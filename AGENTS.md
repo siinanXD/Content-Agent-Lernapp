@@ -13,26 +13,50 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - KI erzeugt nur Inhalte. Bewertung von Lernenden und Zulassung macht ein Mensch.
 - Ohne amtliche Quelle wird kein Lerninhalt erzeugt.
 
-## Vor jeder Entscheidung
+## Entscheidungsregeln (wörtlich aus PRODUCT.md)
 
-1. Suche auf GitHub und Hugging Face nach einer fertigen Lösung.
-2. Lies die offiziellen Docs (Anthropic, OpenAI, Hermes, Langfuse, Figma) zum aktuellen Stand. Nutze nie Modellnamen oder Funktionen aus dem Gedächtnis.
-3. Schreibe die Entscheidung mit Links und einem Satz Begründung in `docs/DECISIONS.md`.
+### Vor jeder Entscheidung
 
-## So wird entschieden
+1. Suche auf GitHub und Hugging Face nach einer fertigen Lösung
+2. Lies die offiziellen Docs von Anthropic, OpenAI, Hermes oder Langfuse zum aktuellen Stand. Nutze nie Modellnamen oder Funktionen aus dem Gedächtnis
+3. Schreibe die Entscheidung mit Links und einem Satz Begründung in docs/DECISIONS.md
 
-- Fertige Open-Source-Lösung vor Eigenbau, wenn: Lizenz MIT oder Apache, letzter Commit jünger als 6 Monate, mehr als 500 Sterne.
-- Das günstigste Modell, das die Qualitäts-Schwelle besteht.
-- Bei zwei gleich guten Wegen: der mit weniger Abhängigkeiten.
-- Nie zurückfragen. Bei Unsicherheit die Annahme in `docs/DECISIONS.md` notieren und weiterarbeiten.
+### So wird entschieden
 
-## Technik
+- Fertige Open-Source-Lösung vor Eigenbau, wenn: Lizenz MIT oder Apache, letzter Commit jünger als 6 Monate, mehr als 500 Sterne
+- Das günstigste Modell, das die Qualitäts-Schwelle besteht
+- Bei zwei gleich guten Wegen: der mit weniger Abhängigkeiten
+- Nie zurückfragen. Bei Unsicherheit die Annahme in docs/DECISIONS.md notieren und weiterarbeiten
+
+### Stopp-Regeln
+
+- Höchstens 3 Reparatur-Runden pro Pull Request, dann stoppen und den Blocker melden
+- Höchstens 20 Euro API-Kosten pro Kurslauf, dann stoppen
+
+### Verboten
+
+- IHK-Prüfungsaufgaben kopieren
+- Personendaten in Prompts
+- Inhalte unter der Qualitäts-Schwelle veröffentlichen
+- Zugangsdaten, Abrechnung oder Datenbank-Löschungen anfassen
+- Barrierefreiheits-Tests abschalten, um einen Merge durchzubekommen
+
+## Linear-Issues bearbeiten
+
+1. Issue starten (In Progress) / zuweisen, bevor Code geschrieben wird — zuerst **AP-00**.
+2. Scope und Akzeptanzkriterien des Issues einhalten; Annahmen in `docs/DECISIONS.md` festhalten.
+3. Branch: `cursor/<kurzname>-85a9`. Pull Request öffnen, Review, Merge.
+4. Nach Merge Issue schließen und nächsten Block laut Bauplan starten.
+5. Reihenfolge: AP-00 → AP-01 → AP-02 nacheinander; danach Pipeline (AP-03–AP-06) und App (AP-07–AP-09) parallel möglich; Hermes **AP-10** zuletzt unter Infra; **AP-11** Pilot; **AP-12** Lern-Schleife nach dem Pilot.
+6. Blocker nach 3 PR-Reparatur-Runden oder bei fehlenden Secrets: kurz melden und mit Arbeit ohne Live-Keys weitermachen (Docs, Scaffold, Mocks, OpenAPI, Linear).
+
+## Technik (siehe DECISIONS.md)
 
 - App: Next.js auf Vercel
-- Daten: Supabase, Region EU
-- Pipeline: Worker auf Railway, Region EU
+- Daten: Supabase, Region EU (bevorzugt Frankfurt)
+- Pipeline: eigene API-Routen; Hermes-Worker auf Railway (AP-10)
 - Tracing und Bewertung: Langfuse Cloud EU
-- API-Vertrag: OpenAPI-Datei im Repo, Postman-Collection daraus erzeugt
+- API-Vertrag: OpenAPI im Repo, Postman-Collection daraus
 - Design: Figma ist die einzige Quelle für Farben, Abstände und Komponenten
 
 ## Qualität
@@ -40,17 +64,4 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Jeder Pull Request: Tests grün, axe-core und Lighthouse ohne Fehler.
 - Barrierefreiheit: WCAG 2.2 Stufe AA, Kontrast mindestens 4,5 zu 1, komplett per Tastatur bedienbar.
 - Jede Lerneinheit speichert Quelle und Abrufdatum.
-
-## Stopp-Regeln
-
-- Höchstens 3 Reparatur-Runden pro Pull Request, dann stoppen und den Blocker im Linear-Issue melden.
-- Höchstens 20 Euro API-Kosten pro Kurslauf, dann stoppen.
-
-## Verboten
-
-- IHK-Prüfungsaufgaben kopieren
-- Personendaten in Prompts
-- Inhalte unter der Qualitäts-Schwelle veröffentlichen
-- Zugangsdaten ins Repo schreiben (das Repo ist öffentlich)
-- Abrechnung oder Datenbank-Löschungen anfassen
-- Barrierefreiheits-Tests abschalten, um einen Merge durchzubekommen
+- Zugangsdaten nie ins Repo (öffentlich).
