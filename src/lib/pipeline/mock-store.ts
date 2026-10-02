@@ -14,6 +14,7 @@ export type Course = {
   mock: true;
   variants: number;
   sources?: Array<{ title: string; url: string; fetchedAt: string; kind?: string; note?: string }>;
+  plan?: unknown;
 };
 
 const courses = new Map<string, Course>();
@@ -51,6 +52,15 @@ export function setSources(
   if (!course) return undefined;
   course.sources = sources;
   course.status = "researched";
+  courses.set(id, course);
+  return course;
+}
+
+export function setPlan(id: string, plan: unknown): Course | undefined {
+  const course = courses.get(id);
+  if (!course) return undefined;
+  course.plan = plan;
+  course.status = "planned";
   courses.set(id, course);
   return course;
 }

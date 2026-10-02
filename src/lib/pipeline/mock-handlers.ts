@@ -1,4 +1,5 @@
-import { createCourse, getCourse, setSources, setStatus } from "./mock-store";
+import { createCourse, getCourse, setPlan, setSources, setStatus } from "./mock-store";
+import { runPlanAgent } from "@/lib/plan/plan-agent";
 import { runResearchAgent } from "@/lib/research/research-agent";
 
 function notFound(id: string) {
@@ -38,40 +39,18 @@ export async function handleResearch(id: string) {
   });
 }
 
-export function handlePlan(id: string) {
+export async function handlePlan(id: string) {
   const course = getCourse(id);
   if (!course) return notFound(id);
-  setStatus(id, "planned");
+  const result = await runPlanAgent(course.keyword);
+  setPlan(id, result.variants);
   return Response.json({
     courseId: id,
-    mock: true,
-    variants: [
-      {
-        name: "Prüfungsvorbereitung 2 Monate",
-        days: [
-          {
-            day: 1,
-            units: [
-              { id: "u1", title: "Werkstoffe erkennen", minutes: 8 },
-              { id: "u2", title: "Messmittel wählen", minutes: 7 },
-            ],
-          },
-        ],
-      },
-      {
-        name: "Weiterbildung 3 Monate",
-        days: [
-          {
-            day: 1,
-            units: [
-              { id: "u1", title: "Werkstoffe erkennen", minutes: 8 },
-              { id: "u2", title: "Messmittel wählen", minutes: 7 },
-              { id: "u3", title: "Sicherheit am Arbeitsplatz", minutes: 10 },
-            ],
-          },
-        ],
-      },
-    ],
+    mock: result.mode !== "live",
+    mode: result.mode,
+    modelId: result.modelId,
+    warning: result.warning,
+    variants: result.variants,
   });
 }
 
