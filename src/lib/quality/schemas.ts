@@ -2,6 +2,8 @@
  * Quality-gate schemas (PRODUCT.md Qualität + DECISIONS D-07/D-11).
  * Thresholds block publish when failed.
  */
+export { GOLDSET_TARGET } from "./goldset-target";
+
 export type QualityScores = {
   /** 1 = answer supported by cited source; 0 = fail */
   sourceFidelity: 0 | 1;
@@ -40,16 +42,6 @@ export const QUALITY_THRESHOLDS = {
   uniqueness: 1 as const,
   niveauMin: 4 as const,
   languageMin: 4 as const,
-} as const;
-
-/** Target averages calibrated from goldset fixture (stand-in until full 70-set + live judge). */
-export const GOLDSET_TARGET = {
-  sourceFidelity: 1,
-  uniqueness: 1,
-  niveau: 4.2,
-  language: 4.1,
-  sampleSize: 12,
-  note: "Fixture-derived targets; replace after live judge on full 70 MAF goldset in Langfuse EU",
 } as const;
 
 export function scoresPass(scores: QualityScores): boolean {

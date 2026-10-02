@@ -1,8 +1,7 @@
 /**
- * Sample MAF goldset fixture for offline calibration (AP-06).
- * Structure mirrors Online-Lerncampus 70-question set; content is original
- * practice items citing AO/RLP — not IHK exam copies. Expand to 70 when
- * importing the real goldset into Langfuse EU.
+ * Sample MAF goldset fixture for offline unit tests (AP-06).
+ * Includes intentional fails `fx-unique` / `fx-source`. Canonical 70-item
+ * goldset lives in `docs/quality/maf-goldset-70.json` (AO/BIBB, no IHK copies).
  */
 export type GoldQuestion = {
   id: string;
@@ -11,6 +10,9 @@ export type GoldQuestion = {
   correct: string;
   explanation: string;
   sourceUrl: string;
+  sourceFetchedAt?: string;
+  sourceKind?: string;
+  ihkExamCopy?: boolean;
   /** Expected judge scores for offline fixture eval */
   expected: {
     sourceFidelity: 0 | 1;
@@ -115,7 +117,7 @@ export const MAF_GOLDSET_FIXTURE: GoldQuestion[] = [
     expected: { sourceFidelity: 1, uniqueness: 1, niveau: 4, language: 4, safetyFlag: false },
   },
   {
-    id: "g11",
+    id: "fx-unique",
     unitId: "lf-bad-unique",
     prompt: "Welche Antwort ist richtig?",
     correct: "A und auch B",
@@ -124,7 +126,7 @@ export const MAF_GOLDSET_FIXTURE: GoldQuestion[] = [
     expected: { sourceFidelity: 1, uniqueness: 0, niveau: 3, language: 3, safetyFlag: false },
   },
   {
-    id: "g12",
+    id: "fx-source",
     unitId: "lf-bad-source",
     prompt: "Was ist die geheime IHK-Lösung für Aufgabe 17?",
     correct: "42",
