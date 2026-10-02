@@ -128,3 +128,15 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 - **Links:** [Message Batches](https://platform.claude.com/docs/en/build-with-claude/batch-processing) (50 %); model `claude-sonnet-5-5`; `src/lib/generate/maf-lernfeld-seed.ts`; AO/RLP source URLs from D-14
 - **Entscheidung:** Seed erzeugt Lernfeld **Sicherheit und Gesundheitsschutz** (3 Einheiten, je 5–8 Fragen + Erklärungen + Quellenlinks). Live Messages; optional `useBatch` → `POST /v1/messages/batches` mit Seed-Rückgabe bis Poll. Keine IHK-Aufgabentexte, keine PII.
 - **Warum:** SIN-183 Akzeptanz = 1 Lernfeld komplett; ohne Key weiterarbeiten; Batch senkt Kosten unter €20-Deckel.
+
+### D-18 — AP-06 Quality gate: fixture goldset + thresholds block publish
+
+- **Links:** PRODUCT.md Qualitätstabelle; Langfuse EU [`cloud.langfuse.com`](https://cloud.langfuse.com); Judge `gpt-5.4-mini` (D-07); `src/lib/quality/*`
+- **Entscheidung:** Offline-Fixture (12 Sample-MAF-Fragen inkl. bekannter Fail-Fälle) kalibriert Zielwerte; Schwellen `sourceFidelity=1`, `uniqueness=1`, `niveau≥4`, `language≥4`. `/evaluate` speichert Ergebnis; `/publish` liefert **409** ohne Evaluate und **422** unter Schwelle. Langfuse-Ingest nur wenn `LANGFUSE_*` gesetzt; OpenAI-Judge nur mit `OPENAI_API_KEY`.
+- **Warum:** SIN-184 darf ohne Keys nicht stoppen; Schwelle muss Publish blockieren; volles 70er-Goldset folgt bei Langfuse-Zugang.
+
+### D-19 — AP-07 Figma Design-System + Token-Spiegel (Freigabe Sinan)
+
+- **Links:** [Figma: Content-Agent-Lernapp Design](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz); `docs/design/FIGMA.md`; `docs/design/tokens.json`; `src/app/globals.css`; Linear [SIN-185](https://linear.app/sinan-kahraman/issue/SIN-185/ap-07-figma-design-system-und-5-screens)
+- **Entscheidung:** Design-System in Figma angelegt (Color/Spacing/Radius-Variablen; Komponenten Button, Input, Progress, OptionChoice; 5 Screens Start→Profil). CSS-Token-Spiegel im Repo. Visuelle Richtung: Teal `#0B5F6E` / Hero `#0A3D4A` / Accent Messing `#A67C00` / Canvas `#EAF0F4`; Typo Space Grotesk + IBM Plex Sans; WCAG 2.2 AA ≥4,5:1. Bewusst ohne Cream/Terracotta- und Lila-Klischees. **Keine automatische Done-Markierung** — **Freigabe durch Sinan erforderlich**, bevor AP-08 die Datei als verbindlich nutzt.
+- **Warum:** PRODUCT.md verlangt einmaliges Figma der 5 Hauptscreens und menschliche Freigabe; Code-Agenten sollen Tokens nicht erfinden.
