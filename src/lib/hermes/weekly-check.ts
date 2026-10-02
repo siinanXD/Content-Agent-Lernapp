@@ -16,6 +16,10 @@ export type HermesDryRun = {
   nextSteps: string[];
 };
 
+/**
+ * AP-10 scaffold: plan weekly source checks without deploying Hermes.
+ * Live Telegram/Railway path stays off until bot + project secrets exist.
+ */
 export function hermesWeeklyDryRun(): HermesDryRun {
   const path = join(process.cwd(), "docs/research/maf-sources.json");
   let sources: SourceCheck[] = [];

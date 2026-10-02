@@ -34,9 +34,11 @@ async function post(path: string, body?: unknown) {
   return { res, json };
 }
 
+/** AP-11: end-to-end seed/fixture pilot against local/mock pipeline. */
 export async function runMafPilot(): Promise<PilotReport> {
   const steps: PilotStepResult[] = [];
   const keyword = "Maschinen- und Anlagenführer";
+
   const create = await post("/api/courses", { keyword, variants: 2 });
   const courseId = String(create.json.id ?? "");
   steps.push({
@@ -46,8 +48,16 @@ export async function runMafPilot(): Promise<PilotReport> {
     detail: courseId || String(create.json.error ?? ""),
   });
   if (!courseId) {
-    return { keyword, liveLlm: false, estimatedCostEur: 0, ceilingEur: 20, steps, passed: false };
+    return {
+      keyword,
+      liveLlm: false,
+      estimatedCostEur: 0,
+      ceilingEur: 20,
+      steps,
+      passed: false,
+    };
   }
+
   for (const step of ["research", "plan", "generate", "evaluate"] as const) {
     const { res, json } = await post(`/api/courses/${courseId}/${step}`);
     steps.push({
@@ -58,6 +68,7 @@ export async function runMafPilot(): Promise<PilotReport> {
       detail: typeof json.warning === "string" ? json.warning.slice(0, 120) : undefined,
     });
   }
+
   const pub = await post(`/api/courses/${courseId}/publish`);
   const blocked = pub.json.blocked === true;
   steps.push({
@@ -66,6 +77,7 @@ export async function runMafPilot(): Promise<PilotReport> {
     status: pub.res.status,
     detail: blocked ? "blocked" : `publishedUnits=${String(pub.json.publishedUnits ?? "")}`,
   });
+
   return {
     keyword,
     courseId,
