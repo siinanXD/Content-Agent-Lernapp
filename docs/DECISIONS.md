@@ -139,7 +139,13 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 
 - **Links:** [MaschFüAusbV](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html); [§ 8 Zwischenprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__8.html); [§ 9 Abschlussprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__9.html); [BIBB 51121](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121); [Langfuse Evaluation](https://langfuse.com/docs/evaluation/overview.md); [GPT-5.4 Mini](https://developers.openai.com/api/docs/models/gpt-5.4-mini); D-07; D-11; `docs/quality/maf-goldset-70.json`
 - **Entscheidung:** Goldset = **70 selbst verfasste Übungsfragen** aus Ausbildungsordnung/BIBB (Abruf 2026-10-02), **keine IHK-Originale**. Dataset `maf-goldset-70` in Langfuse Cloud EU. Richter **`gpt-5.4-mini`** (Chat Completions, JSON) — Anthropic-Judge nicht genutzt (D-07 zweite Familie; Workspace-Header nur falls Claude später 400/401 liefert). Live-Kalibrierung 2026-10-02: 45/70 PASS, Ziel `sourceFidelity=1`, `uniqueness=1`, `niveau=4`, `language=4.9`, Kosten ~0.08 USD. **Publish-Hartgatter = PRODUCT** (`language≥4`); Goldset-`language=4.9` ist Baseline, nicht 422-Schwelle. Live-`/evaluate` schreibt Trace + Scores nach Langfuse; `/publish` bleibt 409 ohne Evaluate und 422 unter Schwelle.
-- **Warum:** SIN-184 Done-Kriterium; Keys sind vorhanden; D-07 gilt weiter; günstigstes bestätigtes Mini-Modell; €20-Deckel (Kalibrierung ≪ 20 USD).
+- **Warum:** SIN-184 Done-Kriterium; Keys sind vorhanden; D-07 gilt weiter; günstigstes bestätigtes Mini-Modell; €20-Deckel (Kalibrierung �; günstigstes bestätigtes Mini-Modell; €20-Deckel (Kalibrierung ≪ 20 USD).
+
+### D-26 — Langfuse platform v4: JS/TS SDK v5 OTEL ingestion
+
+- **Links:** [Upgrade to Langfuse v4](https://langfuse.com/faq/all/upgrade-to-langfuse-v4); [JS/TS v4 → v5](https://langfuse.com/docs/observability/sdk/upgrade-path/js-v4-to-v5); [Custom ingestion → OTEL](https://langfuse.com/integrations/native/opentelemetry/migration-to-v4); [Deprecated API migration](https://langfuse.com/faq/all/deprecated-api-migration); D-05; D-25
+- **Entscheidung:** Quality-gate Ingest migriert von raw `POST /api/public/ingestion` (`trace-create`) auf **`@langfuse/tracing` + `@langfuse/otel` + `@langfuse/client` ≥ 5.4.0** (aktuell 5.11.1). Root-Observation trägt Input/Output; Attribute via `propagateAttributes`; Scores observation-level; Datasets über SDK. Optional `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`.
+- **Warum:** Langfuse Cloud schaltet Legacy-Ingest am 2026-11-16 ab; observations-first Modell braucht OTEL + propagated attributes.
 
 ### D-19 — AP-07 Figma Design-System + Token-Spiegel (Freigabe Sinan)
 
