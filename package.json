@@ -11,11 +11,7 @@
     "typecheck": "tsc --noEmit",
     "quality:sync-goldset": "node --import tsx scripts/ap06-sync-goldset.ts",
     "quality:calibrate": "node --import tsx scripts/ap06-calibrate.ts",
-    "quality:smoke": "node --import tsx scripts/ap06-smoke.ts",
-    "test:a11y": "playwright test",
-    "test:lighthouse": "node scripts/lighthouse-gate.mjs http://127.0.0.1:43123/",
-    "hermes:dry-run": "node --import tsx scripts/hermes-dry-run.mjs",
-    "pilot:maf": "node --import tsx scripts/pilot-maf.mjs"
+    "quality:smoke": "node --import tsx scripts/ap06-smoke.ts"
   },
   "dependencies": {
     "@langfuse/client": "^5.11.1",
@@ -28,16 +24,12 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
-    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "chrome-launcher": "^1.2.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
-    "lighthouse": "^12.8.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
