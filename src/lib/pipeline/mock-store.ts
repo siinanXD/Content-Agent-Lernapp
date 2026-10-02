@@ -13,6 +13,7 @@ export type Course = {
   createdAt: string;
   mock: true;
   variants: number;
+  sources?: Array<{ title: string; url: string; fetchedAt: string; kind?: string; note?: string }>;
 };
 
 const courses = new Map<string, Course>();
@@ -38,6 +39,18 @@ export function setStatus(id: string, status: CourseStatus): Course | undefined 
   const course = courses.get(id);
   if (!course) return undefined;
   course.status = status;
+  courses.set(id, course);
+  return course;
+}
+
+export function setSources(
+  id: string,
+  sources: NonNullable<Course["sources"]>,
+): Course | undefined {
+  const course = courses.get(id);
+  if (!course) return undefined;
+  course.sources = sources;
+  course.status = "researched";
   courses.set(id, course);
   return course;
 }
