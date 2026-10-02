@@ -1,4 +1,5 @@
-import { createCourse, getCourse, setPlan, setSources, setStatus } from "./mock-store";
+import { createCourse, getCourse, setGenerated, setPlan, setSources, setStatus } from "./mock-store";
+import { runGenerateAgent } from "@/lib/generate/generate-agent";
 import { runPlanAgent } from "@/lib/plan/plan-agent";
 import { runResearchAgent } from "@/lib/research/research-agent";
 
@@ -54,14 +55,20 @@ export async function handlePlan(id: string) {
   });
 }
 
-export function handleGenerate(id: string) {
+export async function handleGenerate(id: string) {
   const course = getCourse(id);
   if (!course) return notFound(id);
-  setStatus(id, "generated");
+  const result = await runGenerateAgent({ keyword: course.keyword });
+  setGenerated(id, result.lernfeld);
   return Response.json({
     courseId: id,
-    unitsGenerated: 3,
-    mock: true,
+    mock: result.mode !== "live",
+    mode: result.mode,
+    modelId: result.modelId,
+    batchId: result.batchId,
+    warning: result.warning,
+    unitsGenerated: result.lernfeld.units.length,
+    lernfeld: result.lernfeld,
   });
 }
 
