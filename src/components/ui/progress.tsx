@@ -1,16 +1,17 @@
 export function Progress({
   value,
-  label,
+  label = "Fortschritt",
 }: {
   value: number;
   label?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
-    <div className="flex w-full flex-col gap-2" aria-label={label}>
+    <div className="flex w-full flex-col gap-2">
       <div
         className="h-3 w-full overflow-hidden rounded-full bg-[var(--color-border-subtle)]"
         role="progressbar"
+        aria-label={label}
         aria-valuenow={clamped}
         aria-valuemin={0}
         aria-valuemax={100}
@@ -20,9 +21,6 @@ export function Progress({
           style={{ width: `${clamped}%` }}
         />
       </div>
-      {label ? (
-        <p className="text-sm text-[var(--color-text-secondary)]">{label}</p>
-      ) : null}
     </div>
   );
 }

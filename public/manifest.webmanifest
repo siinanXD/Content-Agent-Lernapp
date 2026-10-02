@@ -1,0 +1,24 @@
+{
+  "name": "Content-Agent-Lernapp",
+  "short_name": "Lernapp",
+  "description": "MAF-Lernpfad aus amtlichen Quellen",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EAF0F4",
+  "theme_color": "#0B5F6E",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
