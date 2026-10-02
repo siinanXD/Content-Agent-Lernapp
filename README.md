@@ -34,11 +34,15 @@ Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · t
 npm test
 npm run test:a11y
 npm run test:lighthouse   # app must be running on :43123
+npm run hermes:dry-run    # AP-10 scaffold (no live Telegram)
+npm run pilot:maf         # AP-11 seed/fixture pipeline (app on :43123)
 npm run build
 npm run lint
 ```
 
 A11y gates (axe critical/serious + Lighthouse a11y ≥ 0.9) run in CI via `.github/workflows/a11y.yml` and must not be disabled.
+
+Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md).
 
 ## Deploy
 
