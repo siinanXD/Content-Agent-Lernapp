@@ -1,0 +1,69 @@
+# Umgebungsvariablen — Prüfung 2026-10-02
+
+Keine Werte in diesem Dokument. Nur Namen, Orte und Status.
+
+Quellen: `AGENTS.md`, `.env.example` (AP-01), `docs/ops/railway.env.example` (AP-10), Vercel-Projekt `content-agent`, Cloud-Agent-Secrets (`CLOUD_AGENT_INJECTED_SECRET_NAMES`). Offizielle Docs: [Langfuse Data Regions](https://langfuse.com/security/data-regions.md) (EU = Ireland, AWS `eu-west-1`; US-Host ist ein anderer Hostname); [Anthropic Authentication](https://platform.claude.com/docs/en/manage-claude/authentication) (`anthropic-workspace-id` / `ANTHROPIC_WORKSPACE_ID`).
+
+## Kurzantwort
+
+**Supabase-URL und Anon-Key sind da** — als `SUPABASE_URL` und `SUPABASE_ANON_KEY` (plus Service-Role). Das sind die injizierten Namen.
+
+**Anthropic-API-Key ist da** (`ANTHROPIC_API_KEY`). Live-Claude braucht zusätzlich `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) oder einen workspace-scoped Key; der Key in diesem Lauf ist nicht workspace-scoped.
+
+Noch offen für Ops: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL`. `NEXT_PUBLIC_SUPABASE_*` sind **keine** fehlenden Secrets, nur optionale Next.js-Client-Aliase derselben Werte.
+
+## Entscheidung D-25
+
+- **Links:** Langfuse-Regionen (oben); Anthropic Workspaces (oben); Vercel Env-API (Projekt `content-agent`).
+- **Entscheidung:** Cloud-Agent- und Vercel-Namen bleiben `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` (so injiziert). Zusätzlich `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` als Aliase dokumentieren. `LANGFUSE_BASE_URL` bleibt der offizielle EU-Host aus den Data-Regions-Docs (Ireland). Fehlende Ops-Secrets (`TELEGRAM_*`, `HERMES_APP_BASE_URL`, `ANTHROPIC_WORKSPACE_ID`) nicht erfinden.
+- **Warum:** Weniger Umbenennung an bestehenden Secrets; Next.js braucht `NEXT_PUBLIC_` im Client; Anthropic-Key ist gesetzt, aber ohne Workspace-Scope unbezahlbar für Live-Calls.
+
+## Cloud Agent (diese Umgebung)
+
+Injizierte Secret-Namen:
+
+| Name | Status | Live-Check (ohne Wert) |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | gesetzt | Prefix `sk-ant`; `GET /v1/models` → 400, Key nicht workspace-scoped |
+| `ANTHROPIC_WORKSPACE_ID` | **fehlt** | Header `anthropic-workspace-id` nötig ([Docs](https://platform.claude.com/docs/en/manage-claude/authentication)) |
+| `OPENAI_API_KEY` | gesetzt | Prefix `sk-`; `GET /v1/models` → 200 |
+| `LANGFUSE_PUBLIC_KEY` | gesetzt | Prefix `pk-lf`; Projekt `Content AGent` auf EU-Host → 200 |
+| `LANGFUSE_SECRET_KEY` | gesetzt | Prefix `sk-lf` |
+| `LANGFUSE_BASE_URL` | gesetzt | offizieller EU-Host (Ireland); US-Host lehnt dieselben Keys mit 401 ab |
+| `SUPABASE_URL` | **gesetzt** | Host `*.supabase.co`; Auth-Health → 200 |
+| `SUPABASE_ANON_KEY` | **gesetzt** | JWT-Form; Auth-Health mit Anon → 200 |
+| `SUPABASE_SERVICE_ROLE_KEY` | gesetzt | JWT-Form; `/rest/v1/` → 200 |
+| `RAILWAY_API_TOKEN` | gesetzt | UUID-Form; allein nicht genug für Hermes |
+| `TELEGRAM_BOT_TOKEN` | **fehlt** | blockiert AP-10 Live |
+| `TELEGRAM_CHAT_ID` | **fehlt** | blockiert AP-10 Live |
+| `HERMES_APP_BASE_URL` | **fehlt** | blockiert Wochenjob gegen die App |
+| `NEXT_PUBLIC_SUPABASE_URL` | optionaler Alias | nicht nötig, solange Server `SUPABASE_URL` liest |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | optionaler Alias | nicht nötig, solange Server `SUPABASE_ANON_KEY` liest |
+
+Nicht erwartet / nicht gesetzt: `AI_GATEWAY_API_KEY`, `FIGMA_ACCESS_TOKEN`, `LINEAR_API_KEY`, `HF_TOKEN` (MCP ist separat authentifiziert).
+
+## Vercel (`content-agent`)
+
+Gleiche acht Keys wie die App-Secrets, **ohne** `RAILWAY_API_TOKEN`. Target nur **production + preview**, nicht **development**. Werte nicht entschlüsselt.
+
+Supabase auf Vercel: `SUPABASE_URL` und `SUPABASE_ANON_KEY` sind gesetzt (kein fehlendes Secret). `NEXT_PUBLIC_*` wäre nur ein Client-Alias.
+
+Noch nicht auf Vercel (gegenüber Hermes-Vorlage): `ANTHROPIC_WORKSPACE_ID`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL`. `RAILWAY_API_TOKEN` gehört zum Worker, nicht zur App.
+
+## Railway / Hermes
+
+Vorlage: `docs/ops/railway.env.example` auf Branch `cursor/ap10-12-scaffold-ff57`. Live-Deploy bleibt blockiert, bis Telegram-Bot und Chat-ID gesetzt sind.
+
+## Was noch gesetzt werden muss
+
+1. `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) — der API-Key ist schon da; ohne Workspace-ID schlägt `GET /v1/models` mit 400 fehl. Neue Cloud-Agent-Secrets gelten erst im **nächsten** Lauf.
+2. `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL` für AP-10 (Railway EU).
+3. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
+
+## Check
+
+```bash
+node scripts/check-env.mjs
+```
+
+Gibt nur `SET` / `EMPTY` / `MISSING` plus Länge aus, keine Werte.
