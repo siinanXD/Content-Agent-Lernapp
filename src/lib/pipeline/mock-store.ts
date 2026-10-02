@@ -16,6 +16,7 @@ export type Course = {
   sources?: Array<{ title: string; url: string; fetchedAt: string; kind?: string; note?: string }>;
   plan?: unknown;
   generated?: unknown;
+  evaluation?: unknown;
 };
 
 const courses = new Map<string, Course>();
@@ -71,6 +72,15 @@ export function setGenerated(id: string, generated: unknown): Course | undefined
   if (!course) return undefined;
   course.generated = generated;
   course.status = "generated";
+  courses.set(id, course);
+  return course;
+}
+
+export function setEvaluation(id: string, evaluation: unknown): Course | undefined {
+  const course = courses.get(id);
+  if (!course) return undefined;
+  course.evaluation = evaluation;
+  course.status = "evaluated";
   courses.set(id, course);
   return course;
 }
