@@ -1,1 +1,1 @@
-$file:/workspace/docs/DECISIONS.md
+@/tmp/decisions_content.txt
