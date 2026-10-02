@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
+import { A11yProvider } from "@/components/a11y/a11y-provider";
+import { ServiceWorkerRegister } from "@/components/a11y/service-worker-register";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -23,6 +25,12 @@ export const metadata: Metadata = {
   title: "Content-Agent-Lernapp",
   description:
     "Autonomer Kurs-Generator aus amtlichen Ausbildungsquellen — Pilot MAF.",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#0B5F6E",
+  appleWebApp: {
+    capable: true,
+    title: "Lernapp",
+  },
 };
 
 export default function RootLayout({
@@ -36,7 +44,10 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-[var(--color-bg-canvas)] text-[var(--color-text-primary)]">
-        {children}
+        <A11yProvider>
+          <ServiceWorkerRegister />
+          {children}
+        </A11yProvider>
       </body>
     </html>
   );
