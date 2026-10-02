@@ -1,0 +1,24 @@
+# AP-09 accessibility CI workflow (copy to .github/workflows/a11y.yml)
+name: a11y
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  axe-and-lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run start &
+      - run: npx wait-on http://127.0.0.1:43123
+      - run: npm run test:a11y
+      - run: npm run test:lighthouse
