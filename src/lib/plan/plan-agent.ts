@@ -1,0 +1,107 @@
+import {
+  mafSeedPlanVariants,
+  planMeetsAcceptance,
+  type PlanVariant,
+} from "./maf-plan-seed";
+
+export type PlanAgentResult = {
+  variants: PlanVariant[];
+  mode: "live" | "seed";
+  modelId?: string;
+  warning?: string;
+};
+
+const GENERATOR_MODEL = "claude-sonnet-5-5";
+
+/**
+ * Build day plans for 2 learning variants (5–10 min units, ~2–3 h/day).
+ * Live: Claude structured JSON when ANTHROPIC_API_KEY set.
+ * Seed: deterministic MAF Metall plan from AO/RLP topics (AP-04 acceptance).
+ */
+export async function runPlanAgent(keyword: string): Promise<PlanAgentResult> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    const variants = mafSeedPlanVariants();
+    return {
+      variants,
+      mode: "seed",
+      warning: planMeetsAcceptance(variants)
+        ? "ANTHROPIC_API_KEY missing — using MAF seed day plans (2 variants). Set key for live structured plan."
+        : "ANTHROPIC_API_KEY missing and seed plan invalid.",
+    };
+  }
+
+  try {
+    const live = await runLivePlan(key, keyword);
+    if (live.variants.length >= 2 && planMeetsAcceptance(live.variants)) return live;
+    return {
+      variants: mafSeedPlanVariants(),
+      mode: "seed",
+      modelId: GENERATOR_MODEL,
+      warning: live.warning ?? "Live plan incomplete; seed fallback.",
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      variants: mafSeedPlanVariants(),
+      mode: "seed",
+      modelId: GENERATOR_MODEL,
+      warning: `Live plan failed: ${msg.slice(0, 200)}. Seed fallback.`,
+    };
+  }
+}
+
+async function runLivePlan(key: string, keyword: string): Promise<PlanAgentResult> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: GENERATOR_MODEL,
+      max_tokens: 8192,
+      messages: [
+        {
+          role: "user",
+          content: `Erzeuge einen Lernplan als JSON für die Ausbildung "${keyword}".
+Genau 2 Varianten: (1) Prüfungsvorbereitung 2 Monate / ~40 Tage / 2.5 h/Tag, (2) Weiterbildung 3 Monate / ~60 Tage / 2 h/Tag.
+Einheiten 5–10 Minuten. Keine Personendaten, keine IHK-Originalprüfungen.
+Schema: [{"name":string,"durationDays":number,"hoursPerDay":number,"days":[{"day":number,"targetMinutes":number,"units":[{"id":string,"title":string,"minutes":number,"sourceKind":"ausbildungsordnung"|"rahmenlehrplan"|"pruefung"}]}]}]
+Antworte nur mit dem JSON-Array.`,
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    return {
+      variants: [],
+      mode: "live",
+      modelId: GENERATOR_MODEL,
+      warning: `Claude API ${res.status}: ${text.slice(0, 200)}`,
+    };
+  }
+
+  const data = (await res.json()) as {
+    content?: Array<{ type: string; text?: string }>;
+  };
+  const text =
+    data.content?.filter((b) => b.type === "text").map((b) => b.text).join("\n") ?? "";
+  const variants = parseVariantsJson(text);
+  return { variants, mode: "live", modelId: GENERATOR_MODEL };
+}
+
+function parseVariantsJson(text: string): PlanVariant[] {
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) return [];
+  try {
+    const arr = JSON.parse(match[0]) as PlanVariant[];
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((v) => v?.name && Array.isArray(v.days));
+  } catch {
+    return [];
+  }
+}
