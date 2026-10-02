@@ -1,4 +1,5 @@
-import { createCourse, getCourse, setStatus } from "./mock-store";
+import { createCourse, getCourse, setSources, setStatus } from "./mock-store";
+import { runResearchAgent } from "@/lib/research/research-agent";
 
 function notFound(id: string) {
   return Response.json(
@@ -22,25 +23,18 @@ export async function handleCreateCourse(req: Request) {
   return Response.json(course, { status: 201 });
 }
 
-export function handleResearch(id: string) {
+export async function handleResearch(id: string) {
   const course = getCourse(id);
   if (!course) return notFound(id);
-  setStatus(id, "researched");
+  const result = await runResearchAgent(course.keyword);
+  setSources(id, result.sources);
   return Response.json({
     courseId: id,
-    mock: true,
-    sources: [
-      {
-        title: "Ausbildungsordnung (Mock – amtliche Quelle einsetzen)",
-        url: "https://www.gesetze-im-internet.de/",
-        fetchedAt: new Date().toISOString(),
-      },
-      {
-        title: "Rahmenlehrplan (Mock – KMK/Land)",
-        url: "https://www.kmk.org/",
-        fetchedAt: new Date().toISOString(),
-      },
-    ],
+    mock: result.mode !== "live",
+    mode: result.mode,
+    modelId: result.modelId,
+    warning: result.warning,
+    sources: result.sources,
   });
 }
 

@@ -18,7 +18,11 @@ export const metadata: Metadata = {
     "Autonomer Kurs-Generator aus amtlichen Ausbildungsquellen — Pilot MAF.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="de"
