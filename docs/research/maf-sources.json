@@ -1,0 +1,53 @@
+{
+  "keyword": "Maschinen- und Anlagenführer",
+  "harvestedAt": "2026-10-02",
+  "method": "agent web_search + web_fetch (seed path; Anthropic live path when ANTHROPIC_API_KEY set)",
+  "acceptance": {
+    "ausbildungsordnung": true,
+    "rahmenlehrplan": true,
+    "pruefung": true,
+    "noIhkExamCopies": true
+  },
+  "sources": [
+    {
+      "title": "MaschFüAusbV HTML (gesetze-im-internet.de)",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html",
+      "kind": "ausbildungsordnung"
+    },
+    {
+      "title": "MaschFüAusbV PDF (gesetze-im-internet.de)",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/MaschF%C3%BCAusbV.pdf",
+      "kind": "ausbildungsordnung"
+    },
+    {
+      "title": "BIBB MaschFüAusbV regulation PDF",
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf",
+      "kind": "ausbildungsordnung"
+    },
+    {
+      "title": "KMK Rahmenlehrplan MAF 31.03.2023",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf",
+      "kind": "rahmenlehrplan"
+    },
+    {
+      "title": "MaschFüAusbV § 9 Abschlussprüfung",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+      "kind": "pruefung"
+    },
+    {
+      "title": "MaschFüAusbV § 8 Zwischenprüfung",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html",
+      "kind": "pruefung"
+    },
+    {
+      "title": "BIBB Berufesuche 51121",
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121",
+      "kind": "berufsinformation"
+    },
+    {
+      "title": "BERUFENET dkz 51121",
+      "url": "https://berufenet.arbeitsagentur.de/berufenet/faces/index?path=null/kurzbeschreibung&dkz=51121",
+      "kind": "berufsinformation"
+    }
+  ]
+}
