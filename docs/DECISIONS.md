@@ -1,1 +1,1 @@
-@/tmp/decisions_content.txt
+<<JSON_FILE:/tmp/cu2.json:content>>
