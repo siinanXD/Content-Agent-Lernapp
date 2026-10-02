@@ -1,8 +1,8 @@
-#!/usr/bin/env node
-const { hermesWeeklyDryRun } = await import("../src/lib/hermes/weekly-check.ts");
+import { hermesWeeklyDryRun } from "../src/lib/hermes/weekly-check.ts";
+
 const report = hermesWeeklyDryRun();
 console.log(JSON.stringify(report, null, 2));
-if (report.liveBlocked) {
-  console.error("\n[hermes] live deploy skipped (scaffold).");
+if (!report.liveBlocked) {
+  console.error("expected liveBlocked");
+  process.exit(1);
 }
-process.exit(0);
