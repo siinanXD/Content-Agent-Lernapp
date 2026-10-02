@@ -72,7 +72,7 @@ async function main() {
     JSON.stringify(target, null, 2) + "\n",
   );
 
-  const ts = `/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ*
+  const ts = `/**
  * Calibrated goldset target (AP-06).
  * Generated ${calibratedAt} by scripts/ap06-calibrate.ts — do not hand-edit.
  */
