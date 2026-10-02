@@ -7,6 +7,7 @@ Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen 
 - [`docs/PRODUCT.md`](docs/PRODUCT.md) — Konzept und Bauplan AP-00–AP-12
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
+- [`docs/design/FIGMA.md`](docs/design/FIGMA.md) — Design-System / Screens
 - [`AGENTS.md`](AGENTS.md) — Entscheidungs- und Stopp-Regeln
 
 ## Local development
@@ -17,6 +18,14 @@ npm run dev
 ```
 
 Dev server defaults to an uncommon port in scripts (see `package.json`). Open the printed URL.
+
+Learner screens (AP-08):
+
+- `/` Start
+- `/lernpfad` Path
+- `/einheit/[unitId]` Unit
+- `/ergebnis` Result
+- `/profil` Profile
 
 ```bash
 npm test

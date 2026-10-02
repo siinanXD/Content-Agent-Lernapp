@@ -1,6 +1,6 @@
 # Figma Design-System — Content-Agent-Lernapp
 
-**Freigabe durch Sinan erforderlich.** Die 5 Screens und Tokens gelten erst nach menschlicher Freigabe als Quelle für AP-08. Bis dahin: Draft, nicht verbindlich für Produktions-UI.
+**Freigegeben durch Sinan (2026-10-02, „passt erstmal“).** Verbindliche Quelle für AP-08+.
 
 ## Datei
 
@@ -10,7 +10,7 @@
 | URL | https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz |
 | File key | `0SWGDO2ioBD3MyXiAnrbRz` |
 | Linear | [SIN-185](https://linear.app/sinan-kahraman/issue/SIN-185/ap-07-figma-design-system-und-5-screens) |
-| Status | **Awaiting Sinan approval** (nicht Done) |
+| Status | **Approved** (Done) |
 
 ## Screens (390×844)
 
@@ -79,10 +79,10 @@ WCAG 2.2 AA: Fließtext und UI-Labels ≥ **4,5:1**. Geprüft gegen Primary-Text
 
 ## Freigabe-Checkliste (Sinan)
 
-- [ ] Visuelle Richtung (Teal / Typo / Atmosphere) OK
-- [ ] 5 Screens inhaltlich und strukturell OK
-- [ ] Kontrast und Lesbarkeit auf Mobil OK
-- [ ] Komponenten-Set ausreichend für AP-08
-- [ ] Freigabe-Kommentar in Figma oder Linear SIN-185
+- [x] Visuelle Richtung (Teal / Typo / Atmosphere) OK
+- [x] 5 Screens inhaltlich und strukturell OK
+- [x] Kontrast und Lesbarkeit auf Mobil OK
+- [x] Komponenten-Set ausreichend für AP-08
+- [x] Freigabe-Kommentar in Figma oder Linear SIN-185 ("passt erstmal", 2026-10-02)
 
 Nach Freigabe: SIN-185 auf Done; AP-08 liest diese Datei + Figma als verbindliche Quelle.
