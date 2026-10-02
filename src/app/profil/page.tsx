@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useA11y } from "@/components/a11y/a11y-provider";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { Progress } from "@/components/ui/progress";
@@ -8,6 +9,7 @@ import { loadSession, type LearnerSession } from "@/lib/learner/session";
 
 export default function ProfilPage() {
   const [session, setSession] = useState<LearnerSession | null>(null);
+  const { prefs, setPrefs } = useA11y();
 
   useEffect(() => {
     setSession(loadSession());
@@ -47,7 +49,7 @@ export default function ProfilPage() {
             Fortschritt bis zur Prüfung
           </p>
           <div className="mt-3">
-            <Progress value={pct} />
+            <Progress value={pct} label="Fortschritt bis zur Prüfung" />
           </div>
           <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
             {daysDone} von {daysTotal} Tagen · {pct} % des Plans
@@ -68,9 +70,25 @@ export default function ProfilPage() {
             Barrierefreiheit
           </p>
           <p className="mt-2 text-sm leading-5 text-[var(--color-text-secondary)]">
-            Einfache Sprache und Vorlesen können hier geschaltet werden (WCAG
-            2.2 AA).
+            Schalter für einfache Sprache und Vorlesen (WCAG 2.2 AA). Offline
+            bleibt die geladene App-Hülle nutzbar.
           </p>
+          <div className="mt-4 flex flex-col gap-3">
+            <ToggleRow
+              id="simple-language"
+              label="Einfache Sprache"
+              checked={prefs.simpleLanguage}
+              onChange={(checked) =>
+                setPrefs({ ...prefs, simpleLanguage: checked })
+              }
+            />
+            <ToggleRow
+              id="read-aloud"
+              label="Vorlesen"
+              checked={prefs.readAloud}
+              onChange={(checked) => setPrefs({ ...prefs, readAloud: checked })}
+            />
+          </div>
         </div>
       </section>
 
@@ -85,5 +103,34 @@ function MetaRow({ label, value }: { label: string; value: string }) {
       <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
       <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">{value}</p>
     </div>
+  );
+}
+
+function ToggleRow({
+  id,
+  label,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      className="flex min-h-11 cursor-pointer items-center justify-between gap-3"
+    >
+      <span className="text-[15px] text-[var(--color-text-primary)]">{label}</span>
+      <input
+        id={id}
+        type="checkbox"
+        role="switch"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-5 w-9 accent-[var(--color-brand-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+      />
+    </label>
   );
 }

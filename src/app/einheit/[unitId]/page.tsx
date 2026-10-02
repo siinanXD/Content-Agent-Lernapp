@@ -5,12 +5,15 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { OptionChoice } from "@/components/ui/option-choice";
 import { MobileShell } from "@/components/learner/mobile-shell";
+import { useA11y } from "@/components/a11y/a11y-provider";
+import { speakGerman } from "@/lib/a11y/preferences";
 import { getUnit } from "@/lib/learner/playable-path";
 import { loadSession, saveSession } from "@/lib/learner/session";
 
 export default function EinheitPage() {
   const params = useParams<{ unitId: string }>();
   const router = useRouter();
+  const { prefs } = useA11y();
   const unit = useMemo(() => getUnit(params.unitId), [params.unitId]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -36,6 +39,9 @@ export default function EinheitPage() {
   const current = unit;
   const question = current.questions[index];
   const total = current.questions.length;
+  const explanation = prefs.simpleLanguage
+    ? "Vor dem Arbeiten: Strom aus. Gegen Wiedereinschalten sichern. Prüfen, dass kein Strom da ist. Schutzkleidung tragen."
+    : current.explanation;
 
   function checkAnswer() {
     if (!question || !selected || revealed) return;
@@ -103,11 +109,20 @@ export default function EinheitPage() {
             Erklärung
           </p>
           <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-primary)]">
-            {current.explanation}
+            {explanation}
           </p>
           <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
             {current.sourceLabel}
           </p>
+          {prefs.readAloud ? (
+            <Button
+              variant="secondary"
+              className="mt-3"
+              onClick={() => speakGerman(`${current.title}. ${explanation}`)}
+            >
+              Erklärung vorlesen
+            </Button>
+          ) : null}
         </div>
       </section>
 
