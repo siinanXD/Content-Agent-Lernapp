@@ -20,7 +20,7 @@ Dev server: [http://127.0.0.1:43123](http://127.0.0.1:43123) (`npm run dev` → 
 
 ### Learner UI (AP-08 draft)
 
-Playable path (Figma draft — **Sinan approval pending** on SIN-185):
+Playable path (Figma approved by Sinan 2026-10-02):
 
 1. `/` Start — Schlagwort + Lernvariante → Kurs erzeugen  
 2. `/lernpfad` — heutige Einheiten  
@@ -32,9 +32,13 @@ Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · t
 
 ```bash
 npm test
+npm run test:a11y
+npm run test:lighthouse   # app must be running on :43123
 npm run build
 npm run lint
 ```
+
+A11y gates (axe critical/serious + Lighthouse a11y ≥ 0.9) run in CI via `.github/workflows/a11y.yml` and must not be disabled.
 
 ## Deploy
 
