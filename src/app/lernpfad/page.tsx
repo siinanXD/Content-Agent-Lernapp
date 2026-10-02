@@ -12,9 +12,9 @@ import {
 import { loadSession, type LearnerSession } from "@/lib/learner/session";
 
 const statusTone: Record<PathUnitStatus, string> = {
-  done: "bg-[var(--color-feedback-success)] text-[var(--color-text-on-brand)]",
-  today: "bg-[var(--color-brand-primary)] text-[var(--color-text-on-brand)]",
-  open: "bg-[var(--color-border-subtle)] text-[var(--color-text-primary)]",
+  done: "bg-[var(--color-feedback-success)] text-white",
+  today: "bg-[var(--color-brand-primary)] text-white",
+  open: "bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] border border-[var(--color-border-subtle)]",
 };
 
 export default function LernpfadPage() {
@@ -95,7 +95,7 @@ export default function LernpfadPage() {
                   {content}
                 </Link>
               ) : (
-                <div className="flex items-center gap-3.5 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3.5 opacity-80">
+                <div className="flex items-center gap-3.5 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3.5">
                   {content}
                 </div>
               )}
