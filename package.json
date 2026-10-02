@@ -13,7 +13,9 @@
     "quality:calibrate": "node --import tsx scripts/ap06-calibrate.ts",
     "quality:smoke": "node --import tsx scripts/ap06-smoke.ts",
     "test:a11y": "playwright test",
-    "test:lighthouse": "node scripts/lighthouse-gate.mjs http://127.0.0.1:43123/"
+    "test:lighthouse": "node scripts/lighthouse-gate.mjs http://127.0.0.1:43123/",
+    "hermes:dry-run": "node --import tsx scripts/hermes-dry-run.mjs",
+    "pilot:maf": "node --import tsx scripts/pilot-maf.mjs"
   },
   "dependencies": {
     "next": "16.3.8",
