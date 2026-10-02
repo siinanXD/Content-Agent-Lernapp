@@ -1,0 +1,215 @@
+openapi: 3.1.0
+info:
+  title: Content-Agent-Lernapp Pipeline API
+  version: 0.1.0
+  description: |
+    Course generation pipeline. Mock mode until live agents land (AP-03+).
+    No IHK exam copying; no PII in prompts.
+servers:
+  - url: /api
+paths:
+  /courses:
+    post:
+      operationId: createCourse
+      summary: Create a course from a keyword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCourseRequest'
+      responses:
+        '201':
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+  /courses/{id}/research:
+    post:
+      operationId: researchCourse
+      summary: Fetch official sources for the occupation
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Sources stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchResult'
+  /courses/{id}/plan:
+    post:
+      operationId: planCourse
+      summary: Build day plans for learning variants
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Plans generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResult'
+  /courses/{id}/generate:
+    post:
+      operationId: generateCourse
+      summary: Generate unit content (explanation + questions)
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Content generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateResult'
+  /courses/{id}/evaluate:
+    post:
+      operationId: evaluateCourse
+      summary: Judge-model quality gate
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Evaluation scores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluateResult'
+  /courses/{id}/publish:
+    post:
+      operationId: publishCourse
+      summary: Publish units above the quality threshold
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Publish result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishResult'
+  /courses/{id}/refresh:
+    post:
+      operationId: refreshCourse
+      summary: Weekly source refresh (Hermes / manual)
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Refresh result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResult'
+components:
+  parameters:
+    CourseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    CreateCourseRequest:
+      type: object
+      required: [keyword]
+      properties:
+        keyword:
+          type: string
+          example: Maschinen- und Anlagenführer
+        variants:
+          type: integer
+          minimum: 2
+          maximum: 3
+          default: 2
+    Course:
+      type: object
+      required: [id, keyword, status, createdAt, mock]
+      properties:
+        id: { type: string, format: uuid }
+        keyword: { type: string }
+        status:
+          type: string
+          enum: [created, researched, planned, generated, evaluated, published]
+        createdAt: { type: string, format: date-time }
+        mock: { type: boolean }
+    Source:
+      type: object
+      required: [title, url, fetchedAt]
+      properties:
+        title: { type: string }
+        url: { type: string, format: uri }
+        fetchedAt: { type: string, format: date-time }
+    ResearchResult:
+      type: object
+      required: [courseId, sources, mock]
+      properties:
+        courseId: { type: string }
+        sources:
+          type: array
+          items: { $ref: '#/components/schemas/Source' }
+        mock: { type: boolean }
+    PlanResult:
+      type: object
+      required: [courseId, variants, mock]
+      properties:
+        courseId: { type: string }
+        variants:
+          type: array
+          items:
+            type: object
+            required: [name, days]
+            properties:
+              name: { type: string }
+              days:
+                type: array
+                items:
+                  type: object
+                  required: [day, units]
+                  properties:
+                    day: { type: integer }
+                    units:
+                      type: array
+                      items:
+                        type: object
+                        required: [id, title, minutes]
+                        properties:
+                          id: { type: string }
+                          title: { type: string }
+                          minutes: { type: integer }
+        mock: { type: boolean }
+    GenerateResult:
+      type: object
+      required: [courseId, unitsGenerated, mock]
+      properties:
+        courseId: { type: string }
+        unitsGenerated: { type: integer }
+        mock: { type: boolean }
+    EvaluateResult:
+      type: object
+      required: [courseId, passed, scores, mock]
+      properties:
+        courseId: { type: string }
+        passed: { type: boolean }
+        scores:
+          type: object
+          additionalProperties: { type: number }
+        mock: { type: boolean }
+    PublishResult:
+      type: object
+      required: [courseId, publishedUnits, blockedUnits, mock]
+      properties:
+        courseId: { type: string }
+        publishedUnits: { type: integer }
+        blockedUnits: { type: integer }
+        mock: { type: boolean }
+    RefreshResult:
+      type: object
+      required: [courseId, sourcesChanged, mock]
+      properties:
+        courseId: { type: string }
+        sourcesChanged: { type: boolean }
+        mock: { type: boolean }

@@ -10,6 +10,7 @@ Stand: AP-00 abgeschlossen (2026-10-02). Modellnamen und Features nur aus aktuel
 | OpenAI API | User setzt | Richter-Modell / Evaluate blockiert bis gesetzt |
 | Langfuse (EU) | User setzt | Tracing/Datasets/Prompt-Versionen blockiert bis gesetzt |
 | Supabase (EU) | User setzt | Persistenz live blockiert; Mocks/OpenAPI weiter möglich |
+| Vercel team link | MCP list_teams leer | create_git_project braucht teamId; lokaler Build grün, Deploy sobald Team/Account verknüpft |
 
 Deckel: max. **20 € API-Kosten pro Kurslauf** (PRODUCT.md).
 

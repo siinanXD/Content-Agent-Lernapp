@@ -1,0 +1,78 @@
+{
+  "info": {
+    "name": "Content-Agent-Lernapp Pipeline",
+    "description": "Generated from docs/api/openapi.yaml — mock pipeline routes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:43123/api" },
+    { "key": "courseId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create course",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set('courseId', j.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"keyword\": \"Maschinen- und Anlagenführer\",\n  \"variants\": 2\n}"
+        },
+        "url": "{{baseUrl}}/courses"
+      }
+    },
+    {
+      "name": "Research",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/{{courseId}}/research"
+      }
+    },
+    {
+      "name": "Plan",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/{{courseId}}/plan"
+      }
+    },
+    {
+      "name": "Generate",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/{{courseId}}/generate"
+      }
+    },
+    {
+      "name": "Evaluate",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/{{courseId}}/evaluate"
+      }
+    },
+    {
+      "name": "Publish",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/{{courseId}}/publish"
+      }
+    },
+    {
+      "name": "Refresh (weekly)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/{{courseId}}/refresh"
+      }
+    }
+  ]
+}
