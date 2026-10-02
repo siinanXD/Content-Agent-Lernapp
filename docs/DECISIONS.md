@@ -4,13 +4,14 @@ Stand: AP-00 abgeschlossen (2026-10-02). Modellnamen und Features nur aus aktuel
 
 ## Blocker / offene Secrets
 
-| Secret | Status | Auswirkung |
+| Secret | Status (2026-10-02 agent env) | Auswirkung |
 | --- | --- | --- |
-| Anthropic (Claude) API | User setzt | Live-Recherche/Generate/Batch blockiert bis gesetzt; Mocks/Docs weiter |
-| OpenAI API | User setzt | Richter-Modell / Evaluate blockiert bis gesetzt |
-| Langfuse (EU) | User setzt | Tracing/Datasets/Prompt-Versionen blockiert bis gesetzt |
-| Supabase (EU) | User setzt | Persistenz live blockiert; Mocks/OpenAPI weiter möglich |
-| Vercel team link | MCP list_teams leer | create_git_project braucht teamId; lokaler Build grün, Deploy sobald Team/Account verknüpft |
+| Anthropic (Claude) API | **absent** (not in injected secrets) | Live-Recherche/Generate/Batch blockiert; MAF-Seed AO/RLP/Prüfung aktiv |
+| OpenAI API | **absent** | Richter-Modell / Evaluate blockiert bis gesetzt |
+| Langfuse (EU) | **absent** | Tracing/Datasets/Prompt-Versionen blockiert bis gesetzt |
+| Supabase (EU) | **absent** | Persistenz live blockiert; Mocks/OpenAPI weiter möglich |
+| Railway | **present** (`RAILWAY_API_TOKEN`) | Nur für späteren Hermes-Deploy (AP-10) |
+| Vercel team link | auth ok / **403** on `siinanxds-projects` | `list_teams` leer; Deploy blockiert bis Re-Auth |
 
 Deckel: max. **20 € API-Kosten pro Kurslauf** (PRODUCT.md).
 
@@ -103,3 +104,15 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 - **Links:** [BIBB Berufesuche 51121](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121) (HTTP 200); [BERUFENET dkz 51121](https://berufenet.arbeitsagentur.de/berufenet/faces/index?path=null/kurzbeschreibung&dkz=51121) (HTTP 200); Claude [web_search](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool) / [web_fetch](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool); model `claude-sonnet-5-5` ([docs](https://platform.claude.com/docs/en/models/sonnet-5-5/overview))
 - **Entscheidung:** Ohne `ANTHROPIC_API_KEY` speichert `/research` verifizierte Seed-Quellen; mit Key ruft der Agent Claude+Tools und parst JSON-Quellen.
 - **Warum:** AP-03 darf ohne Secrets nicht stoppen; Seeds sind erreichbare amtliche Einstiege, keine IHK-Prüfungen.
+
+### D-14 — AP-03 acceptance: full AO + RLP + Prüfung seed (2026-10-02 harvest)
+
+- **Links:** [MaschFüAusbV HTML](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html); [MaschFüAusbV PDF](https://www.gesetze-im-internet.de/maschf_ausbv/MaschF%C3%BCAusbV.pdf); [BIBB regulation PDF](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf); [KMK RLP 31.03.2023](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf) (HTTP 200); [§ 9 Abschlussprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__9.html); [§ 8 Zwischenprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__8.html); artifact `docs/research/maf-sources.json`; Claude [web_fetch beta header](https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool)
+- **Entscheidung:** Seed speichert **Ausbildungsordnung + Rahmenlehrplan + Prüfungsanforderungen (Verordnungsstruktur)**; Live-Pfad nutzt `claude-sonnet-5-5` mit Tool-Loop und `anthropic-beta: web-fetch-2025-09-10`; bei unvollständigem Live-Ergebnis Merge mit Seed für MAF. Keine IHK-Aufgabentexte.
+- **Warum:** SIN-181 Akzeptanz verlangt AO/RLP/Prüfung mit Links; Cloud-Agent hatte 2026-10-02 nur `RAILWAY_API_TOKEN` injiziert (kein Anthropic) → Harvest über Agent-Web-Tools, Live-Pfad bleibt für Key bereit.
+
+### D-15 — Secrets gap (2026-10-02 continuation agent)
+
+- **Links:** Cloud Agents Secrets UI; `.env.example`; Vercel team `team_ZuQwQeQCoaAXbHB9StRzbsWv` / scope `siinanxds-projects`
+- **Entscheidung:** Weiter ohne Live-Keys (Mocks, Seeds, Plan-JSON); Blocker dokumentieren. Vercel-Deploy blockiert bis Team-Scope re-auth.
+- **Warum:** `CLOUD_AGENT_INJECTED_SECRET_NAMES` = nur `RAILWAY_API_TOKEN`; Anthropic/OpenAI/Langfuse/Supabase **absent**. Vercel MCP `list_teams` leer + 403 auf Team-Projekte.
