@@ -17,6 +17,8 @@ Hermes Agent (Railway EU, AP-10) → weekly source check → Telegram + pipeline
 
 ## Pipeline routes (AP-02+)
 
+Contract: [`docs/api/openapi.yaml`](api/openapi.yaml) · Postman: [`docs/api/postman-collection.json`](api/postman-collection.json)
+
 | Method | Path | Owner package |
 | --- | --- | --- |
 | POST | `/api/courses` | AP-02/03 |
@@ -27,7 +29,7 @@ Hermes Agent (Railway EU, AP-10) → weekly source check → Telegram + pipeline
 | POST | `/api/courses/{id}/publish` | AP-06 |
 | POST | `/api/courses/{id}/refresh` | AP-10 (weekly) |
 
-Until AP-10, pipeline starts are manual.
+Mocks respond with `"mock": true` until live agents replace them. Until AP-10, pipeline starts are manual.
 
 ## App screens (AP-07/08)
 
