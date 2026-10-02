@@ -122,3 +122,9 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 - **Links:** MaschFüAusbV §4 Berufsbild / §8–§9 Prüfung; KMK RLP MAF (verweist auf verwandte Metall-RLPs); PRODUCT.md (2–3 h/Tag, 5–10 min Einheiten); `src/lib/plan/maf-plan-seed.ts`
 - **Entscheidung:** Seed liefert **Prüfungsvorbereitung 2 Monate (40 Tage × 2,5 h)** und **Weiterbildung 3 Monate (60 Tage × 2 h)** als JSON; Topics aus AO/RLP/Prüfungsstruktur (keine IHK-Aufgaben). Live-Pfad `claude-sonnet-5-5` structured JSON wenn Key da.
 - **Warum:** SIN-182 Akzeptanz = Tagesplan für 2 Varianten; ohne Anthropic-Key darf AP-04 nicht blockieren.
+
+### D-17 — AP-05 Generate: one complete Lernfeld seed + Batch path
+
+- **Links:** [Message Batches](https://platform.claude.com/docs/en/build-with-claude/batch-processing) (50 %); model `claude-sonnet-5-5`; `src/lib/generate/maf-lernfeld-seed.ts`; AO/RLP source URLs from D-14
+- **Entscheidung:** Seed erzeugt Lernfeld **Sicherheit und Gesundheitsschutz** (3 Einheiten, je 5–8 Fragen + Erklärungen + Quellenlinks). Live Messages; optional `useBatch` → `POST /v1/messages/batches` mit Seed-Rückgabe bis Poll. Keine IHK-Aufgabentexte, keine PII.
+- **Warum:** SIN-183 Akzeptanz = 1 Lernfeld komplett; ohne Key weiterarbeiten; Batch senkt Kosten unter €20-Deckel.
