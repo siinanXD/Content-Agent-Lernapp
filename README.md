@@ -41,6 +41,8 @@ Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).
 
 Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.
 
+Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`docs/quality/README.md`).
+
 ## Repo
 
 https://github.com/siinanXD/Content-Agent-Lernapp
