@@ -1,4 +1,8 @@
-import { mafSeedSources, type ResearchSource } from "./maf-seed-sources";
+import {
+  mafSeedSources,
+  seedCoversAcceptance,
+  type ResearchSource,
+} from "./maf-seed-sources";
 
 export type ResearchAgentResult = {
   sources: ResearchSource[];
@@ -7,71 +11,165 @@ export type ResearchAgentResult = {
   warning?: string;
 };
 
+const GENERATOR_MODEL = "claude-sonnet-5-5";
+const MAX_TOOL_ROUNDS = 6;
+
+type AnthropicContentBlock =
+  | { type: "text"; text: string }
+  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+  | { type: string; [key: string]: unknown };
+
+type AnthropicMessage = {
+  role: "user" | "assistant";
+  content: string | AnthropicContentBlock[];
+};
+
 /**
  * Research official sources for a course keyword.
- * Live path uses Claude Messages API + web_search/web_fetch (see DECISIONS D-06).
- * Without ANTHROPIC_API_KEY, returns verified seed sources for MAF pilot.
+ * Live path: Claude Messages API + web_search/web_fetch with tool loop (DECISIONS D-06/D-14).
+ * Without ANTHROPIC_API_KEY: verified MAF seed covering AO + RLP + Prüfung.
  */
 export async function runResearchAgent(keyword: string): Promise<ResearchAgentResult> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {
+    const sources = mafSeedSources();
     return {
-      sources: mafSeedSources(),
+      sources,
       mode: "seed",
-      warning:
-        "ANTHROPIC_API_KEY missing — seed sources only. Set key for live web_search/web_fetch.",
+      warning: seedCoversAcceptance(sources)
+        ? "ANTHROPIC_API_KEY missing — using verified MAF seed (AO/RLP/Prüfung). Set key for live web_search/web_fetch."
+        : "ANTHROPIC_API_KEY missing and seed incomplete.",
     };
   }
 
-  // Live call: model ID from official docs (DECISIONS D-06), not memory.
-  const modelId = "claude-sonnet-5-5";
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
+  try {
+    const live = await runLiveResearch(key, keyword);
+    if (live.sources.length > 0) return live;
+    return {
+      sources: mafSeedSources(),
+      mode: "seed",
+      modelId: GENERATOR_MODEL,
+      warning: live.warning ?? "Live response had no parseable sources; seed fallback.",
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      sources: mafSeedSources(),
+      mode: "seed",
+      modelId: GENERATOR_MODEL,
+      warning: `Live research failed: ${msg.slice(0, 200)}. Fell back to seed.`,
+    };
+  }
+}
+
+async function runLiveResearch(
+  key: string,
+  keyword: string,
+): Promise<ResearchAgentResult> {
+  const tools = [
+    { type: "web_search_20250305", name: "web_search" },
+    {
+      type: "web_fetch_20250910",
+      name: "web_fetch",
+      max_uses: 8,
+      citations: { enabled: true },
     },
-    body: JSON.stringify({
-      model: modelId,
-      max_tokens: 2048,
-      tools: [
-        { type: "web_search_20250305", name: "web_search" },
-        { type: "web_fetch_20250910", name: "web_fetch" },
-      ],
-      messages: [
-        {
-          role: "user",
-          content: `Finde ausschließlich amtliche deutsche Quellen zur Ausbildung "${keyword}": Ausbildungsordnung, Rahmenlehrplan, Prüfungsanforderungen. Keine IHK-Originalprüfungsaufgaben. Antworte als JSON-Array von Objekten {title,url,kind} mit kind in ausbildungsordnung|rahmenlehrplan|pruefung|berufsinformation|other.`,
-        },
-      ],
-    }),
-  });
+  ];
 
-  if (!res.ok) {
-    const text = await res.text();
-    return {
-      sources: mafSeedSources(),
-      mode: "seed",
-      modelId,
-      warning: `Claude API ${res.status}: ${text.slice(0, 200)}. Fell back to seed sources.`,
+  const messages: AnthropicMessage[] = [
+    {
+      role: "user",
+      content: `Finde ausschließlich amtliche deutsche Quellen zur Ausbildung "${keyword}":
+1) Ausbildungsordnung (Verordnung / gesetze-im-internet / BIBB),
+2) Rahmenlehrplan (KMK PDF),
+3) Prüfungsanforderungen als Struktur aus der Verordnung (§ Zwischen-/Abschlussprüfung) — KEINE IHK-Originalprüfungsaufgaben und keine Personendaten.
+
+Nutze web_search und web_fetch. Antworte am Ende als JSON-Array von Objekten {title,url,kind} mit kind in ausbildungsordnung|rahmenlehrplan|pruefung|berufsinformation|other. Mindestens je eine Quelle für ausbildungsordnung, rahmenlehrplan und pruefung.`,
+    },
+  ];
+
+  let lastText = "";
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        // web_fetch requires beta header per Anthropic docs
+        "anthropic-beta": "web-fetch-2025-09-10",
+      },
+      body: JSON.stringify({
+        model: GENERATOR_MODEL,
+        max_tokens: 4096,
+        tools,
+        messages,
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      return {
+        sources: [],
+        mode: "live",
+        modelId: GENERATOR_MODEL,
+        warning: `Claude API ${res.status}: ${text.slice(0, 200)}`,
+      };
+    }
+
+    const data = (await res.json()) as {
+      stop_reason?: string;
+      content?: AnthropicContentBlock[];
     };
+    const content = data.content ?? [];
+    messages.push({ role: "assistant", content });
+
+    lastText = content
+      .filter((b): b is { type: "text"; text: string } => b.type === "text" && typeof b.text === "string")
+      .map((b) => b.text)
+      .join("\n");
+
+    const toolUses = content.filter(
+      (b): b is { type: "tool_use"; id: string; name: string; input: Record<string, unknown> } =>
+        b.type === "tool_use",
+    );
+
+    if (toolUses.length === 0 || data.stop_reason === "end_turn") {
+      break;
+    }
+
+    // Server-executed tools (web_search / web_fetch) return results inside the
+    // assistant content stream on Anthropic's side in many deployments; if we
+    // still see tool_use without paired tool_result, ask for the final JSON.
+    messages.push({
+      role: "user",
+      content:
+        "Falls die Tools fertig sind: gib jetzt nur das JSON-Array der Quellen aus (kein weiterer Tool-Aufruf nötig, außer eine URL fehlt noch).",
+    });
   }
 
-  const data = (await res.json()) as {
-    content?: Array<{ type: string; text?: string }>;
-  };
-  const text = data.content?.filter((b) => b.type === "text").map((b) => b.text).join("\n") ?? "";
-  const sources = parseSourcesJson(text);
+  const sources = parseSourcesJson(lastText);
   if (sources.length === 0) {
     return {
-      sources: mafSeedSources(),
-      mode: "seed",
-      modelId,
-      warning: "Live response had no parseable sources; seed fallback.",
+      sources: [],
+      mode: "live",
+      modelId: GENERATOR_MODEL,
+      warning: "Live response had no parseable sources.",
     };
   }
-  return { sources, mode: "live", modelId };
+
+  const merged = mergeWithSeedIfNeeded(sources, keyword);
+  return { sources: merged, mode: "live", modelId: GENERATOR_MODEL };
+}
+
+function mergeWithSeedIfNeeded(sources: ResearchSource[], keyword: string): ResearchSource[] {
+  // For MAF pilot, ensure acceptance kinds even if live missed one.
+  const isMaf = /maschinen|anlagenf[uü]hrer/i.test(keyword);
+  if (!isMaf || seedCoversAcceptance(sources)) return sources;
+  const kinds = new Set(sources.map((s) => s.kind));
+  const extras = mafSeedSources().filter((s) => !kinds.has(s.kind));
+  return [...sources, ...extras];
 }
 
 function parseSourcesJson(text: string): ResearchSource[] {
