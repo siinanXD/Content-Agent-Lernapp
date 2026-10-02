@@ -1,1 +1,0 @@
-https://raw.githubusercontent.com/siinanXD/Content-Agent-Lernapp/cursor/ap01-scaffold-85a9/package.json
