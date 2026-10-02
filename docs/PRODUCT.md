@@ -155,7 +155,7 @@ Dieses Paket ist AP-12, geschätzt 3 Tage, und kommt nach dem Pilotkurs.
 Die KI erzeugt Lernstoff, sie bewertet keine Menschen und entscheidet nicht über Zulassung. Das hält die App nach unserem Verständnis aus der Hochrisiko-Stufe des EU-KI-Gesetzes. Kein Anwalt.
 
 | Thema | Regel im Produkt |
-| --- | --- | --- |
+| --- | --- |
 | DSGVO | Hosting in der EU, Auftragsverarbeitungsvertrag mit jedem Anbieter, keine Personendaten in Prompts |
 | EU-KI-Gesetz | KI-Inhalte sichtbar kennzeichnen. Die Hochrisiko-Pflichten für Bildung gelten ab 2. Dezember 2027 |
 | Fernunterricht (FernUSG) | Verkauf an Bildungsträger, nicht direkt an Lernende, sonst ZFU-Zulassung prüfen |
