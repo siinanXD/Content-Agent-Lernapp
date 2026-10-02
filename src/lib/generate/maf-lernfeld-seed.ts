@@ -203,7 +203,7 @@ export function mafSeedLernfeldSicherheit(): GeneratedLernfeld {
             prompt: "Drei Verriegelungen müssen geprüft werden. Jede Prüfung dauert 2 Minuten. Wie lange insgesamt?",
             choices: ["6 Minuten", "3 Minuten", "9 Minuten", "2 Minuten"],
             correct: "6 Minuten",
-            explanation: "3 × 2 = 6 Minuten.",
+            explanation: "3 × 2 = 6 Minuten — einfache Zeitrechnung für Prüfschritte an der Maschine.",
             sourceUrl: AO_URL,
           },
         ],

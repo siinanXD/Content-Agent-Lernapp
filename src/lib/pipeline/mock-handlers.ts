@@ -1,6 +1,15 @@
-import { createCourse, getCourse, setGenerated, setPlan, setSources, setStatus } from "./mock-store";
+import {
+  createCourse,
+  getCourse,
+  setEvaluation,
+  setGenerated,
+  setPlan,
+  setSources,
+  setStatus,
+} from "./mock-store";
 import { runGenerateAgent } from "@/lib/generate/generate-agent";
 import { runPlanAgent } from "@/lib/plan/plan-agent";
+import { runEvaluateAgent } from "@/lib/quality/evaluate-agent";
 import { runResearchAgent } from "@/lib/research/research-agent";
 
 function notFound(id: string) {
@@ -72,31 +81,94 @@ export async function handleGenerate(id: string) {
   });
 }
 
-export function handleEvaluate(id: string) {
+export async function handleEvaluate(id: string) {
   const course = getCourse(id);
   if (!course) return notFound(id);
-  setStatus(id, "evaluated");
+
+  type GenQ = {
+    id: string;
+    unitId: string;
+    prompt: string;
+    correct: string | string[];
+    explanation: string;
+    sourceUrl: string;
+  };
+  let generated: GenQ[] | undefined;
+  const lf = course.generated as
+    | {
+        units?: Array<{
+          id: string;
+          questions: Array<{
+            id: string;
+            prompt: string;
+            correct: string | string[];
+            explanation: string;
+            sourceUrl: string;
+          }>;
+        }>;
+      }
+    | undefined;
+  if (lf?.units?.length) {
+    generated = lf.units.flatMap((u) =>
+      u.questions.map((q) => ({
+        id: `${u.id}-${q.id}`,
+        unitId: u.id,
+        prompt: q.prompt,
+        correct: q.correct,
+        explanation: q.explanation,
+        sourceUrl: q.sourceUrl,
+      })),
+    );
+  }
+
+  const result = await runEvaluateAgent({ courseId: id, generated });
+  setEvaluation(id, result);
   return Response.json({
-    courseId: id,
-    passed: true,
-    scores: {
-      sourceFidelity: 1,
-      uniqueness: 1,
-      niveau: 4,
-      language: 4,
-    },
-    mock: true,
+    mock: result.mode !== "live",
+    ...result,
   });
 }
 
 export function handlePublish(id: string) {
   const course = getCourse(id);
   if (!course) return notFound(id);
+  const evaluation = course.evaluation as
+    | { passed?: boolean; scores?: Record<string, number>; questions?: Array<{ passed: boolean }> }
+    | undefined;
+  if (!evaluation) {
+    return Response.json(
+      {
+        error: "evaluate_required",
+        message: "Run /evaluate before /publish. Quality gate blocks unreviewed content.",
+        mock: true,
+      },
+      { status: 409 },
+    );
+  }
+  if (!evaluation.passed) {
+    const blocked =
+      evaluation.questions?.filter((q) => !q.passed).length ?? 0;
+    return Response.json(
+      {
+        courseId: id,
+        publishedUnits: 0,
+        blockedUnits: blocked,
+        blocked: true,
+        reason: "below_quality_threshold",
+        scores: evaluation.scores,
+        mock: true,
+      },
+      { status: 422 },
+    );
+  }
   setStatus(id, "published");
+  const published =
+    (course.generated as { units?: unknown[] } | undefined)?.units?.length ?? 0;
   return Response.json({
     courseId: id,
-    publishedUnits: 3,
+    publishedUnits: published,
     blockedUnits: 0,
+    blocked: false,
     mock: true,
   });
 }
