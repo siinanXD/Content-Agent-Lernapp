@@ -16,7 +16,19 @@ npm install
 npm run dev
 ```
 
-Dev server defaults to an uncommon port in scripts (see `package.json`). Open the printed URL.
+Dev server: [http://127.0.0.1:43123](http://127.0.0.1:43123) (`npm run dev` → port 43123).
+
+### Learner UI (AP-08 draft)
+
+Playable path (Figma draft — **Sinan approval pending** on SIN-185):
+
+1. `/` Start — Schlagwort + Lernvariante → Kurs erzeugen  
+2. `/lernpfad` — heutige Einheiten  
+3. `/einheit/unit-03` — Erklärung + Fragen  
+4. `/ergebnis` — Punkte / Serie / weiter  
+5. `/profil` — Fortschritt  
+
+Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`.
 
 ```bash
 npm test
