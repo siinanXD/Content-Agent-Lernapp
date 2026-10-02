@@ -1,1 +1,1 @@
-file:///tmp/decisions_content_utf8.md
+$file:/workspace/docs/DECISIONS.md
