@@ -6,7 +6,11 @@ Quellen: `AGENTS.md`, `.env.example` (AP-01), `docs/ops/railway.env.example` (AP
 
 ## Kurzantwort
 
-**Nein — nicht alle Variablen sind vollständig.** Die Kern-Secrets für App, Daten, Tracing und Modelle sind im Cloud-Agent und auf Vercel gesetzt und live erreichbar. Es fehlen Hermes/Telegram, die Anthropic-Workspace-ID und die `NEXT_PUBLIC_SUPABASE_*`-Aliase. GitHub Actions Secrets sind mit dem Agent-Token nicht lesbar.
+**Supabase-URL und Anon-Key sind da** — als `SUPABASE_URL` und `SUPABASE_ANON_KEY` (plus Service-Role). Das sind die injizierten Namen.
+
+**Anthropic-API-Key ist da** (`ANTHROPIC_API_KEY`). Live-Claude braucht zusätzlich `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) oder einen workspace-scoped Key; der Key in diesem Lauf ist nicht workspace-scoped.
+
+Noch offen für Ops: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL`. `NEXT_PUBLIC_SUPABASE_*` sind **keine** fehlenden Secrets, nur optionale Next.js-Client-Aliase derselben Werte.
 
 ## Entscheidung D-25
 
@@ -26,15 +30,15 @@ Injizierte Secret-Namen:
 | `LANGFUSE_PUBLIC_KEY` | gesetzt | Prefix `pk-lf`; Projekt `Content AGent` auf EU-Host → 200 |
 | `LANGFUSE_SECRET_KEY` | gesetzt | Prefix `sk-lf` |
 | `LANGFUSE_BASE_URL` | gesetzt | offizieller EU-Host (Ireland); US-Host lehnt dieselben Keys mit 401 ab |
-| `SUPABASE_URL` | gesetzt | Host `*.supabase.co`; Auth-Health → 200 |
-| `SUPABASE_ANON_KEY` | gesetzt | JWT-Form; Auth-Health mit Anon → 200 |
+| `SUPABASE_URL` | **gesetzt** | Host `*.supabase.co`; Auth-Health → 200 |
+| `SUPABASE_ANON_KEY` | **gesetzt** | JWT-Form; Auth-Health mit Anon → 200 |
 | `SUPABASE_SERVICE_ROLE_KEY` | gesetzt | JWT-Form; `/rest/v1/` → 200 |
 | `RAILWAY_API_TOKEN` | gesetzt | UUID-Form; allein nicht genug für Hermes |
 | `TELEGRAM_BOT_TOKEN` | **fehlt** | blockiert AP-10 Live |
 | `TELEGRAM_CHAT_ID` | **fehlt** | blockiert AP-10 Live |
 | `HERMES_APP_BASE_URL` | **fehlt** | blockiert Wochenjob gegen die App |
-| `NEXT_PUBLIC_SUPABASE_URL` | **fehlt** | Alias zu `SUPABASE_URL` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **fehlt** | Alias zu `SUPABASE_ANON_KEY` |
+| `NEXT_PUBLIC_SUPABASE_URL` | optionaler Alias | nicht nötig, solange Server `SUPABASE_URL` liest |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | optionaler Alias | nicht nötig, solange Server `SUPABASE_ANON_KEY` liest |
 
 Nicht erwartet / nicht gesetzt: `AI_GATEWAY_API_KEY`, `FIGMA_ACCESS_TOKEN`, `LINEAR_API_KEY`, `HF_TOKEN` (MCP ist separat authentifiziert).
 
@@ -42,28 +46,19 @@ Nicht erwartet / nicht gesetzt: `AI_GATEWAY_API_KEY`, `FIGMA_ACCESS_TOKEN`, `LIN
 
 Gleiche acht Keys wie die App-Secrets, **ohne** `RAILWAY_API_TOKEN`. Target nur **production + preview**, nicht **development**. Werte nicht entschlüsselt.
 
-Fehlt auf Vercel gegenüber `.env.example` / Railway-Beispiel:
+Supabase auf Vercel: `SUPABASE_URL` und `SUPABASE_ANON_KEY` sind gesetzt (kein fehlendes Secret). `NEXT_PUBLIC_*` wäre nur ein Client-Alias.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `ANTHROPIC_WORKSPACE_ID`
-- `RAILWAY_API_TOKEN` (nur Worker)
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
-- `HERMES_APP_BASE_URL`
-
-Namens-Mismatch: Vercel hat `SUPABASE_URL` / `SUPABASE_ANON_KEY`; AP-01-`.env.example` nannte `NEXT_PUBLIC_SUPABASE_*`. Der aktuelle Code auf den Feature-Branches liest Supabase-Env noch nicht; Pipeline liest `process.env.ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `LANGFUSE_*`.
+Noch nicht auf Vercel (gegenüber Hermes-Vorlage): `ANTHROPIC_WORKSPACE_ID`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL`. `RAILWAY_API_TOKEN` gehört zum Worker, nicht zur App.
 
 ## Railway / Hermes
 
 Vorlage: `docs/ops/railway.env.example` auf Branch `cursor/ap10-12-scaffold-ff57`. Live-Deploy bleibt blockiert, bis Telegram-Bot und Chat-ID gesetzt sind.
 
-## Was Sinan noch setzen muss
+## Was noch gesetzt werden muss
 
-1. `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) in Cloud-Agent-Secrets **und** Vercel — oder einen workspace-scoped Key.
+1. `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) — der API-Key ist schon da; ohne Workspace-ID schlägt `GET /v1/models` mit 400 fehl. Neue Cloud-Agent-Secrets gelten erst im **nächsten** Lauf.
 2. `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL` für AP-10 (Railway EU).
-3. Optional: `NEXT_PUBLIC_SUPABASE_URL` = `SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `SUPABASE_ANON_KEY` auf Vercel (production/preview/development). Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
-4. Optional: dieselben App-Keys auf Vercel **development**, damit `vercel env pull` lokal vollständig ist.
+3. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
 
 ## Check
 

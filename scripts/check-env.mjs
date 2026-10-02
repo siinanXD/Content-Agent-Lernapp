@@ -22,8 +22,9 @@ const REQUIRED_HERMES = [
   "HERMES_APP_BASE_URL",
 ];
 
-const OPTIONAL_ALIASES = [
-  "ANTHROPIC_WORKSPACE_ID",
+const ANTHROPIC_WORKSPACE = ["ANTHROPIC_WORKSPACE_ID"];
+
+const OPTIONAL_NEXT_PUBLIC_ALIASES = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
 ];
@@ -43,19 +44,19 @@ function printGroup(title, names) {
   }
 }
 
-const groups = [
-  ["Live pipeline (required)", REQUIRED_LIVE],
-  ["Hermes / Railway", REQUIRED_HERMES],
-  ["Aliases / workspace", OPTIONAL_ALIASES],
-];
-
-printGroup(...groups[0]);
-printGroup(...groups[1]);
-printGroup(...groups[2]);
+printGroup("Live pipeline (required)", REQUIRED_LIVE);
+printGroup("Hermes / Railway", REQUIRED_HERMES);
+printGroup("Anthropic workspace (needed for live Claude)", ANTHROPIC_WORKSPACE);
+printGroup(
+  "Optional Next.js aliases (not extra Supabase secrets)",
+  OPTIONAL_NEXT_PUBLIC_ALIASES,
+);
 
 const missingLive = REQUIRED_LIVE.map(status).filter((r) => r.state !== "SET");
 const missingHermes = REQUIRED_HERMES.map(status).filter((r) => r.state !== "SET");
 const missingWorkspace = status("ANTHROPIC_WORKSPACE_ID").state !== "SET";
+const supabaseUrl = status("SUPABASE_URL");
+const supabaseAnon = status("SUPABASE_ANON_KEY");
 
 console.log("\n## Summary");
 console.log(
@@ -64,13 +65,18 @@ console.log(
     : `pipeline_secrets: incomplete (${missingLive.map((r) => r.name).join(", ")})`,
 );
 console.log(
+  supabaseUrl.state === "SET" && supabaseAnon.state === "SET"
+    ? "supabase_url_and_anon: present (SUPABASE_URL + SUPABASE_ANON_KEY)"
+    : "supabase_url_and_anon: missing",
+);
+console.log(
   missingHermes.length === 0
     ? "hermes_secrets: complete"
     : `hermes_secrets: incomplete (${missingHermes.map((r) => r.name).join(", ")})`,
 );
 console.log(
   missingWorkspace
-    ? "anthropic_workspace: missing (live Claude calls need ANTHROPIC_WORKSPACE_ID or a workspace-scoped key)"
+    ? "anthropic_api_key: set; ANTHROPIC_WORKSPACE_ID missing in this process (new dashboard secrets apply on the next agent run)"
     : "anthropic_workspace: set",
 );
 
