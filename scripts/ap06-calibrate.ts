@@ -5,6 +5,7 @@ import { MAF_GOLDSET_ITEMS } from "../src/lib/quality/maf-goldset";
 import { JUDGE_MODEL, liveJudge } from "../src/lib/quality/evaluate-agent";
 import { scoresPass } from "../src/lib/quality/schemas";
 import { ensureGoldsetDataset } from "../src/lib/quality/langfuse-client";
+import { shutdownLangfuseOtel } from "../src/lib/quality/langfuse-otel";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -71,7 +72,7 @@ async function main() {
     JSON.stringify(target, null, 2) + "\n",
   );
 
-  const ts = `/**
+  const ts = `/ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ*
  * Calibrated goldset target (AP-06).
  * Generated ${calibratedAt} by scripts/ap06-calibrate.ts — do not hand-edit.
  */
@@ -105,7 +106,11 @@ export type GoldsetTarget = typeof GOLDSET_TARGET;
   );
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await shutdownLangfuseOtel();
+  });

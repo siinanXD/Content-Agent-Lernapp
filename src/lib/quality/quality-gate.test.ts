@@ -4,9 +4,20 @@ import { calibrateGoldsetFixture, fixtureJudge } from "./evaluate-agent";
 import { MAF_GOLDSET_FIXTURE } from "./maf-goldset-fixture";
 import { LANGFUSE_DATASET_NAME, MAF_GOLDSET_ITEMS } from "./maf-goldset";
 import { GOLDSET_TARGET, scoresPass } from "./schemas";
-import { LANGFUSE_EU_HOST } from "./langfuse-client";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  LANGFUSE_EU_HOST,
+  LANGFUSE_SDK_MAJOR,
+  LANGFUSE_SDK_MIN_VERSION,
+  langfuseConfigured,
+  recordEvaluationTrace,
+} from "./langfuse-client";
 import { handleEvaluate, handlePublish } from "@/lib/pipeline/mock-handlers";
 import { createCourse, setEvaluation } from "@/lib/pipeline/mock-store";
+
+const qualityDir = dirname(fileURLToPath(import.meta.url));
 
 describe("AP-06 quality gate", () => {
   it("ships 70 original MAF goldset items with official sources", () => {
@@ -83,6 +94,40 @@ describe("AP-06 quality gate", () => {
     });
     const published = handlePublish(okCourse.id);
     assert.equal(published.status, 200);
+  });
+
+  it("targets Langfuse JS/TS SDK v5 (≥5.4.0) without legacy ingestion REST", () => {
+    assert.equal(LANGFUSE_SDK_MAJOR, 5);
+    assert.equal(LANGFUSE_SDK_MIN_VERSION, "5.4.0");
+    const clientSrc = readFileSync(join(qualityDir, "langfuse-client.ts"), "utf8");
+    const otelSrc = readFileSync(join(qualityDir, "langfuse-otel.ts"), "utf8");
+    assert.doesNotMatch(clientSrc, /\/api\/public\/ingestion/);
+    assert.doesNotMatch(clientSrc, /trace-create/);
+    assert.match(clientSrc, /@langfuse\/tracing/);
+    assert.match(clientSrc, /propagateAttributes/);
+    assert.match(clientSrc, /startActiveObservation/);
+    assert.match(otelSrc, /LangfuseSpanProcessor/);
+    assert.match(otelSrc, /@langfuse\/otel/);
+  });
+
+  it("recordEvaluationTrace is a no-op without LANGFUSE_* credentials", async () => {
+    const prevPub = process.env.LANGFUSE_PUBLIC_KEY;
+    const prevSec = process.env.LANGFUSE_SECRET_KEY;
+    delete process.env.LANGFUSE_PUBLIC_KEY;
+    delete process.env.LANGFUSE_SECRET_KEY;
+    try {
+      assert.equal(langfuseConfigured(), false);
+      const tid = await recordEvaluationTrace({
+        name: "course-evaluate",
+        courseId: "c-test",
+        passed: true,
+        scores: { sourceFidelity: 1 },
+      });
+      assert.equal(tid, null);
+    } finally {
+      if (prevPub) process.env.LANGFUSE_PUBLIC_KEY = prevPub;
+      if (prevSec) process.env.LANGFUSE_SECRET_KEY = prevSec;
+    }
   });
 
   it("evaluate records a result the publish gate can read", async () => {
