@@ -14,8 +14,10 @@ import { join } from "node:path";
 import {
   collectBatchUnits,
   mergePhaseLernfeld,
+  missingChunkTargets,
   phaseAChunks,
   pollBatchUntilDone,
+  submitChunkTargets,
   submitPhaseBatch,
   submitRegenBatch,
 } from "../src/lib/generate/batch-generate";
@@ -164,19 +166,49 @@ async function main() {
   }
 
   let ledger: CostLedger = emptyLedger();
-  const course = await storage.createCourse(KEYWORD, 2);
-  console.log("course", course.id, "backend", storage.backend);
-
-  const research = await runResearchAgent(KEYWORD);
-  await storage.setSources(course.id, research.sources);
-  const plan = await runPlanAgent(KEYWORD);
-  await storage.setPlan(course.id, plan.variants);
+  const priorCourse = argFlag("course-id");
+  let course = priorCourse
+    ? await storage.getCourse(priorCourse)
+    : undefined;
+  if (!course) {
+    course = await storage.createCourse(KEYWORD, 2);
+    console.log("course", course.id, "backend", storage.backend);
+    const research = await runResearchAgent(KEYWORD);
+    await storage.setSources(course.id, research.sources);
+    const plan = await runPlanAgent(KEYWORD);
+    await storage.setPlan(course.id, plan.variants);
+  } else {
+    console.log("reusing course", course.id, "backend", storage.backend);
+  }
 
   let batchId = argFlag("resume-batch");
+  let unitsAccum: import("../src/lib/generate/maf-lernfeld-seed").GeneratedUnit[] =
+    [];
+
+  const priorGen = course.generated as
+    | { units?: import("../src/lib/generate/maf-lernfeld-seed").GeneratedUnit[] }
+    | undefined;
+  if (priorGen?.units?.length) {
+    unitsAccum = [...priorGen.units];
+    console.log("loaded prior course units", unitsAccum.length);
+  }
+
   if (!batchId) {
-    const submitted = await submitPhaseBatch({ keyword: KEYWORD, phaseId: "A" });
+    const have = new Set(unitsAccum.map((u) => u.id));
+    const missing = missingChunkTargets(have, "A");
+    const submitted =
+      missing.length === targets.length
+        ? await submitPhaseBatch({ keyword: KEYWORD, phaseId: "A" })
+        : await submitChunkTargets({ keyword: KEYWORD, targets: missing });
     batchId = submitted.batchId;
-    console.log("batch submitted", batchId, "chunks", submitted.chunkCount);
+    console.log(
+      "batch submitted",
+      batchId,
+      "chunks",
+      submitted.chunkCount,
+      "missingUnits~",
+      submitted.unitTarget,
+    );
     writeFileSync(
       join(OUT_DIR, `${runId}-batch.json`),
       JSON.stringify({ courseId: course.id, ...submitted }, null, 2),
@@ -204,15 +236,50 @@ async function main() {
     collected.ledger.claudeInputTokens,
     collected.ledger.claudeOutputTokens,
   );
+  unitsAccum = mergePhaseLernfeld([...unitsAccum, ...collected.units]).units;
   console.log(
-    `collected units=${collected.units.length} failedChunks=${collected.failedCustomIds.length} cost~€${ledger.eurEstimate}`,
+    `collected units=${collected.units.length} total=${unitsAccum.length} failedChunks=${collected.failedCustomIds.length} cost~€${ledger.eurEstimate}`,
   );
+
+  // One automatic retry for still-missing slots (new max_tokens / smaller chunks).
+  const haveAfter = new Set(unitsAccum.map((u) => u.id));
+  const stillMissing = missingChunkTargets(haveAfter, "A");
+  if (stillMissing.length > 0 && !ledger.stopped && !hasFlag("no-retry")) {
+    console.log("retry missing chunks", stillMissing.length);
+    if (ledger.eurEstimate > 14) {
+      console.warn("approaching budget — skipping retry batch");
+    } else {
+      const retry = await submitChunkTargets({
+        keyword: KEYWORD,
+        targets: stillMissing,
+      });
+      await pollBatchUntilDone(retry.batchId, {
+        intervalMs: 20_000,
+        onTick: (s) => console.log("retry", s.processing_status, s.request_counts),
+      });
+      const retryCollected = await collectBatchUnits(retry.batchId);
+      ledger = addClaudeUsage(
+        ledger,
+        retryCollected.ledger.claudeInputTokens,
+        retryCollected.ledger.claudeOutputTokens,
+      );
+      unitsAccum = mergePhaseLernfeld([
+        ...unitsAccum,
+        ...retryCollected.units,
+      ]).units;
+      batchId = `${batchId}+${retry.batchId}`;
+      console.log(
+        `after retry total=${unitsAccum.length} cost~€${ledger.eurEstimate}`,
+      );
+    }
+  }
+
   if (ledger.stopped) {
-    writeReport(runId, course.id, batchId, collected.units, [], ledger, "budget_stop_after_generate");
+    writeReport(runId, course.id, batchId, unitsAccum, [], ledger, "budget_stop_after_generate");
     process.exit(3);
   }
 
-  let lernfeld = mergePhaseLernfeld(collected.units);
+  let lernfeld = mergePhaseLernfeld(unitsAccum);
   await storage.setGenerated(course.id, lernfeld);
 
   const openaiKey = process.env.OPENAI_API_KEY!.trim();
