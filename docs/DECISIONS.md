@@ -1,1 +1,1 @@
-$file:/tmp/mcp-pending/DECISIONS.only.md
+$file:/tmp/mcp-pending/DECISIONS_CONTENT.md
