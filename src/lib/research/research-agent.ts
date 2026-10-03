@@ -1,3 +1,4 @@
+import { anthropicHeaders } from "@/lib/anthropic/headers";
 import {
   mafSeedSources,
   seedCoversAcceptance,
@@ -93,13 +94,11 @@ Nutze web_search und web_fetch. Antworte am Ende als JSON-Array von Objekten {ti
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
+      headers: anthropicHeaders({
+        apiKey: key,
         // web_fetch requires beta header per Anthropic docs
-        "anthropic-beta": "web-fetch-2025-09-10",
-      },
+        extra: { "anthropic-beta": "web-fetch-2025-09-10" },
+      }),
       body: JSON.stringify({
         model: GENERATOR_MODEL,
         max_tokens: 4096,
