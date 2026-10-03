@@ -1,1 +1,1 @@
-LOAD_FROM_FILE:/tmp/decisions-fixed.md
+@/tmp/decisions-fixed.md
