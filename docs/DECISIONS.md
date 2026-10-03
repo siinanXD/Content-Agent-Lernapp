@@ -1,1 +1,1 @@
-$file:/tmp/cal-pr/docs/DECISIONS.md
+TEST_EMBED_OK
