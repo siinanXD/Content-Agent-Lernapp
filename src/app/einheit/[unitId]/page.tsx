@@ -14,7 +14,6 @@ import { speakGerman } from "@/lib/a11y/preferences";
 import {
   getUnit,
   unitExplanation,
-  type PathUnit,
 } from "@/lib/learner/playable-path";
 import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
 import { loadSession, saveSession } from "@/lib/learner/session";
@@ -29,10 +28,19 @@ export default function EinheitPage() {
   const params = useParams<{ unitId: string }>();
   const router = useRouter();
   const { prefs } = useA11y();
-  const [unit, setUnit] = useState<PathUnit | undefined>(() =>
-    getUnit(params.unitId),
-  );
-  const [loading, setLoading] = useState(!unit);
+  // The unit is resolved once per id: from seed/cache on the first render, or
+  // after the Phase A fetch below. It stays fixed while the lesson runs.
+  const [resolved, setResolved] = useState(() => ({
+    unitId: params.unitId,
+    unit: getUnit(params.unitId),
+    fetched: false,
+  }));
+  const current =
+    resolved.unitId === params.unitId
+      ? resolved
+      : { unitId: params.unitId, unit: getUnit(params.unitId), fetched: false };
+  const unit = current.unit;
+  const loading = !unit && !current.fetched;
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
@@ -40,23 +48,20 @@ export default function EinheitPage() {
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
 
   useEffect(() => {
+    if (!loading) return;
     let cancelled = false;
-    const local = getUnit(params.unitId);
-    if (local) {
-      setUnit(local);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
     fetchPhaseAPathUnits().then(() => {
       if (cancelled) return;
-      setUnit(getUnit(params.unitId));
-      setLoading(false);
+      setResolved({
+        unitId: params.unitId,
+        unit: getUnit(params.unitId),
+        fetched: true,
+      });
     });
     return () => {
       cancelled = true;
     };
-  }, [params.unitId]);
+  }, [params.unitId, loading]);
 
   if (loading) {
     return (
