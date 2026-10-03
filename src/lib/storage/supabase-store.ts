@@ -117,17 +117,21 @@ async function loadCourse(id: string): Promise<Course | undefined> {
 
   const unitRows = (units ?? []) as UnitRow[];
   const questionRows = (questions ?? []) as QuestionRow[];
-  if (courseRow.lernfeld && unitRows.length) {
+  // Prefer full AP-15 payload (includes moduleId/blockId/Didaktik fields).
+  if (isLernfeld(courseRow.lernfeld) && courseRow.lernfeld.units?.length) {
+    course.generated = courseRow.lernfeld;
+  } else if (courseRow.lernfeld && unitRows.length) {
     const byUnit = new Map<string, QuestionRow[]>();
     for (const q of questionRows) {
       const list = byUnit.get(q.unit_id) ?? [];
       list.push(q);
       byUnit.set(q.unit_id, list);
     }
+    const meta = courseRow.lernfeld as { id: string; title: string; focus: string };
     course.generated = {
-      id: courseRow.lernfeld.id,
-      title: courseRow.lernfeld.title,
-      focus: courseRow.lernfeld.focus,
+      id: meta.id,
+      title: meta.title,
+      focus: meta.focus,
       units: unitRows.map(
         (u): GeneratedUnit => ({
           id: u.id,
@@ -144,11 +148,11 @@ async function loadCourse(id: string): Promise<Course | undefined> {
             correct: q.correct,
             explanation: q.explanation,
             sourceUrl: q.source_url,
-            // Legacy rows predate AP-18; callers treat missing level/examAreas as optional.
+            // Legacy reason: AP-18 fields optional on old rows.
             level: undefined,
             examAreas: undefined,
           })),
-        }),
+        })),
       ),
     };
   }
@@ -220,7 +224,6 @@ export const supabaseStorage: CourseStorage = {
     const existing = await loadCourse(id);
     if (!existing) return undefined;
 
-    // Replace course sources (pipeline re-research). Additive schema; row replace is update semantics.
     const { error: delErr } = await sb.from("sources").delete().eq("course_id", id);
     if (delErr) throw new Error(`sources_clear: ${delErr.message}`);
 
@@ -277,38 +280,40 @@ export const supabaseStorage: CourseStorage = {
       throw new Error("generated_must_be_lernfeld");
     }
 
-    // Clear previous units/questions for this course, then insert fresh rows.
     const { error: qDel } = await sb.from("questions").delete().eq("course_id", id);
     if (qDel) throw new Error(`questions_clear: ${qDel.message}`);
     const { error: uDel } = await sb.from("units").delete().eq("course_id", id);
     if (uDel) throw new Error(`units_clear: ${uDel.message}`);
 
     if (generated.units.length) {
+      const fallbackUrl =
+        "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";
+      const fallbackFetched = new Date().toISOString();
       const { error: uIns } = await sb.from("units").insert(
         generated.units.map((u, i) => ({
-          id: u.id,
+          id: u.id || `unit-${i + 1}`,
           course_id: id,
-          title: u.title,
-          minutes: u.minutes,
-          explanation: u.explanation,
-          source_url: u.sourceUrl,
-          source_fetched_at: u.sourceFetchedAt,
+          title: u.title || `Einheit ${i + 1}`,
+          minutes: typeof u.minutes === "number" && u.minutes > 0 ? u.minutes : 8,
+          explanation: u.explanation || "",
+          source_url: u.sourceUrl || fallbackUrl,
+          source_fetched_at: u.sourceFetchedAt || fallbackFetched,
           sort_order: i,
         })),
       );
       if (uIns) throw new Error(`units_insert: ${uIns.message}`);
 
       const questionRows = generated.units.flatMap((u, ui) =>
-        u.questions.map((q, qi) => ({
-          id: q.id,
+        (u.questions ?? []).map((q, qi) => ({
+          id: q.id || `q${qi + 1}`,
           course_id: id,
-          unit_id: u.id,
-          type: q.type,
-          prompt: q.prompt,
+          unit_id: u.id || `unit-${ui + 1}`,
+          type: q.type || "auswahl",
+          prompt: q.prompt || "",
           choices: q.choices ?? null,
-          correct: q.correct,
-          explanation: q.explanation,
-          source_url: q.sourceUrl,
+          correct: q.correct ?? "",
+          explanation: q.explanation || "",
+          source_url: q.sourceUrl || u.sourceUrl || fallbackUrl,
           sort_order: ui * 1000 + qi,
         })),
       );
@@ -322,11 +327,7 @@ export const supabaseStorage: CourseStorage = {
       .from("courses")
       .update({
         status: "generated",
-        lernfeld: {
-          id: generated.id,
-          title: generated.title,
-          focus: generated.focus,
-        },
+        lernfeld: generated,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
