@@ -138,3 +138,4 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 
 ### D-25 — AP-06 live: 70 AO/BIBB goldset in Langfuse EU + OpenAI judge calibration
 
+- **Links:** [MaschFüAusbV](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html); [§ 8 Zwischenprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__8.html); [§ 9 Abschlussprüfung](https:/
