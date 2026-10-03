@@ -71,4 +71,84 @@ describe("AP-06 quality gate", () => {
     assert.ok(LANGFUSE_EU_HOST.includes("langfuse.com"));
   });
 
-  it("publish returns 409 without evalua
+  it("publish returns 409 without evaluate and 422 below threshold", async () => {
+    const course = createCourse("Maschinen- und Anlagenführer");
+    const blocked = await handlePublish(course.id);
+    assert.equal(blocked.status, 409);
+
+    setEvaluation(course.id, {
+      passed: false,
+      scores: { sourceFidelity: 0, uniqueness: 1, niveau: 2, language: 2, safetyFlag: false },
+      questions: [{ passed: false }],
+    });
+    const rejected = await handlePublish(course.id);
+    assert.equal(rejected.status, 422);
+    const body = (await rejected.json()) as { reason?: string };
+    assert.equal(body.reason, "below_quality_threshold");
+
+    const okCourse = createCourse("MAF pass");
+    setEvaluation(okCourse.id, {
+      passed: true,
+      scores: { sourceFidelity: 1, uniqueness: 1, niveau: 4, language: 5, safetyFlag: false },
+      questions: [{ passed: true }],
+    });
+    const published = await handlePublish(okCourse.id);
+    assert.equal(published.status, 200);
+  });
+
+
+  it("targets Langfuse JS/TS SDK v5 (≥5.4.0) without legacy ingestion REST", () => {
+    assert.equal(LANGFUSE_SDK_MAJOR, 5);
+    assert.equal(LANGFUSE_SDK_MIN_VERSION, "5.4.0");
+    const clientSrc = readFileSync(join(qualityDir, "langfuse-client.ts"), "utf8");
+    const otelSrc = readFileSync(join(qualityDir, "langfuse-otel.ts"), "utf8");
+    assert.doesNotMatch(clientSrc, /\/api\/public\/ingestion/);
+    assert.doesNotMatch(clientSrc, /trace-create/);
+    assert.match(clientSrc, /@langfuse\/tracing/);
+    assert.match(clientSrc, /propagateAttributes/);
+    assert.match(clientSrc, /startActiveObservation/);
+    assert.match(otelSrc, /LangfuseSpanProcessor/);
+    assert.match(otelSrc, /@langfuse\/otel/);
+  });
+
+  it("recordEvaluationTrace is a no-op without LANGFUSE_* credentials", async () => {
+    const prevPub = process.env.LANGFUSE_PUBLIC_KEY;
+    const prevSec = process.env.LANGFUSE_SECRET_KEY;
+    delete process.env.LANGFUSE_PUBLIC_KEY;
+    delete process.env.LANGFUSE_SECRET_KEY;
+    try {
+      assert.equal(langfuseConfigured(), false);
+      const tid = await recordEvaluationTrace({
+        name: "course-evaluate",
+        courseId: "c-test",
+        passed: true,
+        scores: { sourceFidelity: 1 },
+      });
+      assert.equal(tid, null);
+    } finally {
+      if (prevPub) process.env.LANGFUSE_PUBLIC_KEY = prevPub;
+      if (prevSec) process.env.LANGFUSE_SECRET_KEY = prevSec;
+    }
+  });
+
+  it("evaluate records a result the publish gate can read", async () => {
+    const openai = process.env.OPENAI_API_KEY;
+    const lfPub = process.env.LANGFUSE_PUBLIC_KEY;
+    const lfSec = process.env.LANGFUSE_SECRET_KEY;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.LANGFUSE_PUBLIC_KEY;
+    delete process.env.LANGFUSE_SECRET_KEY;
+    try {
+      const course = createCourse("MAF evaluate");
+      const res = await handleEvaluate(course.id);
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { passed?: boolean; mode?: string; courseId?: string };
+      assert.equal(body.courseId, course.id);
+      assert.equal(body.mode, "fixture");
+    } finally {
+      if (openai) process.env.OPENAI_API_KEY = openai;
+      if (lfPub) process.env.LANGFUSE_PUBLIC_KEY = lfPub;
+      if (lfSec) process.env.LANGFUSE_SECRET_KEY = lfSec;
+    }
+  });
+});
