@@ -1,1 +1,1 @@
-LOAD_FROM_TMP_DECISIONS_CONTENT
+@/tmp/decisions-content.txt
