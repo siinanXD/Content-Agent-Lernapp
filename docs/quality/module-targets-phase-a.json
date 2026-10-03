@@ -5,35 +5,19 @@
   "modules": {
     "M0": {
       "sampleSize": 5,
-      "sourceFidelity": 1,
-      "uniqueness": 1,
-      "niveau": 4.2,
-      "language": 4.6,
-      "unitsTarget": 60
+      "targets": { "sourceFidelity": 1, "uniqueness": 1, "niveau": 4, "language": 4.6, "safetyFlag": false }
     },
     "LF1": {
       "sampleSize": 5,
-      "sourceFidelity": 1,
-      "uniqueness": 1,
-      "niveau": 4.0,
-      "language": 4.8,
-      "unitsTarget": 80
+      "targets": { "sourceFidelity": 1, "uniqueness": 1, "niveau": 4, "language": 4.8, "safetyFlag": false }
     },
     "LF2": {
       "sampleSize": 5,
-      "sourceFidelity": 1,
-      "uniqueness": 1,
-      "niveau": 4.0,
-      "language": 4.6,
-      "unitsTarget": 80
+      "targets": { "sourceFidelity": 1, "uniqueness": 1, "niveau": 4, "language": 4.6, "safetyFlag": false }
     },
     "PA": {
       "sampleSize": 5,
-      "sourceFidelity": 1,
-      "uniqueness": 1,
-      "niveau": 4.2,
-      "language": 4.4,
-      "unitsTarget": 60
+      "targets": { "sourceFidelity": 1, "uniqueness": 1, "niveau": 4.2, "language": 4.4, "safetyFlag": false }
     }
   }
 }
