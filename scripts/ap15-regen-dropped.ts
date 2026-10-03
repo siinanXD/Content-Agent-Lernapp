@@ -1,1 +1,1 @@
-@/tmp/Content-Agent-Lernapp/scripts/ap15-regen-dropped.ts
+$file:/tmp/Content-Agent-Lernapp/scripts/ap15-regen-dropped.ts
