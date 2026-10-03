@@ -2,15 +2,26 @@
 
 Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen Kurs aus amtlichen Quellen erzeugt und aktuell hält.
 
+## Stack (current)
+
+| Layer | Choice |
+| --- | --- |
+| App | Next.js 16 + React 19 + TypeScript + Tailwind 4 |
+| Hosting | Vercel |
+| Persistence | Supabase EU (AP-17) with in-memory mock fallback |
+| Quality / tracing | Langfuse Cloud EU — legacy REST on `main`; v4 / SDK v5 cutover in draft [PR #17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17) ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197)) |
+| Ops scaffold | Hermes weekly source check + Telegram (AP-10/AP-16) |
+| Models | Claude for generate (Batch); OpenAI mini as judge (D-06/D-07) |
+
 ## Docs
 
 - [`docs/PRODUCT.md`](docs/PRODUCT.md) — Konzept und Bauplan AP-00–AP-12
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
 - [`AGENTS.md`](AGENTS.md) — Entscheidungs- und Stopp-Regeln
-- [`docs/content/README.md`](docs/content/README.md) — Curriculum-Maps (AP-13): MAF in allen fünf Schwerpunkten und Industriekaufleute 2024, Vorgabe für die Agenten
+- [`docs/content/README.md`](docs/content/README.md) — Curriculum-Maps (AP-13): MAF in allen fünf Schwerpunkten und Industriekaufleute 2024
 - [`docs/content/DIDAKTIK.md`](docs/content/DIDAKTIK.md) — Didaktik-Vorgabe (AP-18): Schablone je Einheit, Fragestufen, Wiederholung, Prüfungsmodus, Bilder
-- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Vorgängerversion v1 (nur Metall), abgelöst durch `docs/content/maf-metall.json`; bleibt, bis AP-14 (PR #20) auf den v2-Loader umgestellt ist
+- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Vorgängerversion v1 (nur Metall); runtime loader uses `docs/content/maf-metall.json` via AP-14 ([PR #24](https://github.com/siinanXD/Content-Agent-Lernapp/pull/24))
 
 ## Local development
 
@@ -42,13 +53,18 @@ npm run test:a11y
 npm run test:lighthouse   # app must be running on :43123
 npm run hermes:dry-run    # AP-10 scaffold (no live Telegram)
 npm run pilot:maf         # AP-11 seed/fixture pipeline (app on :43123)
+npm run supabase:verify   # when SUPABASE_* present
 npm run build
 npm run lint
 ```
 
 A11y gates (axe critical/serious + Lighthouse a11y ≥ 0.9) run in CI via `.github/workflows/a11y.yml` and must not be disabled.
 
-Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md).
+Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
+
+## Phase A (AP-15)
+
+First live course slice after the curriculum map: modules `M0`, `LF1`, `LF2`, `PA` (~280 units), generate with Claude Batch, judge with OpenAI mini, publish only through the quality gate. Tracked in [SIN-193](https://linear.app/sinan-kahraman/issue/SIN-193). Costs and scores should land in Langfuse Cloud EU — prefer completing the v4 cutover ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197) / [PR #17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17)) before relying on dashboards for that run.
 
 ## Deploy
 
@@ -64,7 +80,7 @@ Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (
 - With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
 - Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
 - Verify tables (when keys present): `npm run supabase:verify`.
-- On this PR branch, regenerate the lockfile before `npm ci`: `npm run lock:assemble` (gzip chunks under `scripts/ap17-lock-chunks/`).
+- If `package-lock.json` was split for transport: `npm run lock:assemble` (gzip chunks under `scripts/ap17-lock-chunks/`), then prefer a normal `npm install` for day-to-day work.
 
 ## Repo
 
