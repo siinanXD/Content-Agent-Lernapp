@@ -6,6 +6,7 @@ import {
   type CurriculumModule,
 } from "@/lib/content/curriculum";
 import { variantFromBlock } from "@/lib/content/didaktik";
+import { anthropicHeaders } from "@/lib/anthropic/headers";
 import {
   buildDidaktikBlockPrompt,
   buildDidaktikKeywordPrompt,
@@ -123,11 +124,7 @@ async function runLiveGenerate(
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: anthropicHeaders({ apiKey: key }),
     body: JSON.stringify({
       model: GENERATOR_MODEL,
       max_tokens: 8192,
@@ -189,11 +186,7 @@ async function submitBatchGenerate(
 
   const res = await fetch("https://api.anthropic.com/v1/messages/batches", {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: anthropicHeaders({ apiKey: key }),
     body: JSON.stringify({
       requests: targets.map(({ module, block }) => ({
         custom_id: `maf-${block.id}`,

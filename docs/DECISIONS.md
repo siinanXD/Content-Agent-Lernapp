@@ -4,12 +4,12 @@ Stand: AP-00 abgeschlossen (2026-10-02). Modellnamen und Features nur aus aktuel
 
 ## Blocker / offene Secrets
 
-| Secret | Status (2026-10-02 agent env) | Auswirkung |
+| Secret | Status (2026-10-03 agent env) | Auswirkung |
 | --- | --- | --- |
-| Anthropic (Claude) API | **absent** (not in injected secrets) | Live-Recherche/Generate/Batch blockiert; MAF-Seed AO/RLP/Prüfung aktiv |
-| OpenAI API | **absent** | Richter-Modell / Evaluate blockiert bis gesetzt |
-| Langfuse (EU) | **absent** | Tracing/Datasets/Prompt-Versionen blockiert bis gesetzt |
-| Supabase (EU) | **absent in this agent** (keys documented as set on Vercel / other runs — see D-27) | Live-Persistenz wenn `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; sonst mock-store |
+| Anthropic (Claude) API | **present** (`ANTHROPIC_API_KEY` + `ANTHROPIC_WORKSPACE_ID`; Console PAYG, nicht Max-Abo — D-33) | Live Messages/Batches bereit; Seed bleibt Fallback |
+| OpenAI API | **present** | Richter-Modell / Evaluate live möglich |
+| Langfuse (EU) | **present** | Tracing/Datasets/Prompt-Versionen live möglich |
+| Supabase (EU) | **present** (`SUPABASE_URL` + service role; see D-30) | Live-Persistenz wenn Keys gesetzt; sonst mock-store |
 | Railway | **present** (`RAILWAY_API_TOKEN`) | Nur für späteren Hermes-Deploy (AP-10) |
 | Vercel team link | auth ok / **403** on `siinanxds-projects` | `list_teams` leer; Deploy blockiert bis Re-Auth |
 | Netz Cloud-Agent (2026-10-03) | `gesetze-im-internet.de`, `kmk.org` **gesperrt** (Egress-Proxy 403) | Amtliche Quellen nur über Exa-Web-Fetch; Domains in der Umgebung freigeben |
@@ -219,3 +219,9 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 - **Links:** Linear [SIN-192](https://linear.app/sinan-kahraman/issue/SIN-192); `docs/content/maf-metall.json`; `src/lib/content/curriculum.ts`; `src/lib/plan/maf-plan-seed.ts`; `src/lib/plan/plan-agent.ts`; `src/lib/generate/generate-agent.ts`; `src/lib/generate/didaktik-prompts.ts`; `src/lib/quality/evaluate-agent.ts`; `docs/api/openapi.yaml`; D-26; D-31
 - **Entscheidung:** Plan-Agent liest `loadMafCurriculum()` (Pilot: `maf-metall.json`), Module in `order`, M0 etwa jede 5. Einheit; jede Plan-Einheit trägt `moduleId`/`blockId`/`sourceKind`/`niveau`; Varianten 40×2,5 h / 60×2 h bleiben. Generate baut **einen Didaktik-Prompt/Batch-Request pro Block** via `buildDidaktikBlockPrompt` (Themen, Quellen-URLs, Jahr/Niveau, Mix, Variante, Einheitenzahl); Ausgabe + Seed tragen `moduleId`/`blockId`; Prompt verbietet IHK-Aufgaben und Personendaten; `rechnen`/`sicherheit`-Varianten aus D-31. Evaluate prüft `niveau` gegen Modul-Jahr (ZP vs. AP), nicht Kurs-Mittelwert, und übernimmt `safetyFlag` aus der Map. Ohne API-Key bleibt Seed-Fallback (M0-3). Live-Erzeugung ganzer Phasen = AP-15.
 - **Warum:** Ohne Map-Bindung bleiben Plan/Generate generisch; nach AP-18 muss die Bindung die Didaktik-Schablonen nutzen statt der v1-explanation-only Skeleton-Prompts aus dem alten PR #20.
+
+### D-33 — Pipeline billing: Claude Console API + Workspace; nicht Claude Mac/Max-Abo
+
+- **Links:** [Claude API auth](https://platform.claude.com/docs/en/api/overview) (`x-api-key`, `anthropic-workspace-id`); [Claude Code + Pro/Max](https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-or-max-plan) (`ANTHROPIC_API_KEY` → API-Rates, nicht Abo-Pool); [Message Batches](https://platform.claude.com/docs/en/build-with-claude/batch-processing); `docs/ENV.md`; `src/lib/anthropic/headers.ts`; Linear [SIN-193](https://linear.app/sinan-kahraman/issue/SIN-193) (AP-15); D-06
+- **Entscheidung:** Research/Plan/Generate (Messages + Message Batches, Modell `claude-sonnet-5-5`) authentifizieren ausschließlich über **Claude Console** Secrets `ANTHROPIC_API_KEY` + optional/empfohlen `ANTHROPIC_WORKSPACE_ID` (Header über `anthropicHeaders`). **Claude Desktop / Pro / Max Subscription-OAuth** ist kein Auth-Pfad für Cloud-Agents oder die Next.js-Pipeline und deckt Batch-Kosten nicht ab. Self-hosted Mac-Worker ändert die Billing-Logik nicht. AP-15 Phase A bleibt Batch auf Console-Credits unter dem €20-Deckel.
+- **Warum:** Anthropic trennt Abo-Pool (Claude.app / Claude Code Login) und Console-PAYG; Cloud-VMs haben kein Desktop-OAuth (`~/.claude` fehlt); die App spricht die öffentliche API, nicht die Mac-App.

@@ -1,3 +1,4 @@
+import { anthropicHeaders } from "@/lib/anthropic/headers";
 import { loadMafCurriculum } from "@/lib/content/curriculum";
 import {
   mafSeedPlanVariants,
@@ -66,11 +67,7 @@ async function runLivePlan(key: string, keyword: string): Promise<PlanAgentResul
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: anthropicHeaders({ apiKey: key }),
     body: JSON.stringify({
       model: GENERATOR_MODEL,
       max_tokens: 8192,
