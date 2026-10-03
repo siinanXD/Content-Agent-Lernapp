@@ -1,5 +1,6 @@
 import { MAF_GOLDSET_ITEMS } from "../src/lib/quality/maf-goldset";
 import { ensureGoldsetDataset } from "../src/lib/quality/langfuse-client";
+import { shutdownLangfuseOtel } from "../src/lib/quality/langfuse-otel";
 
 async function main() {
   const result = await ensureGoldsetDataset(MAF_GOLDSET_ITEMS);
@@ -9,7 +10,11 @@ async function main() {
   console.log(JSON.stringify(result, null, 2));
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await shutdownLangfuseOtel();
+  });
