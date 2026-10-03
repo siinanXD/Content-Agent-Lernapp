@@ -106,4 +106,128 @@ export async function recordEvaluationTrace(payload: {
           courseId: payload.courseId,
           dataset: LANGFUSE_DATASET_NAME,
           passed: payload.passed,
-          ...(payload.
+          ...(payload.metadata ?? {}),
+        }),
+      },
+      async () => {
+        await startActiveObservation(
+          payload.name,
+          async (observation) => {
+            observation.update({
+              input: {
+                courseId: payload.courseId,
+                name: payload.name,
+              },
+              output: {
+                passed: payload.passed,
+                scores: payload.scores,
+              },
+              metadata: {
+                courseId: payload.courseId,
+                dataset: LANGFUSE_DATASET_NAME,
+              },
+            });
+
+            traceId = getActiveTraceId() ?? observation.traceId;
+
+            for (const [name, value] of Object.entries(payload.scores)) {
+              const numeric =
+                typeof value === "number"
+                  ? value
+                  : typeof value === "boolean"
+                    ? value
+                      ? 1
+                      : 0
+                    : null;
+              if (numeric === null) continue;
+              // Observation-level scores (v4 evaluators target observations).
+              client.score.observation(
+                { otelSpan: observation.otelSpan },
+                {
+                  name,
+                  value: numeric,
+                  dataType: "NUMERIC",
+                  comment: payload.passed ? "pass" : "below_quality_threshold",
+                  metadata: { courseId: payload.courseId },
+                },
+              );
+            }
+          },
+          { asType: "evaluator" },
+        );
+      },
+    );
+
+    await client.score.flush();
+    await flushLangfuseOtel();
+    return traceId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
+  dataset: string;
+  upserted: number;
+} | null> {
+  const cfg = getLangfuseConfig();
+  if (!cfg) return null;
+
+  try {
+    const client = createClient(cfg);
+
+    try {
+      await client.api.datasets.create({
+        name: LANGFUSE_DATASET_NAME,
+        description:
+          "70 original MAF practice items from MaschFüAusbV/BIBB (not IHK exam copies).",
+        metadata: {
+          retrievedAt: "2026-10-02",
+          ihkExamCopy: false,
+          itemCount: items.length,
+        },
+      });
+    } catch {
+      // Dataset may already exist (409) — continue upserting items.
+    }
+
+    let upserted = 0;
+    for (const item of items) {
+      try {
+        await client.dataset.createItem({
+          datasetName: LANGFUSE_DATASET_NAME,
+          id: `maf-${item.id}`,
+          input: {
+            prompt: item.prompt,
+            correct: item.correct,
+            explanation: item.explanation,
+            sourceUrl: item.sourceUrl,
+            unitId: item.unitId,
+          },
+          expectedOutput: item.expected,
+          metadata: {
+            sourceFetchedAt:
+              "sourceFetchedAt" in item ? item.sourceFetchedAt : "2026-10-02",
+            ihkExamCopy: false,
+          },
+          status: "ACTIVE",
+        });
+        upserted += 1;
+      } catch {
+        // skip failed item; continue
+      }
+    }
+    return { dataset: LANGFUSE_DATASET_NAME, upserted };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchGoldsetFromLangfuse(): Promise<GoldQuestion[] | null> {
+  const cfg = getLangfuseConfig();
+  if (!cfg) return null;
+  try {
+    const client = createClient(cfg);
+    const dataset = await client.dataset.get(LANGFUSE_DATASET_NAME, {
+      fetchItemsPageSize: 100,
+  
