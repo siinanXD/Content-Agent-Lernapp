@@ -1,1 +1,1 @@
-/tmp/cal-pr/docs/DECISIONS.md
+$file:/tmp/cal-pr/docs/DECISIONS.md
