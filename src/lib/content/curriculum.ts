@@ -15,7 +15,7 @@ export type CurriculumSource = {
   id: string;
   title: string;
   url: string;
-  kind: "ausbildungsordnung" | "rahmenlehrplan" | "pruefung" | "berufsinformation";
+  kind: "ausbildungsordnung" | "rahmenlehrplan" | "pruefung" | "berufsinformation" | "empfehlung";
   fetchedAt: string;
   via: string;
 };
@@ -141,7 +141,7 @@ export const MAF_METALL_PATH = path.join(CONTENT_DIR, "maf-metall.json");
 
 export function listCurriculumFiles(dir: string = CONTENT_DIR): string[] {
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
+    .filter((f) => f.endsWith(".json") && !f.endsWith(".lock.json"))
     .sort()
     .map((f) => path.join(dir, f));
 }

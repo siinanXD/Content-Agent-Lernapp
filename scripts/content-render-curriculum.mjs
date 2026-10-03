@@ -164,7 +164,7 @@ function render(c) {
 }
 
 const only = process.argv[2];
-const files = readdirSync(DIR).filter((f) => f.endsWith(".json") && (!only || f === `${only}.json`));
+const files = readdirSync(DIR).filter((f) => f.endsWith(".json") && !f.endsWith(".lock.json") && (!only || f === `${only}.json`));
 if (files.length === 0) {
   console.error(`no curriculum json found in ${DIR}${only ? ` for ${only}` : ""}`);
   process.exit(1);

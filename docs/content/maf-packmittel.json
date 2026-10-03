@@ -388,11 +388,11 @@
     "bestehen": "Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in zwei schriftlichen Prüfungsbereichen mindestens ausreichend, im dritten nicht ungenügend (§ 9 Abs. 7). Mündliche Ergänzungsprüfung möglich, Gewichtung 2:1 (§ 9 Abs. 5)."
   },
   "totals": {
-    "modules": 15,
-    "unitsTarget": 830,
-    "hoursAtAvgUnit": 103.8,
-    "questionsMin": 4150,
-    "questionsMax": 6640,
+    "modules": 16,
+    "unitsTarget": 850,
+    "hoursAtAvgUnit": 106.3,
+    "questionsMin": 4250,
+    "questionsMax": 6800,
     "rlpHoursByYear": {
       "1": 280,
       "2": 280
@@ -440,11 +440,12 @@
       "moduleIds": [
         "LF8",
         "WISO",
+        "SBP",
         "APPT",
         "APPP"
       ],
       "why": "Instandhalten, WiSo und beide schriftlichen Prüfungstrainings.",
-      "unitsTarget": 210
+      "unitsTarget": 230
     }
   ],
   "modules": [
@@ -1751,8 +1752,69 @@
       "note": "Inhalt nach dem KMK-Qualifikationsprofil 2021 (40 Unterrichtsstunden). Keine Personendaten in Beispielen."
     },
     {
-      "id": "APPT",
+      "id": "SBP",
       "order": 13,
+      "title": "Standardberufsbildpositionen 2021: Nachhaltigkeit und digitalisierte Arbeitswelt (Empfehlung)",
+      "kind": "querschnitt",
+      "year": 1,
+      "niveau": "Grundbildung – Empfehlung BIBB-Hauptausschuss 172, nicht Teil der MaschFüAusbV 2004",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
+        },
+        {
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
+        }
+      ],
+      "examAreas": [
+        "WISO-1"
+      ],
+      "unitsTarget": 20,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "SBP-1",
+          "title": "Umweltschutz und Nachhaltigkeit",
+          "units": 8,
+          "topics": [
+            "Materialien und Energie unter wirtschaftlichen, umweltverträglichen und sozialen Gesichtspunkten nutzen",
+            "Vorschläge für nachhaltiges Handeln im eigenen Arbeitsbereich",
+            "Zielkonflikte zwischen ökonomisch, ökologisch, sozial"
+          ],
+          "sourceIds": [
+            "bibb-ha172"
+          ]
+        },
+        {
+          "id": "SBP-2",
+          "title": "Digitalisierte Arbeitswelt",
+          "units": 12,
+          "topics": [
+            "Datenschutz und Datensicherheit bei eigenen, betrieblichen und fremden Daten",
+            "Risiken digitaler Medien, betriebliche Regelungen",
+            "Informationen in digitalen Netzen recherchieren, prüfen, bewerten",
+            "Lern- und Arbeitstechniken, digitale Lernmedien, lebensbegleitendes Lernen",
+            "Zusammenarbeit über Bereichsgrenzen, Wertschätzung und Vielfalt"
+          ],
+          "sourceIds": [
+            "bibb-ha172"
+          ]
+        }
+      ],
+      "note": "Die MaschFüAusbV von 2004 enthält die vier modernisierten Standardberufsbildpositionen nicht. Der BIBB-Hauptausschuss empfiehlt seit 2020, sie trotzdem in allen Berufen zu vermitteln. Darum als eigenes Querschnittsmodul, im Lernpfad gestreut wie M0; in der Prüfung nur über WiSo relevant."
+    },
+    {
+      "id": "APPT",
+      "order": 14,
       "title": "Abschlussprüfung: Training Produktionstechnik (§ 9)",
       "kind": "pruefung",
       "year": 2,
@@ -1826,7 +1888,7 @@
     },
     {
       "id": "APPP",
-      "order": 14,
+      "order": 15,
       "title": "Abschlussprüfung: Training Produktionsplanung (§ 9)",
       "kind": "pruefung",
       "year": 2,
@@ -1961,6 +2023,14 @@
       "title": "KMK Kompetenzorientiertes Qualifikationsprofil Wirtschafts- und Sozialkunde gewerblich-technischer Ausbildungsberufe (Beschluss 17.06.2021, 40 Unterrichtsstunden)",
       "url": "https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf",
       "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "bibb-ha172",
+      "title": "BIBB Hauptausschuss-Empfehlung Nr. 172 vom 17.11.2020: Anwendung der modernisierten Standardberufsbildpositionen in der Ausbildungspraxis (Empfehlung für Berufe mit Verordnung vor 2021)",
+      "url": "https://www.bibb.de/dokumente/pdf/HA172.pdf",
+      "kind": "empfehlung",
       "fetchedAt": "2026-10-03",
       "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },

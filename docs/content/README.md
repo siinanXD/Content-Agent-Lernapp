@@ -8,22 +8,22 @@ node scripts/content-render-curriculum.mjs maf-metall # eine Map
 npm test                                               # Summen, Quellen, Gewichte, Phasen
 ```
 
-Stand 2026-10-03 · Status aller Maps: **Entwurf, Freigabe durch Sinan offen** · Linear [SIN-191](https://linear.app/sinan-kahraman/issue/SIN-191) · Entscheidung D-26/D-27 in `docs/DECISIONS.md`.
+Stand 2026-10-03 · Status aller Maps: **Entwurf, Freigabe durch Sinan offen** · Linear [SIN-191](https://linear.app/sinan-kahraman/issue/SIN-191) · Entscheidung D-26/D-27/D-28 in `docs/DECISIONS.md` · Rechtsstand geprüft am 2026-10-03 (siehe unten).
 
 ## Übersicht
 
 | Map | Beruf / Variante | Jahre | Referenz-Rahmenlehrplan | Module | Einheiten |
 | --- | --- | --- | --- | --- | --- |
-| [`maf-metall`](MAF-METALL.md) | MAF, Schwerpunkt Metall- und Kunststofftechnik, Metallbetriebe (Pilot) | 2 | Industriemechaniker/in LF 1–9 (320 + 280 Std.) | 16 | 870 |
-| [`maf-kunststoff`](MAF-KUNSTSTOFF.md) | MAF, Schwerpunkt Metall- und Kunststofftechnik, Kunststoffbetriebe | 2 | Kunststoff- und Kautschuktechnologe/-technologin LF 1–8 (320 + 280) | 15 | 870 |
-| [`maf-textil`](MAF-TEXTIL.md) | MAF, Schwerpunkt Textiltechnik | 2 | Produktionsmechaniker-Textil LF 1–4, 5 PM–9 PM, 10 (280 + 280) | 17 | 830 |
-| [`maf-textilveredelung`](MAF-TEXTILVEREDELUNG.md) | MAF, Schwerpunkt Textilveredelung | 2 | Produktveredler-Textil LF 1–8 (280 + 280) | 15 | 830 |
-| [`maf-lebensmittel`](MAF-LEBENSMITTEL.md) | MAF, Schwerpunkt Lebensmitteltechnik | 2 | Fachkraft für Lebensmitteltechnik LF 1–9 (280 + 280) | 16 | 830 |
-| [`maf-druckverarbeitung`](MAF-DRUCKVERARBEITUNG.md) | MAF, Schwerpunkt Druckweiter- und Papierverarbeitung, Druckweiterverarbeitung | 2 | Buchbinder/Medientechnologe Druckverarbeitung LF 1–8 (320 + 280) | 15 | 870 |
-| [`maf-packmittel`](MAF-PACKMITTEL.md) | MAF, Schwerpunkt Druckweiter- und Papierverarbeitung, Packmittel | 2 | Packmitteltechnologe/-technologin LF 1–8 (280 + 280) | 15 | 830 |
+| [`maf-metall`](MAF-METALL.md) | MAF, Schwerpunkt Metall- und Kunststofftechnik, Metallbetriebe (Pilot) | 2 | Industriemechaniker/in LF 1–9 (320 + 280 Std.) | 17 | 890 |
+| [`maf-kunststoff`](MAF-KUNSTSTOFF.md) | MAF, Schwerpunkt Metall- und Kunststofftechnik, Kunststoffbetriebe | 2 | Kunststoff- und Kautschuktechnologe/-technologin LF 1–8 (320 + 280) | 16 | 890 |
+| [`maf-textil`](MAF-TEXTIL.md) | MAF, Schwerpunkt Textiltechnik | 2 | Produktionsmechaniker-Textil LF 1–4, 5 PM–9 PM, 10 (280 + 280) | 18 | 850 |
+| [`maf-textilveredelung`](MAF-TEXTILVEREDELUNG.md) | MAF, Schwerpunkt Textilveredelung | 2 | Produktveredler-Textil LF 1–8 (280 + 280) | 16 | 850 |
+| [`maf-lebensmittel`](MAF-LEBENSMITTEL.md) | MAF, Schwerpunkt Lebensmitteltechnik | 2 | Fachkraft für Lebensmitteltechnik LF 1–9 (280 + 280) | 17 | 850 |
+| [`maf-druckverarbeitung`](MAF-DRUCKVERARBEITUNG.md) | MAF, Schwerpunkt Druckweiter- und Papierverarbeitung, Druckweiterverarbeitung | 2 | Buchbinder/Medientechnologe Druckverarbeitung LF 1–8 (320 + 280) | 16 | 890 |
+| [`maf-packmittel`](MAF-PACKMITTEL.md) | MAF, Schwerpunkt Druckweiter- und Papierverarbeitung, Packmittel | 2 | Packmitteltechnologe/-technologin LF 1–8 (280 + 280) | 16 | 850 |
 | [`indkfl`](INDKFL.md) | Industriekaufmann/-frau, alle sieben Einsatzgebiete | 3 | Industriekaufleute 2023, LF 1–13 (320 + 280 + 280) | 20 | 1160 |
 
-**MAF, alle Richtungen:** Die Ausbildungsordnung kennt fünf Schwerpunkte (§ 5). Der KMK-Rahmenlehrplan MAF hat keine eigenen Lernfelder und verweist je Schwerpunkt auf die ersten zwei Jahre der Fortsetzungsberufe. Wo ein Schwerpunkt zwei verschiedene Referenz-Rahmenlehrpläne hat (Metall/Kunststoff, Druck/Papier), gibt es zwei Maps mit identischer betrieblicher Achse und Prüfung. Jahr 1 der betrieblichen Achse (Anlage I) und die Module M0, ZP, QS, WISO sind in allen MAF-Maps gleich.
+**MAF, alle Richtungen:** Die Ausbildungsordnung kennt fünf Schwerpunkte (§ 5). Der KMK-Rahmenlehrplan MAF hat keine eigenen Lernfelder und verweist je Schwerpunkt auf die ersten zwei Jahre der Fortsetzungsberufe. Wo ein Schwerpunkt zwei verschiedene Referenz-Rahmenlehrpläne hat (Metall/Kunststoff, Druck/Papier), gibt es zwei Maps mit identischer betrieblicher Achse und Prüfung. Jahr 1 der betrieblichen Achse (Anlage I) und die Module M0, ZP, QS, WISO sind in allen MAF-Maps gleich. Das Modul `SBP` (Standardberufsbildpositionen 2021: Umweltschutz und Nachhaltigkeit, digitalisierte Arbeitswelt) steht in allen MAF-Maps in Phase D: Für Berufe mit Verordnung vor 2021 gelten sie nur als Empfehlung (BIBB-Hauptausschuss 172), darum ein eigenes Modul mit Quellenart `empfehlung` statt einer Vermischung mit den Pflichtpositionen der Anlage. Für Industriekaufleute sind dieselben Inhalte Pflicht (Abschnitt B der Anlage) und stecken in den Modulen `DIG` und `WISO`.
 
 **Industriekaufleute, alle Varianten:** Einsatzgebiete (§ 4 Abs. 4) sind keine Fachrichtungen. Lernfelder und schriftliche Prüfung sind für alle gleich; nur Berufsbildpositionen 8 und 9 und die Fachaufgabe in Teil 2 hängen am Einsatzgebiet. Darum eine Map mit einem Modul `EG`, das pro Einsatzgebiet einen Block hat.
 
@@ -74,6 +74,19 @@ Antworte nur mit JSON nach Schema: { ... }
 ## Erzeugungsphasen und Kosten
 
 Jede Map hat vier Phasen (A–D), je ein Kurslauf unter dem 20-Euro-Deckel. Phase A reicht für einen spielbaren Pilot. Schätzung pro Phase mit 250–380 Einheiten (Preise D-06/D-07, Batch-Rabatt): 10–15 USD für Erzeugen und Prüfen; AP-15 misst nach.
+
+## Aktualität und Rechtsstand (AP-16)
+
+**Rechtsstand 2026, geprüft am 2026-10-03:** MaschFüAusbV (Stand Art. 2 V v. 14.6.2023), IndKflAusbV (12.03.2024, unverändert) und alle neun Referenz-Rahmenlehrpläne tragen im KMK-Downloadbereich dieselben Beschlussdaten wie in den Maps. Die 22 Neuordnungen zum 1.8.2026 (19 Bauberufe, Bautechnischer Konstrukteur, Kaufmann für Mobilität und Verkehrsservice, Verfahrensmechaniker Glastechnik) und die laufenden Verfahren (Technischer Modellbauer 1.8.2027, Veranstaltungskaufleute, Landwirt, Bäcker, Fachangestellte für Medien- und Informationsdienste) betreffen keine Map.
+
+**So bleibt das aktuell:**
+
+1. `docs/content/sources.lock.json` hält je Quell-URL einen Versionsmarker: die Stand-Zeile von gesetze-im-internet.de („Zuletzt geändert durch …“), das Beschlussdatum aus dem KMK-Downloadbereich oder ETag/Last-Modified/Hash.
+2. `npm run content:check-sources` liest alle Quellen der Maps neu, vergleicht mit dem Lock, scannt den Aktualitätendienst von gesetze-im-internet.de und die BIBB-Seite „Neuordnungen“ nach 20 Berufsnamen und nennt je Treffer die betroffenen Module und Blöcke (`sourceIds`). Exit 0 = nichts neu, Exit 2 = Änderung oder Feed-Treffer, Exit 3 = eine Quelle fehlt im Lock.
+3. Läuft wöchentlich als GitHub-Action (`.github/workflows/source-check.yml`, montags, auch per Hand startbar). Bei Exit 2 legt sie ein Issue mit Label `quellen-monitor` an oder ergänzt das offene; bei Exit 3 wird der Job rot. Später übernimmt der Hermes-Job auf Railway (`docs/ops/HERMES.md`) mit Telegram-Meldung. Im Cloud-Agent nur `npm run content:check-sources:offline`, weil der Proxy gesetze-im-internet.de und kmk.org sperrt.
+4. Bei Exit 2: Änderung lesen, betroffene Map im Builder anpassen, Markdown neu rendern, Lock mit `--update` schreiben, PR. Danach die genannten Blöcke neu erzeugen und prüfen (research → plan → generate → evaluate → publish).
+
+Der Lock ist am 2026-10-03 von Hand geseedet (Stand-Zeilen und KMK-Daten aus den Dokumenten); ETag und Hash füllt der erste Live-Lauf mit `--update`.
 
 ## Quellen
 

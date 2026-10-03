@@ -22,6 +22,7 @@ Stand: 2026-10-03 · Status: **Entwurf – Freigabe durch Sinan offen** · Famil
 | `ao-bgbl` | [BGBl. I 2004 Nr. 19 (BIBB-Kopie der Verordnung inkl. Anlage)](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf) | ausbildungsordnung | 2026-10-03 |
 | `rlp-maf` | [KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist je Schwerpunkt auf die RLP der Fortsetzungsberufe](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf) | rahmenlehrplan | 2026-10-03 |
 | `kmk-wiso` | [KMK Kompetenzorientiertes Qualifikationsprofil Wirtschafts- und Sozialkunde gewerblich-technischer Ausbildungsberufe (Beschluss 17.06.2021, 40 Unterrichtsstunden)](https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf) | rahmenlehrplan | 2026-10-03 |
+| `bibb-ha172` | [BIBB Hauptausschuss-Empfehlung Nr. 172 vom 17.11.2020: Anwendung der modernisierten Standardberufsbildpositionen in der Ausbildungspraxis (Empfehlung für Berufe mit Verordnung vor 2021)](https://www.bibb.de/dokumente/pdf/HA172.pdf) | empfehlung | 2026-10-03 |
 | `bibb-51121` | [BIBB Berufesuche – Maschinen- und Anlagenführer/in (51121)](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121) | berufsinformation | 2026-10-03 |
 | `rlp-pmtextil` | [KMK Rahmenlehrplan Produktionsmechaniker-Textil / Produktprüfer-Textil (Beschluss 18.03.2005 i. d. F. 15.03.2007), Lernfelder 1–10 PM – Wiedergabe im Landeslehrplan NRW (QUA-LiS)](https://berufsbildung.nrw.de/system/files/media/document/file/produktionsmechanik_textil.pdf) | rahmenlehrplan | 2026-10-03 |
 
@@ -83,7 +84,7 @@ Zwischenprüfung zu Beginn des 2. Ausbildungsjahres (§ 8). Abschlussprüfung (�
 | Abschlussprüfung | Praktischer Teil (§ 9 Abs. 2) | praktisch | höchstens 7 Stunden, bis zu 2 Aufgaben | – | PRAK-1: Einrichten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage; PRAK-2: Umrüsten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage; PRAK-3: Durchführen einer vorbeugenden Instandsetzung einschließlich der Inbetriebnahme | `PA`, `LF9` |
 | Abschlussprüfung schriftlich | Produktionstechnik | schriftlich | 120 Minuten | 50 % | PT-a: Rohstoffe, Zwischen- und Endprodukte; PT-b: Produktionsverfahren, Prozessabläufe; PT-c: Funktion von Maschinen und Anlagen; PT-d: prozess- und leistungsbezogene Berechnungen; PT-e: Konstruktionstechniken und Produktmerkmale; PT-f: Fertigungstechniken | `LF1`, `LF2`, `LF3`, `LF4`, `LF5`, `LF6`, `LF7`, `PA`, `LF9`, `LF10`, `APPT` |
 | Abschlussprüfung schriftlich | Produktionsplanung | schriftlich | 60 Minuten | 30 % | PP-a: Arbeitsschritte; PP-b: Qualitätssicherung; PP-c: vorbeugende Instandhaltung; PP-d: Materialfluss; PP-e: Anfertigen von Skizzen und Planungsunterlagen | `LF1`, `LF5`, `LF6`, `LF7`, `LF8`, `PA`, `LF9`, `LF10`, `QS`, `APPP` |
-| Abschlussprüfung schriftlich | Wirtschafts- und Sozialkunde | schriftlich | 60 Minuten | 20 % | WISO-1: allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt | `M0`, `WISO` |
+| Abschlussprüfung schriftlich | Wirtschafts- und Sozialkunde | schriftlich | 60 Minuten | 20 % | WISO-1: allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt | `M0`, `WISO`, `SBP` |
 
 **Zwischenprüfung (§ 8):** zu Beginn des 2. Ausbildungsjahres; praktische Aufgabe höchstens 3 Stunden plus höchstens 60 Minuten schriftlich; Beispiel: Positionieren von Maschinenelementen; Stoff des 1. Ausbildungsjahres → `ZP`
 
@@ -91,7 +92,7 @@ Bestehen: Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in 
 
 ## 6. Module im Überblick
 
-17 Module, **830 Einheiten** (bei 7.5 Minuten im Schnitt ≈ 103.8 Stunden Lernzeit; 4150–6640 Fragen).
+18 Module, **850 Einheiten** (bei 7.5 Minuten im Schnitt ≈ 106.3 Stunden Lernzeit; 4250–6800 Fragen).
 
 | Reihenfolge | Modul | Titel | Jahr | Art | Einheiten | Sicherheit | Prüfungsgebiete |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -110,9 +111,10 @@ Bestehen: Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in 
 | 12 | `LF10` | Textilien kundengerecht veredeln und aufmachen | 2 | lernfeld | 40 | nein | PT-a, PP-b |
 | 13 | `QS` | Qualitätssichernde Maßnahmen | 2 | ao-kern | 20 | nein | PP-b |
 | 14 | `WISO` | Wirtschafts- und Sozialkunde | 2 | wiso | 40 | nein | WISO-1 |
-| 15 | `APPT` | Abschlussprüfung: Training Produktionstechnik (§ 9) | 2 | pruefung | 40 | nein | PT-a, PT-b, PT-c, PT-d, PT-e, PT-f |
-| 16 | `APPP` | Abschlussprüfung: Training Produktionsplanung (§ 9) | 2 | pruefung | 30 | nein | PP-a, PP-b, PP-c, PP-d, PP-e |
-| | | **Summe** | | | **830** | | |
+| 15 | `SBP` | Standardberufsbildpositionen 2021: Nachhaltigkeit und digitalisierte Arbeitswelt (Empfehlung) | 1 | querschnitt | 20 | nein | WISO-1 |
+| 16 | `APPT` | Abschlussprüfung: Training Produktionstechnik (§ 9) | 2 | pruefung | 40 | nein | PT-a, PT-b, PT-c, PT-d, PT-e, PT-f |
+| 17 | `APPP` | Abschlussprüfung: Training Produktionsplanung (§ 9) | 2 | pruefung | 30 | nein | PP-a, PP-b, PP-c, PP-d, PP-e |
+| | | **Summe** | | | **850** | | |
 
 Reihenfolge = Lernreihenfolge. Querschnitt-Module werden über den Kurs gestreut (etwa jede fünfte Einheit).
 
@@ -339,6 +341,19 @@ Reihenfolge = Lernreihenfolge. Querschnitt-Module werden über den Kurs gestreut
 | `WISO-2` | Nachhaltige Existenzsicherung | 12 | Säulen der sozialen Sicherung, Versicherungsprinzipien; Positionen der Entgeltabrechnung; Private Vorsorge; Karriere- und Lebensplanung, Existenzgründung | `kmk-wiso` |  |
 | `WISO-3` | Unternehmen, Organisationen und private Marktteilnehmende | 12 | Ziele, Aufbau und Perspektiven von Unternehmen, Wertschöpfungskette, Wirtschaftskreislauf; Bedürfnisse, Bedarf, Kaufkraft; Rechtsgeschäfte: Kauf-, Miet-, Kreditvertrag, Verbraucherschutz; Soziale Marktwirtschaft, Europa, globale Vernetzung, Standortwettbewerb | `kmk-wiso` |  |
 
+### SBP · Standardberufsbildpositionen 2021: Nachhaltigkeit und digitalisierte Arbeitswelt (Empfehlung)
+
+- Jahr 1 · querschnitt · 20 Einheiten · Niveau: Grundbildung – Empfehlung BIBB-Hauptausschuss 172, nicht Teil der MaschFüAusbV 2004
+- AO-Berufsbild: Anlage I Nr. 4 → Umweltschutz; Anlage I Nr. 1 → Berufsbildung, Arbeits- und Tarifrecht
+- Prüfungsgebiete: WISO-1
+- Fragetypen-Mix (%): auswahl 40, zuordnen 25, lueckentext 20, reihenfolge 10, rechnen 5
+- Hinweis: Die MaschFüAusbV von 2004 enthält die vier modernisierten Standardberufsbildpositionen nicht. Der BIBB-Hauptausschuss empfiehlt seit 2020, sie trotzdem in allen Berufen zu vermitteln. Darum als eigenes Querschnittsmodul, im Lernpfad gestreut wie M0; in der Prüfung nur über WiSo relevant.
+
+| Block | Titel | Einheiten | Themen | Quellen | Merker |
+| --- | --- | --- | --- | --- | --- |
+| `SBP-1` | Umweltschutz und Nachhaltigkeit | 8 | Materialien und Energie unter wirtschaftlichen, umweltverträglichen und sozialen Gesichtspunkten nutzen; Vorschläge für nachhaltiges Handeln im eigenen Arbeitsbereich; Zielkonflikte zwischen ökonomisch, ökologisch, sozial | `bibb-ha172` |  |
+| `SBP-2` | Digitalisierte Arbeitswelt | 12 | Datenschutz und Datensicherheit bei eigenen, betrieblichen und fremden Daten; Risiken digitaler Medien, betriebliche Regelungen; Informationen in digitalen Netzen recherchieren, prüfen, bewerten; Lern- und Arbeitstechniken, digitale Lernmedien, lebensbegleitendes Lernen; Zusammenarbeit über Bereichsgrenzen, Wertschätzung und Vielfalt | `bibb-ha172` |  |
+
 ### APPT · Abschlussprüfung: Training Produktionstechnik (§ 9)
 
 - Jahr 2 · pruefung · 40 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung)
@@ -376,8 +391,8 @@ Jede Phase ist ein eigener Kurslauf unter dem 20-Euro-Deckel (AGENTS.md).
 | A | `M0`, `LF1`, `LF2`, `PA` | 240 | Produktionsprozesse, Faserstoffe, Produktionsanlagen. |
 | B | `LF3`, `LF4`, `LF5`, `ZP`, `QS` | 200 | Garne, Flächen, Überwachung, Zwischenprüfungs-Training, Qualitätssicherung. |
 | C | `LF6`, `LF7`, `LF8` | 180 | Nachstellen, Vorbereitungsprozesse, Werkstoffe für Maschinenelemente. |
-| D | `LF9`, `LF10`, `WISO`, `APPT`, `APPP` | 210 | Warten, Veredeln, WiSo und beide schriftlichen Prüfungstrainings. |
-| | **Summe** | **830** | |
+| D | `LF9`, `LF10`, `WISO`, `SBP`, `APPT`, `APPP` | 230 | Warten, Veredeln, WiSo und beide schriftlichen Prüfungstrainings. |
+| | **Summe** | **850** | |
 
 ## 9. Annahmen (ohne Rückfrage, siehe DECISIONS.md)
 

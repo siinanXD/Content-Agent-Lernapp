@@ -1,0 +1,96 @@
+# AP-16 Quellen-Monitor: vergleicht die amtlichen Quellen der Curriculum-Maps
+# (docs/content/*.json) wöchentlich mit docs/content/sources.lock.json.
+# Exit 0 = unverändert, 2 = Änderung oder Feed-Treffer (Issue), 3 = Lock unvollständig (Job rot).
+# Läuft hier statt im Cloud-Agent, weil dessen Proxy gesetze-im-internet.de und kmk.org sperrt.
+name: Quellen-Monitor (AP-16)
+
+on:
+  schedule:
+    - cron: "17 5 * * 1" # montags 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Abhängigkeiten installieren
+        run: npm install --no-audit --no-fund
+      - name: Quellen gegen Lock vergleichen
+        id: check
+        shell: bash
+        run: |
+          set +e
+          npm run -s content:check-sources > source-report.json 2> source-check.log
+          code=$?
+          set -e
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          cat source-check.log || true
+          echo "exit code: $code"
+      - name: Report sichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-report
+          path: |
+            source-report.json
+            source-check.log
+          if-no-files-found: ignore
+      - name: Issue bei Änderung anlegen oder ergänzen
+        if: steps.check.outputs.exit == '2'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const report = JSON.parse(fs.readFileSync("source-report.json", "utf8"));
+            const label = "quellen-monitor";
+            const title = "Quellen-Monitor: amtliche Quelle geändert (AP-16)";
+            const changed = (report.diff?.changed ?? []).map(
+              (c) => `- **${c.field}** ${c.url}\n  vorher: \`${c.before}\`\n  nachher: \`${c.after}\`\n  Maps: ${c.mapIds.join(", ")}`,
+            );
+            const hits = (report.feedHits ?? []).filter((h) => !h.error).map((h) => `- Feed **${h.feed}** (${h.keyword}): ${h.title}`);
+            const affected = (report.affected ?? []).map(
+              (a) => `- ${a.mapId} / ${a.sourceId}: ${a.modules.map((m) => m.moduleId).join(", ") || "keine"}`,
+            );
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `Lauf ${report.checkedAt} — [Workflow-Run](${run})`,
+              "",
+              "## Geänderte Quellen",
+              ...(changed.length ? changed : ["keine"]),
+              "",
+              "## Feed-Treffer (Aktualitätendienst, BIBB)",
+              ...(hits.length ? hits : ["keine"]),
+              "",
+              "## Betroffene Module je Map",
+              ...(affected.length ? affected : ["keine"]),
+              "",
+              "Nächste Schritte: `docs/content/README.md`, Abschnitt „Aktualität und Rechtsstand“. Ein Mensch prüft die Änderung; kein automatisches Publish.",
+            ].join("\n");
+            try {
+              await github.rest.issues.createLabel({ ...context.repo, name: label, color: "B60205", description: "AP-16 Quellen-Monitor" });
+            } catch (e) {
+              if (e.status !== 422) throw e;
+            }
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: "open", labels: label, per_page: 5 });
+            if (open.length) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: open[0].number, body });
+            } else {
+              await github.rest.issues.create({ ...context.repo, title, body, labels: [label] });
+            }
+      - name: Lock unvollständig
+        if: steps.check.outputs.exit == '3'
+        run: |
+          echo "::error::Eine Quelle der Maps fehlt in docs/content/sources.lock.json — Eintrag ergänzen und --update laufen lassen"
+          exit 1
+      - name: Unerwarteter Fehler
+        if: steps.check.outputs.exit != '0' && steps.check.outputs.exit != '2' && steps.check.outputs.exit != '3'
+        run: exit 1
