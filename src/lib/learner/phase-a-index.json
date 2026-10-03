@@ -1,14 +1,34 @@
 {
   "courseId": "e22073de-7020-4380-9002-c70d46c25e25",
+  "keyword": "Maschinen- und Anlagenführer",
   "phase": "A",
+  "publishedAt": "2026-10-03T15:27:51.920Z",
   "unitCount": 248,
-  "target": 280,
-  "shortfall": 32,
+  "targetUnits": 280,
+  "droppedUnits": 32,
   "byModule": {
     "M0": 45,
     "LF1": 70,
     "LF2": 75,
     "PA": 58
   },
+  "modules": [
+    {
+      "id": "M0",
+      "title": "Querschnitt: Beruf, Betrieb, Sicherheit, Umwelt"
+    },
+    {
+      "id": "LF1",
+      "title": "Fertigen von Bauelementen mit handgeführten Werkzeugen"
+    },
+    {
+      "id": "LF2",
+      "title": "Fertigen von Bauelementen mit Maschinen"
+    },
+    {
+      "id": "PA",
+      "title": "Produktionsanlagen einrichten, bedienen und übergeben (MAF-Kern)"
+    }
+  ],
   "updatedAt": "2026-10-03T15:27:51.920Z"
 }

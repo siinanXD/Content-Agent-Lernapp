@@ -29,6 +29,7 @@ export async function GET() {
       unitCount: units.length,
       targetUnits: phaseAIndex.targetUnits,
       droppedUnits: phaseAIndex.droppedUnits,
+      byModule: phaseAIndex.byModule,
       modules: phaseAIndex.modules,
       units,
       storage: storage.backend,
