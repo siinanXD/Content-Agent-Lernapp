@@ -90,6 +90,12 @@ const report = {
   maps: curricula.map((c) => c.id),
   sourcesTracked: Object.keys(lock.entries).length,
   sourcesMissingInLock: missing,
+  summary: {
+    changed: diff?.changed.map((c) => c.url) ?? [],
+    unreachable: diff?.unreachable.map((u) => u.url) ?? [],
+    ok: diff?.unchanged ?? [],
+    weak: diff?.weak.map((w) => w.url) ?? [],
+  },
   diff,
   feedHits,
   affected,
