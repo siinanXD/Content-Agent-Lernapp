@@ -156,4 +156,12 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 
 ### D-21 — AP-09 a11y gates + offline shell
 
-- **Links:** [axe-core](https://github.com/dequelabs/axe-core); Playwright `@axe-core/playwright`; Lighthouse accessi
+- **Links:** [axe-core](https://github.com/dequelabs/axe-core); Playwright `@axe-core/playwright`; Lighthouse accessibility category; Linear [SIN-187](https://linear.app/sinan-kahraman/issue/SIN-187/ap-09-barrierefreiheit-und-offline); workflow `.github/workflows/a11y.yml`
+- **Entscheidung:** CI blockiert bei axe critical/serious und Lighthouse a11y unter 0.9. Service Worker cached Learner-Shell (`public/sw.js`). Profil-Schalter: Einfache Sprache + Vorlesen (`speechSynthesis`). Gates nicht abschaltbar.
+- **Warum:** PRODUCT.md / D-10; Offline und alte Android-Geräte; SIN-187 Akzeptanz.
+
+### D-22 — AP-10 Hermes: scaffold/docs only until Telegram secrets
+
+- **Links:** [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent); Railway EU; Linear [SIN-188](https://linear.app/sinan-kahraman/issue/SIN-188/ap-10-hermes-betrieb); `docs/ops/HERMES.md`
+- **Entscheidung:** Runbook + `hermes:dry-run` gegen Seed-Quellen shippen. **Kein** Live-Deploy: `RAILWAY_API_TOKEN` allein reicht nicht (Telegram-Bot/Chat + Hermes-Config fehlen). Manueller Pipeline-Start bleibt gültig (D-09).
+- **Warum:** AP-10 
