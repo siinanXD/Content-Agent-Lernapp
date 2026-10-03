@@ -1,89 +1,52 @@
-# Content-Agent-Lernapp
+# AP-06 Quality gate (Langfuse EU)
 
-Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen Kurs aus amtlichen Quellen erzeugt und aktuell hält.
+## Langfuse v4 / SDK v5
 
-## Stack (current)
+Tracing uses **JS/TS SDK v5** (`@langfuse/tracing`, `@langfuse/otel`, `@langfuse/client` ≥ **5.4.0** / current **5.11.1**) with OpenTelemetry export to Langfuse Cloud EU. Legacy `POST /api/public/ingestion` trace events are not used (see [upgrade to v4](https://langfuse.com/faq/all/upgrade-to-langfuse-v4), [JS/TS v4 → v5](https://langfuse.com/docs/observability/sdk/upgrade-path/js-v4-to-v5), [custom ingestion migration](https://langfuse.com/integrations/native/opentelemetry/migration-to-v4)).
 
-| Layer | Choice |
+- Root observation carries overall evaluate input/output.
+- Correlating attributes (`tags`, `metadata`, `traceName`) via `propagateAttributes`.
+- Scores via `LangfuseClient.score` (observation-level).
+- Goldset via `api.datasets` + `dataset.createItem` / `dataset.get`.
+- Next.js registers the processor in `src/instrumentation.ts`.
+
+## Thresholds (PRODUCT.md)
+
+Hard publish gate (blocks `/publish`):
+
+| Check | Threshold |
 | --- | --- |
-| App | Next.js 16 + React 19 + TypeScript + Tailwind 4 |
-| Hosting | Vercel |
-| Persistence | Supabase EU (AP-17) with in-memory mock fallback |
-| Quality / tracing | Langfuse Cloud EU — JS/TS SDK v5 / platform v4 OTEL ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197); clean rebase supersedes [#17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17)/[#28](https://github.com/siinanXD/Content-Agent-Lernapp/pull/28)) |
-| Ops scaffold | Hermes weekly source check + Telegram (AP-10/AP-16) |
-| Models | Claude for generate (Batch); OpenAI mini as judge (D-06/D-07) |
+| sourceFidelity | 1 (hard) |
+| uniqueness | 1 (hard) |
+| niveau | ≥ 4 / 5 |
+| language | ≥ 4 / 5 |
+| safetyFlag | human sample when true |
 
-## Docs
+Calibrated goldset baseline (`docs/quality/calibration.json`, OpenAI `gpt-5.4-mini`, 2026-10-02): 45/70 items passed; averages on passers `niveau=4`, `language=4.9`. The 4.9 language figure is a baseline, **not** the 422 floor — otherwise most live content would fail.
 
-- [`docs/PRODUCT.md`](docs/PRODUCT.md) — Konzept und Bauplan AP-00–AP-12
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
-- [`AGENTS.md`](AGENTS.md) — Entscheidungs- und Stopp-Regeln
-- [`docs/content/README.md`](docs/content/README.md) — Curriculum-Maps (AP-13): MAF in allen fünf Schwerpunkten und Industriekaufleute 2024
-- [`docs/content/DIDAKTIK.md`](docs/content/DIDAKTIK.md) — Didaktik-Vorgabe (AP-18): Schablone je Einheit, Fragestufen, Wiederholung, Prüfungsmodus, Bilder
-- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Vorgängerversion v1 (nur Metall); runtime loader uses `docs/content/maf-metall.json` via AP-14 ([PR #24](https://github.com/siinanXD/Content-Agent-Lernapp/pull/24))
+## Goldset
 
-## Local development
+`docs/quality/maf-goldset-70.json` — **70 original** MAF practice items citing [MaschFüAusbV](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html), [§ 8](https://www.gesetze-im-internet.de/maschf_ausbv/__8.html), [§ 9](https://www.gesetze-im-internet.de/maschf_ausbv/__9.html), [BIBB 51121](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121). Retrieved **2026-10-02**. **No IHK exam copies.**
 
-```bash
-npm install
-npm run dev
-```
+Langfuse dataset name: `maf-goldset-70` (Langfuse Cloud EU).
 
-Dev server: [http://127.0.0.1:43123](http://127.0.0.1:43123) (`npm run dev` → port 43123).
+`src/lib/quality/maf-goldset-fixture.ts` keeps 12 samples including intentional fails `fx-unique`/`fx-source` for unit tests.
 
-### Learner UI (AP-08 + AP-18 Didaktik)
+## Modes
 
-Playable path (Figma approved by Sinan 2026-10-02; Didaktik D-31):
+1. **fixture** — no OpenAI key; heuristic/gold expected scores
+2. **live** — `OPENAI_API_KEY` → `gpt-5.4-mini` structured judge (D-07); traces/scores in Langfuse when `LANGFUSE_*` set
+3. **langfuse-offline** — fixture scores + Langfuse ingest when keys set but OpenAI absent
 
-1. `/` Start — Schlagwort + Lernvariante → Kurs erzeugen  
-2. `/lernpfad` — Module/Blöcke, Wiederholung, Prüfungsmodus  
-3. `/einheit/unit-03` — sections + alle 5 Fragetypen (+ Bildfragen)  
-4. `/wiederholung` — Leitner 1/3/7/14  
-5. `/pruefung` — schriftliche Teile aus `exam.gradedParts` (MAF PT/PP/WiSo)  
-6. `/ergebnis` — Punkte + Ampel je Gebiet  
-7. `/profil` — Fortschritt, Stapelgröße, Prüfungsreife  
+## API
 
-Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`. Phase-A SVGs: `npm run content:mermaid`.
+- `POST /api/courses/{id}/evaluate` → scores + per-question results
+- `POST /api/courses/{id}/publish` → **409** if not evaluated; **422** if below threshold; **200** if passed
+
+## Commands
 
 ```bash
-npm test
-npm run content:mermaid
-npm run test:a11y
-npm run test:lighthouse   # app must be running on :43123
-npm run hermes:dry-run    # AP-10 scaffold (no live Telegram)
-npm run pilot:maf         # AP-11 seed/fixture pipeline (app on :43123)
-npm run supabase:verify   # when SUPABASE_* present
-npm run build
-npm run lint
+npm run quality:sync-goldset   # upsert 70 items into Langfuse
+npm run quality:calibrate      # OpenAI judge → GOLDSET_TARGET + Langfuse dataset
+npm run quality:smoke          # live evaluate + 409/422/200 publish gate
 ```
-
-A11y gates (axe critical/serious + Lighthouse a11y ≥ 0.9) run in CI via `.github/workflows/a11y.yml` and must not be disabled.
-
-Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
-
-## Phase A (AP-15)
-
-First live course slice after the curriculum map: modules `M0`, `LF1`, `LF2`, `PA` (~280 units), generate with Claude Batch, judge with OpenAI mini, publish only through the quality gate. Tracked in [SIN-193](https://linear.app/sinan-kahraman/issue/SIN-193). Costs and scores should land in Langfuse Cloud EU — prefer completing the v4 cutover ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197)) before relying on dashboards for that run.
-
-## Deploy
-
-Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).
-
-## Secrets
-
-Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.
-
-Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`docs/quality/README.md`).
-
-### Supabase persistence (AP-17)
-
-- Migrations: `supabase/migrations/` (additive SQL + RLS). Runbook: [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
-- With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
-- Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
-- Verify tables (when keys present): `npm run supabase:verify`.
-- If `package-lock.json` was split for transport: `npm run lock:assemble` (gzip chunks under `scripts/ap17-lock-chunks/`), then prefer a normal `npm install` for day-to-day work.
-
-## Repo
-
-https://github.com/siinanXD/Content-Agent-Lernapp
