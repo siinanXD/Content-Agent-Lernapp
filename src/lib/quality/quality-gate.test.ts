@@ -62,7 +62,7 @@ describe("AP-06 quality gate", () => {
 
   it("publish returns 409 without evaluate and 422 below threshold", async () => {
     const course = createCourse("Maschinen- und Anlagenführer");
-    const blocked = handlePublish(course.id);
+    const blocked = await handlePublish(course.id);
     assert.equal(blocked.status, 409);
 
     setEvaluation(course.id, {
@@ -70,7 +70,7 @@ describe("AP-06 quality gate", () => {
       scores: { sourceFidelity: 0, uniqueness: 1, niveau: 2, language: 2, safetyFlag: false },
       questions: [{ passed: false }],
     });
-    const rejected = handlePublish(course.id);
+    const rejected = await handlePublish(course.id);
     assert.equal(rejected.status, 422);
     const body = (await rejected.json()) as { reason?: string };
     assert.equal(body.reason, "below_quality_threshold");
@@ -81,7 +81,7 @@ describe("AP-06 quality gate", () => {
       scores: { sourceFidelity: 1, uniqueness: 1, niveau: 4, language: 5, safetyFlag: false },
       questions: [{ passed: true }],
     });
-    const published = handlePublish(okCourse.id);
+    const published = await handlePublish(okCourse.id);
     assert.equal(published.status, 200);
   });
 

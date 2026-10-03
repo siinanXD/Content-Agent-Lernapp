@@ -7,5 +7,7 @@ describe("health", () => {
     const h = getHealth();
     assert.equal(h.ok, true);
     assert.equal(h.service, "content-agent-lernapp");
+    assert.equal(h.storage, "mock");
+    assert.equal(h.supabaseConfigured, false);
   });
 });

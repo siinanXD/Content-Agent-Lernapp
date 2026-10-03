@@ -46,7 +46,7 @@ async function main() {
   }
 
   const missing = createCourse("MAF smoke 409");
-  const r409 = await readJson(handlePublish(missing.id));
+  const r409 = await readJson(await handlePublish(missing.id));
 
   const below = createCourse("MAF smoke 422");
   setEvaluation(below.id, {
@@ -60,7 +60,7 @@ async function main() {
     },
     questions: [{ passed: false }],
   });
-  const r422 = await readJson(handlePublish(below.id));
+  const r422 = await readJson(await handlePublish(below.id));
 
   const passCourse = createCourse("MAF smoke 200");
   setGenerated(passCourse.id, mafSeedLernfeldSicherheit());
@@ -75,12 +75,12 @@ async function main() {
     },
     questions: [{ passed: true }],
   });
-  const r200 = await readJson(handlePublish(passCourse.id));
+  const r200 = await readJson(await handlePublish(passCourse.id));
 
   const live = createCourse("Maschinen- und Anlagenführer");
   setGenerated(live.id, mafSeedLernfeldSicherheit());
   const evaluated = await readJson(await handleEvaluate(live.id));
-  const published = await readJson(handlePublish(live.id));
+  const published = await readJson(await handlePublish(live.id));
 
   const report = {
     openai: true,

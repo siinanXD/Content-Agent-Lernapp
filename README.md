@@ -8,8 +8,7 @@ Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen 
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
 - [`AGENTS.md`](AGENTS.md) — Entscheidungs- und Stopp-Regeln
-- [`docs/content/README.md`](docs/content/README.md) — Curriculum-Maps (AP-13): MAF in allen fünf Schwerpunkten und Industriekaufleute 2024, Vorgabe für die Agenten
-- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Vorgängerversion v1 (nur Metall), abgelöst durch `docs/content/maf-metall.json`; bleibt, bis AP-14 (PR #20) auf den v2-Loader umgestellt ist
+- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Curriculum-Map MAF (AP-13): Jahr → Lernfeld → Block → Einheiten, Vorgabe für die Agenten
 
 ## Local development
 
@@ -53,6 +52,14 @@ Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).
 ## Secrets
 
 Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.
+
+### Supabase persistence (AP-17)
+
+- Migrations: `supabase/migrations/` (additive SQL + RLS). Runbook: [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
+- With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
+- Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
+- Verify tables (when keys present): `npm run supabase:verify`.
+- On this PR branch, regenerate the lockfile before `npm ci`: `npm run lock:assemble` (gzip chunks under `scripts/ap17-lock-chunks/`).
 
 ## Repo
 

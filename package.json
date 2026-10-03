@@ -15,12 +15,12 @@
     "test:a11y": "playwright test",
     "test:lighthouse": "node scripts/lighthouse-gate.mjs http://127.0.0.1:43123/",
     "hermes:dry-run": "node --import tsx scripts/hermes-dry-run.mjs",
-    "hermes:weekly": "node --import tsx scripts/hermes-weekly.mjs",
-    "content:check-sources": "node --import tsx scripts/content-check-sources.mjs",
-    "content:check-sources:offline": "node --import tsx scripts/content-check-sources.mjs --offline",
-    "pilot:maf": "node --import tsx scripts/pilot-maf.mjs"
+    "pilot:maf": "node --import tsx scripts/pilot-maf.mjs",
+    "supabase:verify": "node scripts/verify-supabase-schema.mjs",
+    "lock:assemble": "node scripts/assemble-package-lock.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8"

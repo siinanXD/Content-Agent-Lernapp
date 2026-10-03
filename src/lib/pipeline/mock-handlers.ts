@@ -1,12 +1,4 @@
-import {
-  createCourse,
-  getCourse,
-  setEvaluation,
-  setGenerated,
-  setPlan,
-  setSources,
-  setStatus,
-} from "./mock-store";
+import { getStorage } from "@/lib/storage";
 import { runGenerateAgent } from "@/lib/generate/generate-agent";
 import { runPlanAgent } from "@/lib/plan/plan-agent";
 import { runEvaluateAgent } from "@/lib/quality/evaluate-agent";
@@ -30,15 +22,17 @@ export async function handleCreateCourse(req: Request) {
       { status: 400 },
     );
   }
-  const course = createCourse(body.keyword, body.variants ?? 2);
+  const storage = getStorage();
+  const course = await storage.createCourse(body.keyword, body.variants ?? 2);
   return Response.json(course, { status: 201 });
 }
 
 export async function handleResearch(id: string) {
-  const course = getCourse(id);
+  const storage = getStorage();
+  const course = await storage.getCourse(id);
   if (!course) return notFound(id);
   const result = await runResearchAgent(course.keyword);
-  setSources(id, result.sources);
+  await storage.setSources(id, result.sources);
   return Response.json({
     courseId: id,
     mock: result.mode !== "live",
@@ -50,10 +44,11 @@ export async function handleResearch(id: string) {
 }
 
 export async function handlePlan(id: string) {
-  const course = getCourse(id);
+  const storage = getStorage();
+  const course = await storage.getCourse(id);
   if (!course) return notFound(id);
   const result = await runPlanAgent(course.keyword);
-  setPlan(id, result.variants);
+  await storage.setPlan(id, result.variants);
   return Response.json({
     courseId: id,
     mock: result.mode !== "live",
@@ -65,10 +60,11 @@ export async function handlePlan(id: string) {
 }
 
 export async function handleGenerate(id: string) {
-  const course = getCourse(id);
+  const storage = getStorage();
+  const course = await storage.getCourse(id);
   if (!course) return notFound(id);
   const result = await runGenerateAgent({ keyword: course.keyword });
-  setGenerated(id, result.lernfeld);
+  await storage.setGenerated(id, result.lernfeld);
   return Response.json({
     courseId: id,
     mock: result.mode !== "live",
@@ -82,7 +78,8 @@ export async function handleGenerate(id: string) {
 }
 
 export async function handleEvaluate(id: string) {
-  const course = getCourse(id);
+  const storage = getStorage();
+  const course = await storage.getCourse(id);
   if (!course) return notFound(id);
 
   type GenQ = {
@@ -122,15 +119,16 @@ export async function handleEvaluate(id: string) {
   }
 
   const result = await runEvaluateAgent({ courseId: id, generated });
-  setEvaluation(id, result);
+  await storage.setEvaluation(id, result);
   return Response.json({
     mock: result.mode !== "live",
     ...result,
   });
 }
 
-export function handlePublish(id: string) {
-  const course = getCourse(id);
+export async function handlePublish(id: string) {
+  const storage = getStorage();
+  const course = await storage.getCourse(id);
   if (!course) return notFound(id);
   const evaluation = course.evaluation as
     | { passed?: boolean; scores?: Record<string, number>; questions?: Array<{ passed: boolean }> }
@@ -161,7 +159,7 @@ export function handlePublish(id: string) {
       { status: 422 },
     );
   }
-  setStatus(id, "published");
+  await storage.setStatus(id, "published");
   const published =
     (course.generated as { units?: unknown[] } | undefined)?.units?.length ?? 0;
   return Response.json({
@@ -169,7 +167,8 @@ export function handlePublish(id: string) {
     publishedUnits: published,
     blockedUnits: 0,
     blocked: false,
-    mock: true,
+    mock: course.mock,
+    storage: storage.backend,
   });
 }
 
@@ -183,14 +182,22 @@ export type RefreshBody = {
 /**
  * Selective refresh (AP-16): Hermes passes module/block/source ids derived from
  * curriculum `sourceIds` so only affected content is regenerated.
+ * Course lookup via AP-17 storage layer.
  */
 export async function handleRefresh(id: string, req?: Request) {
-  const course = getCourse(id);
+  const storage = getStorage();
+  const course = await storage.getCourse(id);
   if (!course) return notFound(id);
   const body = (req ? await req.json().catch(() => ({})) : {}) as RefreshBody;
-  const sourceIds = Array.isArray(body.sourceIds) ? body.sourceIds.filter((x) => typeof x === "string") : [];
-  const moduleIds = Array.isArray(body.moduleIds) ? body.moduleIds.filter((x) => typeof x === "string") : [];
-  const blockIds = Array.isArray(body.blockIds) ? body.blockIds.filter((x) => typeof x === "string") : [];
+  const sourceIds = Array.isArray(body.sourceIds)
+    ? body.sourceIds.filter((x) => typeof x === "string")
+    : [];
+  const moduleIds = Array.isArray(body.moduleIds)
+    ? body.moduleIds.filter((x) => typeof x === "string")
+    : [];
+  const blockIds = Array.isArray(body.blockIds)
+    ? body.blockIds.filter((x) => typeof x === "string")
+    : [];
   const selective = sourceIds.length + moduleIds.length + blockIds.length > 0;
   return Response.json({
     courseId: id,
@@ -201,5 +208,6 @@ export async function handleRefresh(id: string, req?: Request) {
     moduleIds,
     blockIds,
     mock: true,
+    storage: storage.backend,
   });
 }
