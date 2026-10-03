@@ -1,1 +1,1 @@
-LOAD_FROM_FILE:/tmp/pr-bundled/DECISIONS-exact.md
+@/tmp/pr-bundled/DECISIONS-exact.md
