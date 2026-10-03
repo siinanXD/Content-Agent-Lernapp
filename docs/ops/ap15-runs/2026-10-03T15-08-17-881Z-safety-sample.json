@@ -1,0 +1,27 @@
+{
+  "note": "10% Stichprobe nach Regen der 110 Dropped Units",
+  "sampledAt": "2026-10-03T15:27:51.919Z",
+  "sampleCount": 20,
+  "unitIds": [
+    "LF1-1-u1",
+    "LF1-1-u8",
+    "LF1-2-u8",
+    "LF1-3-u7",
+    "LF1-5-u2",
+    "LF1-6-u11",
+    "LF1-6-u9",
+    "LF1-8-u2",
+    "LF2-4-u5",
+    "LF2-5-u14",
+    "LF2-8-u4",
+    "M0-1-u9",
+    "M0-3-u10",
+    "M0-3-u19",
+    "M0-4-u10",
+    "M0-4-u6",
+    "PA-2-u10",
+    "PA-3-u1",
+    "PA-4-u1",
+    "PA-5-u4"
+  ]
+}
