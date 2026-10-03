@@ -27,12 +27,19 @@ export type GeneratedUnit = {
   questions: GeneratedQuestion[];
   sourceUrl: string;
   sourceFetchedAt: string;
+  /** Curriculum map refs (AP-14). */
+  moduleId: string;
+  blockId: string;
+  niveau?: string;
+  safetyFlag?: boolean;
 };
 
 export type GeneratedLernfeld = {
   id: string;
   title: string;
   focus: string;
+  moduleId: string;
+  blockId: string;
   units: GeneratedUnit[];
 };
 
@@ -41,12 +48,17 @@ const RLP_URL =
   "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf";
 const FETCHED = "2026-10-02T00:00:00.000Z";
 
-/** One complete Lernfeld: Sicherheit und Gesundheitsschutz bei der Arbeit. */
+/** One complete Lernfeld: Sicherheit — maps to curriculum block M0-3 (AP-14). */
 export function mafSeedLernfeldSicherheit(): GeneratedLernfeld {
+  const moduleId = "M0";
+  const blockId = "M0-3";
+  const niveau = "Grundbildung – wird über beide Jahre verteilt wiederholt";
   return {
     id: "lf-sicherheit",
     title: "Sicherheit und Gesundheitsschutz bei der Arbeit",
     focus: "Metall- und Kunststofftechnik (Pilot)",
+    moduleId,
+    blockId,
     units: [
       {
         id: "lf-sicherheit-u1",
@@ -54,6 +66,10 @@ export function mafSeedLernfeldSicherheit(): GeneratedLernfeld {
         minutes: 8,
         sourceUrl: AO_URL,
         sourceFetchedAt: FETCHED,
+        moduleId,
+        blockId,
+        niveau,
+        safetyFlag: true,
         explanation:
           "Laut Ausbildungsordnung gehören Sicherheit und Gesundheitsschutz zu den verpflichtenden Ausbildungsinhalten. Typische Gefährdungen in der Fertigung sind mechanische Bewegungen, scharfe Kanten, Lärm, Gefahrstoffe und Stolperstellen. Vor jeder Tätigkeit die Gefährdungsbeurteilung des Betriebs beachten und persönliche Schutzausrüstung (PSA) prüfen.",
         questions: [
@@ -125,6 +141,10 @@ export function mafSeedLernfeldSicherheit(): GeneratedLernfeld {
         minutes: 9,
         sourceUrl: AO_URL,
         sourceFetchedAt: FETCHED,
+        moduleId,
+        blockId,
+        niveau,
+        safetyFlag: true,
         explanation:
           "Vor dem Einrichten und Bedienen müssen Schutzeinrichtungen wirksam sein. Der Not-Halt muss erreichbar und funktionsfähig sein. Bei Umrüsten gilt: Energie freischalten, gegen Wiedereinschalten sichern, Restenergie beachten.",
         questions: [
@@ -214,6 +234,10 @@ export function mafSeedLernfeldSicherheit(): GeneratedLernfeld {
         minutes: 7,
         sourceUrl: RLP_URL,
         sourceFetchedAt: FETCHED,
+        moduleId,
+        blockId,
+        niveau,
+        safetyFlag: true,
         explanation:
           "Die Ausbildungsordnung verlangt Umweltschutzkenntnisse. Späne, Öle, Kühlschmierstoffe und Verpackungen sind getrennt zu erfassen. Lecks und Verschmutzungen sofort melden und Fachentsorgung nutzen.",
         questions: [
@@ -279,10 +303,12 @@ export function mafSeedLernfeldSicherheit(): GeneratedLernfeld {
 }
 
 export function lernfeldIsComplete(lf: GeneratedLernfeld): boolean {
-  if (!lf.units.length) return false;
+  if (!lf.units.length || !lf.moduleId || !lf.blockId) return false;
   return lf.units.every(
     (u) =>
       u.explanation.trim().length > 40 &&
+      Boolean(u.moduleId) &&
+      Boolean(u.blockId) &&
       u.questions.length >= 5 &&
       u.questions.length <= 8 &&
       u.questions.every((q) => q.explanation.trim().length > 10 && q.sourceUrl.startsWith("http")) &&
