@@ -66,6 +66,14 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Jede Lerneinheit speichert Quelle und Abrufdatum.
 - Zugangsdaten nie ins Repo (öffentlich).
 
+## Claude als Ersatz-Agent (SIN-205)
+
+- Cursor zuerst. Hat Cursor kein Guthaben, setze das Label `claude` auf das Issue oder kommentiere `@claude`.
+- Der Workflow `.github/workflows/claude.yml` startet Claude (`claude-code-action@v1`, nur für Nutzer mit Schreibrechten).
+- Immer Draft-PR, nie selbst mergen.
+- Commit-Nachrichten enthalten `Part of SIN-xxx` (die Issue-Nummer des Auftrags).
+- Maximal 3 Reparaturrunden pro Pull Request, dann stoppen und den Blocker melden.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
