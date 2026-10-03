@@ -24,6 +24,11 @@ import {
   markWrong,
   saveStack,
 } from "@/lib/learner/leitner";
+import {
+  trackQuestionAnswered,
+  trackUnitCompleted,
+  trackUnitStarted,
+} from "@/lib/analytics";
 
 export default function EinheitPage() {
   const params = useParams<{ unitId: string }>();
@@ -57,6 +62,18 @@ export default function EinheitPage() {
       cancelled = true;
     };
   }, [params.unitId]);
+
+  useEffect(() => {
+    if (!unit) return;
+    trackUnitStarted({
+      unitId: unit.id,
+      unitTitle: unit.title,
+      moduleId: unit.moduleId,
+      variant: unit.variant,
+    });
+    // Fire once per unit id when the Einheit becomes available.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: track by unit.id only
+  }, [unit?.id]);
 
   if (loading) {
     return (
@@ -103,6 +120,14 @@ export default function EinheitPage() {
       setLastCorrect(result.correct);
       setAwaitSelfCheck(false);
       applyLeitner(question.id, result.correct, question.level === "anwenden");
+      trackQuestionAnswered({
+        unitId: unit!.id,
+        questionId: question.id,
+        correct: result.correct,
+        questionType: question.type,
+        level: question.level,
+        selfChecked: true,
+      });
       return;
     }
     if (revealed) return;
@@ -114,6 +139,14 @@ export default function EinheitPage() {
     }
     if (result.correct) setCorrectCount((c) => c + 1);
     applyLeitner(question.id, result.correct, question.level === "anwenden");
+    trackQuestionAnswered({
+      unitId: unit!.id,
+      questionId: question.id,
+      correct: result.correct,
+      questionType: question.type,
+      level: question.level,
+      selfChecked: false,
+    });
   }
 
   function finish(scored: number) {
@@ -135,6 +168,13 @@ export default function EinheitPage() {
         points,
         kind: "unit",
       },
+    });
+    trackUnitCompleted({
+      unitId: unit!.id,
+      unitTitle: unit!.title,
+      correct: scored,
+      total,
+      points,
     });
     router.push("/ergebnis");
   }
