@@ -4,10 +4,17 @@ import { explanationFromSections } from "@/lib/content/didaktik";
 import { lernfeldIsComplete, mafSeedLernfeldSicherheit } from "./maf-lernfeld-seed";
 
 describe("mafSeedLernfeldSicherheit", () => {
-  it("is a complete Lernfeld for AP-05/AP-18 acceptance", () => {
+  it("is a complete Lernfeld for AP-05/AP-14/AP-18 acceptance", () => {
     const lf = mafSeedLernfeldSicherheit();
     assert.equal(lernfeldIsComplete(lf), true);
     assert.ok(lf.units.length >= 3);
+    assert.equal(lf.moduleId, "M0");
+    assert.equal(lf.blockId, "M0-3");
+    for (const u of lf.units) {
+      assert.equal(u.moduleId, "M0");
+      assert.equal(u.blockId, "M0-3");
+      assert.equal(u.safetyFlag, true);
+    }
   });
 
   it("stores sections, variant, levels, examAreas and explanation fallback", () => {
