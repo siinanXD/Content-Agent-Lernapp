@@ -172,13 +172,42 @@ export async function handlePublish(id: string) {
   });
 }
 
-export async function handleRefresh(id: string) {
+export type RefreshBody = {
+  mapId?: string;
+  sourceIds?: string[];
+  moduleIds?: string[];
+  blockIds?: string[];
+};
+
+/**
+ * Selective refresh (AP-16): Hermes passes module/block/source ids derived from
+ * curriculum `sourceIds` so only affected content is regenerated.
+ * Course lookup via AP-17 storage layer.
+ */
+export async function handleRefresh(id: string, req?: Request) {
   const storage = getStorage();
   const course = await storage.getCourse(id);
   if (!course) return notFound(id);
+  const body = (req ? await req.json().catch(() => ({})) : {}) as RefreshBody;
+  const sourceIds = Array.isArray(body.sourceIds)
+    ? body.sourceIds.filter((x) => typeof x === "string")
+    : [];
+  const moduleIds = Array.isArray(body.moduleIds)
+    ? body.moduleIds.filter((x) => typeof x === "string")
+    : [];
+  const blockIds = Array.isArray(body.blockIds)
+    ? body.blockIds.filter((x) => typeof x === "string")
+    : [];
+  const selective = sourceIds.length + moduleIds.length + blockIds.length > 0;
   return Response.json({
     courseId: id,
-    sourcesChanged: false,
+    mapId: body.mapId ?? null,
+    sourcesChanged: selective,
+    selective,
+    sourceIds,
+    moduleIds,
+    blockIds,
     mock: true,
+    storage: storage.backend,
   });
 }
