@@ -1,6 +1,6 @@
 /**
- * AP-15: Lernpfad from published Phase A snapshot (Supabase-backed generation).
- * Falls back to Sicherheit seed only when snapshot missing / empty.
+ * AP-15: Lernpfad from published Phase A (Supabase via /api/learner/phase-a).
+ * Client fetches live units; server helpers use index metadata. Seed fallback if empty.
  */
 import { loadMafCurriculum } from "@/lib/content/curriculum";
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
@@ -9,6 +9,7 @@ import {
   type PathUnitStatus,
   PLAYABLE_UNITS as SEED_UNITS,
 } from "./playable-path";
+import phaseAIndex from "./phase-a-index.json";
 
 export type PhaseASnapshot = {
   courseId: string;
@@ -19,24 +20,17 @@ export type PhaseASnapshot = {
   units: GeneratedUnit[];
 };
 
-let cached: PhaseASnapshot | null | undefined;
+let cachedUnits: PathUnit[] | null = null;
 
-export function loadPhaseASnapshot(): PhaseASnapshot | null {
-  if (cached !== undefined) return cached;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const data = require("./phase-a-published.json") as PhaseASnapshot;
-    cached = data?.units?.length ? data : null;
-  } catch {
-    cached = null;
-  }
-  return cached;
+export function phaseAIndexMeta() {
+  return phaseAIndex;
 }
 
-export function phaseAPathUnits(): PathUnit[] {
-  const snap = loadPhaseASnapshot();
-  if (!snap?.units?.length) return SEED_UNITS;
+export function usingPhaseASnapshot(): boolean {
+  return Boolean(phaseAIndex.courseId && phaseAIndex.unitCount > 0);
+}
 
+export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
   const curriculum = loadMafCurriculum();
   const modTitle = (id?: string) =>
     curriculum.modules.find((m) => m.id === id)?.title ?? id ?? "Modul";
@@ -45,7 +39,7 @@ export function phaseAPathUnits(): PathUnit[] {
     return mod?.blocks.find((b) => b.id === blockId)?.title ?? blockId ?? "Block";
   };
 
-  return snap.units.map((u, index): PathUnit => {
+  return units.map((u, index): PathUnit => {
     let status: PathUnitStatus = "open";
     let statusLabel = "Noch offen";
     if (index < 2) {
@@ -67,7 +61,9 @@ export function phaseAPathUnits(): PathUnit[] {
       explanationSimple: u.explanationSimple,
       variant: u.variant ?? "standard",
       image: u.image,
-      sourceLabel: `Quelle: ${u.sourceUrl.includes("gesetze-im-internet") ? "MaschFüAusbV" : "KMK RLP"}`,
+      sourceLabel: `Quelle: ${
+        u.sourceUrl.includes("gesetze-im-internet") ? "MaschFüAusbV" : "KMK RLP"
+      }`,
       moduleId: u.moduleId ?? "M0",
       moduleTitle: modTitle(u.moduleId),
       blockId: u.blockId ?? "M0-3",
@@ -94,6 +90,25 @@ export function phaseAPathUnits(): PathUnit[] {
   });
 }
 
-export function usingPhaseASnapshot(): boolean {
-  return Boolean(loadPhaseASnapshot()?.units?.length);
+/** Sync path for SSR/tests — seed until client hydrates Phase A from API. */
+export function phaseAPathUnits(): PathUnit[] {
+  if (cachedUnits?.length) return cachedUnits;
+  return usingPhaseASnapshot() ? SEED_UNITS : SEED_UNITS;
+}
+
+export function setPhaseAPathUnits(units: GeneratedUnit[]): PathUnit[] {
+  cachedUnits = mapGeneratedToPathUnits(units);
+  return cachedUnits;
+}
+
+export async function fetchPhaseAPathUnits(): Promise<PathUnit[]> {
+  try {
+    const res = await fetch("/api/learner/phase-a", { cache: "no-store" });
+    if (!res.ok) return phaseAPathUnits();
+    const data = (await res.json()) as { units?: GeneratedUnit[] };
+    if (data.units?.length) return setPhaseAPathUnits(data.units);
+  } catch {
+    /* seed fallback */
+  }
+  return phaseAPathUnits();
 }
