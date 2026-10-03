@@ -53,14 +53,14 @@ export function phaseAChunks(
   const mods = modulesForPhase(c, phaseId);
   const targets: BatchChunkTarget[] = [];
   let unitTarget = 0;
-  for (const module of mods) {
-    for (const block of module.blocks) {
+  for (const mod of mods) {
+    for (const block of mod.blocks) {
       unitTarget += block.units;
       for (let offset = 0; offset < block.units; offset += UNITS_PER_CHUNK) {
         const unitCount = Math.min(UNITS_PER_CHUNK, block.units - offset);
         targets.push({
           customId: `maf-${block.id}-u${offset}-${offset + unitCount - 1}`,
-          module,
+          module: mod,
           block,
           unitOffset: offset,
           unitCount,
@@ -167,9 +167,9 @@ export async function submitRegenBatch(opts: {
   const c = loadMafCurriculum();
   const requests = [];
   for (const spec of opts.unitSpecs) {
-    const module = c.modules.find((m) => m.id === spec.moduleId);
-    const block = module?.blocks.find((b) => b.id === spec.blockId);
-    if (!module || !block) continue;
+    const mod = c.modules.find((m) => m.id === spec.moduleId);
+    const block = mod?.blocks.find((b) => b.id === spec.blockId);
+    if (!mod || !block) continue;
     const offsetMatch = spec.unitId.match(/u(\d+)$/i);
     const unitOffset = offsetMatch ? Math.max(0, Number(offsetMatch[1]) - 1) : 0;
     requests.push({
@@ -180,8 +180,8 @@ export async function submitRegenBatch(opts: {
         messages: [
           {
             role: "user",
-            content: `${chunkPrompt(c, module, block, unitOffset, 1, opts.keyword)}
-Nachbesserung: vorherige Version fiel durch die Qualitäts-Schranke. Eine korrekte Quelle, eine richtige Antwort, Niveau ${module.niveau}. Titel-Hinweis: ${spec.titleHint ?? spec.unitId}.`,
+            content: `${chunkPrompt(c, mod, block, unitOffset, 1, opts.keyword)}
+Nachbesserung: vorherige Version fiel durch die Qualitäts-Schranke. Eine korrekte Quelle, eine richtige Antwort, Niveau ${mod.niveau}. Titel-Hinweis: ${spec.titleHint ?? spec.unitId}.`,
           },
         ],
       },
@@ -323,9 +323,9 @@ function resolveCustomId(
   const m = customId.match(/^(?:maf|regen)-([A-Z0-9]+-\d+)/i);
   const blockId = m?.[1];
   if (!blockId) return null;
-  for (const module of c.modules) {
-    const block = module.blocks.find((b) => b.id === blockId);
-    if (block) return { module, block };
+  for (const mod of c.modules) {
+    const block = mod.blocks.find((b) => b.id === blockId);
+    if (block) return { module: mod, block };
   }
   return null;
 }
