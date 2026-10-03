@@ -32,6 +32,8 @@ Injizierte Secret-Namen:
 | `LANGFUSE_PUBLIC_KEY` | gesetzt | Prefix `pk-lf`; Projekt `Content AGent` auf EU-Host → 200 |
 | `LANGFUSE_SECRET_KEY` | gesetzt | Prefix `sk-lf` |
 | `LANGFUSE_BASE_URL` | gesetzt | offizieller EU-Host (Ireland); US-Host lehnt dieselben Keys mit 401 ab |
+| `LANGFUSE_TRACING_ENVIRONMENT` | optional | SDK v5 env attribute (nicht im Code setzen) |
+| `LANGFUSE_RELEASE` | optional | SDK v5 release attribute (nicht im Code setzen) |
 | `SUPABASE_URL` | **gesetzt** | Host `*.supabase.co`; Auth-Health → 200 |
 | `SUPABASE_ANON_KEY` | **gesetzt** | JWT-Form; Auth-Health mit Anon → 200 |
 | `SUPABASE_SERVICE_ROLE_KEY` | gesetzt | JWT-Form; `/rest/v1/` → 200 |
@@ -62,7 +64,8 @@ Vorlage: `docs/ops/railway.env.example`. Live-Deploy bleibt blockiert, bis Teleg
 
 1. Vercel: `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) an Production/Preview angleichen (Cloud-Agent hat es bereits). Console-API-Credits für AP-15 Batch budgetieren — Max-Abo deckt das nicht (D-33).
 2. `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL` für AP-10 (Railway EU).
-3. Optional AP-16: `LINEAR_API_KEY` + `LINEAR_TEAM_ID` (+ `LINEAR_PROJECT_ID`) für Issues „Quelle geändert: \<Map\>“.
+3. Optional AP-16: `LINEAR_API_KEY` + `LINEAR_TEAM_ID` (+ `LINEAR_PROJECT_ID`) für Issues „Quelle geändert: \<Map\>"
+.
 4. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
 
 ## Check
