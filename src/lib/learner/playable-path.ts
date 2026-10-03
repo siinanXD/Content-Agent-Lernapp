@@ -1,6 +1,39 @@
-import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
+import {
+  resolveExplanation,
+  type QuestionLevel,
+  type UnitImage,
+  type UnitSections,
+  type UnitVariant,
+} from "@/lib/content/didaktik";
+import {
+  mafSeedLernfeldSicherheit,
+  type GeneratedQuestion,
+  type QuestionType,
+} from "@/lib/generate/maf-lernfeld-seed";
 
 export type PathUnitStatus = "done" | "today" | "open";
+
+export type PathQuestion = {
+  id: string;
+  type: QuestionType;
+  level: QuestionLevel;
+  prompt: string;
+  choices?: string[];
+  pairs?: Array<[string, string]>;
+  steps?: string[];
+  blanks?: string[];
+  correct: string | string[];
+  explanation: string;
+  sourceUrl: string;
+  examAreas: string[];
+  image?: UnitImage;
+  sampleSolution?: string;
+  sampleChecklist?: string[];
+};
+
+function requireLevel(level: QuestionLevel | undefined): QuestionLevel {
+  return level ?? "verstehen";
+}
 
 export type PathUnit = {
   id: string;
@@ -10,18 +43,52 @@ export type PathUnit = {
   statusLabel: string;
   minutes: number;
   explanation: string;
+  sections?: UnitSections;
+  explanationSimple?: string;
+  variant: UnitVariant;
+  image?: UnitImage;
   sourceLabel: string;
-  questions: Array<{
-    id: string;
-    prompt: string;
-    choices: string[];
-    correct: string;
+  moduleId: string;
+  moduleTitle: string;
+  blockId: string;
+  blockTitle: string;
+  examAreas: string[];
+  questions: PathQuestion[];
+};
+
+export type PathModuleGroup = {
+  moduleId: string;
+  moduleTitle: string;
+  blocks: Array<{
+    blockId: string;
+    blockTitle: string;
+    units: PathUnit[];
   }>;
 };
 
 const seed = mafSeedLernfeldSicherheit();
 
-/** Figma-aligned path labels; questions from Sicherheit seed (no IHK copies). */
+function mapQuestions(questions: GeneratedQuestion[]): PathQuestion[] {
+  return questions.map((q) => ({
+    id: q.id,
+    type: q.type,
+    level: requireLevel(q.level),
+    prompt: q.prompt,
+    choices: q.choices,
+    pairs: q.pairs,
+    steps: q.steps,
+    blanks: q.blanks,
+    correct: q.correct,
+    explanation: q.explanation,
+    sourceUrl: q.sourceUrl,
+    examAreas: q.examAreas ?? [],
+    image: q.image,
+    sampleSolution: q.sampleSolution,
+    sampleChecklist: q.sampleChecklist,
+  }));
+}
+
+/** Figma-aligned path; questions from Sicherheit seed + didactic fields (AP-18). */
 export const PLAYABLE_UNITS: PathUnit[] = [
   {
     id: "unit-01",
@@ -29,10 +96,19 @@ export const PLAYABLE_UNITS: PathUnit[] = [
     title: "PSA und Arbeitsplatz",
     status: "done",
     statusLabel: "Abgeschlossen",
-    minutes: seed.units[0].minutes,
-    explanation: seed.units[0].explanation,
+    minutes: seed.units[0]!.minutes,
+    explanation: seed.units[0]!.explanation,
+    sections: seed.units[0]!.sections,
+    explanationSimple: seed.units[0]!.explanationSimple,
+    variant: seed.units[0]!.variant ?? "sicherheit",
+    image: seed.units[0]!.image,
     sourceLabel: "Quelle: MaschFüAusbV · KMK RLP MAF",
-    questions: toChoices(seed.units[0].questions),
+    moduleId: "M0",
+    moduleTitle: "Querschnitt: Beruf, Betrieb, Sicherheit",
+    blockId: "M0-3",
+    blockTitle: "Sicherheit und Gesundheitsschutz",
+    examAreas: ["WISO-1"],
+    questions: mapQuestions(seed.units[0]!.questions),
   },
   {
     id: "unit-02",
@@ -40,10 +116,17 @@ export const PLAYABLE_UNITS: PathUnit[] = [
     title: "Gefährdungsbeurteilung",
     status: "done",
     statusLabel: "Abgeschlossen",
-    minutes: seed.units[0].minutes,
-    explanation: seed.units[0].explanation,
+    minutes: seed.units[0]!.minutes,
+    explanation: seed.units[0]!.explanation,
+    sections: seed.units[0]!.sections,
+    variant: "sicherheit",
     sourceLabel: "Quelle: MaschFüAusbV · KMK RLP MAF",
-    questions: toChoices(seed.units[0].questions.slice(0, 4)),
+    moduleId: "M0",
+    moduleTitle: "Querschnitt: Beruf, Betrieb, Sicherheit",
+    blockId: "M0-3",
+    blockTitle: "Sicherheit und Gesundheitsschutz",
+    examAreas: ["WISO-1"],
+    questions: mapQuestions(seed.units[0]!.questions.slice(0, 5)),
   },
   {
     id: "unit-03",
@@ -52,27 +135,21 @@ export const PLAYABLE_UNITS: PathUnit[] = [
     status: "today",
     statusLabel: "Teil des Tagesziels",
     minutes: 7,
-    explanation:
-      "Vor Arbeiten an Anlagen gilt: spannungsfrei schalten, gegen Wiedereinschalten sichern, Spannungsfreiheit feststellen. PSA und Freigabe sind Pflicht laut MaschFüAusbV und RLP Lernfeld Sicherheit.",
+    explanation: seed.units[1]!.explanation,
+    sections: seed.units[1]!.sections,
+    explanationSimple: seed.units[1]!.explanationSimple,
+    variant: "ablauf",
+    image: seed.units[1]!.image,
     sourceLabel: "Quelle: MaschFüAusbV · KMK RLP MAF",
-    questions: [
-      {
-        id: "e1",
-        prompt:
-          "Was ist der erste Schritt vor dem Öffnen einer Schaltschranktür unter Spannung?",
-        choices: [
-          "Sofort die Tür öffnen",
-          "Freischalten und Spannungsfreiheit feststellen",
-          "Nur Handschuhe anziehen",
-          "Den Meister anrufen und warten",
-        ],
-        correct: "Freischalten und Spannungsfreiheit feststellen",
-      },
-      ...toChoices(seed.units[1].questions.slice(0, 5)).map((q, i) => ({
-        ...q,
-        id: `e${i + 2}`,
-      })),
-    ],
+    moduleId: "M0",
+    moduleTitle: "Querschnitt: Beruf, Betrieb, Sicherheit",
+    blockId: "M0-3",
+    blockTitle: "Sicherheit und Gesundheitsschutz",
+    examAreas: ["WISO-1"],
+    questions: mapQuestions(seed.units[1]!.questions).map((q, i) => ({
+      ...q,
+      id: `e${i + 1}`,
+    })),
   },
   {
     id: "unit-04",
@@ -80,10 +157,22 @@ export const PLAYABLE_UNITS: PathUnit[] = [
     title: "Not-Aus und Verriegelung",
     status: "today",
     statusLabel: "Teil des Tagesziels",
-    minutes: seed.units[1].minutes,
-    explanation: seed.units[1].explanation,
+    minutes: seed.units[1]!.minutes,
+    explanation: seed.units[1]!.explanation,
+    sections: seed.units[1]!.sections,
+    variant: "ablauf",
+    image: seed.units[1]!.image,
     sourceLabel: "Quelle: MaschFüAusbV · KMK RLP MAF",
-    questions: toChoices(seed.units[1].questions),
+    moduleId: "LF1",
+    moduleTitle: "Fertigen von Bauelementen mit handgeführten Werkzeugen",
+    blockId: "LF1-1",
+    blockTitle: "Planen und Vorbereiten",
+    examAreas: ["PT-a", "PT-c"],
+    questions: mapQuestions(seed.units[1]!.questions).map((q, i) => ({
+      ...q,
+      id: `n${i + 1}`,
+      examAreas: ["PT-a", "PT-c"],
+    })),
   },
   {
     id: "unit-05",
@@ -92,9 +181,20 @@ export const PLAYABLE_UNITS: PathUnit[] = [
     status: "open",
     statusLabel: "Noch offen",
     minutes: 8,
-    explanation: seed.units[2].explanation,
+    explanation: seed.units[2]!.explanation,
+    sections: seed.units[2]!.sections,
+    variant: "standard",
     sourceLabel: "Quelle: MaschFüAusbV · KMK RLP MAF",
-    questions: toChoices(seed.units[2].questions),
+    moduleId: "LF1",
+    moduleTitle: "Fertigen von Bauelementen mit handgeführten Werkzeugen",
+    blockId: "LF1-2",
+    blockTitle: "Fertigen und Prüfen",
+    examAreas: ["PT-e"],
+    questions: mapQuestions(seed.units[2]!.questions).map((q, i) => ({
+      ...q,
+      id: `r${i + 1}`,
+      examAreas: ["PT-e", "WISO-1"],
+    })),
   },
   {
     id: "unit-06",
@@ -103,14 +203,25 @@ export const PLAYABLE_UNITS: PathUnit[] = [
     status: "open",
     statusLabel: "Noch offen",
     minutes: 8,
-    explanation: seed.units[2].explanation,
+    explanation: seed.units[2]!.explanation,
+    sections: seed.units[2]!.sections,
+    variant: "sicherheit",
     sourceLabel: "Quelle: MaschFüAusbV · KMK RLP MAF",
-    questions: toChoices(seed.units[2].questions.slice(0, 4)),
+    moduleId: "PA",
+    moduleTitle: "Produktionsanlagen bedienen und warten",
+    blockId: "PA-1",
+    blockTitle: "In Betrieb nehmen",
+    examAreas: ["PT-d"],
+    questions: mapQuestions(seed.units[2]!.questions.slice(0, 5)).map((q, i) => ({
+      ...q,
+      id: `b${i + 1}`,
+      examAreas: ["PT-d", "WISO-1"],
+    })),
   },
 ];
 
 export const PLAYABLE_TODAY = {
-  goal: "4 Einheiten · Sicherheit und Gesundheitsschutz",
+  goal: "Fällige Wiederholungen zuerst, dann neue Einheiten · Sicherheit",
   occupation: "Maschinen- und Anlagenführer · Prüfungsvorbereitung",
   nextTitle: "Not-Aus und Verriegelung",
 };
@@ -119,20 +230,32 @@ export function getUnit(id: string): PathUnit | undefined {
   return PLAYABLE_UNITS.find((u) => u.id === id);
 }
 
-function toChoices(
-  questions: Array<{
-    id: string;
-    prompt: string;
-    choices?: string[];
-    correct: string | string[];
-  }>,
-) {
-  return questions
-    .filter((q) => q.choices && q.choices.length > 0)
-    .map((q) => ({
-      id: q.id,
-      prompt: q.prompt,
-      choices: q.choices!,
-      correct: Array.isArray(q.correct) ? q.correct[0]! : q.correct,
-    }));
+export function getQuestionById(id: string): PathQuestion | undefined {
+  for (const u of PLAYABLE_UNITS) {
+    const q = u.questions.find((item) => item.id === id);
+    if (q) return q;
+  }
+  return undefined;
+}
+
+export function groupUnitsByModule(units: PathUnit[] = PLAYABLE_UNITS): PathModuleGroup[] {
+  const modules = new Map<string, PathModuleGroup>();
+  for (const unit of units) {
+    let mod = modules.get(unit.moduleId);
+    if (!mod) {
+      mod = { moduleId: unit.moduleId, moduleTitle: unit.moduleTitle, blocks: [] };
+      modules.set(unit.moduleId, mod);
+    }
+    let block = mod.blocks.find((b) => b.blockId === unit.blockId);
+    if (!block) {
+      block = { blockId: unit.blockId, blockTitle: unit.blockTitle, units: [] };
+      mod.blocks.push(block);
+    }
+    block.units.push(unit);
+  }
+  return [...modules.values()];
+}
+
+export function unitExplanation(unit: PathUnit, simpleLanguage: boolean): string {
+  return resolveExplanation(unit, simpleLanguage);
 }

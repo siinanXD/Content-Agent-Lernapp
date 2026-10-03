@@ -3,6 +3,7 @@ import {
   mafSeedLernfeldSicherheit,
   type GeneratedLernfeld,
 } from "./maf-lernfeld-seed";
+import { buildDidaktikKeywordPrompt } from "./didaktik-prompts";
 
 export type GenerateAgentResult = {
   lernfeld: GeneratedLernfeld;
@@ -15,9 +16,12 @@ export type GenerateAgentResult = {
 const GENERATOR_MODEL = "claude-sonnet-5-5";
 
 /**
- * Generate one complete Lernfeld (explanation + 5–8 questions per unit).
- * Seed path meets AP-05 without API key. Live uses Messages; Batch API when
- * ANTHROPIC_API_KEY set and `useBatch` requested (DECISIONS D-06 / D-17).
+ * Generate one complete Lernfeld (sections + 5–8 questions per unit).
+ * Seed path meets AP-05/AP-18 without API key. Live uses Messages; Batch API when
+ * ANTHROPIC_API_KEY set and `useBatch` requested (DECISIONS D-06 / D-17 / D-31).
+ *
+ * Note: AP-14 PR #20 still binds to v1 maf-curriculum.json — after merge, switch
+ * live/batch prompts to buildDidaktikBlockPrompt(loadCurriculum(...), mod, block).
  */
 export async function runGenerateAgent(opts: {
   keyword: string;
@@ -30,7 +34,7 @@ export async function runGenerateAgent(opts: {
       lernfeld,
       mode: "seed",
       warning: lernfeldIsComplete(lernfeld)
-        ? "ANTHROPIC_API_KEY missing — seed Lernfeld 'Sicherheit'. Set key for live/Batch generate."
+        ? "ANTHROPIC_API_KEY missing — seed Lernfeld 'Sicherheit' (Didaktik sections/variants). Set key for live/Batch generate."
         : "Seed Lernfeld incomplete.",
     };
   }
@@ -84,7 +88,7 @@ async function runLiveGenerate(key: string, keyword: string): Promise<GenerateAg
       messages: [
         {
           role: "user",
-          content: generatePrompt(keyword),
+          content: buildDidaktikKeywordPrompt(keyword, "sicherheit"),
         },
       ],
     }),
@@ -126,7 +130,12 @@ async function submitBatchGenerate(
           params: {
             model: GENERATOR_MODEL,
             max_tokens: 8192,
-            messages: [{ role: "user", content: generatePrompt(keyword) }],
+            messages: [
+              {
+                role: "user",
+                content: buildDidaktikKeywordPrompt(keyword, "sicherheit"),
+              },
+            ],
           },
         },
       ],
@@ -139,23 +148,14 @@ async function submitBatchGenerate(
   }
 
   const data = (await res.json()) as { id?: string };
-  // Until batch completes, return seed so pipeline stays usable; caller can poll later.
   return {
     lernfeld: mafSeedLernfeldSicherheit(),
     mode: "batch-pending",
     modelId: GENERATOR_MODEL,
     batchId: data.id,
     warning:
-      "Batch submitted; returning seed Lernfeld until results are polled (AP-05 scaffold).",
+      "Batch submitted; returning seed Lernfeld until results are polled (AP-05/AP-18 scaffold).",
   };
-}
-
-function generatePrompt(keyword: string): string {
-  return `Erzeuge EIN vollständiges Lernfeld als JSON für "${keyword}", Fokus Sicherheit und Gesundheitsschutz.
-3 Einheiten, je kurze Erklärung, 5–8 Fragen (Typen: auswahl|zuordnen|lueckentext|reihenfolge|rechnen), jede mit explanation und sourceUrl (amtliche AO/RLP-Links).
-Keine IHK-Originalprüfungen, keine Personendaten.
-Schema: {"id":string,"title":string,"focus":string,"units":[{"id":string,"title":string,"minutes":number,"explanation":string,"sourceUrl":string,"sourceFetchedAt":string,"questions":[{"id":string,"type":string,"prompt":string,"choices":string[],"correct":string|string[],"explanation":string,"sourceUrl":string}]}]}
-Nur JSON.`;
 }
 
 function parseLernfeldJson(text: string): GeneratedLernfeld | null {

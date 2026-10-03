@@ -29,9 +29,11 @@ Stand 2026-10-03 · Status aller Maps: **Entwurf, Freigabe durch Sinan offen** �
 
 ## Aufbau einer Map
 
+Wie eine Einheit innen aufgebaut ist (Erklärung, Fragestufen, Wiederholung, Prüfungsmodus, Bilder), steht in [`DIDAKTIK.md`](DIDAKTIK.md) (AP-18, D-31). Prompt-Schablonen der vier Varianten (`standard` / `ablauf` / `rechnen` / `sicherheit`) liegen in `src/lib/generate/didaktik-prompts.ts` (`buildDidaktikBlockPrompt`, `buildDidaktikKeywordPrompt`). Phase-A-Bilder: `npm run content:mermaid` → `public/generated/*.svg`.
+
 1. **Modul** = Lernfeld (Schule), Kernbereich aus der Ausbildungsordnung (Betrieb), Querschnitt oder Prüfungstraining
 2. **Block** = Themenblock mit Quellen-IDs (Ausbildungsordnung/Anlage und/oder Rahmenlehrplan)
-3. **Einheit** = 5–10 Minuten: kurze Erklärung, 5–8 Fragen (Auswahl, Zuordnen, Lückentext, Reihenfolge, Rechnen), jede Antwort mit Erklärung und Quelle
+3. **Einheit** = 5–10 Minuten: `sections` (einstieg/kern/beispiel/merksatz) + `explanation`-Fallback, 5–8 Fragen mit Stufe `erinnern`/`verstehen`/`anwenden`, optional generiertes SVG
 
 Jedes Modul trägt Jahr, Niveau für den Richter, AO-Berufsbildpositionen, Prüfungsgebiete, Einheiten-Ziel, Fragetypen-Mix und ein Sicherheitsmerkmal (dann 10 % Stichprobe durch einen Menschen). Einheiten-Budget: 1 Einheit je Unterrichtsstunde des Rahmenlehrplans; übrige Module nach Gewicht in Anlage und Prüfungsordnung.
 
@@ -45,25 +47,14 @@ Jedes Modul trägt Jahr, Niveau für den Richter, AO-Berufsbildpositionen, Prüf
 4. Jede Plan-Einheit trägt `moduleId`, `blockId`, `sourceKind` und `niveau`, damit Generate und Evaluate dieselbe Referenz nutzen.
 5. Industriekaufleute: Modul `EG` nur mit Block `EG-0` plus dem Block des gewählten Einsatzgebiets.
 
-**Inhalts-Agent** (`src/lib/generate/generate-agent.ts`)
+**Inhalts-Agent** (`src/lib/generate/generate-agent.ts` + `didaktik-prompts.ts`)
 
-1. Ein Batch-Request **pro Block**. Eingabe: Blocktitel, Themenliste, Quellen-URLs aus `blockSources()`, Jahr und Niveau, Fragetypen-Mix, Anzahl Einheiten.
-2. Ausgabe im bestehenden Schema (`GeneratedLernfeld` → `GeneratedUnit` → `GeneratedQuestion`) plus `moduleId` und `blockId`.
-3. Pflicht im Prompt: nur die genannten Quellen zitieren, `sourceFetchedAt` setzen, keine IHK-Aufgaben, keine Personendaten, einfache Sprache.
-4. Blöcke mit `rechnen` liefern Rechenfragen mit Rechenweg; Blöcke mit `safety` setzen `safetyFlag`.
+1. Ein Batch-Request **pro Block**. Eingabe: Blocktitel, Themenliste, Quellen-URLs aus `blockSources()`, Jahr und Niveau, Fragetypen-Mix, Anzahl Einheiten, Didaktik-Variante.
+2. Ausgabe: `GeneratedLernfeld` → `GeneratedUnit` (`sections`, `variant`, `image?`, `explanation` Fallback) → `GeneratedQuestion` (`level`, `examAreas`, optional `sampleSolution`).
+3. Pflicht im Prompt: nur die genannten Quellen zitieren, `sourceFetchedAt` setzen, keine IHK-Aufgaben, keine Personendaten, einfache Sprache, keine KI-Bewertung offener Antworten.
+4. Blöcke mit `rechnen` → Variante rechnen + Rechenweg; Blöcke mit `safety` → Variante sicherheit + `safetyFlag`.
 
-Prompt-Gerüst für einen Block:
-
-```text
-Erzeuge {units} Lerneinheiten (je 5–10 Minuten) für den Block "{block.title}" im Modul "{module.title}"
-der Ausbildung {keyword}, {variantLabel}, Ausbildungsjahr {year}. Niveau: {niveau}.
-Themen, die abgedeckt werden müssen: {topics}.
-Erlaubte Quellen (nur diese zitieren, URL in sourceUrl, Abrufdatum {fetchedAt} in sourceFetchedAt): {sourceUrls}.
-Je Einheit: kurze Erklärung in einfacher Sprache, dann 5–8 Fragen. Fragetypen-Mix in Prozent: {questionMix}.
-Jede Frage hat genau eine richtige Antwort, eine Erklärung mit Bezug zur Quelle und sourceUrl.
-Verboten: IHK-Prüfungsaufgaben oder deren Umformulierung, Personendaten, Inhalte ohne Quelle.
-Antworte nur mit JSON nach Schema: { ... }
-```
+Prompt-Gerüst: `buildDidaktikBlockPrompt(curriculum, module, block)` (vier Varianten). AP-14 (PR #20) bitte nach Merge auf diese Funktion umstellen statt des v1-`explanation`-only-Skeletts.
 
 **Richter / Qualitäts-Schranke** (`src/lib/quality/*`)
 

@@ -1,0 +1,87 @@
+/**
+ * AP-18e: Generate prompt templates for the four didactic variants.
+ * Used by generate-agent; AP-14 (PR #20) should call buildDidaktikBlockPrompt
+ * instead of the v1 explanation-only skeleton after rebase onto this schema.
+ */
+
+import {
+  variantFromBlock,
+  type UnitVariant,
+} from "@/lib/content/didaktik";
+import {
+  blockSources,
+  type Curriculum,
+  type CurriculumBlock,
+  type CurriculumModule,
+  type QuestionMix,
+} from "@/lib/content/curriculum";
+
+const VARIANT_RULES: Record<UnitVariant, string> = {
+  standard:
+    "Variante standard: sections.einstieg (1 Satz Praxis), sections.kern (≤120 Wörter), sections.beispiel (≤60 Wörter), sections.merksatz (≤15 Wörter).",
+  ablauf:
+    "Variante ablauf: sections.kern als nummerierte Schritte (3–7). image.kind=flow aus genau diesen Schritten (Mermaid → SVG). generatedFrom = Mermaid-Quelltext.",
+  rechnen:
+    "Variante rechnen: sections.kern nennt Größen, Einheiten und Formel; sections.beispiel ist vollständiger Rechenweg; sections.merksatz = Formel in Worten. Rechenfragen mit Toleranz/Rundung und sampleSolution.",
+  sicherheit:
+    "Variante sicherheit: sections.kern in Folge Gefahr → Regel → Folge bei Verstoß. image.kind=sign wenn sinnvoll. safetyFlag=true auf jeder Einheit. 10 % menschliche Stichprobe vor publish.",
+};
+
+export function formatMix(mix: QuestionMix): string {
+  return (Object.entries(mix) as Array<[keyof QuestionMix, number]>)
+    .map(([k, v]) => `${k}=${v}%`)
+    .join(", ");
+}
+
+export function didaktikSchemaHint(): string {
+  return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
+Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter mit Quelle.
+Offene Aufgaben (rechnen/kurze Begründung): nur sampleSolution + sampleChecklist zur Selbstkontrolle — keine KI-Bewertung.
+Phase A: nur generierte SVG (license Generated-SVG), keine Commons-/KI-Bilder.
+explanation muss immer gesetzt sein (Fallback aus sections).`;
+}
+
+/** Full block prompt with variant rules (AP-14/AP-15 contract). */
+export function buildDidaktikBlockPrompt(
+  c: Curriculum,
+  mod: CurriculumModule,
+  block: CurriculumBlock,
+): string {
+  const sources = blockSources(c, block);
+  const fetchedAt = sources[0]?.fetchedAt ?? c.version;
+  const sourceUrls =
+    sources.map((s) => s.url).join(" | ") || "(amtliche AO/RLP-Quellen)";
+  const variant = variantFromBlock({
+    rechnen: block.rechnen,
+    safety: block.safety || mod.safety,
+    topics: block.topics,
+  });
+  const examAreas = mod.examAreas.join(", ") || "(keine)";
+
+  return `Erzeuge ${block.units} Lerneinheiten (je 5–10 Minuten) für den Block "${block.title}" im Modul "${mod.title}"
+der Ausbildung ${c.keyword}${c.variantLabel ? `, ${c.variantLabel}` : ""}, Ausbildungsjahr ${mod.year}.
+Niveau: ${mod.niveau}. Themen: ${block.topics.join("; ")}.
+Erlaubte Quellen (nur diese zitieren, URL in sourceUrl, Abrufdatum ${fetchedAt} in sourceFetchedAt): ${sourceUrls}.
+Fragetypen-Mix in Prozent: ${formatMix(mod.questionMix)}.
+examAreas je Frage aus dem Modul: [${examAreas}].
+Didaktik-Variante für diesen Block: ${variant}.
+${VARIANT_RULES[variant]}
+Verboten: IHK-Prüfungsaufgaben oder Umformulierung, Personendaten, Inhalte ohne Quelle, KI-Bewertung von Lernenden.
+Jede Einheit trägt moduleId="${mod.id}", blockId="${block.id}", variant="${variant}".
+${didaktikSchemaHint()}
+Antworte nur mit JSON: {"id","title","focus","moduleId","blockId","units":[...]}`;
+}
+
+/** Lightweight keyword prompt (seed/live without map block) — still enforces 4 variants. */
+export function buildDidaktikKeywordPrompt(keyword: string, variant: UnitVariant = "sicherheit"): string {
+  return `Erzeuge EIN vollständiges Lernfeld als JSON für "${keyword}", Fokus Sicherheit und Gesundheitsschutz.
+3 Einheiten, Variante ${variant}. ${VARIANT_RULES[variant]}
+Je Einheit sections + explanation-Fallback, 5–8 Fragen mit level und examAreas (z.B. WISO-1).
+Typen: auswahl|zuordnen|lueckentext|reihenfolge|rechnen. Bildfragen als auswahl/zuordnen mit image.
+${didaktikSchemaHint()}
+Keine IHK-Originalprüfungen, keine Personendaten. Nur JSON.`;
+}
+
+export function variantRules(): Record<UnitVariant, string> {
+  return { ...VARIANT_RULES };
+}

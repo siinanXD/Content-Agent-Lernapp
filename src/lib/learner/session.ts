@@ -1,3 +1,5 @@
+import type { AreaResult } from "@/lib/learner/exam";
+
 export type LearnerSession = {
   keyword: string;
   variant: "pruefung" | "weiterbildung";
@@ -9,6 +11,9 @@ export type LearnerSession = {
     correct: number;
     total: number;
     points: number;
+    kind?: "unit" | "exam" | "review";
+    areaResults?: AreaResult[];
+    partTitle?: string;
   };
 };
 

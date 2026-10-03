@@ -6,13 +6,16 @@ import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { Progress } from "@/components/ui/progress";
 import { loadSession, type LearnerSession } from "@/lib/learner/session";
+import { loadStack, stackSize } from "@/lib/learner/leitner";
 
 export default function ProfilPage() {
   const [session, setSession] = useState<LearnerSession | null>(null);
+  const [reviewSize, setReviewSize] = useState(0);
   const { prefs, setPrefs } = useA11y();
 
   useEffect(() => {
     setSession(loadSession());
+    setReviewSize(stackSize(loadStack()));
   }, []);
 
   const daysDone = 15;
@@ -64,6 +67,17 @@ export default function ProfilPage() {
           value={(session?.totalPoints ?? 1840).toLocaleString("de-DE")}
         />
         <MetaRow label="Nächste Prüfungsthemen" value="Sicherheit, Fertigungstechnik" />
+        <MetaRow label="Wiederholungsstapel" value={`${reviewSize} Fragen`} />
+        <MetaRow
+          label="Prüfungsreife (Demo)"
+          value={
+            session?.lastResult?.areaResults?.length
+              ? session.lastResult.areaResults
+                  .map((a) => `${a.areaId}: ${a.label}`)
+                  .join(" · ")
+              : "Noch keine Prüfung absolviert"
+          }
+        />
 
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
           <p className="text-sm font-medium text-[var(--color-text-primary)]">
