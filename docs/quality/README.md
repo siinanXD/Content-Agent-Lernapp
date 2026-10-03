@@ -1,5 +1,15 @@
 # AP-06 Quality gate (Langfuse EU)
 
+## Langfuse v4 / SDK v5
+
+Tracing uses **JS/TS SDK v5** (`@langfuse/tracing`, `@langfuse/otel`, `@langfuse/client` ≥ **5.4.0** / current **5.11.1**) with OpenTelemetry export to Langfuse Cloud EU. Legacy `POST /api/public/ingestion` trace events are not used (see [upgrade to v4](https://langfuse.com/faq/all/upgrade-to-langfuse-v4), [JS/TS v4 → v5](https://langfuse.com/docs/observability/sdk/upgrade-path/js-v4-to-v5), [custom ingestion migration](https://langfuse.com/integrations/native/opentelemetry/migration-to-v4)).
+
+- Root observation carries overall evaluate input/output.
+- Correlating attributes (`tags`, `metadata`, `traceName`) via `propagateAttributes`.
+- Scores via `LangfuseClient.score` (observation-level).
+- Goldset via `api.datasets` + `dataset.createItem` / `dataset.get`.
+- Next.js registers the processor in `src/instrumentation.ts`.
+
 ## Thresholds (PRODUCT.md)
 
 Hard publish gate (blocks `/publish`):
