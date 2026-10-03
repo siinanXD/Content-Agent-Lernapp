@@ -139,4 +139,39 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 ### D-25 — AP-06 live: 70 AO/BIBB goldset in Langfuse EU + OpenAI judge calibration
 
 - **Links:** [MaschFüAusbV](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html); [§ 8 Zwischenprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__8.html); [§ 9 Abschlussprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__9.html); [BIBB 51121](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121); [Langfuse Evaluation](https://langfuse.com/docs/evaluation/overview.md); [GPT-5.4 Mini](https://developers.openai.com/api/docs/models/gpt-5.4-mini); D-07; D-11; `docs/quality/maf-goldset-70.json`
-- **Entscheidung:** Goldset = **70 selbst verfasste Übungsfragen** aus Ausbildungsordnung/BIBB (Abruf 2026-10-02), **keine IHK-Originale**. Dataset `maf-goldset-70` in Langfuse Cloud EU. Richter **`gpt-5.4-mini`** (Chat Completions, JSON) — Anthropic-Judge nicht genutzt (D-07 zweite Familie; Workspace-Header nur falls Claude später 400/401 liefert). Live-Kalibrierung 2026-10-02: 45/70 PASS, Ziel `sourceFidelity=1`, `uniqueness=1`, `niveau=4`, `language=4.9`, Kosten ~0.08 USD. **Publish-Hartgatter = PRO
+- **Entscheidung:** Goldset = **70 selbst verfasste Übungsfragen** aus Ausbildungsordnung/BIBB (Abruf 2026-10-02), **keine IHK-Originale**. Dataset `maf-goldset-70` in Langfuse Cloud EU. Richter **`gpt-5.4-mini`** (Chat Completions, JSON) — Anthropic-Judge nicht genutzt (D-07 zweite Familie; Workspace-Header nur falls Claude später 400/401 liefert). Live-Kalibrierung 2026-10-02: 45/70 PASS, Ziel `sourceFidelity=1`, `uniqueness=1`, `niveau=4`, `language=4.9`, Kosten ~0.08 USD. **Publish-Hartgatter = PRODUCT** (`language≥4`); Goldset-`language=4.9` ist Baseline, nicht 422-Schwelle. Live-`/evaluate` schreibt Trace + Scores nach Langfuse; `/publish` bleibt 409 ohne Evaluate und 422 unter Schwelle.
+- **Warum:** SIN-184 Done-Kriterium; Keys sind vorhanden; D-07 gilt weiter; günstigstes bestätigtes Mini-Modell; €20-Deckel (Kalibrierung ≪ 20 USD).
+
+### D-19 — AP-07 Figma Design-System + Token-Spiegel (Freigabe Sinan)
+
+- **Links:** [Figma: Content-Agent-Lernapp Design](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz); `docs/design/FIGMA.md`; `docs/design/tokens.json`; `src/app/globals.css`; Linear [SIN-185](https://linear.app/sinan-kahraman/issue/SIN-185/ap-07-figma-design-system-und-5-screens)
+- **Entscheidung:** Design-System in Figma angelegt (Color/Spacing/Radius-Variablen; Komponenten Button, Input, Progress, OptionChoice; 5 Screens Start→Profil). CSS-Token-Spiegel im Repo. Visuelle Richtung: Teal `#0B5F6E` / Hero `#0A3D4A` / Accent Messing `#A67C00` / Canvas `#EAF0F4`; Typo Space Grotesk + IBM Plex Sans; WCAG 2.2 AA ≥4,5:1. Bewusst ohne Cream/Terracotta- und Lila-Klischees. **Keine automatische Done-Markierung** — **Freigabe durch Sinan erforderlich**, bevor AP-08 die Datei als verbindlich nutzt.
+- **Warum:** PRODUCT.md verlangt einmaliges Figma der 5 Hauptscreens und menschliche Freigabe; Code-Agenten sollen Tokens nicht erfinden.
+
+### D-20 — AP-08 Learner UI: playable path from approved Figma
+
+- **Links:** Figma `0SWGDO2ioBD3MyXiAnrbRz`; routes `/`, `/lernpfad`, `/einheit/[unitId]`, `/ergebnis`, `/profil`; Linear [SIN-186](https://linear.app/sinan-kahraman/issue/SIN-186/ap-08-5-hauptscreens-spielbar)
+- **Entscheidung:** App Router screens implementieren die 5 freigegebenen Figma-Hauptscreens mit Token-Spiegel; spielbarer Pfad Start→Lernpfad→Einheit→Ergebnis (sessionStorage). Inhalt aus MAF-Sicherheit-Seed / AO-RLP-Copy, keine IHK-Aufgaben.
+- **Warum:** SIN-186 Akzeptanz = eine Einheit spielbar; Design nach Sinan-Freigabe verbindlich.
+
+### D-21 — AP-09 a11y gates + offline shell
+
+- **Links:** [axe-core](https://github.com/dequelabs/axe-core); Playwright `@axe-core/playwright`; Lighthouse accessibility category; Linear [SIN-187](https://linear.app/sinan-kahraman/issue/SIN-187/ap-09-barrierefreiheit-und-offline); workflow `.github/workflows/a11y.yml`
+- **Entscheidung:** CI blockiert bei axe critical/serious und Lighthouse a11y unter 0.9. Service Worker cached Learner-Shell (`public/sw.js`). Profil-Schalter: Einfache Sprache + Vorlesen (`speechSynthesis`). Gates nicht abschaltbar.
+- **Warum:** PRODUCT.md / D-10; Offline und alte Android-Geräte; SIN-187 Akzeptanz.
+
+### D-22 — AP-10 Hermes: scaffold/docs only until Telegram secrets
+
+- **Links:** [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent); Railway EU; Linear [SIN-188](https://linear.app/sinan-kahraman/issue/SIN-188/ap-10-hermes-betrieb); `docs/ops/HERMES.md`
+- **Entscheidung:** Runbook + `hermes:dry-run` gegen Seed-Quellen shippen. **Kein** Live-Deploy: `RAILWAY_API_TOKEN` allein reicht nicht (Telegram-Bot/Chat + Hermes-Config fehlen). Manueller Pipeline-Start bleibt gültig (D-09).
+- **Warum:** AP-10 darf ohne Ops-Secrets nicht blockieren; Entscheidung dokumentiert statt Pseudo-Telegram.
+
+### D-23 — AP-11 Pilot: seed/fixture path without live LLM
+
+- **Links:** Linear [SIN-189](https://linear.app/sinan-kahraman/issue/SIN-189/ap-11-pilotkurs-maf-komplett); `docs/pilot/MAF-PILOT.md`; `npm run pilot:maf`; Deckel €20/Kurslauf
+- **Entscheidung:** Pilot akzeptiert den **Seed/Fixture**-Pfad (create→research→plan→generate→evaluate→publish) mit `liveLlm: false` und `estimatedCostEur: 0`. Live-Langfuse-Kosten/Bewertung folgen, sobald Keys da sind.
+- **Warum:** Secrets absent; Publish-Gate und AO/RLP-Seeds decken die Pipeline-Akzeptanz für diesen Boot.
+
+### D-24 — AP-12 Learning loop: fixture scaffold, no PII, no training
+
+- **Links:** Linear [SIN-190](https://linear.app/sinan-kahraman/issue/SIN-190/ap-12-lern-sc
