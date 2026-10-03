@@ -66,6 +66,13 @@ Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF
 
 First live course slice after the curriculum map: modules `M0`, `LF1`, `LF2`, `PA` (~280 units), generate with Claude Batch, judge with OpenAI mini, publish only through the quality gate. Tracked in [SIN-193](https://linear.app/sinan-kahraman/issue/SIN-193). Costs and scores should land in Langfuse Cloud EU — prefer completing the v4 cutover ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197) / [PR #17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17)) before relying on dashboards for that run.
 
+```bash
+npm run ap15:phase-a:dry
+npm run ap15:phase-a
+```
+
+Artifacts land in `docs/ops/AP15-PHASE-A.md` and `docs/ops/ap15-runs/`.
+
 ## Deploy
 
 Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).

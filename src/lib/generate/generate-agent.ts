@@ -1,12 +1,11 @@
 import {
   loadMafCurriculum,
-  modulesForPhase,
   type Curriculum,
   type CurriculumBlock,
   type CurriculumModule,
 } from "@/lib/content/curriculum";
 import { variantFromBlock } from "@/lib/content/didaktik";
-import { anthropicHeaders } from "@/lib/anthropic/headers";
+import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
 import {
   buildDidaktikBlockPrompt,
   buildDidaktikKeywordPrompt,
@@ -16,6 +15,7 @@ import {
   mafSeedLernfeldSicherheit,
   type GeneratedLernfeld,
 } from "./maf-lernfeld-seed";
+import { submitPhaseBatch } from "./batch-generate";
 
 export type GenerateAgentResult = {
   lernfeld: GeneratedLernfeld;
@@ -23,11 +23,11 @@ export type GenerateAgentResult = {
   modelId?: string;
   batchId?: string;
   warning?: string;
-  /** Present when a Message Batch was submitted (one request per block). */
+  /** Present when a Message Batch was submitted (chunked Didaktik requests). */
   batchBlockIds?: string[];
+  chunkCount?: number;
+  unitTarget?: number;
 };
-
-const GENERATOR_MODEL = "claude-sonnet-5-5";
 
 /**
  * Generate content for one curriculum block (Didaktik sections + 5–8 questions).
@@ -122,9 +122,8 @@ async function runLiveGenerate(
     ? buildDidaktikBlockPrompt(c, found.module, found.block)
     : buildDidaktikKeywordPrompt(keyword, "sicherheit");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await anthropicFetch("/v1/messages", {
     method: "POST",
-    headers: anthropicHeaders({ apiKey: key }),
     body: JSON.stringify({
       model: GENERATOR_MODEL,
       max_tokens: 8192,
@@ -162,62 +161,32 @@ async function runLiveGenerate(
   return { lernfeld, mode: "live", modelId: GENERATOR_MODEL };
 }
 
-/** Submit Message Batch — one custom_id / request per curriculum block. */
+/** Submit Message Batch — chunked Didaktik requests for a phase (AP-15). */
 async function submitBatchGenerate(
-  key: string,
+  _key: string,
   opts: { keyword: string; blockId?: string; phaseId?: string },
 ): Promise<GenerateAgentResult> {
-  const c = loadMafCurriculum();
-  const targets: Array<{ module: CurriculumModule; block: CurriculumBlock }> = [];
-
   if (opts.blockId) {
+    // Single-block live path remains Messages; batch phase is AP-15.
+    const c = loadMafCurriculum();
     const found = findCurriculumBlock(opts.blockId, c);
-    if (found) targets.push(found);
-  } else {
-    const mods = modulesForPhase(c, opts.phaseId ?? "A");
-    for (const mod of mods) {
-      for (const block of mod.blocks) targets.push({ module: mod, block });
-    }
+    if (!found) throw new Error(`Unknown block ${opts.blockId}`);
   }
 
-  if (targets.length === 0) {
-    throw new Error("No curriculum blocks to batch");
-  }
-
-  const res = await fetch("https://api.anthropic.com/v1/messages/batches", {
-    method: "POST",
-    headers: anthropicHeaders({ apiKey: key }),
-    body: JSON.stringify({
-      requests: targets.map(({ module, block }) => ({
-        custom_id: `maf-${block.id}`,
-        params: {
-          model: GENERATOR_MODEL,
-          max_tokens: 8192,
-          messages: [
-            {
-              role: "user",
-              content: `${buildDidaktikBlockPrompt(c, module, block)}\n(Kurs-Stichwort: ${opts.keyword})`,
-            },
-          ],
-        },
-      })),
-    }),
+  const submitted = await submitPhaseBatch({
+    keyword: opts.keyword,
+    phaseId: opts.phaseId ?? "A",
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Batch API ${res.status}: ${text.slice(0, 200)}`);
-  }
-
-  const data = (await res.json()) as { id?: string };
   return {
     lernfeld: mafSeedLernfeldSicherheit(),
     mode: "batch-pending",
     modelId: GENERATOR_MODEL,
-    batchId: data.id,
-    batchBlockIds: targets.map((t) => t.block.id),
+    batchId: submitted.batchId,
+    batchBlockIds: submitted.customIds,
+    chunkCount: submitted.chunkCount,
+    unitTarget: submitted.unitTarget,
     warning:
-      "Batch submitted (one Didaktik request per curriculum block); returning seed M0-3 until results are polled (AP-14; full phase gen = AP-15).",
+      "Batch submitted (chunked Didaktik requests for Phase A). Poll with scripts/ap15-phase-a.ts — seed returned until results land.",
   };
 }
 

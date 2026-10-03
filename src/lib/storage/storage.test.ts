@@ -17,9 +17,14 @@ describe("storage layer (AP-17)", () => {
     delete process.env.COURSE_STORAGE;
   });
 
-  it("uses mock when Supabase secrets are absent", () => {
-    assert.equal(supabaseSecretsPresent(), false);
-    assert.equal(preferMockStorage(), true);
+  it("uses mock when Supabase secrets are absent or COURSE_STORAGE=mock", () => {
+    // Cloud Agents often inject SUPABASE_*; npm test sets COURSE_STORAGE=mock.
+    if (!supabaseSecretsPresent()) {
+      assert.equal(preferMockStorage(), true);
+    } else {
+      process.env.COURSE_STORAGE = "mock";
+      assert.equal(preferMockStorage(), true);
+    }
     assert.equal(getStorageBackend(), "mock");
   });
 

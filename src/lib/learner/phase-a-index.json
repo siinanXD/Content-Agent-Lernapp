@@ -1,0 +1,16 @@
+{
+  "courseId": "e22073de-7020-4380-9002-c70d46c25e25",
+  "keyword": "Maschinen- und Anlagenführer",
+  "phase": "A",
+  "publishedAt": "2026-10-03T12:39:55.000Z",
+  "unitCount": 170,
+  "targetUnits": 280,
+  "droppedUnits": 110,
+  "modules": [
+    { "id": "M0", "title": "Querschnitt: Beruf, Betrieb, Sicherheit" },
+    { "id": "LF1", "title": "Fertigen von Bauelementen mit handgeführten Werkzeugen" },
+    { "id": "LF2", "title": "Fertigen von Bauelementen mit Maschinen" },
+    { "id": "PA", "title": "Produktionsanlagen bedienen und warten" }
+  ],
+  "note": "Full units live in Supabase courses.lernfeld; GET /api/learner/phase-a. Regen blocked by Console credits."
+}

@@ -60,18 +60,33 @@ export async function handlePlan(id: string) {
   });
 }
 
-export async function handleGenerate(id: string) {
+export async function handleGenerate(id: string, req?: Request) {
   const storage = getStorage();
   const course = await storage.getCourse(id);
   if (!course) return notFound(id);
-  const result = await runGenerateAgent({ keyword: course.keyword });
-  await storage.setGenerated(id, result.lernfeld);
+  const body = (req ? await req.json().catch(() => ({})) : {}) as {
+    useBatch?: boolean;
+    phaseId?: string;
+    blockId?: string;
+  };
+  const result = await runGenerateAgent({
+    keyword: course.keyword,
+    useBatch: body.useBatch,
+    phaseId: body.phaseId,
+    blockId: body.blockId,
+  });
+  // batch-pending keeps seed only as placeholder; AP-15 script polls and persists live units.
+  if (result.mode !== "batch-pending") {
+    await storage.setGenerated(id, result.lernfeld);
+  }
   return Response.json({
     courseId: id,
-    mock: result.mode !== "live",
+    mock: result.mode !== "live" && result.mode !== "batch-pending",
     mode: result.mode,
     modelId: result.modelId,
     batchId: result.batchId,
+    chunkCount: result.chunkCount,
+    unitTarget: result.unitTarget,
     warning: result.warning,
     unitsGenerated: result.lernfeld.units.length,
     moduleId: result.lernfeld.moduleId,

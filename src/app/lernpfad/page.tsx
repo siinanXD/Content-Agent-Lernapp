@@ -5,11 +5,16 @@ import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import {
+  activePathUnits,
   groupUnitsByModule,
   PLAYABLE_TODAY,
-  PLAYABLE_UNITS,
+  type PathUnit,
   type PathUnitStatus,
 } from "@/lib/learner/playable-path";
+import {
+  fetchPhaseAPathUnits,
+  usingPhaseASnapshot,
+} from "@/lib/learner/phase-a-path";
 import { loadSession, type LearnerSession } from "@/lib/learner/session";
 import { dueItems, loadStack, stackSize } from "@/lib/learner/leitner";
 import { listExamParts } from "@/lib/learner/exam";
@@ -24,14 +29,23 @@ export default function LernpfadPage() {
   const [session, setSession] = useState<LearnerSession | null>(null);
   const [dueCount, setDueCount] = useState(0);
   const [stackCount, setStackCount] = useState(0);
-  const groups = groupUnitsByModule(PLAYABLE_UNITS);
+  const [pathUnits, setPathUnits] = useState<PathUnit[]>(() => activePathUnits());
+  const groups = groupUnitsByModule(pathUnits);
   const examParts = listExamParts().filter((p) => p.simulated);
+  const phaseA = usingPhaseASnapshot() && pathUnits.length > 6;
 
   useEffect(() => {
     setSession(loadSession());
     const stack = loadStack();
     setDueCount(dueItems(stack).length);
     setStackCount(stackSize(stack));
+    let cancelled = false;
+    fetchPhaseAPathUnits().then((units) => {
+      if (!cancelled && units.length) setPathUnits(units);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const subtitle = session
@@ -53,6 +67,11 @@ export default function LernpfadPage() {
         </h1>
         <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
           {subtitle}
+        </p>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+          {phaseA
+            ? `Phase A · ${pathUnits.length} Einheiten (M0, LF1, LF2, PA)`
+            : "Demo-Seed Sicherheit — Phase A noch nicht veröffentlicht"}
         </p>
       </header>
 
