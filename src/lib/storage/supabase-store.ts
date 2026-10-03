@@ -16,7 +16,7 @@ type CourseRow = {
   created_at: string;
   mock: boolean;
   variants: number;
-  lernfeld: GeneratedLernfeld | null;
+  lernfeld: { id: string; title: string; focus: string } | null;
 };
 
 type SourceRow = {
@@ -35,12 +35,6 @@ type UnitRow = {
   source_url: string;
   source_fetched_at: string;
   sort_order: number;
-  module_id: string | null;
-  block_id: string | null;
-  niveau: number | null;
-  safety_flag: boolean | null;
-  variant: string | null;
-  sections: unknown | null;
 };
 
 type QuestionRow = {
@@ -53,8 +47,6 @@ type QuestionRow = {
   explanation: string;
   source_url: string;
   sort_order: number;
-  level: string | null;
-  exam_areas: string[] | null;
 };
 
 function isLernfeld(value: unknown): value is GeneratedLernfeld {
@@ -85,14 +77,14 @@ async function loadCourse(id: string): Promise<Course | undefined> {
       sb
         .from("units")
         .select(
-          "id, title, minutes, explanation, source_url, source_fetched_at, sort_order, module_id, block_id, niveau, safety_flag, variant, sections",
+          "id, title, minutes, explanation, source_url, source_fetched_at, sort_order",
         )
         .eq("course_id", id)
         .order("sort_order", { ascending: true }),
       sb
         .from("questions")
         .select(
-          "id, unit_id, type, prompt, choices, correct, explanation, source_url, sort_order, level, exam_areas",
+          "id, unit_id, type, prompt, choices, correct, explanation, source_url, sort_order",
         )
         .eq("course_id", id)
         .order("sort_order", { ascending: true }),
@@ -123,52 +115,46 @@ async function loadCourse(id: string): Promise<Course | undefined> {
     course.plan = planRow.payload;
   }
 
-  // Prefer full lernfeld JSON (AP-15 Phase A) when present; else reconstruct from rows.
-  if (isLernfeld(courseRow.lernfeld)) {
+  const unitRows = (units ?? []) as UnitRow[];
+  const questionRows = (questions ?? []) as QuestionRow[];
+  // Prefer full AP-15 payload (includes moduleId/blockId/Didaktik fields).
+  if (isLernfeld(courseRow.lernfeld) && courseRow.lernfeld.units?.length) {
     course.generated = courseRow.lernfeld;
-  } else {
-    const unitRows = (units ?? []) as UnitRow[];
-    const questionRows = (questions ?? []) as QuestionRow[];
-    if (courseRow.lernfeld && unitRows.length) {
-      const byUnit = new Map<string, QuestionRow[]>();
-      for (const q of questionRows) {
-        const list = byUnit.get(q.unit_id) ?? [];
-        list.push(q);
-        byUnit.set(q.unit_id, list);
-      }
-      course.generated = {
-        id: (courseRow.lernfeld as { id: string }).id,
-        title: (courseRow.lernfeld as { title: string }).title,
-        focus: (courseRow.lernfeld as { focus: string }).focus,
-        units: unitRows.map(
-          (u): GeneratedUnit => ({
-            id: u.id,
-            title: u.title,
-            minutes: u.minutes,
-            explanation: u.explanation,
-            sourceUrl: u.source_url,
-            sourceFetchedAt: u.source_fetched_at,
-            moduleId: u.module_id ?? undefined,
-            blockId: u.block_id ?? undefined,
-            niveau: u.niveau ?? undefined,
-            safetyFlag: u.safety_flag ?? undefined,
-            variant: (u.variant as GeneratedUnit["variant"]) ?? undefined,
-            sections: (u.sections as GeneratedUnit["sections"]) ?? undefined,
-            questions: (byUnit.get(u.id) ?? []).map((q) => ({
-              id: q.id,
-              type: q.type as GeneratedUnit["questions"][number]["type"],
-              prompt: q.prompt,
-              ...(q.choices ? { choices: q.choices } : {}),
-              correct: q.correct,
-              explanation: q.explanation,
-              sourceUrl: q.source_url,
-              level: (q.level as GeneratedUnit["questions"][number]["level"]) ?? undefined,
-              examAreas: q.exam_areas ?? undefined,
-            })),
-          }),
-        ),
-      };
+  } else if (courseRow.lernfeld && unitRows.length) {
+    const byUnit = new Map<string, QuestionRow[]>();
+    for (const q of questionRows) {
+      const list = byUnit.get(q.unit_id) ?? [];
+      list.push(q);
+      byUnit.set(q.unit_id, list);
     }
+    const meta = courseRow.lernfeld as { id: string; title: string; focus: string };
+    course.generated = {
+      id: meta.id,
+      title: meta.title,
+      focus: meta.focus,
+      units: unitRows.map(
+        (u): GeneratedUnit => ({
+          id: u.id,
+          title: u.title,
+          minutes: u.minutes,
+          explanation: u.explanation,
+          sourceUrl: u.source_url,
+          sourceFetchedAt: u.source_fetched_at,
+          questions: (byUnit.get(u.id) ?? []).map((q) => ({
+            id: q.id,
+            type: q.type as GeneratedUnit["questions"][number]["type"],
+            prompt: q.prompt,
+            ...(q.choices ? { choices: q.choices } : {}),
+            correct: q.correct,
+            explanation: q.explanation,
+            sourceUrl: q.source_url,
+            // Legacy rows predate AP-18; callers treat missing level/examAreas as optional.
+            level: undefined,
+            examAreas: undefined,
+          })),
+        }),
+      ),
+    };
   }
 
   if (evaluation?.payload !== undefined) {
@@ -238,6 +224,7 @@ export const supabaseStorage: CourseStorage = {
     const existing = await loadCourse(id);
     if (!existing) return undefined;
 
+    // Replace course sources (pipeline re-research). Additive schema; row replace is update semantics.
     const { error: delErr } = await sb.from("sources").delete().eq("course_id", id);
     if (delErr) throw new Error(`sources_clear: ${delErr.message}`);
 
@@ -294,47 +281,42 @@ export const supabaseStorage: CourseStorage = {
       throw new Error("generated_must_be_lernfeld");
     }
 
-    // Persist full lernfeld JSON (AP-15); also keep relational rows for queries.
+    // Clear previous units/questions for this course, then insert fresh rows.
     const { error: qDel } = await sb.from("questions").delete().eq("course_id", id);
     if (qDel) throw new Error(`questions_clear: ${qDel.message}`);
     const { error: uDel } = await sb.from("units").delete().eq("course_id", id);
     if (uDel) throw new Error(`units_clear: ${uDel.message}`);
 
     if (generated.units.length) {
+      const fallbackUrl =
+        "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";
+      const fallbackFetched = new Date().toISOString();
       const { error: uIns } = await sb.from("units").insert(
         generated.units.map((u, i) => ({
-          id: u.id,
+          id: u.id || `unit-${i + 1}`,
           course_id: id,
-          title: u.title,
-          minutes: u.minutes,
-          explanation: u.explanation,
-          source_url: u.sourceUrl,
-          source_fetched_at: u.sourceFetchedAt,
+          title: u.title || `Einheit ${i + 1}`,
+          minutes: typeof u.minutes === "number" && u.minutes > 0 ? u.minutes : 8,
+          explanation: u.explanation || "",
+          source_url: u.sourceUrl || fallbackUrl,
+          source_fetched_at: u.sourceFetchedAt || fallbackFetched,
           sort_order: i,
-          module_id: u.moduleId ?? null,
-          block_id: u.blockId ?? null,
-          niveau: u.niveau ?? null,
-          safety_flag: u.safetyFlag ?? null,
-          variant: u.variant ?? null,
-          sections: u.sections ?? null,
         })),
       );
       if (uIns) throw new Error(`units_insert: ${uIns.message}`);
 
       const questionRows = generated.units.flatMap((u, ui) =>
-        u.questions.map((q, qi) => ({
-          id: q.id,
+        (u.questions ?? []).map((q, qi) => ({
+          id: q.id || `q${qi + 1}`,
           course_id: id,
-          unit_id: u.id,
-          type: q.type,
-          prompt: q.prompt,
+          unit_id: u.id || `unit-${ui + 1}`,
+          type: q.type || "auswahl",
+          prompt: q.prompt || "",
           choices: q.choices ?? null,
-          correct: q.correct,
-          explanation: q.explanation,
-          source_url: q.sourceUrl,
+          correct: q.correct ?? "",
+          explanation: q.explanation || "",
+          source_url: q.sourceUrl || u.sourceUrl || fallbackUrl,
           sort_order: ui * 1000 + qi,
-          level: q.level ?? null,
-          exam_areas: q.examAreas ?? null,
         })),
       );
       if (questionRows.length) {
@@ -343,6 +325,8 @@ export const supabaseStorage: CourseStorage = {
       }
     }
 
+    // AP-15: persist full GeneratedLernfeld in courses.lernfeld jsonb (moduleId/blockId/sections).
+    // Normalized units/questions remain for listing; loadCourse prefers full payload when present.
     const { error: stErr } = await sb
       .from("courses")
       .update({
