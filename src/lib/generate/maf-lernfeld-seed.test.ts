@@ -7,6 +7,8 @@ describe("mafSeedLernfeldSicherheit", () => {
     const lf = mafSeedLernfeldSicherheit();
     assert.equal(lernfeldIsComplete(lf), true);
     assert.ok(lf.units.length >= 3);
+    assert.equal(lf.moduleId, "M0");
+    assert.equal(lf.blockId, "M0-3");
   });
 
   it("stores source links and 5–8 questions per unit", () => {
