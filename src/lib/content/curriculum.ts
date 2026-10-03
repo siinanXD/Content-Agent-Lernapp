@@ -139,9 +139,15 @@ export const CONTENT_DIR = path.join(process.cwd(), "docs", "content");
 /** Pilot map (Metall- und Kunststofftechnik, Referenz Industriemechaniker). */
 export const MAF_METALL_PATH = path.join(CONTENT_DIR, "maf-metall.json");
 
+/**
+ * v1 map (Metall only, loaded by src/lib/content/maf-curriculum.ts). Superseded by
+ * maf-metall.json; kept until AP-14 (PR #20) moves to loadCurriculum(). See D-28.
+ */
+export const LEGACY_FILES = new Set(["maf-curriculum.json"]);
+
 export function listCurriculumFiles(dir: string = CONTENT_DIR): string[] {
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".json") && !f.endsWith(".lock.json"))
+    .filter((f) => f.endsWith(".json") && !f.endsWith(".lock.json") && !LEGACY_FILES.has(f))
     .sort()
     .map((f) => path.join(dir, f));
 }

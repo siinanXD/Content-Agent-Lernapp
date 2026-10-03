@@ -164,7 +164,9 @@ function render(c) {
 }
 
 const only = process.argv[2];
-const files = readdirSync(DIR).filter((f) => f.endsWith(".json") && !f.endsWith(".lock.json") && (!only || f === `${only}.json`));
+// maf-curriculum.json is the v1 map (own loader/renderer-less); see src/lib/content/curriculum.ts LEGACY_FILES.
+const LEGACY = new Set(["maf-curriculum.json"]);
+const files = readdirSync(DIR).filter((f) => f.endsWith(".json") && !f.endsWith(".lock.json") && !LEGACY.has(f) && (!only || f === `${only}.json`));
 if (files.length === 0) {
   console.error(`no curriculum json found in ${DIR}${only ? ` for ${only}` : ""}`);
   process.exit(1);
