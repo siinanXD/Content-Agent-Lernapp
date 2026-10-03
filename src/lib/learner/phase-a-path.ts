@@ -1,8 +1,7 @@
 /**
  * AP-15: Lernpfad from published Phase A (Supabase via /api/learner/phase-a).
- * Client fetches live units; server helpers use index metadata. Seed fallback if empty.
+ * Client-safe: no node:fs. Titles come from a static JSON slice of Phase-A modules/blocks.
  */
-import { loadMafCurriculum } from "@/lib/content/curriculum";
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import {
   type PathUnit,
@@ -10,6 +9,7 @@ import {
   PLAYABLE_UNITS as SEED_UNITS,
 } from "./playable-path";
 import phaseAIndex from "./phase-a-index.json";
+import phaseATitles from "./phase-a-titles.json";
 
 export type PhaseASnapshot = {
   courseId: string;
@@ -30,15 +30,21 @@ export function usingPhaseASnapshot(): boolean {
   return Boolean(phaseAIndex.courseId && phaseAIndex.unitCount > 0);
 }
 
-export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
-  const curriculum = loadMafCurriculum();
-  const modTitle = (id?: string) =>
-    curriculum.modules.find((m) => m.id === id)?.title ?? id ?? "Modul";
-  const blockTitle = (moduleId?: string, blockId?: string) => {
-    const mod = curriculum.modules.find((m) => m.id === moduleId);
-    return mod?.blocks.find((b) => b.id === blockId)?.title ?? blockId ?? "Block";
-  };
+function modTitle(id?: string): string {
+  if (!id) return "Modul";
+  return (
+    (phaseATitles.modules as Record<string, string>)[id] ??
+    phaseAIndex.modules.find((m) => m.id === id)?.title ??
+    id
+  );
+}
 
+function blockTitle(blockId?: string): string {
+  if (!blockId) return "Block";
+  return (phaseATitles.blocks as Record<string, string>)[blockId] ?? blockId;
+}
+
+export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
   return units.map((u, index): PathUnit => {
     let status: PathUnitStatus = "open";
     let statusLabel = "Noch offen";
@@ -67,7 +73,7 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
       moduleId: u.moduleId ?? "M0",
       moduleTitle: modTitle(u.moduleId),
       blockId: u.blockId ?? "M0-3",
-      blockTitle: blockTitle(u.moduleId, u.blockId),
+      blockTitle: blockTitle(u.blockId),
       examAreas: u.questions[0]?.examAreas ?? [],
       questions: u.questions.map((q) => ({
         id: q.id,

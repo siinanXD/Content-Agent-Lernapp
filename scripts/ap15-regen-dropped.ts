@@ -554,7 +554,7 @@ async function main() {
     ),
   );
 
-  // Update phase-a-index summary
+  // Update phase-a-index summary (must match API route readers)
   const indexPath = join(ROOT, "src", "lib", "learner", "phase-a-index.json");
   const byModule = Object.fromEntries(
     ["M0", "LF1", "LF2", "PA"].map((m) => [
@@ -562,17 +562,25 @@ async function main() {
       merged.units.filter((u) => u.moduleId === m).length,
     ]),
   );
+  const publishedAt = new Date().toISOString();
+  const modules = modulesForPhase(loadMafCurriculum(), "A").map((m) => ({
+    id: m.id,
+    title: m.title,
+  }));
   writeFileSync(
     indexPath,
     JSON.stringify(
       {
         courseId: COURSE,
+        keyword: KEYWORD,
         phase: "A",
+        publishedAt,
         unitCount: merged.units.length,
-        target: 280,
-        shortfall: Math.max(0, 280 - merged.units.length),
+        targetUnits: 280,
+        droppedUnits: Math.max(0, 280 - merged.units.length),
         byModule,
-        updatedAt: new Date().toISOString(),
+        modules,
+        updatedAt: publishedAt,
       },
       null,
       2,

@@ -1,0 +1,40 @@
+{
+  "modules": {
+    "M0": "Querschnitt: Beruf, Betrieb, Sicherheit, Umwelt",
+    "LF1": "Fertigen von Bauelementen mit handgeführten Werkzeugen",
+    "LF2": "Fertigen von Bauelementen mit Maschinen",
+    "PA": "Produktionsanlagen einrichten, bedienen und übergeben (MAF-Kern)"
+  },
+  "blocks": {
+    "M0-1": "Ausbildung, Ausbildungsvertrag und Berufsbild",
+    "M0-2": "Ausbildungsbetrieb: Aufbau, Grundfunktionen, Mitbestimmung",
+    "M0-3": "Sicherheit und Gesundheitsschutz bei der Arbeit",
+    "M0-4": "Umweltschutz in der Fertigung",
+    "LF1-1": "Technische Zeichnungen lesen und skizzieren",
+    "LF1-2": "Technische Unterlagen: Stücklisten, Arbeits- und Fertigungspläne",
+    "LF1-3": "Werkstoffe: Eisen- und Nichteisenmetalle, Kunststoffe",
+    "LF1-4": "Halbzeuge, Normteile, Hilfsstoffe",
+    "LF1-5": "Bank- und Elektrowerkzeuge sicher einsetzen",
+    "LF1-6": "Trennen und Umformen von Hand",
+    "LF1-7": "Prüfen: Messen, Lehren, Prüfprotokoll",
+    "LF1-8": "Berechnen: Masse, Stückzahl, Kosten",
+    "LF1-9": "Dokumentieren und Präsentieren, Urheberrecht",
+    "LF2-1": "Zeichnungen und Informationsquellen, auch digital",
+    "LF2-2": "ISO-Toleranzen und Oberflächenangaben",
+    "LF2-3": "Prüfmittel auswählen, Messfehler erkennen",
+    "LF2-4": "Bohren, Senken, Reiben",
+    "LF2-5": "Drehen und Fräsen: Verfahren, Werkzeuge, Maschinenaufbau",
+    "LF2-6": "Funktionseinheiten von Maschinen und ihre Wirkungsweise",
+    "LF2-7": "Fertigungsdaten berechnen",
+    "LF2-8": "Standzeiten, Kühl- und Schmiermittel",
+    "LF2-9": "Qualitätsmanagement-Grundlagen und Fertigungskosten",
+    "PA-1": "Produktionsmaschinen und -anlagen nach Funktion und Einsatz unterscheiden",
+    "PA-2": "Rüsten und Umrüsten nach Vorgaben, Rüstzeiten",
+    "PA-3": "Prozessdaten einstellen und optimieren, Parameter überwachen",
+    "PA-4": "Inbetriebnahme unter Sicherheitsbestimmungen",
+    "PA-5": "Störungen und Abweichungen: erkennen, Ursachen, beseitigen",
+    "PA-6": "Abläufe optimieren, Eingriff in die Prozesskette",
+    "PA-7": "Materialfluss im Arbeitsbereich",
+    "PA-8": "Übergabe und Übergabeprotokoll"
+  }
+}
