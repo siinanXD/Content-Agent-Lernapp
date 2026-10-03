@@ -288,31 +288,34 @@ export const supabaseStorage: CourseStorage = {
     if (uDel) throw new Error(`units_clear: ${uDel.message}`);
 
     if (generated.units.length) {
+      const fallbackUrl =
+        "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";
+      const fallbackFetched = new Date().toISOString();
       const { error: uIns } = await sb.from("units").insert(
         generated.units.map((u, i) => ({
-          id: u.id,
+          id: u.id || `unit-${i + 1}`,
           course_id: id,
-          title: u.title,
-          minutes: u.minutes,
-          explanation: u.explanation,
-          source_url: u.sourceUrl,
-          source_fetched_at: u.sourceFetchedAt,
+          title: u.title || `Einheit ${i + 1}`,
+          minutes: typeof u.minutes === "number" && u.minutes > 0 ? u.minutes : 8,
+          explanation: u.explanation || "",
+          source_url: u.sourceUrl || fallbackUrl,
+          source_fetched_at: u.sourceFetchedAt || fallbackFetched,
           sort_order: i,
         })),
       );
       if (uIns) throw new Error(`units_insert: ${uIns.message}`);
 
       const questionRows = generated.units.flatMap((u, ui) =>
-        u.questions.map((q, qi) => ({
-          id: q.id,
+        (u.questions ?? []).map((q, qi) => ({
+          id: q.id || `q${qi + 1}`,
           course_id: id,
-          unit_id: u.id,
-          type: q.type,
-          prompt: q.prompt,
+          unit_id: u.id || `unit-${ui + 1}`,
+          type: q.type || "auswahl",
+          prompt: q.prompt || "",
           choices: q.choices ?? null,
-          correct: q.correct,
-          explanation: q.explanation,
-          source_url: q.sourceUrl,
+          correct: q.correct ?? "",
+          explanation: q.explanation || "",
+          source_url: q.sourceUrl || u.sourceUrl || fallbackUrl,
           sort_order: ui * 1000 + qi,
         })),
       );
