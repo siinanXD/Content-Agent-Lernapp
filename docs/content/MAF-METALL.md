@@ -1,83 +1,65 @@
-# Curriculum-Map: Maschinen- und Anlagenführer/in (Schwerpunkt Metall- und Kunststofftechnik)
+# Curriculum-Map: Maschinen- und Anlagenführer/in – Schwerpunkt Metall- und Kunststofftechnik (Referenz Industriemechaniker)
 
-Stand: 2026-10-03 · Status: **Entwurf, Freigabe durch Sinan offen** · Linear: [SIN-191 (AP-13)](https://linear.app/sinan-kahraman/issue/SIN-191) · Maschinenlesbar: [`maf-curriculum.json`](maf-curriculum.json)
+Stand: 2026-10-03 · Status: **Entwurf – Freigabe durch Sinan offen** · Familie: `maf` · Map-ID: `maf-metall` · Maschinenlesbar: [`maf-metall.json`](maf-metall.json) · Vorgaben für die Agenten: [README](README.md)
 
-Diese Map ist die Vorgabe, nach der Plan-Agent und Inhalts-Agent den kompletten Kurs für den Pilotberuf erzeugen. Sie legt fest, **was** in welcher Reihenfolge und in welchem Umfang entsteht. Die Fragen selbst entstehen erst in den Folge-Issues (AP-14, AP-15).
+> Diese Datei wird aus der JSON erzeugt (`node scripts/content-render-curriculum.mjs`). Änderungen gehören in die JSON.
 
-## 1. Zuerst lesen: zwei Jahre, nicht drei
+## 1. Beruf, Dauer, Variante
 
-Die Ausbildung dauert laut **§ 2 MaschFüAusbV zwei Jahre**. Ein drittes Jahr gibt es nur über **§ 10**: Wer weitermacht, wechselt in das 3. und 4. Ausbildungsjahr eines anderen Berufs (für Metall z. B. Industriemechaniker/in mit den Lernfeldern 10–15). Das ist ein anderer Kurs und nicht Teil dieser Map.
-
-Darum plant diese Map **zwei Ausbildungsjahre plus Prüfungstraining**:
-
-- **Jahr 1, Berufliche Grundbildung** (Anlage I): für alle fünf Schwerpunkte gleich; schulisch Lernfelder 1–4 (320 Std.)
-- **Jahr 2, Berufliche Fachbildung** (Anlage II.A, Metall- und Kunststofftechnik): schulisch Lernfelder 5–9 (280 Std.)
-- **Prüfungen:** Zwischenprüfung zu Beginn von Jahr 2 (§ 8) und Abschlussprüfung am Ende (§ 9)
+- **Beruf:** Maschinen- und Anlagenführer
+- **Variante:** Schwerpunkt Metall- und Kunststofftechnik, Referenz-RLP Industriemechaniker/in (Metallbetriebe)
+- **Dauer:** 2 Jahre. § 2 MaschFüAusbV: Die Ausbildung dauert zwei Jahre. Ein drittes und viertes Jahr gibt es nur als Fortsetzung in einem anderen Beruf nach § 10. Das ist nicht Teil dieses Kurses.
+- **Referenz-Rahmenlehrplan:** `rlp-im`. Der KMK-RLP MAF hat keine eigenen Lernfelder; er verweist für den Schwerpunkt Metall/Kunststoff auf die ersten zwei Jahre der RLP der Fortsetzungsberufe. Referenz für Metallbetriebe: Industriemechaniker/in, weil LF 1–4 laut RLP für alle Metallberufe inhaltsgleich sind und der Beruf die häufigste Fortsetzung ist.
+- **Alternativen:** Zerspanungsmechaniker/in; Werkzeugmechaniker/in; Feinwerkmechaniker/in; Fertigungsmechaniker/in; Kunststoffbetriebe: Map maf-kunststoff
 
 ## 2. Amtliche Quellen
-
-Alle Inhalte stammen aus diesen Quellen. Jede Einheit, die der Agent später erzeugt, zitiert eine davon mit Abrufdatum.
 
 | ID | Quelle | Art | Abruf |
 | --- | --- | --- | --- |
 | `ao` | [MaschFüAusbV – Verordnung über die Berufsausbildung zum Maschinen- und Anlagenführer (Volltext, Stand Art. 2 V v. 14.6.2023)](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html) | ausbildungsordnung | 2026-10-03 |
-| `ao-anlage` | [MaschFüAusbV Anlage (zu § 5) – Ausbildungsrahmenplan mit zeitlichen Richtwerten](https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html) | ausbildungsordnung | 2026-10-03 |
+| `ao-anlage` | [MaschFüAusbV Anlage (zu § 5) – Ausbildungsrahmenplan mit zeitlichen Richtwerten, Abschnitte I und II.A–E](https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html) | ausbildungsordnung | 2026-10-03 |
 | `ao-p8` | [MaschFüAusbV § 8 Zwischenprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__8.html) | pruefung | 2026-10-03 |
-| `ao-p9` | [MaschFüAusbV § 9 Abschlussprüfung](https://www.gesetze-im-internet.de/maschf_ausbv/__9.html) | pruefung | 2026-10-03 |
+| `ao-p9` | [MaschFüAusbV § 9 Abschlussprüfung (Prüfungsgebiete je Schwerpunkt, Abs. 3 Nr. 1–5)](https://www.gesetze-im-internet.de/maschf_ausbv/__9.html) | pruefung | 2026-10-03 |
 | `ao-bgbl` | [BGBl. I 2004 Nr. 19 (BIBB-Kopie der Verordnung inkl. Anlage)](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf) | ausbildungsordnung | 2026-10-03 |
-| `rlp-maf` | [KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist auf die RLP der Fortsetzungsberufe](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf) | rahmenlehrplan | 2026-10-03 |
-| `rlp-im` | [KMK Rahmenlehrplan Industriemechaniker/in (Beschluss 25.03.2004 i. d. F. 23.02.2018) – Lernfelder 1–9 als Referenz für Schwerpunkt Metall](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf) | rahmenlehrplan | 2026-10-03 |
+| `rlp-maf` | [KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist je Schwerpunkt auf die RLP der Fortsetzungsberufe](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf) | rahmenlehrplan | 2026-10-03 |
 | `kmk-wiso` | [KMK Kompetenzorientiertes Qualifikationsprofil Wirtschafts- und Sozialkunde gewerblich-technischer Ausbildungsberufe (Beschluss 17.06.2021, 40 Unterrichtsstunden)](https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf) | rahmenlehrplan | 2026-10-03 |
 | `bibb-51121` | [BIBB Berufesuche – Maschinen- und Anlagenführer/in (51121)](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121) | berufsinformation | 2026-10-03 |
+| `rlp-im` | [KMK Rahmenlehrplan Industriemechaniker/in (Beschluss 25.03.2004 i. d. F. 23.02.2018) – Lernfelder 1–9 als Referenz für Metall](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf) | rahmenlehrplan | 2026-10-03 |
 
-Abruf über Exa-Web-Fetch, weil der Netzwerk-Proxy der Cloud-Agent-Umgebung `gesetze-im-internet.de` und `kmk.org` sperrt (siehe DECISIONS D-26). Die Verordnungstexte wurden zusätzlich gegen die BIBB-Kopie des Bundesgesetzblatts gelesen.
+Abruf: Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen
 
-**Besonderheit beim Rahmenlehrplan:** Der KMK-RLP für den MAF hat keine eigenen Lernfelder. Er legt fest, dass nach den **ersten beiden Jahren der Rahmenlehrpläne der Fortsetzungsberufe** unterrichtet wird. Für den Schwerpunkt Metall sind das sechs Berufe. Referenz dieser Map ist der **RLP Industriemechaniker/in** (Lernfelder 1–4 sind laut RLP für alle Metallberufe inhaltsgleich; häufigste Fortsetzung nach § 10). Alternative für Zerspanungsbetriebe: RLP Zerspanungsmechaniker/in, dort unterscheiden sich die Lernfelder 5–9.
+## 3. Betrieblicher Zeitrahmen (Ausbildungsrahmenplan)
 
-## 3. So ist die Map aufgebaut
+**Anlage I – Berufliche Grundbildung, 1. Ausbildungsjahr (alle Schwerpunkte)** (Quelle `ao-anlage`)
 
-Drei Ebenen, die der Agent genauso erzeugt:
-
-1. **Modul** = ein Lernfeld (Schule), ein Kernbereich aus der Ausbildungsordnung (Betrieb) oder ein Prüfungstraining
-2. **Block** = ein Themenblock innerhalb des Moduls mit Quellenangabe (AO-Nr. und/oder Lernfeld)
-3. **Einheit** = 5–10 Minuten: kurze Erklärung, 5–8 Fragen (Auswahl, Zuordnen, Lückentext, Reihenfolge, Rechnen), jede Antwort mit Erklärung und Quelle
-
-Jedes Modul trägt: Ausbildungsjahr, Niveau für den Richter, AO-Berufsbildpositionen, Prüfungsgebiete nach § 9, Einheiten-Ziel, Fragetypen-Mix und ob Sicherheitsthemen enthalten sind (dann 10 % Stichprobe durch einen Menschen).
-
-## 4. Betrieblicher Zeitrahmen (Anlage zu § 5)
-
-Die Anlage verteilt die 14 Berufsbildpositionen auf Wochen. Das ist die Gewichtung aus Sicht des Betriebs.
-
-**Jahr 1 – Berufliche Grundbildung (alle Schwerpunkte)**
-
-| Lfd. Nr. | Berufsbildposition (§ 4 Nr.) | Wochen |
+| Lfd. Nr. | Berufsbildposition | Wochen |
 | --- | --- | --- |
-| 1, 2, 3, 4 | Nr. 1 Berufsbildung, Arbeits- und Tarifrecht; Nr. 2 Aufbau und Organisation des Ausbildungsbetriebes; Nr. 3 Sicherheit und Gesundheitsschutz bei der Arbeit; Nr. 4 Umweltschutz | während der gesamten Ausbildung zu vermitteln |
-| 5 | Nr. 5 Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen | 4 |
-| 6 | Nr. 6 Betriebliche und technische Kommunikation | 8 |
-| 7 | Nr. 7 Planen und Vorbereiten von Arbeitsabläufen | 4 |
-| 8 | Nr. 8 Prüfen | 6 |
-| 9, 10, 11 | Nr. 9 Branchenspezifische Fertigungstechniken; Nr. 10 Steuerungs- und Regelungstechnik; Nr. 11 Einrichten und Bedienen von Produktionsanlagen | 22 |
-| 12 | Nr. 12 Steuern des Materialflusses | 2 |
-| 13 | Nr. 13 Warten und Inspizieren von Maschinen und Anlagen | 4 |
-| 14 | Nr. 14 Durchführen von qualitätssichernden Maßnahmen | 2 |
-| | **Summe** | **52** |
+| 1, 2, 3, 4 | 1 Berufsbildung, Arbeits- und Tarifrecht; 2 Aufbau und Organisation des Ausbildungsbetriebes; 3 Sicherheit und Gesundheitsschutz bei der Arbeit; 4 Umweltschutz | während der gesamten Ausbildung zu vermitteln |
+| 5 | 5 Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen | 4 |
+| 6 | 6 Betriebliche und technische Kommunikation | 8 |
+| 7 | 7 Planen und Vorbereiten von Arbeitsabläufen | 4 |
+| 8 | 8 Prüfen | 6 |
+| 9, 10, 11 | 9 Branchenspezifische Fertigungstechniken; 10 Steuerungs- und Regelungstechnik; 11 Einrichten und Bedienen von Produktionsanlagen | 22 |
+| 12 | 12 Steuern des Materialflusses | 2 |
+| 13 | 13 Warten und Inspizieren von Maschinen und Anlagen | 4 |
+| 14 | 14 Durchführen von qualitätssichernden Maßnahmen | 2 |
+| | **Summe** | **52** (erwartet 52) |
 
-**Jahr 2 – Fachbildung, Schwerpunkt Metall- und Kunststofftechnik**
+**Anlage II.A – Berufliche Fachbildung, 2. Ausbildungsjahr, Schwerpunkt Metall- und Kunststofftechnik** (Quelle `ao-anlage`)
 
-| Lfd. Nr. | Berufsbildposition (§ 4 Nr.) | Wochen |
+| Lfd. Nr. | Berufsbildposition | Wochen |
 | --- | --- | --- |
-| 1, 2 | Nr. 5 Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen; Nr. 7 Planen und Vorbereiten von Arbeitsabläufen | 8 |
-| 3 | Nr. 9 Branchenspezifische Fertigungstechniken | 18 |
-| 4, 5 | Nr. 10 Steuerungs- und Regelungstechnik; Nr. 11 Einrichten und Bedienen von Produktionsanlagen | 18 |
-| 6 | Nr. 12 Steuern des Materialflusses | 2 |
-| 7 | Nr. 13 Warten und Inspizieren von Maschinen und Anlagen | 4 |
-| 8 | Nr. 14 Durchführen von qualitätssichernden Maßnahmen | 2 |
-| | **Summe** | **52** |
+| 1, 2 | 5 Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen; 7 Planen und Vorbereiten von Arbeitsabläufen | 8 |
+| 3 | 9 Branchenspezifische Fertigungstechniken | 18 |
+| 4, 5 | 10 Steuerungs- und Regelungstechnik; 11 Einrichten und Bedienen von Produktionsanlagen | 18 |
+| 6 | 12 Steuern des Materialflusses | 2 |
+| 7 | 13 Warten und Inspizieren von Maschinen und Anlagen | 4 |
+| 8 | 14 Durchführen von qualitätssichernden Maßnahmen | 2 |
+| | **Summe** | **52** (erwartet 52) |
 
-Lesehilfe: Mehrere Nummern in einer Zeile teilen sich die Wochen (Klammer in der Anlage).
+Mehrere Nummern in einer Zeile teilen sich die Wochen (Klammer in der Anlage).
 
-## 5. Schulische Lernfelder (RLP Industriemechaniker, Jahr 1–2)
+## 4. Schulische Lernfelder (Referenz-Rahmenlehrplan)
 
 | LF | Titel | Jahr | Std. | Modul |
 | --- | --- | --- | --- | --- |
@@ -90,48 +72,30 @@ Lesehilfe: Mehrere Nummern in einer Zeile teilen sich die Wochen (Klammer in der
 | 6 | Installieren und Inbetriebnehmen steuerungstechnischer Systeme | 2 | 60 | `LF6` |
 | 8 | Fertigen auf numerisch gesteuerten Werkzeugmaschinen | 2 | 60 | `LF8` |
 | 9 | Instandsetzen von technischen Systemen | 2 | 40 | `LF9` |
-| | **Summe Jahr 1 / Jahr 2** | | **320 / 280** | |
+| | **Summe je Jahr** | | **J1: 320 · J2: 280** | |
 
-## 6. Prüfungen (§ 8, § 9) und was wohin gehört
+## 5. Prüfungen und Zuordnung der Gebiete
 
-**Zwischenprüfung (§ 8):** zu Beginn des zweiten Ausbildungsjahres; praktische Aufgabe höchstens 3 Stunden, schriftlich höchstens 60 Minuten; Beispielaufgabe „Positionieren von Maschinenelementen“. Geprüft wird der Stoff des 1. Ausbildungsjahres. → Modul `ZP`.
+Zwischenprüfung zu Beginn des 2. Ausbildungsjahres (§ 8). Abschlussprüfung (§ 9): praktischer Teil (höchstens 7 Stunden, bis zu 2 Aufgaben) und schriftlicher Teil mit Produktionstechnik 50 %, Produktionsplanung 30 %, Wirtschafts- und Sozialkunde 20 %. Gebiete laut § 9 Abs. 3 für diesen Schwerpunkt.
 
-**Abschlussprüfung praktisch (§ 9 Abs. 2):** höchstens 7 Stunden, bis zu 2 Aufgaben: Einrichten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage; Umrüsten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage; Durchführen einer vorbeugenden Instandsetzung einschließlich der Inbetriebnahme. → Module `PA`, `LF9`, `LF6`.
+| Teil | Prüfungsbereich | Form | Dauer | Gewicht | Gebiete | Module |
+| --- | --- | --- | --- | --- | --- | --- |
+| Abschlussprüfung | Praktischer Teil (§ 9 Abs. 2) | praktisch | höchstens 7 Stunden, bis zu 2 Aufgaben | – | PRAK-1: Einrichten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage; PRAK-2: Umrüsten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage; PRAK-3: Durchführen einer vorbeugenden Instandsetzung einschließlich der Inbetriebnahme | `LF6`, `PA`, `LF9` |
+| Abschlussprüfung schriftlich | Produktionstechnik | schriftlich | 120 Minuten | 50 % | PT-a: technische Unterlagen; PT-b: Werkstoffe; PT-c: Werkzeuge; PT-d: Funktion von Maschinen und Anlagen; PT-e: Prüfverfahren und Prüfmittel; PT-f: Fertigungstechniken | `LF1`, `LF2`, `LF3`, `LF4`, `LF5`, `LF7`, `LF6`, `PA`, `LF8`, `APPT` |
+| Abschlussprüfung schriftlich | Produktionsplanung | schriftlich | 60 Minuten | 30 % | PP-a: Arbeitsschritte; PP-b: Qualitätssicherung; PP-c: vorbeugende Instandhaltung; PP-d: Produktionsanlagen; PP-e: Übergabeprotokoll | `LF1`, `LF3`, `LF4`, `LF5`, `LF7`, `LF6`, `PA`, `LF8`, `LF9`, `QS`, `APPP` |
+| Abschlussprüfung schriftlich | Wirtschafts- und Sozialkunde | schriftlich | 60 Minuten | 20 % | WISO-1: allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt | `M0`, `WISO` |
 
-**Abschlussprüfung schriftlich (§ 9 Abs. 3–6):**
-
-| Bereich | Minuten | Gewicht | Gebiete (Schwerpunkt Metall) | Module |
-| --- | --- | --- | --- | --- |
-| Produktionstechnik | 120 | 50 % | PT-a: technische Unterlagen; PT-b: Werkstoffe; PT-c: Werkzeuge; PT-d: Funktion von Maschinen und Anlagen; PT-e: Prüfverfahren und Prüfmittel; PT-f: Fertigungstechniken | `LF1`, `LF2`, `LF3`, `LF4`, `LF5`, `LF7`, `LF6`, `PA`, `LF8`, `APPT` |
-| Produktionsplanung | 60 | 30 % | PP-a: Arbeitsschritte; PP-b: Qualitätssicherung; PP-c: vorbeugende Instandhaltung; PP-d: Produktionsanlagen; PP-e: Übergabeprotokoll | `LF1`, `LF3`, `LF4`, `LF5`, `LF7`, `LF6`, `PA`, `LF8`, `LF9`, `QS`, `APPP` |
-| Wirtschafts- und Sozialkunde | 60 | 20 % | allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt | `M0`, `WISO` |
+**Zwischenprüfung (§ 8):** zu Beginn des 2. Ausbildungsjahres; praktische Aufgabe höchstens 3 Stunden plus höchstens 60 Minuten schriftlich; Beispiel: Positionieren von Maschinenelementen; Stoff des 1. Ausbildungsjahres → `ZP`
 
 Bestehen: Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in zwei schriftlichen Prüfungsbereichen mindestens ausreichend, im dritten nicht ungenügend (§ 9 Abs. 7). Mündliche Ergänzungsprüfung möglich, Gewichtung 2:1 (§ 9 Abs. 5).
 
-Gebiet → Module im Detail:
+## 6. Module im Überblick
 
-| Gebiet | Module |
-| --- | --- |
-| PT-a technische Unterlagen | `LF1`, `LF2`, `LF3`, `LF7`, `LF8`, `APPT` |
-| PT-b Werkstoffe | `LF1`, `LF5`, `APPT` |
-| PT-c Werkzeuge | `LF1`, `LF2`, `LF3`, `LF5`, `APPT` |
-| PT-d Funktion von Maschinen und Anlagen | `LF2`, `LF4`, `LF6`, `PA`, `APPT` |
-| PT-e Prüfverfahren und Prüfmittel | `LF1`, `LF2`, `LF5`, `LF8`, `APPT` |
-| PT-f Fertigungstechniken | `LF1`, `LF2`, `LF5`, `LF8`, `APPT` |
-| PP-a Arbeitsschritte | `LF1`, `LF3`, `LF7`, `PA`, `APPP` |
-| PP-b Qualitätssicherung | `LF5`, `LF8`, `QS`, `APPP` |
-| PP-c vorbeugende Instandhaltung | `LF4`, `LF9`, `APPP` |
-| PP-d Produktionsanlagen | `LF6`, `PA`, `LF9`, `APPP` |
-| PP-e Übergabeprotokoll | `PA`, `APPP` |
-| WISO allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt | `M0`, `WISO` |
-
-## 7. Die Module im Überblick
-
-16 Module, **870 Einheiten** (bei 7,5 Minuten im Schnitt ≈ 109 Stunden Lernzeit; 4350–6960 Fragen).
+16 Module, **870 Einheiten** (bei 7.5 Minuten im Schnitt ≈ 108.8 Stunden Lernzeit; 4350–6960 Fragen).
 
 | Reihenfolge | Modul | Titel | Jahr | Art | Einheiten | Sicherheit | Prüfungsgebiete |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | `M0` | Querschnitt: Beruf, Betrieb, Sicherheit, Umwelt | 1 | querschnitt | 60 | ja | WISO |
+| 0 | `M0` | Querschnitt: Beruf, Betrieb, Sicherheit, Umwelt | 1 | querschnitt | 60 | ja | WISO-1 |
 | 1 | `LF1` | Fertigen von Bauelementen mit handgeführten Werkzeugen | 1 | lernfeld | 80 | ja | PT-a, PT-b, PT-c, PT-e, PT-f, PP-a |
 | 2 | `LF2` | Fertigen von Bauelementen mit Maschinen | 1 | lernfeld | 80 | nein | PT-a, PT-c, PT-d, PT-e, PT-f |
 | 3 | `LF3` | Herstellen von einfachen Baugruppen | 1 | lernfeld | 80 | nein | PT-a, PT-c, PP-a |
@@ -139,39 +103,39 @@ Gebiet → Module im Detail:
 | 5 | `ZP` | Zwischenprüfung: Training (§ 8) | 1 | pruefung | 20 | ja | ZP |
 | 6 | `LF5` | Fertigen von Einzelteilen mit Werkzeugmaschinen | 2 | lernfeld | 80 | nein | PT-b, PT-c, PT-e, PT-f, PP-b |
 | 7 | `LF7` | Montieren von technischen Teilsystemen | 2 | lernfeld | 40 | nein | PT-a, PP-a |
-| 8 | `LF6` | Installieren und Inbetriebnehmen steuerungstechnischer Systeme | 2 | lernfeld | 60 | ja | PT-d, PP-d |
-| 9 | `PA` | Produktionsanlagen einrichten, bedienen und übergeben (MAF-Kern) | 2 | ao-kern | 60 | ja | PT-d, PP-a, PP-d, PP-e |
+| 8 | `LF6` | Installieren und Inbetriebnehmen steuerungstechnischer Systeme | 2 | lernfeld | 60 | ja | PT-d, PP-d, PRAK-1 |
+| 9 | `PA` | Produktionsanlagen einrichten, bedienen und übergeben (MAF-Kern) | 2 | ao-kern | 60 | ja | PT-d, PP-a, PP-d, PP-e, PRAK-1, PRAK-2 |
 | 10 | `LF8` | Fertigen auf numerisch gesteuerten Werkzeugmaschinen | 2 | lernfeld | 60 | ja | PT-a, PT-e, PT-f, PP-b |
-| 11 | `LF9` | Instandsetzen von technischen Systemen | 2 | lernfeld | 40 | ja | PP-c, PP-d |
+| 11 | `LF9` | Instandsetzen von technischen Systemen | 2 | lernfeld | 40 | ja | PP-c, PP-d, PRAK-3 |
 | 12 | `QS` | Qualitätssichernde Maßnahmen | 2 | ao-kern | 20 | nein | PP-b |
-| 13 | `WISO` | Wirtschafts- und Sozialkunde | 2 | wiso | 40 | nein | WISO |
+| 13 | `WISO` | Wirtschafts- und Sozialkunde | 2 | wiso | 40 | nein | WISO-1 |
 | 14 | `APPT` | Abschlussprüfung: Training Produktionstechnik (§ 9) | 2 | pruefung | 40 | nein | PT-a, PT-b, PT-c, PT-d, PT-e, PT-f |
 | 15 | `APPP` | Abschlussprüfung: Training Produktionsplanung (§ 9) | 2 | pruefung | 30 | nein | PP-a, PP-b, PP-c, PP-d, PP-e |
 | | | **Summe** | | | **870** | | |
 
-Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sondern über alle Module gestreut (etwa jede fünfte Einheit), weil die Anlage diese Inhalte „während der gesamten Ausbildung“ vorsieht.
+Reihenfolge = Lernreihenfolge. Querschnitt-Module werden über den Kurs gestreut (etwa jede fünfte Einheit).
 
-## 8. Module und Blöcke im Detail
+## 7. Module und Blöcke im Detail
 
 ### M0 · Querschnitt: Beruf, Betrieb, Sicherheit, Umwelt
 
 - Jahr 1 · querschnitt · 60 Einheiten · Niveau: Grundbildung – wird über beide Jahre verteilt wiederholt
-- AO-Berufsbild: Anlage I Nr. 1 → § 4 Nr. 1 Berufsbildung, Arbeits- und Tarifrecht; Anlage I Nr. 2 → § 4 Nr. 2 Aufbau und Organisation des Ausbildungsbetriebes; Anlage I Nr. 3 → § 4 Nr. 3 Sicherheit und Gesundheitsschutz bei der Arbeit; Anlage I Nr. 4 → § 4 Nr. 4 Umweltschutz
-- Prüfungsgebiete: WISO
+- AO-Berufsbild: Anlage I Nr. 1 → Berufsbildung, Arbeits- und Tarifrecht; Anlage I Nr. 2 → Aufbau und Organisation des Ausbildungsbetriebes; Anlage I Nr. 3 → Sicherheit und Gesundheitsschutz bei der Arbeit; Anlage I Nr. 4 → Umweltschutz
+- Prüfungsgebiete: WISO-1
 - Fragetypen-Mix (%): auswahl 40, zuordnen 25, lueckentext 20, reihenfolge 10, rechnen 5
-- Hinweis: Laut Anlage während der gesamten Ausbildung zu vermitteln. Der Plan-Agent streut diese Einheiten über alle Lernfelder (etwa jede fünfte Einheit). Vorhandener Seed: Lernfeld 'Sicherheit' (3 Einheiten) gehört zu M0-3.
+- Hinweis: Laut Anlage während der gesamten Ausbildung zu vermitteln. Der Plan-Agent streut diese Einheiten über alle Lernfelder (etwa jede fünfte Einheit).
 
 | Block | Titel | Einheiten | Themen | Quellen | Merker |
 | --- | --- | --- | --- | --- | --- |
 | `M0-1` | Ausbildung, Ausbildungsvertrag und Berufsbild | 15 | Ausbildungsvertrag: Abschluss, Dauer (2 Jahre, § 2), Beendigung; Rechte und Pflichten aus dem Ausbildungsvertrag; Berichtsheft als Ausbildungsnachweis (§ 7); Ausbildungsrahmenplan und betrieblicher Ausbildungsplan (§ 5, § 6); Die 14 Berufsbildpositionen (§ 4); Fünf Schwerpunkte (§ 5) und Fortsetzung der Ausbildung (§ 10); Berufliche Fortbildung; Arbeitsvertrag und Tarifvertrag: wesentliche Teile | `ao`, `ao-anlage`, `bibb-51121` |  |
 | `M0-2` | Ausbildungsbetrieb: Aufbau, Grundfunktionen, Mitbestimmung | 10 | Aufbau und Aufgaben des Betriebes; Grundfunktionen: Beschaffung, Fertigung, Absatz, Verwaltung; Wirtschaftsorganisationen, Berufsvertretungen, Gewerkschaften; Betriebsrat, Jugend- und Auszubildendenvertretung | `ao-anlage` |  |
 | `M0-3` | Sicherheit und Gesundheitsschutz bei der Arbeit | 20 | Gefährdungen am Arbeitsplatz erkennen, Gefährdungsbeurteilung, Betriebsanweisung; Persönliche Schutzausrüstung; Arbeitsschutz- und Unfallverhütungsvorschriften; Verhalten bei Unfällen, erste Maßnahmen; Vorbeugender Brandschutz, Verhalten bei Bränden; Schutzeinrichtungen, Not-Halt, Freischalten und gegen Wiedereinschalten sichern, Restenergie | `ao-anlage` | Sicherheit |
-| `M0-4` | Umweltschutz in der Fertigung | 15 | Umweltbelastungen durch den Betrieb an Beispielen; Betriebliche Umweltschutz-Regelungen; Wirtschaftliche und umweltschonende Energie- und Materialverwendung; Abfälle vermeiden, Stoffe trennen und fachgerecht entsorgen (Späne, Kühlschmierstoff, Altöl) | `ao-anlage` |  |
+| `M0-4` | Umweltschutz in der Fertigung | 15 | Umweltbelastungen durch den Betrieb an Beispielen; Betriebliche Umweltschutz-Regelungen; Wirtschaftliche und umweltschonende Energie- und Materialverwendung; Abfälle vermeiden, Stoffe trennen und fachgerecht entsorgen | `ao-anlage` |  |
 
 ### LF1 · Fertigen von Bauelementen mit handgeführten Werkzeugen
 
-- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 1 (80 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage I Nr. 5 → § 4 Nr. 5 Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen; Anlage I Nr. 6 → § 4 Nr. 6 Betriebliche und technische Kommunikation; Anlage I Nr. 7 → § 4 Nr. 7 Planen und Vorbereiten von Arbeitsabläufen; Anlage I Nr. 8 → § 4 Nr. 8 Prüfen; Anlage I Nr. 9 → § 4 Nr. 9 Branchenspezifische Fertigungstechniken
+- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 1 (80 Std., `rlp-im`)
+- AO-Berufsbild: Anlage I Nr. 5 → Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen; Anlage I Nr. 6 → Betriebliche und technische Kommunikation; Anlage I Nr. 7 → Planen und Vorbereiten von Arbeitsabläufen; Anlage I Nr. 8 → Prüfen; Anlage I Nr. 9 → Branchenspezifische Fertigungstechniken
 - Prüfungsgebiete: PT-a, PT-b, PT-c, PT-e, PT-f, PP-a
 - Fragetypen-Mix (%): auswahl 40, zuordnen 20, lueckentext 15, reihenfolge 10, rechnen 15
 
@@ -189,8 +153,8 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 
 ### LF2 · Fertigen von Bauelementen mit Maschinen
 
-- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 2 (80 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage I Nr. 8 → § 4 Nr. 8 Prüfen; Anlage I Nr. 9 → § 4 Nr. 9 Branchenspezifische Fertigungstechniken; Anlage I Nr. 11 → § 4 Nr. 11 Einrichten und Bedienen von Produktionsanlagen
+- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 2 (80 Std., `rlp-im`)
+- AO-Berufsbild: Anlage I Nr. 8 → Prüfen; Anlage I Nr. 9 → Branchenspezifische Fertigungstechniken; Anlage I Nr. 11 → Einrichten und Bedienen von Produktionsanlagen
 - Prüfungsgebiete: PT-a, PT-c, PT-d, PT-e, PT-f
 - Fragetypen-Mix (%): auswahl 35, zuordnen 15, lueckentext 10, reihenfolge 15, rechnen 25
 
@@ -208,8 +172,8 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 
 ### LF3 · Herstellen von einfachen Baugruppen
 
-- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 3 (80 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage I Nr. 6 → § 4 Nr. 6 Betriebliche und technische Kommunikation; Anlage I Nr. 7 → § 4 Nr. 7 Planen und Vorbereiten von Arbeitsabläufen; Anlage I Nr. 9 → § 4 Nr. 9 Branchenspezifische Fertigungstechniken; Anlage I Nr. 10 → § 4 Nr. 10 Steuerungs- und Regelungstechnik
+- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 3 (80 Std., `rlp-im`)
+- AO-Berufsbild: Anlage I Nr. 6 → Betriebliche und technische Kommunikation; Anlage I Nr. 7 → Planen und Vorbereiten von Arbeitsabläufen; Anlage I Nr. 9 → Branchenspezifische Fertigungstechniken; Anlage I Nr. 10 → Steuerungs- und Regelungstechnik
 - Prüfungsgebiete: PT-a, PT-c, PP-a
 - Fragetypen-Mix (%): auswahl 40, zuordnen 20, lueckentext 15, reihenfolge 10, rechnen 15
 
@@ -226,8 +190,8 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 
 ### LF4 · Warten technischer Systeme
 
-- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 4 (80 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage I Nr. 13 → § 4 Nr. 13 Warten und Inspizieren von Maschinen und Anlagen; Anlage I Nr. 10 → § 4 Nr. 10 Steuerungs- und Regelungstechnik; Anlage I Nr. 3 → § 4 Nr. 3 Sicherheit und Gesundheitsschutz bei der Arbeit; Anlage I Nr. 4 → § 4 Nr. 4 Umweltschutz
+- Jahr 1 · lernfeld · 80 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau) · RLP LF 4 (80 Std., `rlp-im`)
+- AO-Berufsbild: Anlage I Nr. 13 → Warten und Inspizieren von Maschinen und Anlagen; Anlage I Nr. 10 → Steuerungs- und Regelungstechnik; Anlage I Nr. 3 → Sicherheit und Gesundheitsschutz bei der Arbeit; Anlage I Nr. 4 → Umweltschutz
 - Prüfungsgebiete: PT-d, PP-c
 - Fragetypen-Mix (%): auswahl 40, zuordnen 20, lueckentext 15, reihenfolge 10, rechnen 15
 
@@ -245,7 +209,7 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 ### ZP · Zwischenprüfung: Training (§ 8)
 
 - Jahr 1 · pruefung · 20 Einheiten · Niveau: Grundbildung (Zwischenprüfungsniveau)
-- AO-Berufsbild: Anlage I Nr. 7 → § 4 Nr. 7 Planen und Vorbereiten von Arbeitsabläufen; Anlage I Nr. 3 → § 4 Nr. 3 Sicherheit und Gesundheitsschutz bei der Arbeit; Anlage I Nr. 4 → § 4 Nr. 4 Umweltschutz; Anlage I Nr. 6 → § 4 Nr. 6 Betriebliche und technische Kommunikation
+- AO-Berufsbild: Anlage I Nr. 7 → Planen und Vorbereiten von Arbeitsabläufen; Anlage I Nr. 3 → Sicherheit und Gesundheitsschutz bei der Arbeit; Anlage I Nr. 4 → Umweltschutz; Anlage I Nr. 6 → Betriebliche und technische Kommunikation
 - Prüfungsgebiete: ZP
 - Fragetypen-Mix (%): auswahl 35, zuordnen 20, lueckentext 10, reihenfolge 25, rechnen 10
 - Hinweis: Eigene Übungsaufgaben nach der Struktur von § 8. Keine IHK-Prüfungsaufgaben.
@@ -255,12 +219,12 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 | `ZP-1` | Aufbau und Ablauf der Zwischenprüfung | 4 | Zeitpunkt: Beginn 2. Ausbildungsjahr; Praktische Aufgabe höchstens 3 Stunden, schriftlich höchstens 60 Minuten; Was nachzuweisen ist | `ao-p8` |  |
 | `ZP-2` | Planungsaufgabe: Arbeitsschritte, Arbeitsmittel, Unterlagen | 6 | Arbeitsschritte planen; Arbeitsmittel auswählen; Technische Unterlagen nutzen | `ao-p8`, `ao-anlage` |  |
 | `ZP-3` | Positionieren von Maschinenelementen | 6 | Vorgehen beim Positionieren und Ausrichten; Prüfen und dokumentieren; Sicherheit und Umweltschutz im Auftrag | `ao-p8` | Sicherheit |
-| `ZP-4` | Gemischte Wiederholung Jahr 1 | 4 | Fragen quer über LF1–LF4 und M0 | `ao-anlage`, `rlp-im` |  |
+| `ZP-4` | Gemischte Wiederholung Jahr 1 | 4 | Fragen quer über die Lernfelder des 1. Jahres und M0 | `ao-anlage` |  |
 
 ### LF5 · Fertigen von Einzelteilen mit Werkzeugmaschinen
 
-- Jahr 2 · lernfeld · 80 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 5 (80 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage II.A Nr. 1 → § 4 Nr. 5 Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen; Anlage II.A Nr. 3 → § 4 Nr. 9 Branchenspezifische Fertigungstechniken; Anlage II.A Nr. 8 → § 4 Nr. 14 Durchführen von qualitätssichernden Maßnahmen
+- Jahr 2 · lernfeld · 80 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 5 (80 Std., `rlp-im`)
+- AO-Berufsbild: Anlage II.A Nr. 1 → Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen; Anlage II.A Nr. 3 → Branchenspezifische Fertigungstechniken; Anlage II.A Nr. 8 → Durchführen von qualitätssichernden Maßnahmen
 - Prüfungsgebiete: PT-b, PT-c, PT-e, PT-f, PP-b
 - Fragetypen-Mix (%): auswahl 35, zuordnen 15, lueckentext 10, reihenfolge 15, rechnen 25
 
@@ -278,8 +242,8 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 
 ### LF7 · Montieren von technischen Teilsystemen
 
-- Jahr 2 · lernfeld · 40 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 7 (40 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage II.A Nr. 3 → § 4 Nr. 9 Branchenspezifische Fertigungstechniken; Anlage II.A Nr. 2 → § 4 Nr. 7 Planen und Vorbereiten von Arbeitsabläufen
+- Jahr 2 · lernfeld · 40 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 7 (40 Std., `rlp-im`)
+- AO-Berufsbild: Anlage II.A Nr. 3 → Branchenspezifische Fertigungstechniken; Anlage II.A Nr. 2 → Planen und Vorbereiten von Arbeitsabläufen
 - Prüfungsgebiete: PT-a, PP-a
 - Fragetypen-Mix (%): auswahl 40, zuordnen 20, lueckentext 15, reihenfolge 10, rechnen 15
 
@@ -293,9 +257,9 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 
 ### LF6 · Installieren und Inbetriebnehmen steuerungstechnischer Systeme
 
-- Jahr 2 · lernfeld · 60 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 6 (60 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage II.A Nr. 4 → § 4 Nr. 10 Steuerungs- und Regelungstechnik; Anlage II.A Nr. 5 → § 4 Nr. 11 Einrichten und Bedienen von Produktionsanlagen
-- Prüfungsgebiete: PT-d, PP-d
+- Jahr 2 · lernfeld · 60 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 6 (60 Std., `rlp-im`)
+- AO-Berufsbild: Anlage II.A Nr. 4 → Steuerungs- und Regelungstechnik; Anlage II.A Nr. 5 → Einrichten und Bedienen von Produktionsanlagen
+- Prüfungsgebiete: PT-d, PP-d, PRAK-1
 - Fragetypen-Mix (%): auswahl 40, zuordnen 20, lueckentext 15, reihenfolge 10, rechnen 15
 
 | Block | Titel | Einheiten | Themen | Quellen | Merker |
@@ -310,10 +274,10 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 ### PA · Produktionsanlagen einrichten, bedienen und übergeben (MAF-Kern)
 
 - Jahr 2 · ao-kern · 60 Einheiten · Niveau: Fachbildung (Niveau praktische und schriftliche Abschlussprüfung)
-- AO-Berufsbild: Anlage I Nr. 11 → § 4 Nr. 11 Einrichten und Bedienen von Produktionsanlagen; Anlage I Nr. 12 → § 4 Nr. 12 Steuern des Materialflusses; Anlage II.A Nr. 5 → § 4 Nr. 11 Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 6 → § 4 Nr. 12 Steuern des Materialflusses
-- Prüfungsgebiete: PT-d, PP-a, PP-d, PP-e
+- AO-Berufsbild: Anlage I Nr. 11 → Einrichten und Bedienen von Produktionsanlagen; Anlage I Nr. 12 → Steuern des Materialflusses; Anlage II.A Nr. 5 → Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 6 → Steuern des Materialflusses
+- Prüfungsgebiete: PT-d, PP-a, PP-d, PP-e, PRAK-1, PRAK-2
 - Fragetypen-Mix (%): auswahl 35, zuordnen 20, lueckentext 10, reihenfolge 25, rechnen 10
-- Hinweis: Berufskern laut Anlage II.A Nr. 5 (18 Wochen zusammen mit Nr. 4). Der RLP Industriemechaniker deckt das nicht 1:1 ab, darum eigenes Modul direkt aus der Ausbildungsordnung. Deckt auch die praktischen Prüfungsaufgaben nach § 9 Abs. 2.
+- Hinweis: Berufskern laut Anlage II.A Nr. 5 und Nr. 6. Der Referenz-Rahmenlehrplan deckt das nicht 1:1 ab, darum eigenes Modul direkt aus der Ausbildungsordnung. Deckt auch die praktischen Prüfungsaufgaben nach § 9 Abs. 2.
 
 | Block | Titel | Einheiten | Themen | Quellen | Merker |
 | --- | --- | --- | --- | --- | --- |
@@ -328,8 +292,8 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 
 ### LF8 · Fertigen auf numerisch gesteuerten Werkzeugmaschinen
 
-- Jahr 2 · lernfeld · 60 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 8 (60 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage II.A Nr. 5 → § 4 Nr. 11 Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 3 → § 4 Nr. 9 Branchenspezifische Fertigungstechniken
+- Jahr 2 · lernfeld · 60 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 8 (60 Std., `rlp-im`)
+- AO-Berufsbild: Anlage II.A Nr. 5 → Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 3 → Branchenspezifische Fertigungstechniken
 - Prüfungsgebiete: PT-a, PT-e, PT-f, PP-b
 - Fragetypen-Mix (%): auswahl 35, zuordnen 15, lueckentext 10, reihenfolge 15, rechnen 25
 
@@ -344,9 +308,9 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 
 ### LF9 · Instandsetzen von technischen Systemen
 
-- Jahr 2 · lernfeld · 40 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 9 (40 Std., `rlp-im` via `rlp-maf`)
-- AO-Berufsbild: Anlage II.A Nr. 7 → § 4 Nr. 13 Warten und Inspizieren von Maschinen und Anlagen; Anlage II.A Nr. 5 → § 4 Nr. 11 Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 6 → § 4 Nr. 12 Steuern des Materialflusses
-- Prüfungsgebiete: PP-c, PP-d
+- Jahr 2 · lernfeld · 40 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung) · RLP LF 9 (40 Std., `rlp-im`)
+- AO-Berufsbild: Anlage II.A Nr. 7 → Warten und Inspizieren von Maschinen und Anlagen; Anlage II.A Nr. 5 → Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 6 → Steuern des Materialflusses
+- Prüfungsgebiete: PP-c, PP-d, PRAK-3
 - Fragetypen-Mix (%): auswahl 35, zuordnen 20, lueckentext 10, reihenfolge 25, rechnen 10
 
 | Block | Titel | Einheiten | Themen | Quellen | Merker |
@@ -360,7 +324,7 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 ### QS · Qualitätssichernde Maßnahmen
 
 - Jahr 2 · ao-kern · 20 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung)
-- AO-Berufsbild: Anlage I Nr. 14 → § 4 Nr. 14 Durchführen von qualitätssichernden Maßnahmen; Anlage II.A Nr. 8 → § 4 Nr. 14 Durchführen von qualitätssichernden Maßnahmen
+- AO-Berufsbild: Anlage I Nr. 14 → Durchführen von qualitätssichernden Maßnahmen; Anlage II.A Nr. 8 → Durchführen von qualitätssichernden Maßnahmen
 - Prüfungsgebiete: PP-b
 - Fragetypen-Mix (%): auswahl 40, zuordnen 25, lueckentext 20, reihenfolge 10, rechnen 5
 
@@ -373,8 +337,8 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 ### WISO · Wirtschafts- und Sozialkunde
 
 - Jahr 2 · wiso · 40 Einheiten · Niveau: Prüfungsbereich WiSo (20 %, 60 Minuten)
-- AO-Berufsbild: Anlage I Nr. 1 → § 4 Nr. 1 Berufsbildung, Arbeits- und Tarifrecht; Anlage I Nr. 2 → § 4 Nr. 2 Aufbau und Organisation des Ausbildungsbetriebes
-- Prüfungsgebiete: WISO
+- AO-Berufsbild: Anlage I Nr. 1 → Berufsbildung, Arbeits- und Tarifrecht; Anlage I Nr. 2 → Aufbau und Organisation des Ausbildungsbetriebes
+- Prüfungsgebiete: WISO-1
 - Fragetypen-Mix (%): auswahl 40, zuordnen 25, lueckentext 20, reihenfolge 10, rechnen 5
 - Hinweis: Inhalt nach dem KMK-Qualifikationsprofil 2021 (40 Unterrichtsstunden). Keine Personendaten in Beispielen.
 
@@ -387,102 +351,47 @@ Reihenfolge = Lernreihenfolge im Kurs. `M0` wird nicht am Stück gelernt, sonder
 ### APPT · Abschlussprüfung: Training Produktionstechnik (§ 9)
 
 - Jahr 2 · pruefung · 40 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung)
-- AO-Berufsbild: Anlage II.A Nr. 3 → § 4 Nr. 9 Branchenspezifische Fertigungstechniken; Anlage II.A Nr. 1 → § 4 Nr. 5 Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen
+- AO-Berufsbild: Anlage II.A Nr. 3 → Branchenspezifische Fertigungstechniken; Anlage II.A Nr. 1 → Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen
 - Prüfungsgebiete: PT-a, PT-b, PT-c, PT-d, PT-e, PT-f
 - Fragetypen-Mix (%): auswahl 40, zuordnen 20, lueckentext 15, reihenfolge 10, rechnen 15
-- Hinweis: Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 Nr. 1.1. Keine IHK-Prüfungsaufgaben.
+- Hinweis: Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt A. Keine IHK-Prüfungsaufgaben.
 
 | Block | Titel | Einheiten | Themen | Quellen | Merker |
 | --- | --- | --- | --- | --- | --- |
-| `APPT-1` | Technische Unterlagen und Werkstoffe (PT a, b) | 12 | Fälle zu Zeichnungen, Stücklisten, Arbeitsplänen; Fälle zu Werkstoffwahl und Werkstoffeigenschaften | `ao-p9`, `rlp-im` |  |
-| `APPT-2` | Werkzeuge, Funktion von Maschinen und Anlagen (PT c, d) | 12 | Fälle zu Werkzeugwahl und Schneidstoffen; Fälle zu Funktion und Aufbau von Maschinen und Anlagen | `ao-p9`, `rlp-im` |  |
-| `APPT-3` | Prüfverfahren, Prüfmittel, Fertigungstechniken (PT e, f) | 12 | Fälle zu Prüfmittelwahl und Toleranzen; Fälle zu Fertigungsverfahren und Technologiedaten | `ao-p9`, `rlp-im` |  |
-| `APPT-4` | Prüfungsformat und Zeitplanung | 4 | 120 Minuten, 50 Prozent Gewicht; Praxisbezogene Fälle lesen und strukturieren | `ao-p9` |  |
+| `APPT-1` | Fälle zu technische Unterlagen, Werkstoffe, Werkzeuge | 18 | Praxisbezogene Fälle: technische Unterlagen; Praxisbezogene Fälle: Werkstoffe; Praxisbezogene Fälle: Werkzeuge | `ao-p9` |  |
+| `APPT-2` | Fälle zu Funktion von Maschinen und Anlagen, Prüfverfahren und Prüfmittel, Fertigungstechniken | 18 | Praxisbezogene Fälle: Funktion von Maschinen und Anlagen; Praxisbezogene Fälle: Prüfverfahren und Prüfmittel; Praxisbezogene Fälle: Fertigungstechniken | `ao-p9` |  |
+| `APPT-3` | Prüfungsformat und Zeitplanung | 4 | 120 Minuten, 50 Prozent Gewicht; Praxisbezogene Fälle lesen und strukturieren | `ao-p9` |  |
 
 ### APPP · Abschlussprüfung: Training Produktionsplanung (§ 9)
 
 - Jahr 2 · pruefung · 30 Einheiten · Niveau: Fachbildung (Niveau schriftliche Abschlussprüfung)
-- AO-Berufsbild: Anlage II.A Nr. 2 → § 4 Nr. 7 Planen und Vorbereiten von Arbeitsabläufen; Anlage II.A Nr. 5 → § 4 Nr. 11 Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 7 → § 4 Nr. 13 Warten und Inspizieren von Maschinen und Anlagen; Anlage II.A Nr. 8 → § 4 Nr. 14 Durchführen von qualitätssichernden Maßnahmen
+- AO-Berufsbild: Anlage II.A Nr. 2 → Planen und Vorbereiten von Arbeitsabläufen; Anlage II.A Nr. 5 → Einrichten und Bedienen von Produktionsanlagen; Anlage II.A Nr. 7 → Warten und Inspizieren von Maschinen und Anlagen; Anlage II.A Nr. 8 → Durchführen von qualitätssichernden Maßnahmen
 - Prüfungsgebiete: PP-a, PP-b, PP-c, PP-d, PP-e
 - Fragetypen-Mix (%): auswahl 35, zuordnen 20, lueckentext 10, reihenfolge 25, rechnen 10
-- Hinweis: Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 Nr. 1.2. Keine IHK-Prüfungsaufgaben.
+- Hinweis: Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt A. Keine IHK-Prüfungsaufgaben.
 
 | Block | Titel | Einheiten | Themen | Quellen | Merker |
 | --- | --- | --- | --- | --- | --- |
-| `APPP-1` | Arbeitsschritte und Produktionsanlagen (PP a, d) | 12 | Fälle zur Planung von Arbeitsschritten; Fälle zu Rüsten, Bedienen und Überwachen von Produktionsanlagen | `ao-p9`, `ao-anlage` |  |
-| `APPP-2` | Qualitätssicherung und vorbeugende Instandhaltung (PP b, c) | 10 | Fälle zu Qualitätsabweichung und Korrektur; Fälle zu Wartungsplanung und vorbeugender Instandhaltung | `ao-p9`, `ao-anlage` |  |
-| `APPP-3` | Übergabeprotokoll und Prüfungsformat (PP e) | 8 | Übergabeprotokoll ausfüllen und bewerten; 60 Minuten, 30 Prozent Gewicht | `ao-p9`, `ao-anlage` |  |
+| `APPP-1` | Fälle zu Arbeitsschritte, Qualitätssicherung | 12 | Praxisbezogene Fälle: Arbeitsschritte; Praxisbezogene Fälle: Qualitätssicherung | `ao-p9`, `ao-anlage` |  |
+| `APPP-2` | Fälle zu vorbeugende Instandhaltung, Produktionsanlagen, Übergabeprotokoll | 12 | Praxisbezogene Fälle: vorbeugende Instandhaltung; Praxisbezogene Fälle: Produktionsanlagen; Praxisbezogene Fälle: Übergabeprotokoll | `ao-p9`, `ao-anlage` |  |
+| `APPP-3` | Prüfungsformat und Zeitplanung | 6 | 60 Minuten, 30 Prozent Gewicht; Planungsunterlagen und Protokolle lesen | `ao-p9` |  |
 
-## 9. Mengengerüst, Phasen und Kosten
+## 8. Erzeugungsphasen
 
-**Erzeugung in vier Phasen.** Jede Phase ist ein eigener Kurslauf unter dem 20-Euro-Deckel (AGENTS.md). Phase A reicht für einen spielbaren Pilot.
+Jede Phase ist ein eigener Kurslauf unter dem 20-Euro-Deckel (AGENTS.md).
 
 | Phase | Module | Einheiten | Warum |
 | --- | --- | --- | --- |
-| A | `M0`, `LF1`, `LF2`, `PA` | 280 | Schnell spielbarer Kern: Sicherheit/Betrieb, Fertigen von Hand und mit Maschinen, Produktionsanlagen (das, was den MAF ausmacht). Das vorhandene Goldset deckt M0 und PA bereits teilweise ab. |
+| A | `M0`, `LF1`, `LF2`, `PA` | 280 | Schnell spielbarer Kern: Sicherheit/Betrieb, Fertigen von Hand und mit Maschinen, Produktionsanlagen. |
 | B | `LF3`, `LF4`, `ZP`, `QS` | 200 | Baugruppen, Warten, Zwischenprüfungs-Training, Qualitätssicherung. |
 | C | `LF5`, `LF7`, `LF6` | 180 | Werkzeugmaschinen, Montage von Teilsystemen, Steuerungstechnik. |
 | D | `LF8`, `LF9`, `WISO`, `APPT`, `APPP` | 210 | CNC, Instandsetzen, WiSo und beide schriftlichen Prüfungstrainings. |
 | | **Summe** | **870** | |
 
-**Kostenschätzung pro Phase** (Preise aus D-06/D-07, Batch-Rabatt 50 %; Schätzung, wird in AP-15 in Langfuse gemessen):
+## 9. Annahmen (ohne Rückfrage, siehe DECISIONS.md)
 
-| Posten | Annahme | Phase A (280 Einheiten) |
-| --- | --- | --- |
-| Erzeugen, `claude-sonnet-5-5` Batch | ca. 3.000 Token Eingabe + 2.500 Token Ausgabe je Einheit | ca. 4–5 USD |
-| Prüfen, `gpt-5.4-mini` | ca. 1.700 Token je Frage, 6 Fragen je Einheit | ca. 4–5 USD |
-| Nachbesserung | 20 % der Fragen einmal neu | ca. 1–2 USD |
-| **Summe** | | **ca. 10–12 USD, unter dem Deckel** |
+1. Referenz-Rahmenlehrplan ist Industriemechaniker/in; Betriebe mit Kunststofffokus nutzen die Map maf-kunststoff.
+2. Einheiten-Budget: 1 Einheit je Unterrichtsstunde des RLP; übrige Module nach Gewicht in Anlage und § 9. Startwert, den die Lern-Schleife (AP-12) später verschiebt.
+3. Wochen der Anlage sind so gruppiert, wie die Klammern der Verordnung sie zusammenfassen (Jahr 1: Nr. 9–11 = 22; Jahr 2: Nr. 1–2 = 8, Nr. 4–5 = 18).
+4. Ein drittes Ausbildungsjahr wird nicht geplant (§ 2).
 
-Passt zu den zwei Lernvarianten aus PRODUCT.md: „Prüfungsvorbereitung 2 Monate“ (40 Tage × 2,5 h = 100 h) nutzt alle 870 Einheiten einmal; „Weiterbildung 3 Monate“ (60 Tage × 2 h = 120 h) hat zusätzlich Platz für Wiederholung nach 1, 3 und 7 Tagen.
-
-## 10. So wird der Agent darauf eingestellt (Vorgabe für AP-14)
-
-Heute ist der Plan-Agent generisch (`Erzeuge einen Lernplan für …`) und der Inhalts-Agent erzeugt nur das Lernfeld „Sicherheit“. Beide bekommen in AP-14 die Map als Eingabe. Konkret:
-
-**Plan-Agent** (`src/lib/plan/plan-agent.ts`)
-
-1. Liest `docs/content/maf-curriculum.json` statt der 24 Topic-Titel aus `maf-plan-seed.ts`.
-2. Läuft die Module in `order` ab und streut `M0`-Einheiten ein (jede fünfte Einheit).
-3. Füllt Tage mit 2–3 Stunden aus Einheiten zu 5–10 Minuten; Variante bestimmt Tage und Stunden pro Tag.
-4. Jede Plan-Einheit trägt `moduleId`, `blockId`, `sourceKind` und `niveau`, damit Generate und Evaluate dieselbe Referenz nutzen.
-
-**Inhalts-Agent** (`src/lib/generate/generate-agent.ts`)
-
-1. Ein Batch-Request **pro Block**, nicht pro Kurs. Eingabe: Blocktitel, Themenliste, Quellen-URLs, Jahr und Niveau, Fragetypen-Mix, Anzahl Einheiten.
-2. Ausgabe im bestehenden Schema (`GeneratedLernfeld` → `GeneratedUnit` → `GeneratedQuestion`), plus `moduleId` und `blockId`.
-3. Pflicht im Prompt: nur die genannten Quellen zitieren, `sourceFetchedAt` setzen, keine IHK-Aufgaben, keine Personendaten, einfache Sprache (kurze Sätze, Fachwort mit Erklärung).
-4. Blöcke mit `rechnen` liefern Rechenfragen mit Rechenweg in der Erklärung; Blöcke mit `safety` setzen `safetyFlag`.
-
-Prompt-Gerüst für einen Block:
-
-```text
-Erzeuge {units} Lerneinheiten (je 5–10 Minuten) für den Block "{block.title}" im Modul "{module.title}"
-der Ausbildung Maschinen- und Anlagenführer/in, Schwerpunkt Metall- und Kunststofftechnik, Ausbildungsjahr {year}.
-Niveau: {niveau}. Themen, die abgedeckt werden müssen: {topics}.
-Erlaubte Quellen (nur diese zitieren, URL in sourceUrl, Abrufdatum {fetchedAt} in sourceFetchedAt): {sourceUrls}.
-Je Einheit: kurze Erklärung in einfacher Sprache, dann 5–8 Fragen. Fragetypen-Mix in Prozent: {questionMix}.
-Jede Frage hat genau eine richtige Antwort, eine Erklärung mit Bezug zur Quelle und sourceUrl.
-Verboten: IHK-Prüfungsaufgaben oder deren Umformulierung, Personendaten, Inhalte ohne Quelle.
-Antworte nur mit JSON nach Schema: { ... }
-```
-
-**Richter / Qualitäts-Schranke** (`src/lib/quality/*`)
-
-- `niveau` wird gegen das Modul-Niveau geprüft (Jahr 1 = Zwischenprüfung, Jahr 2 = Abschlussprüfung), nicht gegen einen Kurs-Mittelwert.
-- `safetyFlag` ist bei Blöcken mit Sicherheitsmerker vorbelegt; 10 % Stichprobe durch einen Menschen vor `publish`.
-- Goldset-Lücke: Die 70 Items decken vor allem Verordnung und Prüfungsstruktur ab, kaum Fachinhalt aus LF1–LF9. Für AP-15 mindestens 5 eigene Items pro Modul ergänzen, damit der Zielwert pro Modul kalibriert ist.
-
-## 11. Annahmen (ohne Rückfrage, siehe D-26)
-
-1. Referenz-Rahmenlehrplan ist Industriemechaniker/in; Betriebe mit Zerspanungsfokus brauchen später eine Variante mit RLP Zerspanungsmechaniker/in (LF 5–9).
-2. Einheiten-Budget: 1 Einheit je Unterrichtsstunde des RLP; Querschnitt, MAF-Kern, WiSo und Prüfungstraining nach Gewicht in Anlage und § 9. Das ist ein Startwert, den die Lern-Schleife (AP-12) später verschiebt.
-3. Wochenangaben der Anlage sind so gruppiert, wie die Klammern in der Verordnung sie zusammenfassen (Jahr 1: Nr. 9–11 zusammen 22 Wochen; Jahr 2: Nr. 1–2 zusammen 8 Wochen, Nr. 4–5 zusammen 18 Wochen).
-4. Ein drittes Ausbildungsjahr wird nicht geplant (§ 2). Ein Anschlusskurs „Fortsetzung Industriemechaniker (LF 10–15)“ ist ein eigenes Produkt.
-5. Die anderen vier Schwerpunkte (Textiltechnik, Textilveredelung, Lebensmitteltechnik, Druckweiter- und Papierverarbeitung) teilen Jahr 1 und `M0`; Jahr 2 braucht pro Schwerpunkt eine eigene Map.
-
-## 12. Nächste Schritte
-
-1. **Freigabe dieser Map** durch Sinan (Reihenfolge, Einheiten-Budget, Referenz-RLP). Änderungen direkt in `maf-curriculum.json`; `npm test` prüft die Summen.
-2. **AP-14:** Plan- und Inhalts-Agent lesen die Map (siehe Abschnitt 10).
-3. **AP-15:** Phase A erzeugen, bewerten, veröffentlichen; Kosten in Langfuse messen; Goldset um Fachitems erweitern.

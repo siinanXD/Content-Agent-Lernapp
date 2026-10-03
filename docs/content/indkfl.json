@@ -1,0 +1,2814 @@
+{
+  "id": "indkfl",
+  "family": "indkfl",
+  "title": "Industriekaufmann / Industriekauffrau (IndKflAusbV 2024, 3 Jahre, 13 Lernfelder, Einsatzgebiete)",
+  "version": "2026-10-03",
+  "status": "Entwurf – Freigabe durch Sinan offen",
+  "keyword": "Industriekaufmann",
+  "variantLabel": "Monoberuf mit sieben Einsatzgebieten (§ 4 Abs. 4); alle Einsatzgebiete als Blöcke im Modul EG",
+  "durationYears": 3,
+  "durationNote": "§ 2 IndKflAusbV: Die Berufsausbildung dauert drei Jahre. Gestreckte Abschlussprüfung: Teil 1 im 4. Halbjahr, Teil 2 am Ende (§ 6). Die Verordnung vom 12.03.2024 ersetzt die IndKfmAusbV 2002 ab 1.8.2024.",
+  "referenceRlp": {
+    "sourceId": "rlp-indkfl",
+    "why": "Der KMK-RLP Industriekaufmann und Industriekauffrau vom 15.12.2023 ist mit der Verordnung 2024 abgestimmt: 13 Lernfelder, 880 Std. (320/280/280). Lernfelder 1–7 sind vor Teil 1 der Abschlussprüfung zu unterrichten.",
+    "alternatives": []
+  },
+  "unit": {
+    "minutesMin": 5,
+    "minutesMax": 10,
+    "minutesAvg": 7.5,
+    "questionsMin": 5,
+    "questionsMax": 8,
+    "questionTypes": [
+      "auswahl",
+      "zuordnen",
+      "lueckentext",
+      "reihenfolge",
+      "rechnen"
+    ],
+    "explanationWithSource": true
+  },
+  "defaultQuestionMix": {
+    "auswahl": 40,
+    "zuordnen": 20,
+    "lueckentext": 15,
+    "reihenfolge": 10,
+    "rechnen": 15
+  },
+  "rules": [
+    "Ohne amtliche Quelle wird kein Lerninhalt erzeugt; jede Einheit speichert sourceUrl und sourceFetchedAt.",
+    "IHK-Prüfungsaufgaben werden nicht kopiert; Prüfungstrainings sind eigene Fälle nach der Struktur der Verordnung.",
+    "Keine Personendaten in Prompts oder Beispielen.",
+    "Blöcke mit safety=true: Richter setzt safetyFlag, 10 Prozent Stichprobe durch einen Menschen vor Veröffentlichung.",
+    "Qualitäts-Schwelle (D-18/D-25): sourceFidelity=1, uniqueness=1, niveau>=4, language>=4."
+  ],
+  "assumptions": [
+    "Einsatzgebiete (§ 4 Abs. 4) sind keine Fachrichtungen: Lernfelder und Teil 1/Teil 2 schriftlich sind für alle gleich. Darum eine Map mit einem Modul EG, das pro Einsatzgebiet einen Block hat; Lernende wählen ihr Gebiet.",
+    "Betriebe dürfen ein abweichendes Einsatzgebiet festlegen; dafür gilt nur der Methodikblock EG-0.",
+    "Wochen der Anlage A: 1.–15. Monat 64 Wochen, 16.–36. Monat 92 Wochen (Summen der Richtwerte, inkl. Anlage B Nr. 5 und 6).",
+    "Der RLP 2023 ist kompetenzorientiert ohne Inhaltslisten; die Themen je Block sind aus den Lernfeldbeschreibungen abgeleitet (verbindliche Mindestinhalte sind dort kursiv).",
+    "Einheiten-Budget: 1 Einheit je Unterrichtsstunde; M0, DIG, EG, Prüfungstrainings und WiSo nach Gewicht in Anlage und § 14.",
+    "WiSo (§ 13) hat im kaufmännischen RLP kein eigenes KMK-Qualifikationsprofil; Inhalt aus Anlage B Nr. 1 und Lernfeldern 1, 11, 12."
+  ],
+  "aoBerufsbild": [
+    {
+      "id": "A1",
+      "title": "Leistungserstellung planen und koordinieren"
+    },
+    {
+      "id": "A2",
+      "title": "Logistik und Lagerprozesse planen und steuern"
+    },
+    {
+      "id": "A3",
+      "title": "Beschaffung planen und steuern"
+    },
+    {
+      "id": "A4",
+      "title": "Marketingmaßnahmen planen und umsetzen"
+    },
+    {
+      "id": "A5",
+      "title": "Vertriebsprozesse umsetzen"
+    },
+    {
+      "id": "A6",
+      "title": "Personalprozesse umsetzen"
+    },
+    {
+      "id": "A7",
+      "title": "kaufmännische Steuerung und Kontrolle durchführen"
+    },
+    {
+      "id": "A8",
+      "title": "einsatzgebietsspezifische Lösungen erarbeiten"
+    },
+    {
+      "id": "A9",
+      "title": "einsatzgebietsspezifische Aufgaben und Prozesse koordinieren"
+    },
+    {
+      "id": "B1",
+      "title": "Organisation des Ausbildungsbetriebes, Berufsbildung sowie Arbeits- und Tarifrecht"
+    },
+    {
+      "id": "B2",
+      "title": "Sicherheit und Gesundheit bei der Arbeit"
+    },
+    {
+      "id": "B3",
+      "title": "Umweltschutz und Nachhaltigkeit"
+    },
+    {
+      "id": "B4",
+      "title": "digitalisierte Arbeitswelt"
+    },
+    {
+      "id": "B5",
+      "title": "digitale Geschäftsprozesse im Unternehmen gestalten"
+    },
+    {
+      "id": "B6",
+      "title": "Zusammenarbeit, Kommunikation und individuelle Arbeitsorganisation gestalten"
+    }
+  ],
+  "aoZeitrahmen": {
+    "sections": [
+      {
+        "id": "anlage-A-1-15",
+        "title": "Anlage Abschnitt A – berufsprofilgebend, 1. bis 15. Monat (vor Teil 1 der Abschlussprüfung)",
+        "sourceId": "indkfl-anlage",
+        "expectedWeeks": 64,
+        "rows": [
+          {
+            "lfdNr": [
+              "A 1"
+            ],
+            "berufsbild": [
+              "A1"
+            ],
+            "weeks": 18
+          },
+          {
+            "lfdNr": [
+              "A 2"
+            ],
+            "berufsbild": [
+              "A2"
+            ],
+            "weeks": 14
+          },
+          {
+            "lfdNr": [
+              "A 3"
+            ],
+            "berufsbild": [
+              "A3"
+            ],
+            "weeks": 14
+          },
+          {
+            "lfdNr": [
+              "A 7 a"
+            ],
+            "berufsbild": [
+              "A7"
+            ],
+            "weeks": 5
+          },
+          {
+            "lfdNr": [
+              "B 5 a–b"
+            ],
+            "berufsbild": [
+              "B5"
+            ],
+            "weeks": 5
+          },
+          {
+            "lfdNr": [
+              "B 6 a–d"
+            ],
+            "berufsbild": [
+              "B6"
+            ],
+            "weeks": 8
+          }
+        ]
+      },
+      {
+        "id": "anlage-A-16-36",
+        "title": "Anlage Abschnitt A – berufsprofilgebend, 16. bis 36. Monat",
+        "sourceId": "indkfl-anlage",
+        "expectedWeeks": 92,
+        "rows": [
+          {
+            "lfdNr": [
+              "A 4"
+            ],
+            "berufsbild": [
+              "A4"
+            ],
+            "weeks": 12
+          },
+          {
+            "lfdNr": [
+              "A 5"
+            ],
+            "berufsbild": [
+              "A5"
+            ],
+            "weeks": 14
+          },
+          {
+            "lfdNr": [
+              "A 6"
+            ],
+            "berufsbild": [
+              "A6"
+            ],
+            "weeks": 14
+          },
+          {
+            "lfdNr": [
+              "A 7 b–e"
+            ],
+            "berufsbild": [
+              "A7"
+            ],
+            "weeks": 10
+          },
+          {
+            "lfdNr": [
+              "A 8"
+            ],
+            "berufsbild": [
+              "A8"
+            ],
+            "weeks": 13
+          },
+          {
+            "lfdNr": [
+              "A 9"
+            ],
+            "berufsbild": [
+              "A9"
+            ],
+            "weeks": 13
+          },
+          {
+            "lfdNr": [
+              "B 5 c–f"
+            ],
+            "berufsbild": [
+              "B5"
+            ],
+            "weeks": 8
+          },
+          {
+            "lfdNr": [
+              "B 6 e–h"
+            ],
+            "berufsbild": [
+              "B6"
+            ],
+            "weeks": 8
+          }
+        ]
+      },
+      {
+        "id": "anlage-B",
+        "title": "Anlage Abschnitt B – integrativ, während der gesamten Ausbildung",
+        "sourceId": "indkfl-anlage",
+        "expectedWeeks": null,
+        "rows": [
+          {
+            "lfdNr": [
+              "B 1",
+              "B 2",
+              "B 3",
+              "B 4"
+            ],
+            "berufsbild": [
+              "B1",
+              "B2",
+              "B3",
+              "B4"
+            ],
+            "weeks": null,
+            "note": "während der gesamten Ausbildung"
+          }
+        ]
+      }
+    ]
+  },
+  "exam": {
+    "summary": "Gestreckte Abschlussprüfung (§ 6): Teil 1 im vierten Ausbildungshalbjahr über die ersten 15 Monate (ein schriftlicher Prüfungsbereich, 25 %), Teil 2 am Ende mit drei Prüfungsbereichen (35 % schriftlich, 30 % betriebliche Fachaufgabe im Einsatzgebiet, 10 % WiSo). Keine Zwischenprüfung.",
+    "gradedParts": [
+      {
+        "id": "T1",
+        "part": "Teil 1",
+        "bereich": "Leistungserstellung, Logistik, Beschaffung und Buchhaltung",
+        "form": "schriftlich",
+        "duration": "90 Minuten",
+        "weightPercent": 25,
+        "sourceId": "indkfl-p8",
+        "gebiete": [
+          {
+            "id": "T1-1",
+            "title": "Leistungserstellung entlang der Wertschöpfungskette planen, koordinieren, bewerten"
+          },
+          {
+            "id": "T1-2",
+            "title": "Bedarfe ermitteln, Beschaffung einleiten, Logistik- und Lagerprozesse planen und steuern"
+          },
+          {
+            "id": "T1-3",
+            "title": "Geschäftsfälle nach Grundsätzen der Buchführung und Bilanzierung prüfen und bewerten"
+          },
+          {
+            "id": "T1-4",
+            "title": "mit internen und externen Partnern zusammenarbeiten"
+          },
+          {
+            "id": "T1-5",
+            "title": "Informationsbeschaffung, Datenschutz, Datensicherheit, Digitalisierung von Geschäftsprozessen"
+          }
+        ]
+      },
+      {
+        "id": "T2A",
+        "part": "Teil 2",
+        "bereich": "Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle",
+        "form": "schriftlich",
+        "duration": "150 Minuten",
+        "weightPercent": 35,
+        "sourceId": "indkfl-p11",
+        "gebiete": [
+          {
+            "id": "T2A-1",
+            "title": "Marketingmaßnahmen zielgruppenorientiert planen, umsetzen, bewerten"
+          },
+          {
+            "id": "T2A-2",
+            "title": "Vertriebsprozesse koordinieren, Kundenzufriedenheit und Kundenbindung"
+          },
+          {
+            "id": "T2A-3",
+            "title": "Personalprozesse nach Arbeits-, Sozial- und Tarifrecht planen und umsetzen"
+          },
+          {
+            "id": "T2A-4",
+            "title": "Kosten- und Leistungsrechnung, Kennzahlen, kaufmännische Steuerung, Jahresabschluss"
+          },
+          {
+            "id": "T2A-5",
+            "title": "englischsprachige Informationen und Fachbegriffe anwenden"
+          }
+        ]
+      },
+      {
+        "id": "T2B",
+        "part": "Teil 2",
+        "bereich": "Fachaufgabe im Einsatzgebiet",
+        "form": "betrieblich",
+        "duration": "Dokumentation (bis 16 Std.) und Präsentation (bis 8 Std.) vorbereiten; Präsentation bis 10 Min. und Fachgespräch zusammen 30 Min.",
+        "weightPercent": 30,
+        "sourceId": "indkfl-p12",
+        "gebiete": [
+          {
+            "id": "T2B-1",
+            "title": "komplexe berufstypische Fachaufgabe prozessorientiert planen, durchführen, auswerten"
+          },
+          {
+            "id": "T2B-2",
+            "title": "einsatzgebietsspezifische Lösungen analysieren und begründet auswählen"
+          },
+          {
+            "id": "T2B-3",
+            "title": "Vorgehen reflektieren, dokumentieren, präsentieren, bewerten (Gewichtung 10/20/70)"
+          }
+        ]
+      },
+      {
+        "id": "T2C",
+        "part": "Teil 2",
+        "bereich": "Wirtschafts- und Sozialkunde",
+        "form": "schriftlich",
+        "duration": "60 Minuten",
+        "weightPercent": 10,
+        "sourceId": "indkfl",
+        "gebiete": [
+          {
+            "id": "WISO-1",
+            "title": "allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt"
+          }
+        ]
+      }
+    ],
+    "ungraded": [],
+    "bestehen": "Gesamtergebnis aus Teil 1 und Teil 2 mindestens ausreichend; Teil 2 mindestens ausreichend; in mindestens zwei Prüfungsbereichen von Teil 2 mindestens ausreichend; kein Prüfungsbereich von Teil 2 ungenügend (§ 14 Abs. 2). Mündliche Ergänzungsprüfung in T2A oder WiSo möglich, Gewichtung 2:1 (§ 15)."
+  },
+  "totals": {
+    "modules": 20,
+    "unitsTarget": 1160,
+    "hoursAtAvgUnit": 145.0,
+    "questionsMin": 5800,
+    "questionsMax": 9280,
+    "rlpHoursByYear": {
+      "1": 320,
+      "2": 280,
+      "3": 280
+    }
+  },
+  "phases": [
+    {
+      "id": "A",
+      "title": "Grundstufe: Betrieb, Projekte, Kundenaufträge",
+      "moduleIds": [
+        "M0",
+        "LF1",
+        "LF2",
+        "LF3"
+      ],
+      "why": "Einstieg: Unternehmen, Rolle, Projektarbeit, Auftragsabwicklung.",
+      "unitsTarget": 260
+    },
+    {
+      "id": "B",
+      "title": "Rest Grundstufe und Teil 1",
+      "moduleIds": [
+        "LF4",
+        "LF5",
+        "LF6",
+        "LF7",
+        "T1"
+      ],
+      "why": "Beschaffung, Buchführung, Leistungserstellung, Logistik, Training Teil 1 (LF 1–7 vor Teil 1).",
+      "unitsTarget": 280
+    },
+    {
+      "id": "C",
+      "title": "Fachstufe: Rechnungswesen, Marketing, Digitalisierung, Einsatzgebiete",
+      "moduleIds": [
+        "LF8",
+        "LF9",
+        "DIG",
+        "EG"
+      ],
+      "why": "KLR, Marketing, digitale Geschäftsprozesse, Einsatzgebiete.",
+      "unitsTarget": 250
+    },
+    {
+      "id": "D",
+      "title": "Jahr 3 und Teil 2",
+      "moduleIds": [
+        "LF10",
+        "LF11",
+        "LF12",
+        "LF13",
+        "T2A",
+        "FA",
+        "WISO"
+      ],
+      "why": "Jahresabschluss, Gesamtwirtschaft, Personal, Problemlösung, Training Teil 2, Fachaufgabe, WiSo.",
+      "unitsTarget": 370
+    }
+  ],
+  "modules": [
+    {
+      "id": "M0",
+      "order": 0,
+      "title": "Querschnitt: Betrieb, Ausbildung, Sicherheit, Nachhaltigkeit, digitale Arbeitswelt",
+      "kind": "querschnitt",
+      "year": 1,
+      "niveau": "Grundstufe (vor Teil 1 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage B Nr. 1",
+          "berufsbild": "B1"
+        },
+        {
+          "ref": "Anlage B Nr. 2",
+          "berufsbild": "B2"
+        },
+        {
+          "ref": "Anlage B Nr. 3",
+          "berufsbild": "B3"
+        },
+        {
+          "ref": "Anlage B Nr. 4",
+          "berufsbild": "B4"
+        },
+        {
+          "ref": "Anlage B Nr. 6",
+          "berufsbild": "B6"
+        }
+      ],
+      "examAreas": [
+        "WISO-1",
+        "T1-5",
+        "T1-4"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "M0-1",
+          "title": "Ausbildungsbetrieb, Berufsbildung, Arbeits- und Tarifrecht",
+          "units": 16,
+          "topics": [
+            "Aufbau und Geschäftsprozesse des Betriebes",
+            "Rechte und Pflichten aus dem Ausbildungsvertrag, Dauer (3 Jahre, § 2), Beendigung",
+            "Ausbildungsordnung und betrieblicher Ausbildungsplan",
+            "Arbeits-, Sozial-, Tarif- und Mitbestimmungsrecht",
+            "Betriebsrat, Gewerkschaften, Wirtschaftsorganisationen",
+            "Positionen der eigenen Entgeltabrechnung",
+            "Beruflicher Aufstieg und Weiterentwicklung"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl"
+          ]
+        },
+        {
+          "id": "M0-2",
+          "title": "Sicherheit und Gesundheit bei der Arbeit",
+          "units": 12,
+          "topics": [
+            "Arbeitsschutz- und Unfallverhütungsvorschriften",
+            "Gefährdungen am Arbeitsplatz und auf dem Arbeitsweg",
+            "Ergonomie, psychische und physische Belastungen",
+            "Verhalten bei Unfällen, vorbeugender Brandschutz"
+          ],
+          "sourceIds": [
+            "indkfl-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "M0-3",
+          "title": "Umweltschutz und Nachhaltigkeit",
+          "units": 10,
+          "topics": [
+            "Belastungen für Umwelt und Gesellschaft vermeiden",
+            "Material und Energie nachhaltig nutzen",
+            "Abfälle vermeiden, Wiederverwertung",
+            "Vorschläge für nachhaltiges Handeln"
+          ],
+          "sourceIds": [
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "M0-4",
+          "title": "Digitalisierte Arbeitswelt",
+          "units": 12,
+          "topics": [
+            "Datenschutz und Datensicherheit",
+            "Risiken digitaler Medien, betriebliche Regelungen",
+            "Informationen recherchieren, prüfen, bewerten",
+            "Lern- und Arbeitstechniken, digitale Lernmedien",
+            "Zusammenarbeit über Bereichsgrenzen, gesellschaftliche Vielfalt"
+          ],
+          "sourceIds": [
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "M0-5",
+          "title": "Zusammenarbeit, Kommunikation, Arbeitsorganisation",
+          "units": 10,
+          "topics": [
+            "Wertschätzende, lösungsorientierte Kommunikation, auch fremdsprachlich",
+            "Kulturelle Unterschiede",
+            "Kommunikationswege wählen",
+            "Reporte, Präsentationen, Gesprächsunterlagen",
+            "Aufgaben strukturieren und priorisieren, Besprechungen moderieren",
+            "Projektarbeit, Fehlerkultur, Konfliktlösung"
+          ],
+          "sourceIds": [
+            "indkfl-anlage"
+          ]
+        }
+      ],
+      "note": "Anlage B Nr. 1–4 während der gesamten Ausbildung; der Plan-Agent streut diese Einheiten über alle Lernfelder."
+    },
+    {
+      "id": "LF1",
+      "order": 1,
+      "title": "Das Unternehmen vorstellen und die eigene Rolle mitgestalten",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundstufe (vor Teil 1 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage B Nr. 1",
+          "berufsbild": "B1"
+        },
+        {
+          "ref": "Anlage A Nr. 1",
+          "berufsbild": "A1"
+        },
+        {
+          "ref": "Anlage B Nr. 6",
+          "berufsbild": "B6"
+        }
+      ],
+      "examAreas": [
+        "T1-4",
+        "T1-1",
+        "WISO-1"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "LF1-1",
+          "title": "Duales System: Beteiligte, Rechte und Pflichten, Vollmachten",
+          "units": 14,
+          "topics": [
+            "Berufsbildungsgesetz, Ausbildungsordnung, Jugendarbeitsschutzgesetz",
+            "Rechte und Pflichten in der Ausbildung",
+            "Grenzen betrieblicher Vollmachten"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF1-2",
+          "title": "Industriebetrieb in der Gesamtwirtschaft, Leistungsprogramm, Produktionsfaktoren",
+          "units": 12,
+          "topics": [
+            "Einordnung als Industriebetrieb",
+            "Leistungsprogramm",
+            "Betriebliche Produktionsfaktoren"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF1-3",
+          "title": "Güter-, Dienstleistungs-, Geld- und Informationsströme",
+          "units": 10,
+          "topics": [
+            "Ströme von der Beschaffung bis zum Absatz",
+            "Darstellung"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF1-4",
+          "title": "Aufbauorganisation und Geschäftsprozesse",
+          "units": 14,
+          "topics": [
+            "Organisationsformen",
+            "Ereignisgesteuerte Prozessketten",
+            "Kern- und Supportprozesse"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF1-5",
+          "title": "Betriebliches Umfeld: Anspruchsgruppen, Verflechtungen, Eigentümer, Rechtsformen",
+          "units": 10,
+          "topics": [
+            "Interessen der Anspruchsgruppen",
+            "Internationale Verflechtungen",
+            "Eigentümerstruktur und Rechtsform"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF1-6",
+          "title": "Unternehmenskultur, Zielsystem, Kennzahlen",
+          "units": 12,
+          "topics": [
+            "Ökonomische, soziale, ökologische, ethische Ziele",
+            "Produktivität, Wirtschaftlichkeit, Rentabilität berechnen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF1-7",
+          "title": "Rolle und Arbeitsplatz gestalten, Betriebsverfassung",
+          "units": 8,
+          "topics": [
+            "Ergonomisch, sicher, gesundheitsgerecht arbeiten",
+            "Ziel- und adressatengerechte Kommunikation",
+            "Mitwirkung nach Betriebsverfassungsgesetz"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 1,
+        "title": "Das Unternehmen vorstellen und die eigene Rolle mitgestalten",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF2",
+      "order": 2,
+      "title": "Projekte planen und durchführen",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundstufe (vor Teil 1 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage B Nr. 6",
+          "berufsbild": "B6"
+        },
+        {
+          "ref": "Anlage B Nr. 4",
+          "berufsbild": "B4"
+        }
+      ],
+      "examAreas": [
+        "T1-4",
+        "T1-5"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "LF2-1",
+          "title": "Projektauftrag analysieren: Ziele und Rahmenbedingungen",
+          "units": 8,
+          "topics": [
+            "Auftrag und Auftraggebende",
+            "Ziele und Rahmenbedingungen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF2-2",
+          "title": "Projektmanagementmethoden: Struktur, Ablauf, Meilensteine",
+          "units": 12,
+          "topics": [
+            "Projektmanagementmethode anwenden",
+            "Projektablauf planen und strukturieren",
+            "Informations- und Kommunikationsstrukturen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF2-3",
+          "title": "Teamorganisation: Rollen, Regeln, Konflikte",
+          "units": 8,
+          "topics": [
+            "Aufgaben im Team",
+            "Regeln der Zusammenarbeit",
+            "Konflikte erkennen und lösen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF2-4",
+          "title": "Kreativitätstechniken, Fortschritt dokumentieren, Status überwachen",
+          "units": 6,
+          "topics": [
+            "Kreativitätstechniken",
+            "Arbeitsfortschritt dokumentieren",
+            "Termine und Zielerreichung überwachen, Abweichungen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF2-5",
+          "title": "Präsentation, Feedback, Reflexion",
+          "units": 6,
+          "topics": [
+            "Projektergebnisse präsentieren",
+            "Feedbackregeln",
+            "Projektablauf bewerten und optimieren"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 2,
+        "title": "Projekte planen und durchführen",
+        "hours": 40,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF3",
+      "order": 3,
+      "title": "Kundenaufträge bearbeiten und überwachen",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundstufe (vor Teil 1 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 5",
+          "berufsbild": "A5"
+        },
+        {
+          "ref": "Anlage A Nr. 1",
+          "berufsbild": "A1"
+        },
+        {
+          "ref": "Anlage B Nr. 4",
+          "berufsbild": "B4"
+        }
+      ],
+      "examAreas": [
+        "T1-1",
+        "T2A-2",
+        "T2A-5"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF3-1",
+          "title": "Kundenanfrage analysieren: Kundenstatus, Bedarf, Leistungsangebot",
+          "units": 10,
+          "topics": [
+            "Kundenstatus",
+            "Kundenbedarf",
+            "Betriebliches Leistungsangebot"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF3-2",
+          "title": "Teilprozesse der Auftragsabwicklung",
+          "units": 10,
+          "topics": [
+            "Prozessschritte von Anfrage bis Rechnung",
+            "Schnittstellen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF3-3",
+          "title": "Kaufvertrag: Zustandekommen, Inhalte, Besitz und Eigentum, AGB",
+          "units": 14,
+          "topics": [
+            "Zustandekommen und Inhalte",
+            "Besitz und Eigentum",
+            "Allgemeine Geschäftsbedingungen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF3-4",
+          "title": "Bonität, Leistungsangebot, Services, Zahlungs- und Lieferbedingungen",
+          "units": 10,
+          "topics": [
+            "Bonitätsprüfung",
+            "Zusätzliche Services",
+            "Zahlungs- und Lieferbedingungen, Nachhaltigkeit"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF3-5",
+          "title": "Verkaufspreis aus Selbstkosten kalkulieren, Angebot erstellen",
+          "units": 14,
+          "topics": [
+            "Kalkulation auf Basis der Selbstkosten",
+            "Angebot erstellen",
+            "Kaufvertrag abschließen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF3-6",
+          "title": "Datenschutz, Kommunikation auch in der Fremdsprache",
+          "units": 6,
+          "topics": [
+            "Vorschriften zum Datenschutz bei der Auftragserfassung",
+            "Interkulturelle, fremdsprachliche Kommunikation"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF3-7",
+          "title": "Kaufvertragsstörungen und Beschwerdemanagement",
+          "units": 16,
+          "topics": [
+            "Schlechtleistung",
+            "Nicht-Rechtzeitig-Zahlung, Verjährung, außergerichtliches Mahnverfahren",
+            "Aktives Beschwerdemanagement, Kundenzufriedenheit, Kundenbindung"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 3,
+        "title": "Kundenaufträge bearbeiten und überwachen",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF4",
+      "order": 4,
+      "title": "Beschaffungsprozesse planen und steuern",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundstufe (vor Teil 1 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 3",
+          "berufsbild": "A3"
+        },
+        {
+          "ref": "Anlage A Nr. 2",
+          "berufsbild": "A2"
+        }
+      ],
+      "examAreas": [
+        "T1-2"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF4-1",
+          "title": "Bedarfsanalyse und Verbrauchsstruktur",
+          "units": 8,
+          "topics": [
+            "Bedarfsanforderungen analysieren",
+            "Wert- und mengenmäßiger Anteil (ABC-Analyse)"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF4-2",
+          "title": "Materialbereitstellung, Bestellverfahren, optimale Bestellmenge",
+          "units": 10,
+          "topics": [
+            "Mit und ohne Vorratshaltung",
+            "Bestellpunkt- und Bestellrhythmusverfahren",
+            "Optimale Bestellmenge"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF4-3",
+          "title": "Bezugsquellen und Lieferantenauswahl, digitale Beschaffung",
+          "units": 6,
+          "topics": [
+            "Regional, national, international",
+            "Ein, zwei, mehrere Lieferanten",
+            "Digitale Beschaffung von Unternehmen zu Unternehmen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF4-4",
+          "title": "Anfrage, quantitativer Angebotsvergleich, Währung und Wechselkursrisiko",
+          "units": 8,
+          "topics": [
+            "Anfrage auch fremdsprachlich",
+            "Bezugskalkulation",
+            "Währungen und Wechselkursrisiko"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF4-5",
+          "title": "Nutzwertanalyse, Bestellung, Wareneingang, Rechnungsprüfung",
+          "units": 4,
+          "topics": [
+            "Qualitativer Angebotsvergleich",
+            "Bestellen, Wareneingang kontrollieren",
+            "Eingangsrechnungen prüfen, Zahlung veranlassen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF4-6",
+          "title": "Vertragsstörungen: Nicht-Rechtzeitig-Lieferung, Schlechtleistung",
+          "units": 4,
+          "topics": [
+            "Rechtliche und ökonomische Handlungsspielräume",
+            "Mahnschreiben, Mängelrüge"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 4,
+        "title": "Beschaffungsprozesse planen und steuern",
+        "hours": 40,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF5",
+      "order": 5,
+      "title": "Wertströme buchhalterisch dokumentieren und auswerten",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundstufe (vor Teil 1 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 7",
+          "berufsbild": "A7"
+        }
+      ],
+      "examAreas": [
+        "T1-3"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF5-1",
+          "title": "Aufgaben der Finanzbuchhaltung, gesetzliche Pflichten, Organisation",
+          "units": 10,
+          "topics": [
+            "Ziele der Finanzbuchhaltung",
+            "Dokumentationspflicht",
+            "Organisation der Buchführung"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF5-2",
+          "title": "Bestands- und Erfolgskonten, Buchungssatz",
+          "units": 16,
+          "topics": [
+            "Bestandskonten",
+            "Erfolgskonten",
+            "Buchungssätze bilden"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF5-3",
+          "title": "Belege, Umsatzsteuer und Vorsteuer",
+          "units": 14,
+          "topics": [
+            "Belege identifizieren",
+            "Umsatzsteuer",
+            "Vorsteuer"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF5-4",
+          "title": "Eingangs- und Ausgangsrechnungen, Bezugskosten, Preisnachlässe, Rücksendungen",
+          "units": 14,
+          "topics": [
+            "Rechnungen buchen",
+            "Bezugskosten",
+            "Preisnachlässe und Rücksendungen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF5-5",
+          "title": "Planmäßige Abschreibung, Anschaffungskosten, Bestandsveränderungen",
+          "units": 14,
+          "topics": [
+            "Anschaffungskosten ermitteln",
+            "Planmäßige Wertminderung",
+            "Bestandsveränderungen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF5-6",
+          "title": "Abgleich mit Istbeständen, Korrekturen, Ergebnis beurteilen",
+          "units": 12,
+          "topics": [
+            "Soll-Ist-Vergleich",
+            "Korrekturbuchungen",
+            "Ergebnis unter Unternehmenszielen beurteilen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 5,
+        "title": "Wertströme buchhalterisch dokumentieren und auswerten",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF6",
+      "order": 6,
+      "title": "Leistungserstellung planen, steuern und kontrollieren",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachstufe (Teil 1 im 4. Halbjahr, danach Niveau Teil 2)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 1",
+          "berufsbild": "A1"
+        },
+        {
+          "ref": "Anlage A Nr. 9",
+          "berufsbild": "A9"
+        }
+      ],
+      "examAreas": [
+        "T1-1"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF6-1",
+          "title": "Auftrag zur Leistungserstellung analysieren",
+          "units": 8,
+          "topics": [
+            "Inhaltliche, technische, zeitliche Aspekte",
+            "Veränderte Kundenbedürfnisse"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF6-2",
+          "title": "Produktionsprogramm, Fertigungsverfahren, Digitalisierung, Nachhaltigkeit",
+          "units": 14,
+          "topics": [
+            "Produktionsprogramm",
+            "Fertigungsverfahren aus ökonomischer Sicht",
+            "Digitalisierung, Nachhaltigkeit, Gesundheitsschutz"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF6-3",
+          "title": "Arbeitspläne und Stücklisten",
+          "units": 10,
+          "topics": [
+            "Arbeitspläne lesen",
+            "Stücklisten"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF6-4",
+          "title": "Kapazitätsplanung, Durchlaufzeiten, optimale Losgröße",
+          "units": 14,
+          "topics": [
+            "Ressourcen und Kapazitätspläne",
+            "Durchlaufzeiten ermitteln",
+            "Optimale Losgröße"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF6-5",
+          "title": "Produktion veranlassen und überwachen, Störungen",
+          "units": 12,
+          "topics": [
+            "Termine, Kosten, Mengen, Qualität überwachen",
+            "Lösungsvorschläge für Störungen",
+            "Informationstechnische Systeme der Produktion"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF6-6",
+          "title": "Kennzahlen und Abweichungsanalyse",
+          "units": 8,
+          "topics": [
+            "Erfolg der Leistungserstellung messen",
+            "Abweichungen analysieren"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF6-7",
+          "title": "Gewinnschwellenanalyse, Eigenfertigung oder Fremdbezug",
+          "units": 14,
+          "topics": [
+            "Gewinnschwelle berechnen",
+            "Eigenfertigung oder Fremdbezug",
+            "Rationalisierung und Nachhaltigkeit"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 6,
+        "title": "Leistungserstellung planen, steuern und kontrollieren",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF7",
+      "order": 7,
+      "title": "Logistik- und Lagerprozesse koordinieren, umsetzen und überwachen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachstufe (Teil 1 im 4. Halbjahr, danach Niveau Teil 2)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 2",
+          "berufsbild": "A2"
+        }
+      ],
+      "examAreas": [
+        "T1-2"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF7-1",
+          "title": "Aufgaben und Ziele der Logistik, Informations- und Materialfluss",
+          "units": 8,
+          "topics": [
+            "Logistikziele",
+            "Zusammenhang Informations- und Materialfluss"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF7-2",
+          "title": "Transport, Umschlag, Lagerung; Lagersysteme, Kommissionierung",
+          "units": 10,
+          "topics": [
+            "Logistische Teilaufgaben",
+            "Lagersysteme und Lagereinrichtungen",
+            "Kommissioniermethoden"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF7-3",
+          "title": "Transportmittel, multimodale Verkehrswege, Supply-Chain-Management",
+          "units": 8,
+          "topics": [
+            "Innerbetriebliche Transportsysteme, auch autonome",
+            "Multimodale Verkehrswege",
+            "Supply-Chain-Management"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF7-4",
+          "title": "Push und Pull, Lagerhaltungs- und Transportkosten, Logistikdienstleister",
+          "units": 8,
+          "topics": [
+            "Push- und Pull-Prinzip",
+            "Kosten der Lagerhaltung und des Transports",
+            "Dienstleister auswählen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF7-5",
+          "title": "Gefahrstoffe, Sicherheit, Nachhaltigkeit, Lagerkennzahlen",
+          "units": 6,
+          "topics": [
+            "Gesetzliche Vorgaben, Datenschutz",
+            "Lagerkennzahlen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 7,
+        "title": "Logistik- und Lagerprozesse koordinieren, umsetzen und überwachen",
+        "hours": 40,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "T1",
+      "order": 8,
+      "title": "Abschlussprüfung Teil 1: Training „Leistungserstellung, Logistik, Beschaffung und Buchhaltung“",
+      "kind": "pruefung",
+      "year": 2,
+      "niveau": "Fachstufe (Teil 1 im 4. Halbjahr, danach Niveau Teil 2)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 1",
+          "berufsbild": "A1"
+        },
+        {
+          "ref": "Anlage A Nr. 2",
+          "berufsbild": "A2"
+        },
+        {
+          "ref": "Anlage A Nr. 3",
+          "berufsbild": "A3"
+        },
+        {
+          "ref": "Anlage A Nr. 7",
+          "berufsbild": "A7"
+        }
+      ],
+      "examAreas": [
+        "T1"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "T1-1",
+          "title": "Fälle zur Leistungserstellung",
+          "units": 10,
+          "topics": [
+            "Praxisbezogene Fälle: Planen, Koordinieren, Bewerten entlang der Wertschöpfungskette"
+          ],
+          "sourceIds": [
+            "indkfl-p8",
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "T1-2",
+          "title": "Fälle zu Beschaffung, Logistik und Lager",
+          "units": 10,
+          "topics": [
+            "Bedarfe, Beschaffung, Logistik- und Lagerprozesse"
+          ],
+          "sourceIds": [
+            "indkfl-p8",
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "T1-3",
+          "title": "Fälle zu Buchführung und Bilanzierung",
+          "units": 10,
+          "topics": [
+            "Geschäftsfälle prüfen und bewerten",
+            "Maßnahmen bei Abweichungen"
+          ],
+          "sourceIds": [
+            "indkfl-p8",
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "T1-4",
+          "title": "Zusammenarbeit, Information, Datenschutz, Digitalisierung",
+          "units": 6,
+          "topics": [
+            "Kommunikation mit internen und externen Partnern",
+            "Informationsbeschaffung, Datenschutz, Datensicherheit, Nutzen und Risiken der Digitalisierung"
+          ],
+          "sourceIds": [
+            "indkfl-p8"
+          ]
+        },
+        {
+          "id": "T1-5",
+          "title": "Prüfungsformat",
+          "units": 4,
+          "topics": [
+            "90 Minuten, 25 Prozent Gewicht, 4. Ausbildungshalbjahr",
+            "Praxisbezogene Fälle lesen und strukturieren"
+          ],
+          "sourceIds": [
+            "indkfl-p8",
+            "indkfl-p14"
+          ]
+        }
+      ],
+      "note": "Eigene praxisbezogene Fälle nach § 8. Keine IHK-Prüfungsaufgaben."
+    },
+    {
+      "id": "LF8",
+      "order": 9,
+      "title": "Kosten- und Leistungsrechnung zur Vorbereitung unternehmerischer Entscheidungen durchführen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachstufe (Teil 1 im 4. Halbjahr, danach Niveau Teil 2)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 7",
+          "berufsbild": "A7"
+        }
+      ],
+      "examAreas": [
+        "T2A-4"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF8-1",
+          "title": "Externes und internes Rechnungswesen, Abgrenzungsrechnung",
+          "units": 12,
+          "topics": [
+            "Aufgaben des internen Rechnungswesens",
+            "Abgrenzung von Aufwand und Kosten"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF8-2",
+          "title": "Kostenkategorien: variabel und fix, Einzel- und Gemeinkosten",
+          "units": 10,
+          "topics": [
+            "Kostenarten",
+            "Entscheidungsrelevante Kategorien"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF8-3",
+          "title": "Mehrstufige Kostenstellenrechnung, Maschinenstundensatz",
+          "units": 16,
+          "topics": [
+            "Betriebsabrechnungsbogen",
+            "Maschinenstundensatz"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF8-4",
+          "title": "Kostenträgerrechnung: Zuschlagskalkulation, Ist-, Normal-, Plankosten",
+          "units": 16,
+          "topics": [
+            "Selbstkosten auf Vollkostenbasis",
+            "Ist- und Planwerte"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF8-5",
+          "title": "Deckungsbeitragsrechnung: Zusatzauftrag, Preisuntergrenze, Engpass",
+          "units": 16,
+          "topics": [
+            "Deckungsbeitrag",
+            "Zusatzaufträge und Preisuntergrenzen",
+            "Optimales Produktionsprogramm bei einem Engpass"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF8-6",
+          "title": "Statische Investitionsrechnung",
+          "units": 10,
+          "topics": [
+            "Kostenvergleich, Gewinnvergleich, Rentabilität, Amortisation"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 8,
+        "title": "Kosten- und Leistungsrechnung zur Vorbereitung unternehmerischer Entscheidungen durchführen",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF9",
+      "order": 10,
+      "title": "Marketingkonzepte planen und umsetzen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachstufe (Teil 1 im 4. Halbjahr, danach Niveau Teil 2)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 4",
+          "berufsbild": "A4"
+        },
+        {
+          "ref": "Anlage A Nr. 5",
+          "berufsbild": "A5"
+        }
+      ],
+      "examAreas": [
+        "T2A-1",
+        "T2A-5"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF9-1",
+          "title": "Marketingkonzept: Bestandteile, Projektvorgehen",
+          "units": 6,
+          "topics": [
+            "Bestandteile eines Marketingkonzepts",
+            "Arbeitsschritte mit Projektmanagement"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF9-2",
+          "title": "Markt- und Unternehmensanalyse",
+          "units": 16,
+          "topics": [
+            "Zielgruppen, Marktsegmente, Wettbewerb",
+            "Produktlebenszyklus, Portfolioanalyse, SWOT-Analyse"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF9-3",
+          "title": "Marktforschung",
+          "units": 8,
+          "topics": [
+            "Marktanalyse und Marktbeobachtung",
+            "Primär- und Sekundärforschung"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF9-4",
+          "title": "Marketingziele und -strategien",
+          "units": 8,
+          "topics": [
+            "Ziele festlegen",
+            "Strategien, Kreativitätstechniken"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF9-5",
+          "title": "Marketinginstrumente und Wettbewerbsrecht",
+          "units": 20,
+          "topics": [
+            "Produktpolitik",
+            "Preis- und Konditionenpolitik",
+            "Kommunikationspolitik, Online-Marketing",
+            "Distributionspolitik",
+            "Wettbewerbsrechtliche Grenzen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF9-6",
+          "title": "Außenhandel: Incoterms, Dokumentenakkreditiv, Dokumenteninkasso",
+          "units": 10,
+          "topics": [
+            "Chancen und Risiken des Außenhandels",
+            "Incoterms",
+            "Dokumentenakkreditiv und -inkasso"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF9-7",
+          "title": "Marketing-Mix, Präsentation, Kennzahlen",
+          "units": 12,
+          "topics": [
+            "Marketing-Mix kombinieren",
+            "Präsentation, Urheberrecht, Datenschutz",
+            "Zielerreichung mit Kennzahlen bewerten"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 9,
+        "title": "Marketingkonzepte planen und umsetzen",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "DIG",
+      "order": 11,
+      "title": "Digitale Geschäftsprozesse im Unternehmen gestalten",
+      "kind": "ao-kern",
+      "year": 2,
+      "niveau": "Fachstufe (Teil 1 im 4. Halbjahr, danach Niveau Teil 2)",
+      "aoPositions": [
+        {
+          "ref": "Anlage B Nr. 5",
+          "berufsbild": "B5"
+        },
+        {
+          "ref": "Anlage B Nr. 4",
+          "berufsbild": "B4"
+        }
+      ],
+      "examAreas": [
+        "T1-5"
+      ],
+      "unitsTarget": 20,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "DIG-1",
+          "title": "Anwendungssysteme, Nutzen und Risiken der Digitalisierung, Datenquellen",
+          "units": 8,
+          "topics": [
+            "Betriebliche Anwendungssysteme",
+            "Nutzen und Risiken digitaler Geschäftsprozesse",
+            "Datenquellen nach Aktualität, Seriosität, Verwendbarkeit prüfen"
+          ],
+          "sourceIds": [
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "DIG-2",
+          "title": "Prozesse analysieren und digital weiterentwickeln",
+          "units": 8,
+          "topics": [
+            "Vorhandene Prozesse analysieren",
+            "Schnittstellenoptimierte, automatisierte Teilprozesse konzipieren",
+            "Betriebliche Vorgaben, Recht, Wirtschaftlichkeit"
+          ],
+          "sourceIds": [
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "DIG-3",
+          "title": "Digitalisierungskonzepte umsetzen, Daten zusammenführen",
+          "units": 4,
+          "topics": [
+            "Umsetzung mit internen und externen Schnittstellen",
+            "Informationen und Datenmengen zusammenführen und auswerten"
+          ],
+          "sourceIds": [
+            "indkfl-anlage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "EG",
+      "order": 12,
+      "title": "Einsatzgebiet: Lösungen erarbeiten, Aufgaben und Prozesse koordinieren",
+      "kind": "ao-kern",
+      "year": 2,
+      "niveau": "Fachstufe (Teil 1 im 4. Halbjahr, danach Niveau Teil 2)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 8",
+          "berufsbild": "A8"
+        },
+        {
+          "ref": "Anlage A Nr. 9",
+          "berufsbild": "A9"
+        },
+        {
+          "ref": "§ 4 Abs. 4",
+          "berufsbild": "A8"
+        }
+      ],
+      "examAreas": [
+        "T2B-1",
+        "T2B-2",
+        "T2B-3"
+      ],
+      "unitsTarget": 70,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "EG-0",
+          "title": "Methodik für jedes Einsatzgebiet",
+          "units": 14,
+          "topics": [
+            "Informationen für einsatzgebietsspezifische Anforderungen beschaffen und auswerten",
+            "Aufgaben kennzahlengestützt analysieren, Lösungen erarbeiten",
+            "Entscheidungsvorlagen strukturieren und präsentieren",
+            "Mit internen und externen Partnern kooperieren",
+            "Ressourcen und Leistungen planen, überwachen, steuern",
+            "Qualitätssicherungssysteme anwenden"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        },
+        {
+          "id": "EG-1",
+          "title": "Einsatzgebiet Vertrieb",
+          "units": 8,
+          "topics": [
+            "Vertriebsprozesse und Schnittstellen",
+            "Kennzahlen des Vertriebs",
+            "Typische Fachaufgaben"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        },
+        {
+          "id": "EG-2",
+          "title": "Einsatzgebiet Marketing",
+          "units": 8,
+          "topics": [
+            "Marketingprozesse",
+            "Kennzahlen",
+            "Typische Fachaufgaben"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        },
+        {
+          "id": "EG-3",
+          "title": "Einsatzgebiet Beschaffung",
+          "units": 8,
+          "topics": [
+            "Beschaffungsprozesse",
+            "Lieferantenkennzahlen",
+            "Typische Fachaufgaben"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        },
+        {
+          "id": "EG-4",
+          "title": "Einsatzgebiet Logistik",
+          "units": 8,
+          "topics": [
+            "Logistikprozesse",
+            "Lager- und Transportkennzahlen",
+            "Typische Fachaufgaben"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        },
+        {
+          "id": "EG-5",
+          "title": "Einsatzgebiet Personalwirtschaft",
+          "units": 8,
+          "topics": [
+            "Personalprozesse",
+            "Personalkennzahlen",
+            "Typische Fachaufgaben"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        },
+        {
+          "id": "EG-6",
+          "title": "Einsatzgebiet Leistungserstellung",
+          "units": 8,
+          "topics": [
+            "Produktionsprozesse",
+            "Produktionskennzahlen",
+            "Typische Fachaufgaben"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        },
+        {
+          "id": "EG-7",
+          "title": "Einsatzgebiet kaufmännische Steuerung und Kontrolle",
+          "units": 8,
+          "topics": [
+            "Controllingprozesse",
+            "Kennzahlen und Berichte",
+            "Typische Fachaufgaben"
+          ],
+          "sourceIds": [
+            "indkfl-anlage",
+            "indkfl-p4"
+          ]
+        }
+      ],
+      "note": "Der Betrieb legt ein Einsatzgebiet nach § 4 Abs. 4 fest (sieben Gebiete oder ein abweichendes). Der Plan-Agent nimmt EG-0 plus den Block des gewählten Gebiets; bei abweichendem Gebiet nur EG-0."
+    },
+    {
+      "id": "LF10",
+      "order": 13,
+      "title": "Jahresabschluss vorbereiten, auswerten und für Finanzierungsentscheidungen nutzen",
+      "kind": "lernfeld",
+      "year": 3,
+      "niveau": "Fachstufe (Niveau Teil 2 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 7",
+          "berufsbild": "A7"
+        }
+      ],
+      "examAreas": [
+        "T2A-4"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF10-1",
+          "title": "Bilanz und Gewinn- und Verlustrechnung einer Kapitalgesellschaft",
+          "units": 10,
+          "topics": [
+            "Inhalte der Bilanz",
+            "Gewinn- und Verlustrechnung"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF10-2",
+          "title": "Bewertungsgrundsätze, -prinzipien und -maßstäbe",
+          "units": 14,
+          "topics": [
+            "Niederstwert-, Anschaffungswert-, Realisations-, Imparitätsprinzip",
+            "Anschaffungs- und Herstellungskosten, Tageswert"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF10-3",
+          "title": "Inventurdifferenzen, Rechnungsabgrenzung, Rückstellungen",
+          "units": 14,
+          "topics": [
+            "Bereinigte Salden",
+            "Antizipative und transitorische Posten",
+            "Rückstellungen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF10-4",
+          "title": "Bewertung von Vermögen, Schulden, Eigenkapital",
+          "units": 12,
+          "topics": [
+            "Bewertung nach Handelsrecht",
+            "Mitwirkung an Bilanz und GuV"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF10-5",
+          "title": "Kennzahlen des Jahresabschlusses",
+          "units": 16,
+          "topics": [
+            "Vermögens- und Kapitalstruktur",
+            "Anlagenfinanzierung, Liquidität",
+            "Rentabilität, Cash-Flow"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF10-6",
+          "title": "Finanzierung und Kreditsicherheiten",
+          "units": 14,
+          "topics": [
+            "Finanz- und Liquiditätsplanung",
+            "Innen- und Außenfinanzierung, Eigen- und Fremdfinanzierung",
+            "Sicherungsübereignung, Eigentumsvorbehalt, Grundschuld"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 10,
+        "title": "Jahresabschluss vorbereiten, auswerten und für Finanzierungsentscheidungen nutzen",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF11",
+      "order": 14,
+      "title": "Geschäftsprozesse an gesamtwirtschaftlichen Rahmenbedingungen ausrichten",
+      "kind": "lernfeld",
+      "year": 3,
+      "niveau": "Fachstufe (Niveau Teil 2 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 1",
+          "berufsbild": "A1"
+        },
+        {
+          "ref": "Anlage B Nr. 1",
+          "berufsbild": "B1"
+        }
+      ],
+      "examAreas": [
+        "WISO-1"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "LF11-1",
+          "title": "Wirtschaftskreislauf einer offenen Volkswirtschaft",
+          "units": 12,
+          "topics": [
+            "Wirtschaftssubjekte",
+            "Modell des Wirtschaftskreislaufs"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF11-2",
+          "title": "Wirtschaftsordnung und soziale Marktwirtschaft",
+          "units": 12,
+          "topics": [
+            "Ordnungsrahmen der Bundesrepublik",
+            "Einfluss auf einzelbetriebliches Handeln"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF11-3",
+          "title": "Märkte: Polypol, Angebotsoligopol, Preis- und Mengenpolitik",
+          "units": 12,
+          "topics": [
+            "Unternehmen als Anbieter und Nachfrager",
+            "Marktformen",
+            "Preis- und mengenpolitische Spielräume"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF11-4",
+          "title": "Kooperation, Konzentration, Wettbewerbs- und Kartellrecht",
+          "units": 10,
+          "topics": [
+            "Chancen und Risiken",
+            "Nationales und europäisches Wettbewerbsrecht"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF11-5",
+          "title": "Konjunkturphasen, Stabilität und Wachstum",
+          "units": 10,
+          "topics": [
+            "Konjunkturzyklus",
+            "Staatliche Maßnahmen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF11-6",
+          "title": "Wirtschafts- und Geldpolitik",
+          "units": 14,
+          "topics": [
+            "Konjunktur-, Prozess-, Struktur-, Fiskalpolitik",
+            "Offenmarktpolitik der Europäischen Zentralbank"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF11-7",
+          "title": "Globalisierung, europäische und weltweite Organisationen",
+          "units": 10,
+          "topics": [
+            "Einflüsse der Globalisierung",
+            "Organisationen",
+            "Geschäftsprozess adressatengerecht präsentieren"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 11,
+        "title": "Geschäftsprozesse an gesamtwirtschaftlichen Rahmenbedingungen ausrichten",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF12",
+      "order": 15,
+      "title": "Personalprozesse planen, steuern und kontrollieren",
+      "kind": "lernfeld",
+      "year": 3,
+      "niveau": "Fachstufe (Niveau Teil 2 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 6",
+          "berufsbild": "A6"
+        },
+        {
+          "ref": "Anlage B Nr. 1",
+          "berufsbild": "B1"
+        }
+      ],
+      "examAreas": [
+        "T2A-3"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF12-1",
+          "title": "Personalbedarf und Stellenbeschreibung",
+          "units": 10,
+          "topics": [
+            "Quantitativer und qualitativer Bedarf",
+            "Interne und externe Einflussfaktoren",
+            "Gesellschaftliche Verantwortung"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF12-2",
+          "title": "Personalbeschaffung, Personalauswahl, Arbeitgebermarke",
+          "units": 14,
+          "topics": [
+            "Beschaffungswege",
+            "Auswahlinstrumente",
+            "Stellenausschreibung, auch fremdsprachig und digital"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF12-3",
+          "title": "Individual- und Kollektivarbeitsrecht, Inklusion",
+          "units": 12,
+          "topics": [
+            "Personalrechtliche Regelungen",
+            "Inklusion und Integration"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF12-4",
+          "title": "Arbeitszeit- und Arbeitsortmodelle, Entgeltformen",
+          "units": 8,
+          "topics": [
+            "Flexible Modelle",
+            "Formen des betrieblichen Entgelts"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF12-5",
+          "title": "Einstellung, Arbeitsvertrag, Personalakte, Datenschutz",
+          "units": 10,
+          "topics": [
+            "Auswahl- und Einstellungsverfahren",
+            "Arbeitsverträge erstellen",
+            "Personalakte unter Datenschutz"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF12-6",
+          "title": "Personaleinsatz, Arbeitszeit, Urlaub, Brutto- und Nettoentgelt",
+          "units": 14,
+          "topics": [
+            "Arbeitszeitregelungen und Urlaub",
+            "Bruttoentgelt ermitteln",
+            "Nettoentgelt berechnen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF12-7",
+          "title": "Beurteilung, Personalentwicklung, Beendigung von Arbeitsverhältnissen",
+          "units": 12,
+          "topics": [
+            "Mitarbeiterbeurteilung",
+            "Personalentwicklung, Motivation",
+            "Beendigung von Arbeitsverhältnissen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 12,
+        "title": "Personalprozesse planen, steuern und kontrollieren",
+        "hours": 80,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "LF13",
+      "order": 16,
+      "title": "Betriebliche Problemlösungsprozesse innovativ durchführen",
+      "kind": "lernfeld",
+      "year": 3,
+      "niveau": "Fachstufe (Niveau Teil 2 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 8",
+          "berufsbild": "A8"
+        },
+        {
+          "ref": "Anlage A Nr. 9",
+          "berufsbild": "A9"
+        },
+        {
+          "ref": "Anlage B Nr. 6",
+          "berufsbild": "B6"
+        }
+      ],
+      "examAreas": [
+        "T2B-1",
+        "T2B-3"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "LF13-1",
+          "title": "Komplexe Fragestellung analysieren: Prozesse, Schnittstellen, Wechselwirkungen",
+          "units": 8,
+          "topics": [
+            "Fragestellung erschließen",
+            "Betroffene Prozesse und Schnittstellen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "LF13-2",
+          "title": "Recherche, Trends, Innovationen, digitale Anwendungen",
+          "units": 8,
+          "topics": [
+            "Lösungsorientierte Recherche, auch fremdsprachlich",
+            "Entwicklungstrends und Innovationen"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF13-3",
+          "title": "Ziele festlegen, Lösungsprozess planen",
+          "units": 8,
+          "topics": [
+            "Ziele definieren",
+            "Planung mit Projektmanagementmethoden"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF13-4",
+          "title": "Methodengeleitet bearbeiten, Kreativitätstechniken",
+          "units": 8,
+          "topics": [
+            "Innovative Ideen aufgreifen",
+            "Informationen zusammenführen",
+            "Termine und Zuständigkeiten beachten"
+          ],
+          "sourceIds": [
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "LF13-5",
+          "title": "Dokumentieren, präsentieren, bewerten, reflektieren",
+          "units": 8,
+          "topics": [
+            "Vorgehen und Ergebnis zielgruppengerecht darstellen",
+            "Zielerreichung bewerten",
+            "Verbesserungspotenziale"
+          ],
+          "sourceIds": [
+            "rlp-indkfl",
+            "indkfl-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 13,
+        "title": "Betriebliche Problemlösungsprozesse innovativ durchführen",
+        "hours": 40,
+        "sourceId": "rlp-indkfl"
+      }
+    },
+    {
+      "id": "T2A",
+      "order": 17,
+      "title": "Abschlussprüfung Teil 2: Training „Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle“",
+      "kind": "pruefung",
+      "year": 3,
+      "niveau": "Fachstufe (Niveau Teil 2 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 4",
+          "berufsbild": "A4"
+        },
+        {
+          "ref": "Anlage A Nr. 5",
+          "berufsbild": "A5"
+        },
+        {
+          "ref": "Anlage A Nr. 6",
+          "berufsbild": "A6"
+        },
+        {
+          "ref": "Anlage A Nr. 7",
+          "berufsbild": "A7"
+        }
+      ],
+      "examAreas": [
+        "T2A"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "T2A-1",
+          "title": "Fälle zu Marketing",
+          "units": 8,
+          "topics": [
+            "Marketingmaßnahmen planen, umsetzen, bewerten",
+            "Rechtliche, ökonomische, ökologische, soziale Aspekte"
+          ],
+          "sourceIds": [
+            "indkfl-p11",
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "T2A-2",
+          "title": "Fälle zu Vertrieb und Kundenbindung",
+          "units": 8,
+          "topics": [
+            "Vertriebsprozesse mit Schnittstellen",
+            "Kundenzufriedenheit und Kundenbindung"
+          ],
+          "sourceIds": [
+            "indkfl-p11",
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "T2A-3",
+          "title": "Fälle zu Personalprozessen",
+          "units": 8,
+          "topics": [
+            "Arbeits- und sozialrechtliche Bestimmungen",
+            "Betriebliche und tarifliche Regelungen"
+          ],
+          "sourceIds": [
+            "indkfl-p11",
+            "rlp-indkfl"
+          ]
+        },
+        {
+          "id": "T2A-4",
+          "title": "Fälle zu Kosten- und Leistungsrechnung, Kennzahlen, Jahresabschluss",
+          "units": 12,
+          "topics": [
+            "KLR anwenden",
+            "Kennzahlen ermitteln und analysieren",
+            "Instrumente der Steuerung und Kontrolle"
+          ],
+          "sourceIds": [
+            "indkfl-p11",
+            "rlp-indkfl"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "T2A-5",
+          "title": "Englische Fachbegriffe und Prüfungsformat",
+          "units": 4,
+          "topics": [
+            "Englischsprachige Informationen situationsbezogen anwenden",
+            "150 Minuten, 35 Prozent Gewicht"
+          ],
+          "sourceIds": [
+            "indkfl-p11",
+            "indkfl-p14"
+          ]
+        }
+      ],
+      "note": "Eigene praxisbezogene Fälle nach § 11. Keine IHK-Prüfungsaufgaben."
+    },
+    {
+      "id": "FA",
+      "order": 18,
+      "title": "Fachaufgabe im Einsatzgebiet: Antrag, Dokumentation, Präsentation, Fachgespräch",
+      "kind": "pruefung",
+      "year": 3,
+      "niveau": "Fachstufe (Niveau Teil 2 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage A Nr. 8",
+          "berufsbild": "A8"
+        },
+        {
+          "ref": "Anlage A Nr. 9",
+          "berufsbild": "A9"
+        }
+      ],
+      "examAreas": [
+        "T2B"
+      ],
+      "unitsTarget": 20,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "FA-1",
+          "title": "Antrag an den Prüfungsausschuss",
+          "units": 6,
+          "topics": [
+            "Kurzbeschreibung der Aufgabenstellung",
+            "Zielsetzung",
+            "Zu berücksichtigende Prozesse",
+            "Bestätigung der eigenständigen Durchführung"
+          ],
+          "sourceIds": [
+            "indkfl-p12"
+          ]
+        },
+        {
+          "id": "FA-2",
+          "title": "Dokumentation (3 bis 5 Seiten)",
+          "units": 6,
+          "topics": [
+            "Aufgabenstellung, Zielsetzung, Planung",
+            "Durchführung und Begründung der Vorgehensweise",
+            "Ergebnis und Bewertung",
+            "Bis zu drei Seiten praxisübliche Anlagen"
+          ],
+          "sourceIds": [
+            "indkfl-p12"
+          ]
+        },
+        {
+          "id": "FA-3",
+          "title": "Präsentation und fallbezogenes Fachgespräch",
+          "units": 8,
+          "topics": [
+            "Präsentation bis 10 Minuten",
+            "Fachgespräch, zusammen 30 Minuten",
+            "Gewichtung: Dokumentation 10, Präsentation 20, Fachgespräch 70 Prozent"
+          ],
+          "sourceIds": [
+            "indkfl-p12",
+            "indkfl-p14"
+          ]
+        }
+      ],
+      "note": "Übungsformat nach § 12; die reale Fachaufgabe entsteht im Betrieb. Keine Personendaten in Beispielen."
+    },
+    {
+      "id": "WISO",
+      "order": 19,
+      "title": "Wirtschafts- und Sozialkunde",
+      "kind": "wiso",
+      "year": 3,
+      "niveau": "Fachstufe (Niveau Teil 2 der Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage B Nr. 1",
+          "berufsbild": "B1"
+        },
+        {
+          "ref": "Anlage A Nr. 6",
+          "berufsbild": "A6"
+        }
+      ],
+      "examAreas": [
+        "WISO-1",
+        "T2C"
+      ],
+      "unitsTarget": 30,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "WISO-1",
+          "title": "Berufs- und Arbeitswelt: Ausbildung, Arbeitsrecht, Mitbestimmung, Tarif",
+          "units": 10,
+          "topics": [
+            "Duales System",
+            "Arbeits- und Tarifrecht",
+            "Betriebliche Mitbestimmung"
+          ],
+          "sourceIds": [
+            "indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "WISO-2",
+          "title": "Soziale Sicherung, Entgeltabrechnung, Vorsorge",
+          "units": 10,
+          "topics": [
+            "Sozialversicherung",
+            "Entgeltabrechnung",
+            "Private Vorsorge"
+          ],
+          "sourceIds": [
+            "indkfl",
+            "indkfl-anlage"
+          ]
+        },
+        {
+          "id": "WISO-3",
+          "title": "Wirtschaftsordnung, Wirtschaftskreislauf, Europa, Globalisierung",
+          "units": 10,
+          "topics": [
+            "Soziale Marktwirtschaft",
+            "Wirtschaftskreislauf",
+            "Europa und globale Vernetzung"
+          ],
+          "sourceIds": [
+            "indkfl",
+            "rlp-indkfl"
+          ]
+        }
+      ],
+      "note": "§ 13: allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge; Inhalt aus Anlage B Nr. 1 und Lernfeldern 1, 11, 12."
+    }
+  ],
+  "sources": [
+    {
+      "id": "indkfl",
+      "title": "IndKflAusbV – Industriekaufleuteausbildungsverordnung vom 12. März 2024 (BGBl. 2024 I Nr. 94), in Kraft 1.8.2024 – Volltext",
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "indkfl-anlage",
+      "title": "IndKflAusbV Anlage (zu § 3 Abs. 1) – Ausbildungsrahmenplan, Abschnitte A und B mit zeitlichen Richtwerten in Wochen",
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "indkfl-p4",
+      "title": "IndKflAusbV § 4 Struktur der Berufsausbildung, Ausbildungsberufsbild und Einsatzgebiete",
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__4.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "indkfl-p8",
+      "title": "IndKflAusbV § 8 Prüfungsbereich des Teiles 1 „Leistungserstellung, Logistik, Beschaffung und Buchhaltung“",
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__8.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "indkfl-p11",
+      "title": "IndKflAusbV § 11 Prüfungsbereich „Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle“",
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__11.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "indkfl-p12",
+      "title": "IndKflAusbV § 12 Prüfungsbereich „Fachaufgabe im Einsatzgebiet“",
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__12.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "indkfl-p14",
+      "title": "IndKflAusbV § 14 Gewichtung der Prüfungsbereiche und Bestehen",
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__14.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "rlp-indkfl",
+      "title": "KMK Rahmenlehrplan Industriekaufmann und Industriekauffrau (Beschluss 15.12.2023) – Lernfelder 1–13, 880 Std.",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    }
+  ]
+}

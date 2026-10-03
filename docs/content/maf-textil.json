@@ -1,0 +1,2196 @@
+{
+  "id": "maf-textil",
+  "family": "maf",
+  "title": "Maschinen- und Anlagenführer/in – Schwerpunkt Textiltechnik (Referenz Produktionsmechaniker-Textil)",
+  "version": "2026-10-03",
+  "status": "Entwurf – Freigabe durch Sinan offen",
+  "keyword": "Maschinen- und Anlagenführer",
+  "variantLabel": "Schwerpunkt Textiltechnik, Referenz-RLP Produktionsmechaniker-Textil (Lernfelder 1–4, 5 PM–9 PM, 10)",
+  "durationYears": 2,
+  "durationNote": "§ 2 MaschFüAusbV: Die Ausbildung dauert zwei Jahre. Ein drittes und viertes Jahr gibt es nur als Fortsetzung in einem anderen Beruf nach § 10. Das ist nicht Teil dieses Kurses.",
+  "referenceRlp": {
+    "sourceId": "rlp-pmtextil",
+    "why": "Der KMK-RLP MAF verweist für den Schwerpunkt Textiltechnik auf den RLP Produktionsmechaniker-Textil (2005 i. d. F. 2007). Dessen Jahre 1–2 (gemeinsame LF 1–4 und 10 plus PM-Lernfelder 5–9) bilden die schulische Achse: 280 + 280 Std.",
+    "alternatives": []
+  },
+  "unit": {
+    "minutesMin": 5,
+    "minutesMax": 10,
+    "minutesAvg": 7.5,
+    "questionsMin": 5,
+    "questionsMax": 8,
+    "questionTypes": [
+      "auswahl",
+      "zuordnen",
+      "lueckentext",
+      "reihenfolge",
+      "rechnen"
+    ],
+    "explanationWithSource": true
+  },
+  "defaultQuestionMix": {
+    "auswahl": 40,
+    "zuordnen": 20,
+    "lueckentext": 15,
+    "reihenfolge": 10,
+    "rechnen": 15
+  },
+  "rules": [
+    "Ohne amtliche Quelle wird kein Lerninhalt erzeugt; jede Einheit speichert sourceUrl und sourceFetchedAt.",
+    "IHK-Prüfungsaufgaben werden nicht kopiert; Prüfungstrainings sind eigene Fälle nach der Struktur der Verordnung.",
+    "Keine Personendaten in Prompts oder Beispielen.",
+    "Blöcke mit safety=true: Richter setzt safetyFlag, 10 Prozent Stichprobe durch einen Menschen vor Veröffentlichung.",
+    "Qualitäts-Schwelle (D-18/D-25): sourceFidelity=1, uniqueness=1, niveau>=4, language>=4."
+  ],
+  "assumptions": [
+    "Die KMK-Originaldatei des RLP Produktionsmechaniker-Textil war nicht auffindbar; genutzt wird die wortgleiche Wiedergabe im Landeslehrplan NRW (QUA-LiS NRW). Bei Fund der KMK-PDF Quelle austauschen.",
+    "Einheiten-Budget: 1 Einheit je Unterrichtsstunde des RLP; übrige Module wie maf-metall.",
+    "Anlage II.B: Nr. 1–2 zusammen 10 Wochen, Nr. 3–4 zusammen 16 Wochen (Klammern der Verordnung)."
+  ],
+  "aoBerufsbild": [
+    {
+      "id": "1",
+      "title": "Berufsbildung, Arbeits- und Tarifrecht"
+    },
+    {
+      "id": "2",
+      "title": "Aufbau und Organisation des Ausbildungsbetriebes"
+    },
+    {
+      "id": "3",
+      "title": "Sicherheit und Gesundheitsschutz bei der Arbeit"
+    },
+    {
+      "id": "4",
+      "title": "Umweltschutz"
+    },
+    {
+      "id": "5",
+      "title": "Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen"
+    },
+    {
+      "id": "6",
+      "title": "Betriebliche und technische Kommunikation"
+    },
+    {
+      "id": "7",
+      "title": "Planen und Vorbereiten von Arbeitsabläufen"
+    },
+    {
+      "id": "8",
+      "title": "Prüfen"
+    },
+    {
+      "id": "9",
+      "title": "Branchenspezifische Fertigungstechniken"
+    },
+    {
+      "id": "10",
+      "title": "Steuerungs- und Regelungstechnik"
+    },
+    {
+      "id": "11",
+      "title": "Einrichten und Bedienen von Produktionsanlagen"
+    },
+    {
+      "id": "12",
+      "title": "Steuern des Materialflusses"
+    },
+    {
+      "id": "13",
+      "title": "Warten und Inspizieren von Maschinen und Anlagen"
+    },
+    {
+      "id": "14",
+      "title": "Durchführen von qualitätssichernden Maßnahmen"
+    }
+  ],
+  "aoZeitrahmen": {
+    "sections": [
+      {
+        "id": "anlage-I",
+        "title": "Anlage I – Berufliche Grundbildung, 1. Ausbildungsjahr (alle Schwerpunkte)",
+        "sourceId": "ao-anlage",
+        "expectedWeeks": 52,
+        "rows": [
+          {
+            "lfdNr": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "berufsbild": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "weeks": null,
+            "note": "während der gesamten Ausbildung zu vermitteln"
+          },
+          {
+            "lfdNr": [
+              "5"
+            ],
+            "berufsbild": [
+              "5"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "6"
+            ],
+            "berufsbild": [
+              "6"
+            ],
+            "weeks": 8
+          },
+          {
+            "lfdNr": [
+              "7"
+            ],
+            "berufsbild": [
+              "7"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "8"
+            ],
+            "berufsbild": [
+              "8"
+            ],
+            "weeks": 6
+          },
+          {
+            "lfdNr": [
+              "9",
+              "10",
+              "11"
+            ],
+            "berufsbild": [
+              "9",
+              "10",
+              "11"
+            ],
+            "weeks": 22
+          },
+          {
+            "lfdNr": [
+              "12"
+            ],
+            "berufsbild": [
+              "12"
+            ],
+            "weeks": 2
+          },
+          {
+            "lfdNr": [
+              "13"
+            ],
+            "berufsbild": [
+              "13"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "14"
+            ],
+            "berufsbild": [
+              "14"
+            ],
+            "weeks": 2
+          }
+        ]
+      },
+      {
+        "id": "anlage-II-B",
+        "title": "Anlage II.B – Berufliche Fachbildung, 2. Ausbildungsjahr, Schwerpunkt Textiltechnik",
+        "sourceId": "ao-anlage",
+        "expectedWeeks": 52,
+        "rows": [
+          {
+            "lfdNr": [
+              "1",
+              "2"
+            ],
+            "berufsbild": [
+              "5",
+              "7"
+            ],
+            "weeks": 10
+          },
+          {
+            "lfdNr": [
+              "3",
+              "4"
+            ],
+            "berufsbild": [
+              "9",
+              "10"
+            ],
+            "weeks": 16
+          },
+          {
+            "lfdNr": [
+              "5"
+            ],
+            "berufsbild": [
+              "11"
+            ],
+            "weeks": 18
+          },
+          {
+            "lfdNr": [
+              "6"
+            ],
+            "berufsbild": [
+              "12"
+            ],
+            "weeks": 2
+          },
+          {
+            "lfdNr": [
+              "7"
+            ],
+            "berufsbild": [
+              "13"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "8"
+            ],
+            "berufsbild": [
+              "14"
+            ],
+            "weeks": 2
+          }
+        ]
+      }
+    ]
+  },
+  "exam": {
+    "summary": "Zwischenprüfung zu Beginn des 2. Ausbildungsjahres (§ 8). Abschlussprüfung (§ 9): praktischer Teil (höchstens 7 Stunden, bis zu 2 Aufgaben) und schriftlicher Teil mit Produktionstechnik 50 %, Produktionsplanung 30 %, Wirtschafts- und Sozialkunde 20 %. Gebiete laut § 9 Abs. 3 für diesen Schwerpunkt.",
+    "gradedParts": [
+      {
+        "id": "PRAK",
+        "part": "Abschlussprüfung",
+        "bereich": "Praktischer Teil (§ 9 Abs. 2)",
+        "form": "praktisch",
+        "duration": "höchstens 7 Stunden, bis zu 2 Aufgaben",
+        "weightPercent": null,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PRAK-1",
+            "title": "Einrichten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage"
+          },
+          {
+            "id": "PRAK-2",
+            "title": "Umrüsten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage"
+          },
+          {
+            "id": "PRAK-3",
+            "title": "Durchführen einer vorbeugenden Instandsetzung einschließlich der Inbetriebnahme"
+          }
+        ]
+      },
+      {
+        "id": "PT",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Produktionstechnik",
+        "form": "schriftlich",
+        "duration": "120 Minuten",
+        "weightPercent": 50,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PT-a",
+            "title": "Rohstoffe, Zwischen- und Endprodukte"
+          },
+          {
+            "id": "PT-b",
+            "title": "Produktionsverfahren, Prozessabläufe"
+          },
+          {
+            "id": "PT-c",
+            "title": "Funktion von Maschinen und Anlagen"
+          },
+          {
+            "id": "PT-d",
+            "title": "prozess- und leistungsbezogene Berechnungen"
+          },
+          {
+            "id": "PT-e",
+            "title": "Konstruktionstechniken und Produktmerkmale"
+          },
+          {
+            "id": "PT-f",
+            "title": "Fertigungstechniken"
+          }
+        ]
+      },
+      {
+        "id": "PP",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Produktionsplanung",
+        "form": "schriftlich",
+        "duration": "60 Minuten",
+        "weightPercent": 30,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PP-a",
+            "title": "Arbeitsschritte"
+          },
+          {
+            "id": "PP-b",
+            "title": "Qualitätssicherung"
+          },
+          {
+            "id": "PP-c",
+            "title": "vorbeugende Instandhaltung"
+          },
+          {
+            "id": "PP-d",
+            "title": "Materialfluss"
+          },
+          {
+            "id": "PP-e",
+            "title": "Anfertigen von Skizzen und Planungsunterlagen"
+          }
+        ]
+      },
+      {
+        "id": "WISO",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Wirtschafts- und Sozialkunde",
+        "form": "schriftlich",
+        "duration": "60 Minuten",
+        "weightPercent": 20,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "WISO-1",
+            "title": "allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt"
+          }
+        ]
+      }
+    ],
+    "ungraded": [
+      {
+        "id": "ZP",
+        "title": "Zwischenprüfung (§ 8)",
+        "sourceId": "ao-p8",
+        "text": "zu Beginn des 2. Ausbildungsjahres; praktische Aufgabe höchstens 3 Stunden plus höchstens 60 Minuten schriftlich; Beispiel: Positionieren von Maschinenelementen; Stoff des 1. Ausbildungsjahres"
+      }
+    ],
+    "bestehen": "Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in zwei schriftlichen Prüfungsbereichen mindestens ausreichend, im dritten nicht ungenügend (§ 9 Abs. 7). Mündliche Ergänzungsprüfung möglich, Gewichtung 2:1 (§ 9 Abs. 5)."
+  },
+  "totals": {
+    "modules": 17,
+    "unitsTarget": 830,
+    "hoursAtAvgUnit": 103.8,
+    "questionsMin": 4150,
+    "questionsMax": 6640,
+    "rlpHoursByYear": {
+      "1": 280,
+      "2": 280
+    }
+  },
+  "phases": [
+    {
+      "id": "A",
+      "title": "Pilot-Kern: Querschnitt, LF1, LF2, MAF-Kern",
+      "moduleIds": [
+        "M0",
+        "LF1",
+        "LF2",
+        "PA"
+      ],
+      "why": "Produktionsprozesse, Faserstoffe, Produktionsanlagen.",
+      "unitsTarget": 240
+    },
+    {
+      "id": "B",
+      "title": "Rest Jahr 1 und Zwischenprüfung",
+      "moduleIds": [
+        "LF3",
+        "LF4",
+        "LF5",
+        "ZP",
+        "QS"
+      ],
+      "why": "Garne, Flächen, Überwachung, Zwischenprüfungs-Training, Qualitätssicherung.",
+      "unitsTarget": 200
+    },
+    {
+      "id": "C",
+      "title": "Fachbildung Jahr 2, Teil 1",
+      "moduleIds": [
+        "LF6",
+        "LF7",
+        "LF8"
+      ],
+      "why": "Nachstellen, Vorbereitungsprozesse, Werkstoffe für Maschinenelemente.",
+      "unitsTarget": 180
+    },
+    {
+      "id": "D",
+      "title": "Fachbildung Jahr 2, Teil 2 und Abschlussprüfung",
+      "moduleIds": [
+        "LF9",
+        "LF10",
+        "WISO",
+        "APPT",
+        "APPP"
+      ],
+      "why": "Warten, Veredeln, WiSo und beide schriftlichen Prüfungstrainings.",
+      "unitsTarget": 210
+    }
+  ],
+  "modules": [
+    {
+      "id": "M0",
+      "order": 0,
+      "title": "Querschnitt: Beruf, Betrieb, Sicherheit, Umwelt",
+      "kind": "querschnitt",
+      "year": 1,
+      "niveau": "Grundbildung – wird über beide Jahre verteilt wiederholt",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
+        },
+        {
+          "ref": "Anlage I Nr. 2",
+          "berufsbild": "2"
+        },
+        {
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
+        },
+        {
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
+        }
+      ],
+      "examAreas": [
+        "WISO-1"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "M0-1",
+          "title": "Ausbildung, Ausbildungsvertrag und Berufsbild",
+          "units": 15,
+          "topics": [
+            "Ausbildungsvertrag: Abschluss, Dauer (2 Jahre, § 2), Beendigung",
+            "Rechte und Pflichten aus dem Ausbildungsvertrag",
+            "Berichtsheft als Ausbildungsnachweis (§ 7)",
+            "Ausbildungsrahmenplan und betrieblicher Ausbildungsplan (§ 5, § 6)",
+            "Die 14 Berufsbildpositionen (§ 4)",
+            "Fünf Schwerpunkte (§ 5) und Fortsetzung der Ausbildung (§ 10)",
+            "Berufliche Fortbildung",
+            "Arbeitsvertrag und Tarifvertrag: wesentliche Teile"
+          ],
+          "sourceIds": [
+            "ao",
+            "ao-anlage",
+            "bibb-51121"
+          ]
+        },
+        {
+          "id": "M0-2",
+          "title": "Ausbildungsbetrieb: Aufbau, Grundfunktionen, Mitbestimmung",
+          "units": 10,
+          "topics": [
+            "Aufbau und Aufgaben des Betriebes",
+            "Grundfunktionen: Beschaffung, Fertigung, Absatz, Verwaltung",
+            "Wirtschaftsorganisationen, Berufsvertretungen, Gewerkschaften",
+            "Betriebsrat, Jugend- und Auszubildendenvertretung"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "M0-3",
+          "title": "Sicherheit und Gesundheitsschutz bei der Arbeit",
+          "units": 20,
+          "topics": [
+            "Gefährdungen am Arbeitsplatz erkennen, Gefährdungsbeurteilung, Betriebsanweisung",
+            "Persönliche Schutzausrüstung",
+            "Arbeitsschutz- und Unfallverhütungsvorschriften",
+            "Verhalten bei Unfällen, erste Maßnahmen",
+            "Vorbeugender Brandschutz, Verhalten bei Bränden",
+            "Schutzeinrichtungen, Not-Halt, Freischalten und gegen Wiedereinschalten sichern, Restenergie"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "M0-4",
+          "title": "Umweltschutz in der Fertigung",
+          "units": 15,
+          "topics": [
+            "Umweltbelastungen durch den Betrieb an Beispielen",
+            "Betriebliche Umweltschutz-Regelungen",
+            "Wirtschaftliche und umweltschonende Energie- und Materialverwendung",
+            "Abfälle vermeiden, Stoffe trennen und fachgerecht entsorgen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        }
+      ],
+      "note": "Laut Anlage während der gesamten Ausbildung zu vermitteln. Der Plan-Agent streut diese Einheiten über alle Lernfelder (etwa jede fünfte Einheit)."
+    },
+    {
+      "id": "LF1",
+      "order": 1,
+      "title": "Produktionsprozesse auf textile Produkte abstimmen",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 7",
+          "berufsbild": "7"
+        },
+        {
+          "ref": "Anlage I Nr. 11",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
+        }
+      ],
+      "examAreas": [
+        "PT-b",
+        "PP-a"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "LF1-1",
+          "title": "Textile Produkte: Garne, Zwirne, Flächen, Verbundstoffe",
+          "units": 12,
+          "topics": [
+            "Garne und Zwirne",
+            "Textile Flächen",
+            "Verbundstoffe"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF1-2",
+          "title": "Produktionsmaschinen und -anlagen im Überblick",
+          "units": 12,
+          "topics": [
+            "Maschinen der Garnherstellung",
+            "Maschinen der Flächenherstellung",
+            "Prozessstufen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF1-3",
+          "title": "Informationsquellen, interner Kunde, Prozessverantwortung",
+          "units": 10,
+          "topics": [
+            "Informationsquellen nutzen",
+            "Interner Kunde",
+            "Verantwortung für den Produktionsprozess"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF1-4",
+          "title": "Prozess auf Produkt abstimmen: Fallbeispiele",
+          "units": 6,
+          "topics": [
+            "Produktanforderung lesen",
+            "Passenden Prozess wählen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 1,
+        "title": "Produktionsprozesse auf textile Produkte abstimmen",
+        "hours": 40,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF2",
+      "order": 2,
+      "title": "Textile Faserstoffe einsetzen",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 5",
+          "berufsbild": "5"
+        },
+        {
+          "ref": "Anlage I Nr. 8",
+          "berufsbild": "8"
+        }
+      ],
+      "examAreas": [
+        "PT-a",
+        "PT-d"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF2-1",
+          "title": "Faserstoffe: Aufbau, Eigenschaften, Einsatzgebiete",
+          "units": 24,
+          "topics": [
+            "Aufbau der Faserstoffe",
+            "Eigenschaften",
+            "Einsatzgebiete"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF2-2",
+          "title": "Natur- und Chemiefasern unterscheiden",
+          "units": 16,
+          "topics": [
+            "Naturfasern",
+            "Chemiefasern",
+            "Kennzeichnung"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF2-3",
+          "title": "Feinheitsbe- und -umrechnungen",
+          "units": 16,
+          "topics": [
+            "Feinheitsbezeichnungen",
+            "Umrechnen zwischen Systemen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF2-4",
+          "title": "Prüfvorschriften und Faserprüfung",
+          "units": 14,
+          "topics": [
+            "Prüfvorschriften",
+            "Faserprüfung durchführen",
+            "Ergebnis dokumentieren"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF2-5",
+          "title": "Ökologische Aspekte",
+          "units": 10,
+          "topics": [
+            "Ressourcen",
+            "Entsorgung und Recycling"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 2,
+        "title": "Textile Faserstoffe einsetzen",
+        "hours": 80,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF3",
+      "order": 3,
+      "title": "Herstellen von linienförmigen textilen Gebilden",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 9",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage I Nr. 8",
+          "berufsbild": "8"
+        }
+      ],
+      "examAreas": [
+        "PT-b",
+        "PT-f",
+        "PT-d"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF3-1",
+          "title": "Garne und Zwirne herstellen",
+          "units": 14,
+          "topics": [
+            "Spinnen",
+            "Zwirnen",
+            "Prozessstufen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF3-2",
+          "title": "Maschinen und Anlagen der Garnherstellung",
+          "units": 10,
+          "topics": [
+            "Maschinenaufbau",
+            "Einsatz"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF3-3",
+          "title": "Qualitätsdaten",
+          "units": 8,
+          "topics": [
+            "Qualitätsmerkmale von Garnen",
+            "Dokumentation"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF3-4",
+          "title": "Berechnungen zur Garnherstellung",
+          "units": 8,
+          "topics": [
+            "Produktionsmengen",
+            "Drehungen, Feinheit"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 3,
+        "title": "Herstellen von linienförmigen textilen Gebilden",
+        "hours": 40,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF4",
+      "order": 4,
+      "title": "Herstellen und Bearbeiten textiler Flächen",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 9",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
+        },
+        {
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
+        }
+      ],
+      "examAreas": [
+        "PT-e",
+        "PT-f",
+        "PT-d"
+      ],
+      "unitsTarget": 80,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF4-1",
+          "title": "Gewebe, Maschenwaren, Vliesstoffe",
+          "units": 20,
+          "topics": [
+            "Gewebe",
+            "Maschenwaren",
+            "Vliesstoffe"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF4-2",
+          "title": "Bindungen, Rapporte, Musteranalyse",
+          "units": 18,
+          "topics": [
+            "Grundbindungen",
+            "Rapporte",
+            "Musteranalyse"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF4-3",
+          "title": "Zeichnungen und Normen",
+          "units": 12,
+          "topics": [
+            "Bindungspatronen zeichnen",
+            "Normen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF4-4",
+          "title": "Bearbeiten textiler Flächen, z. B. Besticken",
+          "units": 10,
+          "topics": [
+            "Besticken",
+            "Weitere Bearbeitungen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF4-5",
+          "title": "Berechnungen zur Flächenherstellung",
+          "units": 12,
+          "topics": [
+            "Fadendichte",
+            "Flächenmasse",
+            "Produktionsleistung"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF4-6",
+          "title": "Arbeits- und Umweltschutz an Flächenmaschinen",
+          "units": 8,
+          "topics": [
+            "Gefährdungen an Web- und Strickmaschinen",
+            "Schutzeinrichtungen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ],
+          "safety": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 4,
+        "title": "Herstellen und Bearbeiten textiler Flächen",
+        "hours": 80,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF5",
+      "order": 5,
+      "title": "Produktionsprozesse überwachen",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 10",
+          "berufsbild": "10"
+        },
+        {
+          "ref": "Anlage I Nr. 11",
+          "berufsbild": "11"
+        }
+      ],
+      "examAreas": [
+        "PT-c",
+        "PP-c"
+      ],
+      "unitsTarget": 40,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF5-1",
+          "title": "Elektronische Überwachungseinrichtungen",
+          "units": 10,
+          "topics": [
+            "Sensoren und Überwachung",
+            "Anzeigen lesen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF5-2",
+          "title": "Steuern und Regeln",
+          "units": 10,
+          "topics": [
+            "Steuern und Regeln unterscheiden",
+            "Regelkreis"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF5-3",
+          "title": "Störungen: Ursachen und Beheben",
+          "units": 10,
+          "topics": [
+            "Störungsursachen",
+            "Störungen beheben"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF5-4",
+          "title": "Schaltpläne, Sicherheitsvorschriften",
+          "units": 10,
+          "topics": [
+            "Schaltpläne lesen",
+            "Sicherheitsvorschriften"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ],
+          "safety": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 5,
+        "title": "Produktionsprozesse überwachen",
+        "hours": 40,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf",
+        "label": "5 PM"
+      }
+    },
+    {
+      "id": "ZP",
+      "order": 6,
+      "title": "Zwischenprüfung: Training (§ 8)",
+      "kind": "pruefung",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 7",
+          "berufsbild": "7"
+        },
+        {
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
+        },
+        {
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
+        },
+        {
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
+        }
+      ],
+      "examAreas": [
+        "ZP"
+      ],
+      "unitsTarget": 20,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "ZP-1",
+          "title": "Aufbau und Ablauf der Zwischenprüfung",
+          "units": 4,
+          "topics": [
+            "Zeitpunkt: Beginn 2. Ausbildungsjahr",
+            "Praktische Aufgabe höchstens 3 Stunden, schriftlich höchstens 60 Minuten",
+            "Was nachzuweisen ist"
+          ],
+          "sourceIds": [
+            "ao-p8"
+          ]
+        },
+        {
+          "id": "ZP-2",
+          "title": "Planungsaufgabe: Arbeitsschritte, Arbeitsmittel, Unterlagen",
+          "units": 6,
+          "topics": [
+            "Arbeitsschritte planen",
+            "Arbeitsmittel auswählen",
+            "Technische Unterlagen nutzen"
+          ],
+          "sourceIds": [
+            "ao-p8",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "ZP-3",
+          "title": "Positionieren von Maschinenelementen",
+          "units": 6,
+          "topics": [
+            "Vorgehen beim Positionieren und Ausrichten",
+            "Prüfen und dokumentieren",
+            "Sicherheit und Umweltschutz im Auftrag"
+          ],
+          "sourceIds": [
+            "ao-p8"
+          ],
+          "safety": true
+        },
+        {
+          "id": "ZP-4",
+          "title": "Gemischte Wiederholung Jahr 1",
+          "units": 4,
+          "topics": [
+            "Fragen quer über die Lernfelder des 1. Jahres und M0"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        }
+      ],
+      "note": "Eigene Übungsaufgaben nach der Struktur von § 8. Keine IHK-Prüfungsaufgaben."
+    },
+    {
+      "id": "LF6",
+      "order": 7,
+      "title": "Textile Produkte nachstellen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.B Nr. 1",
+          "berufsbild": "5"
+        },
+        {
+          "ref": "Anlage II.B Nr. 3",
+          "berufsbild": "9"
+        }
+      ],
+      "examAreas": [
+        "PT-e",
+        "PP-e",
+        "PT-a"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF6-1",
+          "title": "Produktanalyse",
+          "units": 24,
+          "topics": [
+            "Mustervorlage analysieren",
+            "Konstruktionstechnik bestimmen",
+            "Produktmerkmale"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF6-2",
+          "title": "Zeichnerische Darstellung",
+          "units": 16,
+          "topics": [
+            "Faden- und Flächenkonstruktion normgerecht darstellen",
+            "Bindungen und Bindungselemente"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF6-3",
+          "title": "Berechnungen zum Nachstellen",
+          "units": 16,
+          "topics": [
+            "Feinheit",
+            "Einstellung",
+            "Materialbedarf"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF6-4",
+          "title": "Umsetzungsplan",
+          "units": 14,
+          "topics": [
+            "Arbeitsschritte planen",
+            "Maschineneinstellungen festlegen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF6-5",
+          "title": "Qualitätsvergleich Muster und Nachstellung",
+          "units": 10,
+          "topics": [
+            "Prüfen",
+            "Abweichungen bewerten"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 6,
+        "title": "Textile Produkte nachstellen",
+        "hours": 80,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf",
+        "label": "6 PM"
+      }
+    },
+    {
+      "id": "LF7",
+      "order": 8,
+      "title": "Textile Materialien in Vorbereitungsprozessen einsetzen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.B Nr. 3",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage II.B Nr. 6",
+          "berufsbild": "12"
+        }
+      ],
+      "examAreas": [
+        "PT-b",
+        "PP-d"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF7-1",
+          "title": "Vorbereitungsprozesse: Spulen, Schären, Zetteln, Schlichten",
+          "units": 16,
+          "topics": [
+            "Spulen",
+            "Schären und Zetteln",
+            "Schlichten"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF7-2",
+          "title": "Lagerung und Logistik",
+          "units": 12,
+          "topics": [
+            "Lagerung textiler Materialien",
+            "Innerbetrieblicher Materialfluss"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF7-3",
+          "title": "Berechnungen zur Vorbereitung",
+          "units": 12,
+          "topics": [
+            "Materialbedarf",
+            "Laufzeiten"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 7,
+        "title": "Textile Materialien in Vorbereitungsprozessen einsetzen",
+        "hours": 40,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf",
+        "label": "7 PM"
+      }
+    },
+    {
+      "id": "LF8",
+      "order": 9,
+      "title": "Werkstoffe für Maschinenelemente bearbeiten",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.B Nr. 7",
+          "berufsbild": "13"
+        },
+        {
+          "ref": "Anlage II.B Nr. 2",
+          "berufsbild": "7"
+        }
+      ],
+      "examAreas": [
+        "PP-c",
+        "PP-e"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF8-1",
+          "title": "Methoden zur Werkstoffbearbeitung",
+          "units": 16,
+          "topics": [
+            "Sägen, Feilen, Bohren",
+            "Werkstoffe für Maschinenelemente"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF8-2",
+          "title": "Betriebs- und Hilfsstoffe, Lagervorschriften",
+          "units": 10,
+          "topics": [
+            "Betriebs- und Hilfsstoffe",
+            "Lagervorschriften"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF8-3",
+          "title": "Arbeitsplatz einrichten, Messen",
+          "units": 12,
+          "topics": [
+            "Arbeitsplatz ergonomisch und sicher einrichten",
+            "Messen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "LF8-4",
+          "title": "Dichte, Volumen, Masse",
+          "units": 10,
+          "topics": [
+            "Dichte",
+            "Volumen",
+            "Masse berechnen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF8-5",
+          "title": "Ansichten von Werkstücken",
+          "units": 12,
+          "topics": [
+            "Ansichten",
+            "Skizzen anfertigen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 8,
+        "title": "Werkstoffe für Maschinenelemente bearbeiten",
+        "hours": 60,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf",
+        "label": "8 PM"
+      }
+    },
+    {
+      "id": "PA",
+      "order": 10,
+      "title": "Produktionsanlagen einrichten, bedienen und übergeben (MAF-Kern)",
+      "kind": "ao-kern",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau praktische und schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 11",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage I Nr. 12",
+          "berufsbild": "12"
+        },
+        {
+          "ref": "Anlage II.B Nr. 5",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage II.B Nr. 6",
+          "berufsbild": "12"
+        }
+      ],
+      "examAreas": [
+        "PT-c",
+        "PP-a",
+        "PP-d",
+        "PRAK-1",
+        "PRAK-2"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "PA-1",
+          "title": "Textile Produktionsmaschinen und -anlagen nach Funktion und Einsatz unterscheiden",
+          "units": 6,
+          "topics": [
+            "Maschinen der Garn- und Flächenherstellung",
+            "Funktion und Einsatzbereich zuordnen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-2",
+          "title": "Rüsten und Umrüsten nach Vorgaben",
+          "units": 8,
+          "topics": [
+            "Rüstvorgang nach Vorgabe",
+            "Umrüsten auf ein anderes Produkt",
+            "Rüstzeit berechnen"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "PA-3",
+          "title": "Mehrstellenarbeit rationell organisieren",
+          "units": 6,
+          "topics": [
+            "Mehrere Maschinen bedienen",
+            "Laufwege und Reihenfolge planen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-4",
+          "title": "Musterungs- und Verfestigungssysteme prüfen, Warenausfall optimieren",
+          "units": 10,
+          "topics": [
+            "Musterungs- oder Verfestigungssysteme prüfen und korrigieren",
+            "Warenausfall prüfen und optimieren"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-5",
+          "title": "Prozessdaten einstellen und optimieren, Prozesse überwachen",
+          "units": 8,
+          "topics": [
+            "Prozessdaten einstellen",
+            "Produktionsprozess nach Verfahrensparametern überwachen",
+            "Parameter optimieren"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-6",
+          "title": "Inbetriebnahme unter Sicherheitsbestimmungen",
+          "units": 6,
+          "topics": [
+            "Inbetriebnahme Schritt für Schritt",
+            "Schutzeinrichtungen prüfen"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ],
+          "safety": true
+        },
+        {
+          "id": "PA-7",
+          "title": "Störungen und Abweichungen: erkennen, Ursachen, beseitigen",
+          "units": 6,
+          "topics": [
+            "Störungen feststellen",
+            "Ursachen eingrenzen",
+            "Beseitigen oder veranlassen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-8",
+          "title": "Materialfluss im Arbeitsbereich",
+          "units": 4,
+          "topics": [
+            "Materialfluss überwachen und sicherstellen",
+            "Störungen im Materialfluss beseitigen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-9",
+          "title": "Übergabe und Dokumentation",
+          "units": 6,
+          "topics": [
+            "Maschine oder Anlage übergeben",
+            "Produktionsstand und Veränderungen dokumentieren"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ]
+        }
+      ],
+      "note": "Berufskern laut Anlage II.B Nr. 5 und Nr. 6. Der Referenz-Rahmenlehrplan deckt das nicht 1:1 ab, darum eigenes Modul direkt aus der Ausbildungsordnung. Deckt auch die praktischen Prüfungsaufgaben nach § 9 Abs. 2."
+    },
+    {
+      "id": "LF9",
+      "order": 11,
+      "title": "Maschinen und Anlagen warten",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.B Nr. 7",
+          "berufsbild": "13"
+        },
+        {
+          "ref": "Anlage II.B Nr. 5",
+          "berufsbild": "11"
+        }
+      ],
+      "examAreas": [
+        "PP-c",
+        "PT-c",
+        "PRAK-3"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF9-1",
+          "title": "Maschinenelemente zum Verbinden, Übertragen und Umformen von Bewegungen",
+          "units": 14,
+          "topics": [
+            "Verbindungselemente",
+            "Übertragungselemente",
+            "Umformen von Bewegungen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF9-2",
+          "title": "Antriebe, Pumpen, Verdichter",
+          "units": 12,
+          "topics": [
+            "Antriebe",
+            "Pumpen",
+            "Verdichter"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF9-3",
+          "title": "Wartungspläne und Explosionszeichnungen",
+          "units": 12,
+          "topics": [
+            "Wartungspläne lesen",
+            "Explosionszeichnungen lesen"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF9-4",
+          "title": "Zahnradgrößen, Reibungskraft, Drehmoment",
+          "units": 12,
+          "topics": [
+            "Zahnradgrößen",
+            "Reibungskraft",
+            "Drehmoment"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF9-5",
+          "title": "Qualitätssicherung und sicheres Warten",
+          "units": 10,
+          "topics": [
+            "Qualitätssicherung bei der Wartung",
+            "Sicher warten: freischalten, sichern"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ],
+          "safety": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 9,
+        "title": "Maschinen und Anlagen warten",
+        "hours": 60,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf",
+        "label": "9 PM"
+      }
+    },
+    {
+      "id": "LF10",
+      "order": 12,
+      "title": "Textilien kundengerecht veredeln und aufmachen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.B Nr. 3",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage II.B Nr. 8",
+          "berufsbild": "14"
+        }
+      ],
+      "examAreas": [
+        "PT-a",
+        "PP-b"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "LF10-1",
+          "title": "Farbgebung und Ausrüstung",
+          "units": 14,
+          "topics": [
+            "Färben",
+            "Ausrüsten"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF10-2",
+          "title": "Kennzeichnung: Kurzzeichen, Pflegekennzeichen, Gütesiegel, Textilkennzeichnung",
+          "units": 14,
+          "topics": [
+            "Kurzzeichen",
+            "Pflegekennzeichen",
+            "Gütesiegel",
+            "Textilkennzeichnungsgesetz"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil"
+          ]
+        },
+        {
+          "id": "LF10-3",
+          "title": "Abfallverwertung und -verwendung",
+          "units": 12,
+          "topics": [
+            "Abfall vermeiden",
+            "Verwerten und verwenden"
+          ],
+          "sourceIds": [
+            "rlp-pmtextil",
+            "ao-anlage"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 10,
+        "title": "Textilien kundengerecht veredeln und aufmachen",
+        "hours": 40,
+        "sourceId": "rlp-pmtextil",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "QS",
+      "order": 13,
+      "title": "Qualitätssichernde Maßnahmen",
+      "kind": "ao-kern",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 14",
+          "berufsbild": "14"
+        },
+        {
+          "ref": "Anlage II.B Nr. 8",
+          "berufsbild": "14"
+        }
+      ],
+      "examAreas": [
+        "PP-b"
+      ],
+      "unitsTarget": 20,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "QS-1",
+          "title": "Aufgaben und Ziele qualitätssichernder Maßnahmen",
+          "units": 6,
+          "topics": [
+            "Qualitätsbegriff",
+            "Aufgaben und Ziele der Qualitätssicherung",
+            "Prüfen, Abweichung erkennen, Korrektur, Dokumentation"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "QS-2",
+          "title": "Ursachen von Qualitätsabweichungen, Korrekturmaßnahmen",
+          "units": 8,
+          "topics": [
+            "Ursachen feststellen",
+            "Korrekturmaßnahmen einleiten",
+            "Qualitätsdaten dokumentieren"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ]
+        },
+        {
+          "id": "QS-3",
+          "title": "Kontinuierliche Verbesserung und kundenorientiertes Arbeiten",
+          "units": 6,
+          "topics": [
+            "Zur Verbesserung von Arbeitsvorgängen beitragen",
+            "Kundenorientiert arbeiten"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WISO",
+      "order": 14,
+      "title": "Wirtschafts- und Sozialkunde",
+      "kind": "wiso",
+      "year": 2,
+      "niveau": "Prüfungsbereich WiSo (20 %, 60 Minuten)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
+        },
+        {
+          "ref": "Anlage I Nr. 2",
+          "berufsbild": "2"
+        }
+      ],
+      "examAreas": [
+        "WISO-1"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "WISO-1",
+          "title": "Junge Menschen in Ausbildung und Beruf",
+          "units": 16,
+          "topics": [
+            "Duales System: Beteiligte, Ausbildungsordnung, Rahmenlehrplan",
+            "Rechte und Pflichten aus Ausbildungs- und Arbeitsverhältnis (Jugendarbeitsschutz, Arbeitszeit, Urlaub, Kündigungsschutz)",
+            "Tarifliche Auseinandersetzung und betriebliche Mitbestimmung",
+            "Wandel der Arbeitswelt, Digitalisierung, lebenslanges Lernen",
+            "Leben, Lernen und Arbeiten in Europa"
+          ],
+          "sourceIds": [
+            "kmk-wiso",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "WISO-2",
+          "title": "Nachhaltige Existenzsicherung",
+          "units": 12,
+          "topics": [
+            "Säulen der sozialen Sicherung, Versicherungsprinzipien",
+            "Positionen der Entgeltabrechnung",
+            "Private Vorsorge",
+            "Karriere- und Lebensplanung, Existenzgründung"
+          ],
+          "sourceIds": [
+            "kmk-wiso"
+          ]
+        },
+        {
+          "id": "WISO-3",
+          "title": "Unternehmen, Organisationen und private Marktteilnehmende",
+          "units": 12,
+          "topics": [
+            "Ziele, Aufbau und Perspektiven von Unternehmen, Wertschöpfungskette, Wirtschaftskreislauf",
+            "Bedürfnisse, Bedarf, Kaufkraft",
+            "Rechtsgeschäfte: Kauf-, Miet-, Kreditvertrag, Verbraucherschutz",
+            "Soziale Marktwirtschaft, Europa, globale Vernetzung, Standortwettbewerb"
+          ],
+          "sourceIds": [
+            "kmk-wiso"
+          ]
+        }
+      ],
+      "note": "Inhalt nach dem KMK-Qualifikationsprofil 2021 (40 Unterrichtsstunden). Keine Personendaten in Beispielen."
+    },
+    {
+      "id": "APPT",
+      "order": 15,
+      "title": "Abschlussprüfung: Training Produktionstechnik (§ 9)",
+      "kind": "pruefung",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.B Nr. 3",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage II.B Nr. 1",
+          "berufsbild": "5"
+        }
+      ],
+      "examAreas": [
+        "PT-a",
+        "PT-b",
+        "PT-c",
+        "PT-d",
+        "PT-e",
+        "PT-f"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "APPT-1",
+          "title": "Fälle zu Rohstoffe, Zwischen- und Endprodukte, Produktionsverfahren, Prozessabläufe, Funktion von Maschinen und Anlagen",
+          "units": 18,
+          "topics": [
+            "Praxisbezogene Fälle: Rohstoffe, Zwischen- und Endprodukte",
+            "Praxisbezogene Fälle: Produktionsverfahren, Prozessabläufe",
+            "Praxisbezogene Fälle: Funktion von Maschinen und Anlagen"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        },
+        {
+          "id": "APPT-2",
+          "title": "Fälle zu prozess- und leistungsbezogene Berechnungen, Konstruktionstechniken und Produktmerkmale, Fertigungstechniken",
+          "units": 18,
+          "topics": [
+            "Praxisbezogene Fälle: prozess- und leistungsbezogene Berechnungen",
+            "Praxisbezogene Fälle: Konstruktionstechniken und Produktmerkmale",
+            "Praxisbezogene Fälle: Fertigungstechniken"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        },
+        {
+          "id": "APPT-3",
+          "title": "Prüfungsformat und Zeitplanung",
+          "units": 4,
+          "topics": [
+            "120 Minuten, 50 Prozent Gewicht",
+            "Praxisbezogene Fälle lesen und strukturieren"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        }
+      ],
+      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt B. Keine IHK-Prüfungsaufgaben."
+    },
+    {
+      "id": "APPP",
+      "order": 16,
+      "title": "Abschlussprüfung: Training Produktionsplanung (§ 9)",
+      "kind": "pruefung",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.B Nr. 2",
+          "berufsbild": "7"
+        },
+        {
+          "ref": "Anlage II.B Nr. 5",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage II.B Nr. 7",
+          "berufsbild": "13"
+        },
+        {
+          "ref": "Anlage II.B Nr. 8",
+          "berufsbild": "14"
+        }
+      ],
+      "examAreas": [
+        "PP-a",
+        "PP-b",
+        "PP-c",
+        "PP-d",
+        "PP-e"
+      ],
+      "unitsTarget": 30,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "APPP-1",
+          "title": "Fälle zu Arbeitsschritte, Qualitätssicherung",
+          "units": 12,
+          "topics": [
+            "Praxisbezogene Fälle: Arbeitsschritte",
+            "Praxisbezogene Fälle: Qualitätssicherung"
+          ],
+          "sourceIds": [
+            "ao-p9",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "APPP-2",
+          "title": "Fälle zu vorbeugende Instandhaltung, Materialfluss, Anfertigen von Skizzen und Planungsunterlagen",
+          "units": 12,
+          "topics": [
+            "Praxisbezogene Fälle: vorbeugende Instandhaltung",
+            "Praxisbezogene Fälle: Materialfluss",
+            "Praxisbezogene Fälle: Anfertigen von Skizzen und Planungsunterlagen"
+          ],
+          "sourceIds": [
+            "ao-p9",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "APPP-3",
+          "title": "Prüfungsformat und Zeitplanung",
+          "units": 6,
+          "topics": [
+            "60 Minuten, 30 Prozent Gewicht",
+            "Planungsunterlagen und Protokolle lesen"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        }
+      ],
+      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt B. Keine IHK-Prüfungsaufgaben."
+    }
+  ],
+  "sources": [
+    {
+      "id": "ao",
+      "title": "MaschFüAusbV – Verordnung über die Berufsausbildung zum Maschinen- und Anlagenführer (Volltext, Stand Art. 2 V v. 14.6.2023)",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-anlage",
+      "title": "MaschFüAusbV Anlage (zu § 5) – Ausbildungsrahmenplan mit zeitlichen Richtwerten, Abschnitte I und II.A–E",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-p8",
+      "title": "MaschFüAusbV § 8 Zwischenprüfung",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-p9",
+      "title": "MaschFüAusbV § 9 Abschlussprüfung (Prüfungsgebiete je Schwerpunkt, Abs. 3 Nr. 1–5)",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-bgbl",
+      "title": "BGBl. I 2004 Nr. 19 (BIBB-Kopie der Verordnung inkl. Anlage)",
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "rlp-maf",
+      "title": "KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist je Schwerpunkt auf die RLP der Fortsetzungsberufe",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "kmk-wiso",
+      "title": "KMK Kompetenzorientiertes Qualifikationsprofil Wirtschafts- und Sozialkunde gewerblich-technischer Ausbildungsberufe (Beschluss 17.06.2021, 40 Unterrichtsstunden)",
+      "url": "https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "bibb-51121",
+      "title": "BIBB Berufesuche – Maschinen- und Anlagenführer/in (51121)",
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121",
+      "kind": "berufsinformation",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "rlp-pmtextil",
+      "title": "KMK Rahmenlehrplan Produktionsmechaniker-Textil / Produktprüfer-Textil (Beschluss 18.03.2005 i. d. F. 15.03.2007), Lernfelder 1–10 PM – Wiedergabe im Landeslehrplan NRW (QUA-LiS)",
+      "url": "https://berufsbildung.nrw.de/system/files/media/document/file/produktionsmechanik_textil.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    }
+  ]
+}

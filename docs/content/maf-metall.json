@@ -1,20 +1,22 @@
 {
-  "id": "maf-metall-kunststoff-v1",
+  "id": "maf-metall",
+  "family": "maf",
+  "title": "Maschinen- und Anlagenführer/in – Schwerpunkt Metall- und Kunststofftechnik (Referenz Industriemechaniker)",
   "version": "2026-10-03",
   "status": "Entwurf – Freigabe durch Sinan offen",
   "keyword": "Maschinen- und Anlagenführer",
-  "schwerpunkt": "Metall- und Kunststofftechnik (§ 5 MaschFüAusbV)",
+  "variantLabel": "Schwerpunkt Metall- und Kunststofftechnik, Referenz-RLP Industriemechaniker/in (Metallbetriebe)",
   "durationYears": 2,
-  "durationNote": "§ 2 MaschFüAusbV: Die Ausbildung dauert zwei Jahre. Ein drittes und viertes Jahr gibt es nur als Fortsetzung in einem anderen Beruf nach § 10 (z. B. Industriemechaniker/in, RLP Lernfelder 10–15). Das ist nicht Teil dieses Kurses.",
+  "durationNote": "§ 2 MaschFüAusbV: Die Ausbildung dauert zwei Jahre. Ein drittes und viertes Jahr gibt es nur als Fortsetzung in einem anderen Beruf nach § 10. Das ist nicht Teil dieses Kurses.",
   "referenceRlp": {
     "sourceId": "rlp-im",
-    "why": "Der KMK-RLP MAF hat keine eigenen Lernfelder; er verweist für den Schwerpunkt Metall auf die ersten zwei Jahre der RLP der Fortsetzungsberufe (Kunststoff- und Kautschuktechnologe, Feinwerkmechaniker, Fertigungsmechaniker, Industriemechaniker, Werkzeugmechaniker, Zerspanungsmechaniker). Referenz hier: Industriemechaniker, weil LF 1–4 laut RLP für alle industriellen und handwerklichen Metallberufe inhaltsgleich sind und der Beruf die häufigste Fortsetzung ist. Alternative für Zerspanungsbetriebe: RLP Zerspanungsmechaniker (LF 5–9 unterscheiden sich).",
+    "why": "Der KMK-RLP MAF hat keine eigenen Lernfelder; er verweist für den Schwerpunkt Metall/Kunststoff auf die ersten zwei Jahre der RLP der Fortsetzungsberufe. Referenz für Metallbetriebe: Industriemechaniker/in, weil LF 1–4 laut RLP für alle Metallberufe inhaltsgleich sind und der Beruf die häufigste Fortsetzung ist.",
     "alternatives": [
       "Zerspanungsmechaniker/in",
       "Werkzeugmechaniker/in",
       "Feinwerkmechaniker/in",
       "Fertigungsmechaniker/in",
-      "Kunststoff- und Kautschuktechnologe/-technologin"
+      "Kunststoffbetriebe: Map maf-kunststoff"
     ]
   },
   "unit": {
@@ -41,344 +43,362 @@
   },
   "rules": [
     "Ohne amtliche Quelle wird kein Lerninhalt erzeugt; jede Einheit speichert sourceUrl und sourceFetchedAt.",
-    "IHK-Prüfungsaufgaben werden nicht kopiert; Prüfungstrainings sind eigene Fälle nach der Struktur von § 8 und § 9.",
+    "IHK-Prüfungsaufgaben werden nicht kopiert; Prüfungstrainings sind eigene Fälle nach der Struktur der Verordnung.",
     "Keine Personendaten in Prompts oder Beispielen.",
     "Blöcke mit safety=true: Richter setzt safetyFlag, 10 Prozent Stichprobe durch einen Menschen vor Veröffentlichung.",
     "Qualitäts-Schwelle (D-18/D-25): sourceFidelity=1, uniqueness=1, niveau>=4, language>=4."
   ],
+  "assumptions": [
+    "Referenz-Rahmenlehrplan ist Industriemechaniker/in; Betriebe mit Kunststofffokus nutzen die Map maf-kunststoff.",
+    "Einheiten-Budget: 1 Einheit je Unterrichtsstunde des RLP; übrige Module nach Gewicht in Anlage und § 9. Startwert, den die Lern-Schleife (AP-12) später verschiebt.",
+    "Wochen der Anlage sind so gruppiert, wie die Klammern der Verordnung sie zusammenfassen (Jahr 1: Nr. 9–11 = 22; Jahr 2: Nr. 1–2 = 8, Nr. 4–5 = 18).",
+    "Ein drittes Ausbildungsjahr wird nicht geplant (§ 2)."
+  ],
   "aoBerufsbild": [
     {
-      "nr": 1,
+      "id": "1",
       "title": "Berufsbildung, Arbeits- und Tarifrecht"
     },
     {
-      "nr": 2,
+      "id": "2",
       "title": "Aufbau und Organisation des Ausbildungsbetriebes"
     },
     {
-      "nr": 3,
+      "id": "3",
       "title": "Sicherheit und Gesundheitsschutz bei der Arbeit"
     },
     {
-      "nr": 4,
+      "id": "4",
       "title": "Umweltschutz"
     },
     {
-      "nr": 5,
+      "id": "5",
       "title": "Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen"
     },
     {
-      "nr": 6,
+      "id": "6",
       "title": "Betriebliche und technische Kommunikation"
     },
     {
-      "nr": 7,
+      "id": "7",
       "title": "Planen und Vorbereiten von Arbeitsabläufen"
     },
     {
-      "nr": 8,
+      "id": "8",
       "title": "Prüfen"
     },
     {
-      "nr": 9,
+      "id": "9",
       "title": "Branchenspezifische Fertigungstechniken"
     },
     {
-      "nr": 10,
+      "id": "10",
       "title": "Steuerungs- und Regelungstechnik"
     },
     {
-      "nr": 11,
+      "id": "11",
       "title": "Einrichten und Bedienen von Produktionsanlagen"
     },
     {
-      "nr": 12,
+      "id": "12",
       "title": "Steuern des Materialflusses"
     },
     {
-      "nr": 13,
+      "id": "13",
       "title": "Warten und Inspizieren von Maschinen und Anlagen"
     },
     {
-      "nr": 14,
+      "id": "14",
       "title": "Durchführen von qualitätssichernden Maßnahmen"
     }
   ],
   "aoZeitrahmen": {
-    "year1": {
-      "abschnitt": "I. Berufliche Grundbildung – 1. Ausbildungsjahr",
-      "sourceId": "ao-anlage",
-      "rows": [
-        {
-          "lfdNr": [
-            1,
-            2,
-            3,
-            4
-          ],
-          "berufsbild": [
-            1,
-            2,
-            3,
-            4
-          ],
-          "weeks": null,
-          "note": "während der gesamten Ausbildung zu vermitteln"
-        },
-        {
-          "lfdNr": [
-            5
-          ],
-          "berufsbild": [
-            5
-          ],
-          "weeks": 4
-        },
-        {
-          "lfdNr": [
-            6
-          ],
-          "berufsbild": [
-            6
-          ],
-          "weeks": 8
-        },
-        {
-          "lfdNr": [
-            7
-          ],
-          "berufsbild": [
-            7
-          ],
-          "weeks": 4
-        },
-        {
-          "lfdNr": [
-            8
-          ],
-          "berufsbild": [
-            8
-          ],
-          "weeks": 6
-        },
-        {
-          "lfdNr": [
-            9,
-            10,
-            11
-          ],
-          "berufsbild": [
-            9,
-            10,
-            11
-          ],
-          "weeks": 22
-        },
-        {
-          "lfdNr": [
-            12
-          ],
-          "berufsbild": [
-            12
-          ],
-          "weeks": 2
-        },
-        {
-          "lfdNr": [
-            13
-          ],
-          "berufsbild": [
-            13
-          ],
-          "weeks": 4
-        },
-        {
-          "lfdNr": [
-            14
-          ],
-          "berufsbild": [
-            14
-          ],
-          "weeks": 2
-        }
-      ]
-    },
-    "year2": {
-      "abschnitt": "II. A. Berufliche Fachbildung – 2. Ausbildungsjahr – Schwerpunkt Metall- und Kunststofftechnik",
-      "sourceId": "ao-anlage",
-      "rows": [
-        {
-          "lfdNr": [
-            1,
-            2
-          ],
-          "berufsbild": [
-            5,
-            7
-          ],
-          "weeks": 8
-        },
-        {
-          "lfdNr": [
-            3
-          ],
-          "berufsbild": [
-            9
-          ],
-          "weeks": 18
-        },
-        {
-          "lfdNr": [
-            4,
-            5
-          ],
-          "berufsbild": [
-            10,
-            11
-          ],
-          "weeks": 18
-        },
-        {
-          "lfdNr": [
-            6
-          ],
-          "berufsbild": [
-            12
-          ],
-          "weeks": 2
-        },
-        {
-          "lfdNr": [
-            7
-          ],
-          "berufsbild": [
-            13
-          ],
-          "weeks": 4
-        },
-        {
-          "lfdNr": [
-            8
-          ],
-          "berufsbild": [
-            14
-          ],
-          "weeks": 2
-        }
-      ]
-    }
-  },
-  "exam": {
-    "zwischenpruefung": {
-      "sourceId": "ao-p8",
-      "timing": "zu Beginn des zweiten Ausbildungsjahres",
-      "scope": "Fertigkeiten und Kenntnisse der Anlage für das 1. Ausbildungsjahr sowie der wesentliche Berufsschul-Lehrstoff",
-      "praktischMaxMinutes": 180,
-      "schriftlichMaxMinutes": 60,
-      "aufgabeBeispiel": "Positionieren von Maschinenelementen",
-      "nachweisen": [
-        "Arbeitsschritte planen",
-        "Arbeitsmittel anwenden",
-        "technische Unterlagen nutzen",
-        "Sicherheits- und Gesundheitsschutz bei der Arbeit sowie Umweltschutz berücksichtigen"
-      ]
-    },
-    "abschlusspruefung": {
-      "sourceId": "ao-p9",
-      "praktisch": {
-        "maxMinutes": 420,
-        "maxAufgaben": 2,
-        "aufgaben": [
-          "Einrichten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage",
-          "Umrüsten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage",
-          "Durchführen einer vorbeugenden Instandsetzung einschließlich der Inbetriebnahme"
-        ],
-        "nachweisen": [
-          "Arbeitsabläufe planen",
-          "Werkzeuge, Betriebs- und Hilfsstoffe festlegen",
-          "Messungen durchführen",
-          "technische Unterlagen nutzen",
-          "Prozesse steuern",
-          "Qualitätsprüfungen durchführen",
-          "Maßnahmen zu Sicherheit, Gesundheitsschutz und Umweltschutz durchführen"
+    "sections": [
+      {
+        "id": "anlage-I",
+        "title": "Anlage I – Berufliche Grundbildung, 1. Ausbildungsjahr (alle Schwerpunkte)",
+        "sourceId": "ao-anlage",
+        "expectedWeeks": 52,
+        "rows": [
+          {
+            "lfdNr": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "berufsbild": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "weeks": null,
+            "note": "während der gesamten Ausbildung zu vermitteln"
+          },
+          {
+            "lfdNr": [
+              "5"
+            ],
+            "berufsbild": [
+              "5"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "6"
+            ],
+            "berufsbild": [
+              "6"
+            ],
+            "weeks": 8
+          },
+          {
+            "lfdNr": [
+              "7"
+            ],
+            "berufsbild": [
+              "7"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "8"
+            ],
+            "berufsbild": [
+              "8"
+            ],
+            "weeks": 6
+          },
+          {
+            "lfdNr": [
+              "9",
+              "10",
+              "11"
+            ],
+            "berufsbild": [
+              "9",
+              "10",
+              "11"
+            ],
+            "weeks": 22
+          },
+          {
+            "lfdNr": [
+              "12"
+            ],
+            "berufsbild": [
+              "12"
+            ],
+            "weeks": 2
+          },
+          {
+            "lfdNr": [
+              "13"
+            ],
+            "berufsbild": [
+              "13"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "14"
+            ],
+            "berufsbild": [
+              "14"
+            ],
+            "weeks": 2
+          }
         ]
       },
-      "schriftlich": [
-        {
-          "id": "PT",
-          "bereich": "Produktionstechnik",
-          "maxMinutes": 120,
-          "weightPercent": 50,
-          "gebiete": [
-            {
-              "id": "PT-a",
-              "title": "technische Unterlagen"
-            },
-            {
-              "id": "PT-b",
-              "title": "Werkstoffe"
-            },
-            {
-              "id": "PT-c",
-              "title": "Werkzeuge"
-            },
-            {
-              "id": "PT-d",
-              "title": "Funktion von Maschinen und Anlagen"
-            },
-            {
-              "id": "PT-e",
-              "title": "Prüfverfahren und Prüfmittel"
-            },
-            {
-              "id": "PT-f",
-              "title": "Fertigungstechniken"
-            }
-          ]
-        },
-        {
-          "id": "PP",
-          "bereich": "Produktionsplanung",
-          "maxMinutes": 60,
-          "weightPercent": 30,
-          "gebiete": [
-            {
-              "id": "PP-a",
-              "title": "Arbeitsschritte"
-            },
-            {
-              "id": "PP-b",
-              "title": "Qualitätssicherung"
-            },
-            {
-              "id": "PP-c",
-              "title": "vorbeugende Instandhaltung"
-            },
-            {
-              "id": "PP-d",
-              "title": "Produktionsanlagen"
-            },
-            {
-              "id": "PP-e",
-              "title": "Übergabeprotokoll"
-            }
-          ]
-        },
-        {
-          "id": "WISO",
-          "bereich": "Wirtschafts- und Sozialkunde",
-          "maxMinutes": 60,
-          "weightPercent": 20,
-          "gebiete": [
-            {
-              "id": "WISO",
-              "title": "allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt"
-            }
-          ]
-        }
-      ],
-      "bestehen": "Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in zwei schriftlichen Prüfungsbereichen mindestens ausreichend, im dritten nicht ungenügend (§ 9 Abs. 7). Mündliche Ergänzungsprüfung möglich, Gewichtung 2:1 (§ 9 Abs. 5)."
-    }
+      {
+        "id": "anlage-II-A",
+        "title": "Anlage II.A – Berufliche Fachbildung, 2. Ausbildungsjahr, Schwerpunkt Metall- und Kunststofftechnik",
+        "sourceId": "ao-anlage",
+        "expectedWeeks": 52,
+        "rows": [
+          {
+            "lfdNr": [
+              "1",
+              "2"
+            ],
+            "berufsbild": [
+              "5",
+              "7"
+            ],
+            "weeks": 8
+          },
+          {
+            "lfdNr": [
+              "3"
+            ],
+            "berufsbild": [
+              "9"
+            ],
+            "weeks": 18
+          },
+          {
+            "lfdNr": [
+              "4",
+              "5"
+            ],
+            "berufsbild": [
+              "10",
+              "11"
+            ],
+            "weeks": 18
+          },
+          {
+            "lfdNr": [
+              "6"
+            ],
+            "berufsbild": [
+              "12"
+            ],
+            "weeks": 2
+          },
+          {
+            "lfdNr": [
+              "7"
+            ],
+            "berufsbild": [
+              "13"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "8"
+            ],
+            "berufsbild": [
+              "14"
+            ],
+            "weeks": 2
+          }
+        ]
+      }
+    ]
+  },
+  "exam": {
+    "summary": "Zwischenprüfung zu Beginn des 2. Ausbildungsjahres (§ 8). Abschlussprüfung (§ 9): praktischer Teil (höchstens 7 Stunden, bis zu 2 Aufgaben) und schriftlicher Teil mit Produktionstechnik 50 %, Produktionsplanung 30 %, Wirtschafts- und Sozialkunde 20 %. Gebiete laut § 9 Abs. 3 für diesen Schwerpunkt.",
+    "gradedParts": [
+      {
+        "id": "PRAK",
+        "part": "Abschlussprüfung",
+        "bereich": "Praktischer Teil (§ 9 Abs. 2)",
+        "form": "praktisch",
+        "duration": "höchstens 7 Stunden, bis zu 2 Aufgaben",
+        "weightPercent": null,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PRAK-1",
+            "title": "Einrichten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage"
+          },
+          {
+            "id": "PRAK-2",
+            "title": "Umrüsten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage"
+          },
+          {
+            "id": "PRAK-3",
+            "title": "Durchführen einer vorbeugenden Instandsetzung einschließlich der Inbetriebnahme"
+          }
+        ]
+      },
+      {
+        "id": "PT",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Produktionstechnik",
+        "form": "schriftlich",
+        "duration": "120 Minuten",
+        "weightPercent": 50,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PT-a",
+            "title": "technische Unterlagen"
+          },
+          {
+            "id": "PT-b",
+            "title": "Werkstoffe"
+          },
+          {
+            "id": "PT-c",
+            "title": "Werkzeuge"
+          },
+          {
+            "id": "PT-d",
+            "title": "Funktion von Maschinen und Anlagen"
+          },
+          {
+            "id": "PT-e",
+            "title": "Prüfverfahren und Prüfmittel"
+          },
+          {
+            "id": "PT-f",
+            "title": "Fertigungstechniken"
+          }
+        ]
+      },
+      {
+        "id": "PP",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Produktionsplanung",
+        "form": "schriftlich",
+        "duration": "60 Minuten",
+        "weightPercent": 30,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PP-a",
+            "title": "Arbeitsschritte"
+          },
+          {
+            "id": "PP-b",
+            "title": "Qualitätssicherung"
+          },
+          {
+            "id": "PP-c",
+            "title": "vorbeugende Instandhaltung"
+          },
+          {
+            "id": "PP-d",
+            "title": "Produktionsanlagen"
+          },
+          {
+            "id": "PP-e",
+            "title": "Übergabeprotokoll"
+          }
+        ]
+      },
+      {
+        "id": "WISO",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Wirtschafts- und Sozialkunde",
+        "form": "schriftlich",
+        "duration": "60 Minuten",
+        "weightPercent": 20,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "WISO-1",
+            "title": "allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt"
+          }
+        ]
+      }
+    ],
+    "ungraded": [
+      {
+        "id": "ZP",
+        "title": "Zwischenprüfung (§ 8)",
+        "sourceId": "ao-p8",
+        "text": "zu Beginn des 2. Ausbildungsjahres; praktische Aufgabe höchstens 3 Stunden plus höchstens 60 Minuten schriftlich; Beispiel: Positionieren von Maschinenelementen; Stoff des 1. Ausbildungsjahres"
+      }
+    ],
+    "bestehen": "Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in zwei schriftlichen Prüfungsbereichen mindestens ausreichend, im dritten nicht ungenügend (§ 9 Abs. 7). Mündliche Ergänzungsprüfung möglich, Gewichtung 2:1 (§ 9 Abs. 5)."
   },
   "totals": {
     "modules": 16,
@@ -386,8 +406,10 @@
     "hoursAtAvgUnit": 108.8,
     "questionsMin": 4350,
     "questionsMax": 6960,
-    "rlpHoursYear1": 320,
-    "rlpHoursYear2": 280
+    "rlpHoursByYear": {
+      "1": 320,
+      "2": 280
+    }
   },
   "phases": [
     {
@@ -399,7 +421,7 @@
         "LF2",
         "PA"
       ],
-      "why": "Schnell spielbarer Kern: Sicherheit/Betrieb, Fertigen von Hand und mit Maschinen, Produktionsanlagen (das, was den MAF ausmacht). Das vorhandene Goldset deckt M0 und PA bereits teilweise ab.",
+      "why": "Schnell spielbarer Kern: Sicherheit/Betrieb, Fertigen von Hand und mit Maschinen, Produktionsanlagen.",
       "unitsTarget": 280
     },
     {
@@ -449,32 +471,24 @@
       "niveau": "Grundbildung – wird über beide Jahre verteilt wiederholt",
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 1,
-          "berufsbild": 1,
-          "title": "Berufsbildung, Arbeits- und Tarifrecht"
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 2,
-          "berufsbild": 2,
-          "title": "Aufbau und Organisation des Ausbildungsbetriebes"
+          "ref": "Anlage I Nr. 2",
+          "berufsbild": "2"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 3,
-          "berufsbild": 3,
-          "title": "Sicherheit und Gesundheitsschutz bei der Arbeit"
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 4,
-          "berufsbild": 4,
-          "title": "Umweltschutz"
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
         }
       ],
       "examAreas": [
-        "WISO"
+        "WISO-1"
       ],
       "unitsTarget": 60,
       "safety": true,
@@ -485,7 +499,6 @@
         "reihenfolge": 10,
         "rechnen": 5
       },
-      "note": "Laut Anlage während der gesamten Ausbildung zu vermitteln. Der Plan-Agent streut diese Einheiten über alle Lernfelder (etwa jede fünfte Einheit). Vorhandener Seed: Lernfeld 'Sicherheit' (3 Einheiten) gehört zu M0-3.",
       "blocks": [
         {
           "id": "M0-1",
@@ -546,13 +559,14 @@
             "Umweltbelastungen durch den Betrieb an Beispielen",
             "Betriebliche Umweltschutz-Regelungen",
             "Wirtschaftliche und umweltschonende Energie- und Materialverwendung",
-            "Abfälle vermeiden, Stoffe trennen und fachgerecht entsorgen (Späne, Kühlschmierstoff, Altöl)"
+            "Abfälle vermeiden, Stoffe trennen und fachgerecht entsorgen"
           ],
           "sourceIds": [
             "ao-anlage"
           ]
         }
-      ]
+      ],
+      "note": "Laut Anlage während der gesamten Ausbildung zu vermitteln. Der Plan-Agent streut diese Einheiten über alle Lernfelder (etwa jede fünfte Einheit)."
     },
     {
       "id": "LF1",
@@ -561,43 +575,26 @@
       "kind": "lernfeld",
       "year": 1,
       "niveau": "Grundbildung (Zwischenprüfungsniveau)",
-      "rlpLernfeld": {
-        "nr": 1,
-        "title": "Fertigen von Bauelementen mit handgeführten Werkzeugen",
-        "hours": 80,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 5,
-          "berufsbild": 5,
-          "title": "Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen"
+          "ref": "Anlage I Nr. 5",
+          "berufsbild": "5"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 6,
-          "berufsbild": 6,
-          "title": "Betriebliche und technische Kommunikation"
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 7,
-          "berufsbild": 7,
-          "title": "Planen und Vorbereiten von Arbeitsabläufen"
+          "ref": "Anlage I Nr. 7",
+          "berufsbild": "7"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 8,
-          "berufsbild": 8,
-          "title": "Prüfen"
+          "ref": "Anlage I Nr. 8",
+          "berufsbild": "8"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 9,
-          "berufsbild": 9,
-          "title": "Branchenspezifische Fertigungstechniken"
+          "ref": "Anlage I Nr. 9",
+          "berufsbild": "9"
         }
       ],
       "examAreas": [
@@ -753,7 +750,14 @@
             "ao-anlage"
           ]
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 1,
+        "title": "Fertigen von Bauelementen mit handgeführten Werkzeugen",
+        "hours": 80,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "LF2",
@@ -762,31 +766,18 @@
       "kind": "lernfeld",
       "year": 1,
       "niveau": "Grundbildung (Zwischenprüfungsniveau)",
-      "rlpLernfeld": {
-        "nr": 2,
-        "title": "Fertigen von Bauelementen mit Maschinen",
-        "hours": 80,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 8,
-          "berufsbild": 8,
-          "title": "Prüfen"
+          "ref": "Anlage I Nr. 8",
+          "berufsbild": "8"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 9,
-          "berufsbild": 9,
-          "title": "Branchenspezifische Fertigungstechniken"
+          "ref": "Anlage I Nr. 9",
+          "berufsbild": "9"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 11,
-          "berufsbild": 11,
-          "title": "Einrichten und Bedienen von Produktionsanlagen"
+          "ref": "Anlage I Nr. 11",
+          "berufsbild": "11"
         }
       ],
       "examAreas": [
@@ -926,7 +917,14 @@
           ],
           "rechnen": true
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 2,
+        "title": "Fertigen von Bauelementen mit Maschinen",
+        "hours": 80,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "LF3",
@@ -935,37 +933,22 @@
       "kind": "lernfeld",
       "year": 1,
       "niveau": "Grundbildung (Zwischenprüfungsniveau)",
-      "rlpLernfeld": {
-        "nr": 3,
-        "title": "Herstellen von einfachen Baugruppen",
-        "hours": 80,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 6,
-          "berufsbild": 6,
-          "title": "Betriebliche und technische Kommunikation"
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 7,
-          "berufsbild": 7,
-          "title": "Planen und Vorbereiten von Arbeitsabläufen"
+          "ref": "Anlage I Nr. 7",
+          "berufsbild": "7"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 9,
-          "berufsbild": 9,
-          "title": "Branchenspezifische Fertigungstechniken"
+          "ref": "Anlage I Nr. 9",
+          "berufsbild": "9"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 10,
-          "berufsbild": 10,
-          "title": "Steuerungs- und Regelungstechnik"
+          "ref": "Anlage I Nr. 10",
+          "berufsbild": "10"
         }
       ],
       "examAreas": [
@@ -1094,7 +1077,14 @@
             "ao-anlage"
           ]
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 3,
+        "title": "Herstellen von einfachen Baugruppen",
+        "hours": 80,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "LF4",
@@ -1103,37 +1093,22 @@
       "kind": "lernfeld",
       "year": 1,
       "niveau": "Grundbildung (Zwischenprüfungsniveau)",
-      "rlpLernfeld": {
-        "nr": 4,
-        "title": "Warten technischer Systeme",
-        "hours": 80,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 13,
-          "berufsbild": 13,
-          "title": "Warten und Inspizieren von Maschinen und Anlagen"
+          "ref": "Anlage I Nr. 13",
+          "berufsbild": "13"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 10,
-          "berufsbild": 10,
-          "title": "Steuerungs- und Regelungstechnik"
+          "ref": "Anlage I Nr. 10",
+          "berufsbild": "10"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 3,
-          "berufsbild": 3,
-          "title": "Sicherheit und Gesundheitsschutz bei der Arbeit"
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 4,
-          "berufsbild": 4,
-          "title": "Umweltschutz"
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
         }
       ],
       "examAreas": [
@@ -1258,7 +1233,14 @@
             "rlp-im"
           ]
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 4,
+        "title": "Warten technischer Systeme",
+        "hours": 80,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "ZP",
@@ -1269,28 +1251,20 @@
       "niveau": "Grundbildung (Zwischenprüfungsniveau)",
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 7,
-          "berufsbild": 7,
-          "title": "Planen und Vorbereiten von Arbeitsabläufen"
+          "ref": "Anlage I Nr. 7",
+          "berufsbild": "7"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 3,
-          "berufsbild": 3,
-          "title": "Sicherheit und Gesundheitsschutz bei der Arbeit"
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 4,
-          "berufsbild": 4,
-          "title": "Umweltschutz"
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 6,
-          "berufsbild": 6,
-          "title": "Betriebliche und technische Kommunikation"
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
         }
       ],
       "examAreas": [
@@ -1305,7 +1279,6 @@
         "reihenfolge": 25,
         "rechnen": 10
       },
-      "note": "Eigene Übungsaufgaben nach der Struktur von § 8. Keine IHK-Prüfungsaufgaben.",
       "blocks": [
         {
           "id": "ZP-1",
@@ -1353,14 +1326,14 @@
           "title": "Gemischte Wiederholung Jahr 1",
           "units": 4,
           "topics": [
-            "Fragen quer über LF1–LF4 und M0"
+            "Fragen quer über die Lernfelder des 1. Jahres und M0"
           ],
           "sourceIds": [
-            "ao-anlage",
-            "rlp-im"
+            "ao-anlage"
           ]
         }
-      ]
+      ],
+      "note": "Eigene Übungsaufgaben nach der Struktur von § 8. Keine IHK-Prüfungsaufgaben."
     },
     {
       "id": "LF5",
@@ -1369,31 +1342,18 @@
       "kind": "lernfeld",
       "year": 2,
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
-      "rlpLernfeld": {
-        "nr": 5,
-        "title": "Fertigen von Einzelteilen mit Werkzeugmaschinen",
-        "hours": 80,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "II.A",
-          "lfdNr": 1,
-          "berufsbild": 5,
-          "title": "Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen"
+          "ref": "Anlage II.A Nr. 1",
+          "berufsbild": "5"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 3,
-          "berufsbild": 9,
-          "title": "Branchenspezifische Fertigungstechniken"
+          "ref": "Anlage II.A Nr. 3",
+          "berufsbild": "9"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 8,
-          "berufsbild": 14,
-          "title": "Durchführen von qualitätssichernden Maßnahmen"
+          "ref": "Anlage II.A Nr. 8",
+          "berufsbild": "14"
         }
       ],
       "examAreas": [
@@ -1538,7 +1498,14 @@
             "rlp-im"
           ]
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 5,
+        "title": "Fertigen von Einzelteilen mit Werkzeugmaschinen",
+        "hours": 80,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "LF7",
@@ -1547,25 +1514,14 @@
       "kind": "lernfeld",
       "year": 2,
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
-      "rlpLernfeld": {
-        "nr": 7,
-        "title": "Montieren von technischen Teilsystemen",
-        "hours": 40,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "II.A",
-          "lfdNr": 3,
-          "berufsbild": 9,
-          "title": "Branchenspezifische Fertigungstechniken"
+          "ref": "Anlage II.A Nr. 3",
+          "berufsbild": "9"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 2,
-          "berufsbild": 7,
-          "title": "Planen und Vorbereiten von Arbeitsabläufen"
+          "ref": "Anlage II.A Nr. 2",
+          "berufsbild": "7"
         }
       ],
       "examAreas": [
@@ -1649,7 +1605,14 @@
             "ao-anlage"
           ]
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 7,
+        "title": "Montieren von technischen Teilsystemen",
+        "hours": 40,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "LF6",
@@ -1658,30 +1621,20 @@
       "kind": "lernfeld",
       "year": 2,
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
-      "rlpLernfeld": {
-        "nr": 6,
-        "title": "Installieren und Inbetriebnehmen steuerungstechnischer Systeme",
-        "hours": 60,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "II.A",
-          "lfdNr": 4,
-          "berufsbild": 10,
-          "title": "Steuerungs- und Regelungstechnik"
+          "ref": "Anlage II.A Nr. 4",
+          "berufsbild": "10"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 5,
-          "berufsbild": 11,
-          "title": "Einrichten und Bedienen von Produktionsanlagen"
+          "ref": "Anlage II.A Nr. 5",
+          "berufsbild": "11"
         }
       ],
       "examAreas": [
         "PT-d",
-        "PP-d"
+        "PP-d",
+        "PRAK-1"
       ],
       "unitsTarget": 60,
       "safety": true,
@@ -1774,7 +1727,14 @@
           ],
           "safety": true
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 6,
+        "title": "Installieren und Inbetriebnehmen steuerungstechnischer Systeme",
+        "hours": 60,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "PA",
@@ -1785,35 +1745,29 @@
       "niveau": "Fachbildung (Niveau praktische und schriftliche Abschlussprüfung)",
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 11,
-          "berufsbild": 11,
-          "title": "Einrichten und Bedienen von Produktionsanlagen"
+          "ref": "Anlage I Nr. 11",
+          "berufsbild": "11"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 12,
-          "berufsbild": 12,
-          "title": "Steuern des Materialflusses"
+          "ref": "Anlage I Nr. 12",
+          "berufsbild": "12"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 5,
-          "berufsbild": 11,
-          "title": "Einrichten und Bedienen von Produktionsanlagen"
+          "ref": "Anlage II.A Nr. 5",
+          "berufsbild": "11"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 6,
-          "berufsbild": 12,
-          "title": "Steuern des Materialflusses"
+          "ref": "Anlage II.A Nr. 6",
+          "berufsbild": "12"
         }
       ],
       "examAreas": [
         "PT-d",
         "PP-a",
         "PP-d",
-        "PP-e"
+        "PP-e",
+        "PRAK-1",
+        "PRAK-2"
       ],
       "unitsTarget": 60,
       "safety": true,
@@ -1824,7 +1778,6 @@
         "reihenfolge": 25,
         "rechnen": 10
       },
-      "note": "Berufskern laut Anlage II.A Nr. 5 (18 Wochen zusammen mit Nr. 4). Der RLP Industriemechaniker deckt das nicht 1:1 ab, darum eigenes Modul direkt aus der Ausbildungsordnung. Deckt auch die praktischen Prüfungsaufgaben nach § 9 Abs. 2.",
       "blocks": [
         {
           "id": "PA-1",
@@ -1933,7 +1886,8 @@
             "ao-p9"
           ]
         }
-      ]
+      ],
+      "note": "Berufskern laut Anlage II.A Nr. 5 und Nr. 6. Der Referenz-Rahmenlehrplan deckt das nicht 1:1 ab, darum eigenes Modul direkt aus der Ausbildungsordnung. Deckt auch die praktischen Prüfungsaufgaben nach § 9 Abs. 2."
     },
     {
       "id": "LF8",
@@ -1942,25 +1896,14 @@
       "kind": "lernfeld",
       "year": 2,
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
-      "rlpLernfeld": {
-        "nr": 8,
-        "title": "Fertigen auf numerisch gesteuerten Werkzeugmaschinen",
-        "hours": 60,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "II.A",
-          "lfdNr": 5,
-          "berufsbild": 11,
-          "title": "Einrichten und Bedienen von Produktionsanlagen"
+          "ref": "Anlage II.A Nr. 5",
+          "berufsbild": "11"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 3,
-          "berufsbild": 9,
-          "title": "Branchenspezifische Fertigungstechniken"
+          "ref": "Anlage II.A Nr. 3",
+          "berufsbild": "9"
         }
       ],
       "examAreas": [
@@ -2061,7 +2004,14 @@
             "rlp-im"
           ]
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 8,
+        "title": "Fertigen auf numerisch gesteuerten Werkzeugmaschinen",
+        "hours": 60,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "LF9",
@@ -2070,36 +2020,24 @@
       "kind": "lernfeld",
       "year": 2,
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
-      "rlpLernfeld": {
-        "nr": 9,
-        "title": "Instandsetzen von technischen Systemen",
-        "hours": 40,
-        "sourceId": "rlp-im",
-        "viaSourceId": "rlp-maf"
-      },
       "aoPositions": [
         {
-          "abschnitt": "II.A",
-          "lfdNr": 7,
-          "berufsbild": 13,
-          "title": "Warten und Inspizieren von Maschinen und Anlagen"
+          "ref": "Anlage II.A Nr. 7",
+          "berufsbild": "13"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 5,
-          "berufsbild": 11,
-          "title": "Einrichten und Bedienen von Produktionsanlagen"
+          "ref": "Anlage II.A Nr. 5",
+          "berufsbild": "11"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 6,
-          "berufsbild": 12,
-          "title": "Steuern des Materialflusses"
+          "ref": "Anlage II.A Nr. 6",
+          "berufsbild": "12"
         }
       ],
       "examAreas": [
         "PP-c",
-        "PP-d"
+        "PP-d",
+        "PRAK-3"
       ],
       "unitsTarget": 40,
       "safety": true,
@@ -2183,7 +2121,14 @@
           ],
           "safety": true
         }
-      ]
+      ],
+      "rlpLernfeld": {
+        "nr": 9,
+        "title": "Instandsetzen von technischen Systemen",
+        "hours": 40,
+        "sourceId": "rlp-im",
+        "viaSourceId": "rlp-maf"
+      }
     },
     {
       "id": "QS",
@@ -2194,16 +2139,12 @@
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 14,
-          "berufsbild": 14,
-          "title": "Durchführen von qualitätssichernden Maßnahmen"
+          "ref": "Anlage I Nr. 14",
+          "berufsbild": "14"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 8,
-          "berufsbild": 14,
-          "title": "Durchführen von qualitätssichernden Maßnahmen"
+          "ref": "Anlage II.A Nr. 8",
+          "berufsbild": "14"
         }
       ],
       "examAreas": [
@@ -2269,20 +2210,16 @@
       "niveau": "Prüfungsbereich WiSo (20 %, 60 Minuten)",
       "aoPositions": [
         {
-          "abschnitt": "I",
-          "lfdNr": 1,
-          "berufsbild": 1,
-          "title": "Berufsbildung, Arbeits- und Tarifrecht"
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
         },
         {
-          "abschnitt": "I",
-          "lfdNr": 2,
-          "berufsbild": 2,
-          "title": "Aufbau und Organisation des Ausbildungsbetriebes"
+          "ref": "Anlage I Nr. 2",
+          "berufsbild": "2"
         }
       ],
       "examAreas": [
-        "WISO"
+        "WISO-1"
       ],
       "unitsTarget": 40,
       "safety": false,
@@ -2293,7 +2230,6 @@
         "reihenfolge": 10,
         "rechnen": 5
       },
-      "note": "Inhalt nach dem KMK-Qualifikationsprofil 2021 (40 Unterrichtsstunden). Keine Personendaten in Beispielen.",
       "blocks": [
         {
           "id": "WISO-1",
@@ -2339,7 +2275,8 @@
             "kmk-wiso"
           ]
         }
-      ]
+      ],
+      "note": "Inhalt nach dem KMK-Qualifikationsprofil 2021 (40 Unterrichtsstunden). Keine Personendaten in Beispielen."
     },
     {
       "id": "APPT",
@@ -2350,16 +2287,12 @@
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
       "aoPositions": [
         {
-          "abschnitt": "II.A",
-          "lfdNr": 3,
-          "berufsbild": 9,
-          "title": "Branchenspezifische Fertigungstechniken"
+          "ref": "Anlage II.A Nr. 3",
+          "berufsbild": "9"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 1,
-          "berufsbild": 5,
-          "title": "Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen"
+          "ref": "Anlage II.A Nr. 1",
+          "berufsbild": "5"
         }
       ],
       "examAreas": [
@@ -2379,49 +2312,35 @@
         "reihenfolge": 10,
         "rechnen": 15
       },
-      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 Nr. 1.1. Keine IHK-Prüfungsaufgaben.",
       "blocks": [
         {
           "id": "APPT-1",
-          "title": "Technische Unterlagen und Werkstoffe (PT a, b)",
-          "units": 12,
+          "title": "Fälle zu technische Unterlagen, Werkstoffe, Werkzeuge",
+          "units": 18,
           "topics": [
-            "Fälle zu Zeichnungen, Stücklisten, Arbeitsplänen",
-            "Fälle zu Werkstoffwahl und Werkstoffeigenschaften"
+            "Praxisbezogene Fälle: technische Unterlagen",
+            "Praxisbezogene Fälle: Werkstoffe",
+            "Praxisbezogene Fälle: Werkzeuge"
           ],
           "sourceIds": [
-            "ao-p9",
-            "rlp-im"
+            "ao-p9"
           ]
         },
         {
           "id": "APPT-2",
-          "title": "Werkzeuge, Funktion von Maschinen und Anlagen (PT c, d)",
-          "units": 12,
+          "title": "Fälle zu Funktion von Maschinen und Anlagen, Prüfverfahren und Prüfmittel, Fertigungstechniken",
+          "units": 18,
           "topics": [
-            "Fälle zu Werkzeugwahl und Schneidstoffen",
-            "Fälle zu Funktion und Aufbau von Maschinen und Anlagen"
+            "Praxisbezogene Fälle: Funktion von Maschinen und Anlagen",
+            "Praxisbezogene Fälle: Prüfverfahren und Prüfmittel",
+            "Praxisbezogene Fälle: Fertigungstechniken"
           ],
           "sourceIds": [
-            "ao-p9",
-            "rlp-im"
+            "ao-p9"
           ]
         },
         {
           "id": "APPT-3",
-          "title": "Prüfverfahren, Prüfmittel, Fertigungstechniken (PT e, f)",
-          "units": 12,
-          "topics": [
-            "Fälle zu Prüfmittelwahl und Toleranzen",
-            "Fälle zu Fertigungsverfahren und Technologiedaten"
-          ],
-          "sourceIds": [
-            "ao-p9",
-            "rlp-im"
-          ]
-        },
-        {
-          "id": "APPT-4",
           "title": "Prüfungsformat und Zeitplanung",
           "units": 4,
           "topics": [
@@ -2432,7 +2351,8 @@
             "ao-p9"
           ]
         }
-      ]
+      ],
+      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt A. Keine IHK-Prüfungsaufgaben."
     },
     {
       "id": "APPP",
@@ -2443,28 +2363,20 @@
       "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
       "aoPositions": [
         {
-          "abschnitt": "II.A",
-          "lfdNr": 2,
-          "berufsbild": 7,
-          "title": "Planen und Vorbereiten von Arbeitsabläufen"
+          "ref": "Anlage II.A Nr. 2",
+          "berufsbild": "7"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 5,
-          "berufsbild": 11,
-          "title": "Einrichten und Bedienen von Produktionsanlagen"
+          "ref": "Anlage II.A Nr. 5",
+          "berufsbild": "11"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 7,
-          "berufsbild": 13,
-          "title": "Warten und Inspizieren von Maschinen und Anlagen"
+          "ref": "Anlage II.A Nr. 7",
+          "berufsbild": "13"
         },
         {
-          "abschnitt": "II.A",
-          "lfdNr": 8,
-          "berufsbild": 14,
-          "title": "Durchführen von qualitätssichernden Maßnahmen"
+          "ref": "Anlage II.A Nr. 8",
+          "berufsbild": "14"
         }
       ],
       "examAreas": [
@@ -2483,15 +2395,14 @@
         "reihenfolge": 25,
         "rechnen": 10
       },
-      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 Nr. 1.2. Keine IHK-Prüfungsaufgaben.",
       "blocks": [
         {
           "id": "APPP-1",
-          "title": "Arbeitsschritte und Produktionsanlagen (PP a, d)",
+          "title": "Fälle zu Arbeitsschritte, Qualitätssicherung",
           "units": 12,
           "topics": [
-            "Fälle zur Planung von Arbeitsschritten",
-            "Fälle zu Rüsten, Bedienen und Überwachen von Produktionsanlagen"
+            "Praxisbezogene Fälle: Arbeitsschritte",
+            "Praxisbezogene Fälle: Qualitätssicherung"
           ],
           "sourceIds": [
             "ao-p9",
@@ -2500,11 +2411,12 @@
         },
         {
           "id": "APPP-2",
-          "title": "Qualitätssicherung und vorbeugende Instandhaltung (PP b, c)",
-          "units": 10,
+          "title": "Fälle zu vorbeugende Instandhaltung, Produktionsanlagen, Übergabeprotokoll",
+          "units": 12,
           "topics": [
-            "Fälle zu Qualitätsabweichung und Korrektur",
-            "Fälle zu Wartungsplanung und vorbeugender Instandhaltung"
+            "Praxisbezogene Fälle: vorbeugende Instandhaltung",
+            "Praxisbezogene Fälle: Produktionsanlagen",
+            "Praxisbezogene Fälle: Übergabeprotokoll"
           ],
           "sourceIds": [
             "ao-p9",
@@ -2513,18 +2425,18 @@
         },
         {
           "id": "APPP-3",
-          "title": "Übergabeprotokoll und Prüfungsformat (PP e)",
-          "units": 8,
+          "title": "Prüfungsformat und Zeitplanung",
+          "units": 6,
           "topics": [
-            "Übergabeprotokoll ausfüllen und bewerten",
-            "60 Minuten, 30 Prozent Gewicht"
+            "60 Minuten, 30 Prozent Gewicht",
+            "Planungsunterlagen und Protokolle lesen"
           ],
           "sourceIds": [
-            "ao-p9",
-            "ao-anlage"
+            "ao-p9"
           ]
         }
-      ]
+      ],
+      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt A. Keine IHK-Prüfungsaufgaben."
     }
   ],
   "sources": [
@@ -2534,15 +2446,15 @@
       "url": "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html",
       "kind": "ausbildungsordnung",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },
     {
       "id": "ao-anlage",
-      "title": "MaschFüAusbV Anlage (zu § 5) – Ausbildungsrahmenplan mit zeitlichen Richtwerten",
+      "title": "MaschFüAusbV Anlage (zu § 5) – Ausbildungsrahmenplan mit zeitlichen Richtwerten, Abschnitte I und II.A–E",
       "url": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
       "kind": "ausbildungsordnung",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },
     {
       "id": "ao-p8",
@@ -2550,15 +2462,15 @@
       "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html",
       "kind": "pruefung",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },
     {
       "id": "ao-p9",
-      "title": "MaschFüAusbV § 9 Abschlussprüfung",
+      "title": "MaschFüAusbV § 9 Abschlussprüfung (Prüfungsgebiete je Schwerpunkt, Abs. 3 Nr. 1–5)",
       "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
       "kind": "pruefung",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },
     {
       "id": "ao-bgbl",
@@ -2566,23 +2478,15 @@
       "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf",
       "kind": "ausbildungsordnung",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },
     {
       "id": "rlp-maf",
-      "title": "KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist auf die RLP der Fortsetzungsberufe",
+      "title": "KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist je Schwerpunkt auf die RLP der Fortsetzungsberufe",
       "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf",
       "kind": "rahmenlehrplan",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
-    },
-    {
-      "id": "rlp-im",
-      "title": "KMK Rahmenlehrplan Industriemechaniker/in (Beschluss 25.03.2004 i. d. F. 23.02.2018) – Lernfelder 1–9 als Referenz für Schwerpunkt Metall",
-      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf",
-      "kind": "rahmenlehrplan",
-      "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },
     {
       "id": "kmk-wiso",
@@ -2590,7 +2494,7 @@
       "url": "https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf",
       "kind": "rahmenlehrplan",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     },
     {
       "id": "bibb-51121",
@@ -2598,7 +2502,15 @@
       "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121",
       "kind": "berufsinformation",
       "fetchedAt": "2026-10-03",
-      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt; Inhalte gegen BIBB-PDF des BGBl. gegengelesen)"
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "rlp-im",
+      "title": "KMK Rahmenlehrplan Industriemechaniker/in (Beschluss 25.03.2004 i. d. F. 23.02.2018) – Lernfelder 1–9 als Referenz für Metall",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
     }
   ]
 }
