@@ -1,1 +1,1 @@
-LOAD_FROM_FILE:/tmp/decisions-content.txt
+LOAD_FROM_FILE:/tmp/content-agent/docs/DECISIONS.md
