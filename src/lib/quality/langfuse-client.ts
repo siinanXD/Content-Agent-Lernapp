@@ -230,4 +230,35 @@ export async function fetchGoldsetFromLangfuse(): Promise<GoldQuestion[] | null>
     const client = createClient(cfg);
     const dataset = await client.dataset.get(LANGFUSE_DATASET_NAME, {
       fetchItemsPageSize: 100,
-  
+    });
+    const rows = (dataset.items ?? [])
+      .map((row): GoldQuestion | null => {
+        const input = row.input as
+          | {
+              prompt?: string;
+              correct?: string;
+              explanation?: string;
+              sourceUrl?: string;
+              unitId?: string;
+            }
+          | undefined;
+        const expected = row.expectedOutput as GoldQuestion["expected"] | undefined;
+        if (!input?.prompt || !input.correct || !input.sourceUrl || !expected) {
+          return null;
+        }
+        return {
+          id: (row.id ?? "").replace(/^maf-/, "") || crypto.randomUUID(),
+          unitId: input.unitId ?? "lf-unknown",
+          prompt: input.prompt,
+          correct: input.correct,
+          explanation: input.explanation ?? "",
+          sourceUrl: input.sourceUrl,
+          expected,
+        };
+      })
+      .filter((q): q is GoldQuestion => q !== null);
+    return rows.length >= 70 ? rows : null;
+  } catch {
+    return null;
+  }
+}
