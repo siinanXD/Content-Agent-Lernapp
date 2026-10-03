@@ -1,1 +1,1 @@
-$file:/tmp/pr-clean-bundled/DECISIONS.full.md
+$file:/tmp/mcp-pending/DECISIONS.only.md
