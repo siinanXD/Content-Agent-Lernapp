@@ -7,6 +7,7 @@ import {
   setSources,
   setStatus,
 } from "./mock-store";
+import { loadMafCurriculum } from "@/lib/content/maf-curriculum";
 import { runGenerateAgent } from "@/lib/generate/generate-agent";
 import { runPlanAgent } from "@/lib/plan/plan-agent";
 import { runEvaluateAgent } from "@/lib/quality/evaluate-agent";
@@ -77,6 +78,8 @@ export async function handleGenerate(id: string) {
     batchId: result.batchId,
     warning: result.warning,
     unitsGenerated: result.lernfeld.units.length,
+    moduleId: result.lernfeld.moduleId,
+    blockId: result.lernfeld.blockId,
     lernfeld: result.lernfeld,
   });
 }
@@ -92,12 +95,23 @@ export async function handleEvaluate(id: string) {
     correct: string | string[];
     explanation: string;
     sourceUrl: string;
+    moduleId?: string;
+    blockId?: string;
+    year?: 1 | 2;
+    niveauHint?: string;
+    safety?: boolean;
   };
   let generated: GenQ[] | undefined;
   const lf = course.generated as
     | {
+        moduleId?: string;
+        blockId?: string;
         units?: Array<{
           id: string;
+          moduleId?: string;
+          blockId?: string;
+          niveau?: string;
+          safetyFlag?: boolean;
           questions: Array<{
             id: string;
             prompt: string;
@@ -109,16 +123,28 @@ export async function handleEvaluate(id: string) {
       }
     | undefined;
   if (lf?.units?.length) {
-    generated = lf.units.flatMap((u) =>
-      u.questions.map((q) => ({
+    const curriculum = loadMafCurriculum();
+    generated = lf.units.flatMap((u) => {
+      const moduleId = u.moduleId ?? lf.moduleId;
+      const blockId = u.blockId ?? lf.blockId;
+      const mod = moduleId
+        ? curriculum.modules.find((m) => m.id === moduleId)
+        : undefined;
+      const block = mod?.blocks.find((b) => b.id === blockId);
+      return u.questions.map((q) => ({
         id: `${u.id}-${q.id}`,
         unitId: u.id,
         prompt: q.prompt,
         correct: q.correct,
         explanation: q.explanation,
         sourceUrl: q.sourceUrl,
-      })),
-    );
+        moduleId,
+        blockId,
+        year: mod?.year,
+        niveauHint: u.niveau ?? mod?.niveau,
+        safety: u.safetyFlag ?? block?.safety ?? mod?.safety,
+      }));
+    });
   }
 
   const result = await runEvaluateAgent({ courseId: id, generated });
