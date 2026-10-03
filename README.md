@@ -8,7 +8,8 @@ Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen 
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
 - [`AGENTS.md`](AGENTS.md) — Entscheidungs- und Stopp-Regeln
-- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Curriculum-Map MAF (AP-13): Jahr → Lernfeld → Block → Einheiten, Vorgabe für die Agenten
+- [`docs/content/README.md`](docs/content/README.md) — Curriculum-Maps (AP-13): MAF in allen fünf Schwerpunkten und Industriekaufleute 2024, Vorgabe für die Agenten
+- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Vorgängerversion v1 (nur Metall), abgelöst durch `docs/content/maf-metall.json`; bleibt, bis AP-14 (PR #20) auf den v2-Loader umgestellt ist
 
 ## Local development
 

@@ -1,0 +1,512 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-03T00:00:00.000Z",
+  "note": "Seed vom 2026-10-03: Stand-Zeilen und KMK-Beschlussdaten manuell aus den Dokumenten gelesen (Cloud-Agent-Proxy sperrt gesetze-im-internet.de und kmk.org). ETag/Last-Modified/Hash füllt der erste Live-Lauf mit --update auf Railway oder in CI.",
+  "kmkListUrl": "https://www.kmk.org/service/servicebereich-berufliche-schulen/downloadbereich-rahmenlehrplaene.html",
+  "watchKeywords": [
+    "Maschinen- und Anlagenführer",
+    "Maschinen- und Anlageführer",
+    "MaschFüAusbV",
+    "Industriekaufmann",
+    "Industriekauffrau",
+    "Industriekaufleute",
+    "IndKflAusbV",
+    "industriellen Metallberufe",
+    "Industriemechaniker",
+    "Kunststoff- und Kautschuktechnolog",
+    "Verfahrensmechaniker für Kunststoff",
+    "Produktionsmechaniker",
+    "Produktveredler",
+    "Textil",
+    "Fachkraft für Lebensmitteltechnik",
+    "Medientechnolog",
+    "Buchbinder",
+    "Packmitteltechnolog",
+    "Standardberufsbildposition",
+    "Wirtschafts- und Sozialkunde"
+  ],
+  "feeds": [
+    {
+      "id": "gii-aktualitaetendienst",
+      "url": "https://www.gesetze-im-internet.de/aktuDienst.html",
+      "type": "html"
+    },
+    {
+      "id": "bibb-neuordnungen",
+      "url": "https://www.bibb.de/de/41.php",
+      "type": "html"
+    }
+  ],
+  "entries": {
+    "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html": {
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html",
+      "kind": "ausbildungsordnung",
+      "title": "IndKflAusbV – Industriekaufleuteausbildungsverordnung vom 12. März 2024 (BGBl. 2024 I Nr. 94), in Kraft 1.8.2024 – Volltext",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "indkfl"
+      ],
+      "standLabel": "Ausfertigungsdatum: 12.03.2024",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/indkflausbv/anlage.html": {
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+      "kind": "ausbildungsordnung",
+      "title": "IndKflAusbV Anlage (zu § 3 Abs. 1) – Ausbildungsrahmenplan, Abschnitte A und B mit zeitlichen Richtwerten in Wochen",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "indkfl-anlage"
+      ],
+      "standLabel": "Ausfertigungsdatum: 12.03.2024",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/indkflausbv/__4.html": {
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__4.html",
+      "kind": "ausbildungsordnung",
+      "title": "IndKflAusbV § 4 Struktur der Berufsausbildung, Ausbildungsberufsbild und Einsatzgebiete",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "indkfl-p4"
+      ],
+      "standLabel": "Ausfertigungsdatum: 12.03.2024",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/indkflausbv/__8.html": {
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__8.html",
+      "kind": "pruefung",
+      "title": "IndKflAusbV § 8 Prüfungsbereich des Teiles 1 „Leistungserstellung, Logistik, Beschaffung und Buchhaltung“",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "indkfl-p8"
+      ],
+      "standLabel": "Ausfertigungsdatum: 12.03.2024",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/indkflausbv/__11.html": {
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__11.html",
+      "kind": "pruefung",
+      "title": "IndKflAusbV § 11 Prüfungsbereich „Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle“",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "indkfl-p11"
+      ],
+      "standLabel": "Ausfertigungsdatum: 12.03.2024",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/indkflausbv/__12.html": {
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__12.html",
+      "kind": "pruefung",
+      "title": "IndKflAusbV § 12 Prüfungsbereich „Fachaufgabe im Einsatzgebiet“",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "indkfl-p12"
+      ],
+      "standLabel": "Ausfertigungsdatum: 12.03.2024",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/indkflausbv/__14.html": {
+      "url": "https://www.gesetze-im-internet.de/indkflausbv/__14.html",
+      "kind": "pruefung",
+      "title": "IndKflAusbV § 14 Gewichtung der Prüfungsbereiche und Bestehen",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "indkfl-p14"
+      ],
+      "standLabel": "Ausfertigungsdatum: 12.03.2024",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Industriekaufmann und Industriekauffrau (Beschluss 15.12.2023) – Lernfelder 1–13, 880 Std.",
+      "mapIds": [
+        "indkfl"
+      ],
+      "sourceIds": [
+        "rlp-indkfl"
+      ],
+      "standLabel": "15.12.2023",
+      "kmkName": "Industriekaufmann und Industriekauffrau",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html": {
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html",
+      "kind": "ausbildungsordnung",
+      "title": "MaschFüAusbV – Verordnung über die Berufsausbildung zum Maschinen- und Anlagenführer (Volltext, Stand Art. 2 V v. 14.6.2023)",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "ao"
+      ],
+      "standLabel": "Ausfertigungsdatum: 27.04.2004; Stand: Zuletzt geändert durch Art. 2 V v. 14.6.2023 I Nr. 151",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html": {
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "kind": "ausbildungsordnung",
+      "title": "MaschFüAusbV Anlage (zu § 5) – Ausbildungsrahmenplan mit zeitlichen Richtwerten, Abschnitte I und II.A–E",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "ao-anlage"
+      ],
+      "standLabel": "Ausfertigungsdatum: 27.04.2004; Stand: Zuletzt geändert durch Art. 2 V v. 14.6.2023 I Nr. 151",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html": {
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html",
+      "kind": "pruefung",
+      "title": "MaschFüAusbV § 8 Zwischenprüfung",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "ao-p8"
+      ],
+      "standLabel": "Ausfertigungsdatum: 27.04.2004; Stand: Zuletzt geändert durch Art. 2 V v. 14.6.2023 I Nr. 151",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html": {
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+      "kind": "pruefung",
+      "title": "MaschFüAusbV § 9 Abschlussprüfung (Prüfungsgebiete je Schwerpunkt, Abs. 3 Nr. 1–5)",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "ao-p9"
+      ],
+      "standLabel": "Ausfertigungsdatum: 27.04.2004; Stand: Zuletzt geändert durch Art. 2 V v. 14.6.2023 I Nr. 151",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf": {
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf",
+      "kind": "ausbildungsordnung",
+      "title": "BGBl. I 2004 Nr. 19 (BIBB-Kopie der Verordnung inkl. Anlage)",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "ao-bgbl"
+      ],
+      "standLabel": "BGBl. I 2004 Nr. 19 vom 30.04.2004 (Ursprungsfassung; Änderung 2023 steht nur auf gesetze-im-internet.de)",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist je Schwerpunkt auf die RLP der Fortsetzungsberufe",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "rlp-maf"
+      ],
+      "standLabel": "31.03.2023",
+      "kmkName": "Maschinen- und Anlagenführer und Maschinen- und Anlageführerin",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Kompetenzorientiertes Qualifikationsprofil Wirtschafts- und Sozialkunde gewerblich-technischer Ausbildungsberufe (Beschluss 17.06.2021, 40 Unterrichtsstunden)",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "kmk-wiso"
+      ],
+      "standLabel": "Beschluss 17.06.2021 (nicht im RLP-Downloadbereich; nur ETag/Last-Modified)",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.bibb.de/dokumente/pdf/HA172.pdf": {
+      "url": "https://www.bibb.de/dokumente/pdf/HA172.pdf",
+      "kind": "empfehlung",
+      "title": "BIBB Hauptausschuss-Empfehlung Nr. 172 vom 17.11.2020: Anwendung der modernisierten Standardberufsbildpositionen in der Ausbildungspraxis (Empfehlung für Berufe mit Verordnung vor 2021)",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "bibb-ha172"
+      ],
+      "standLabel": "HA-Empfehlung 172 vom 17.11.2020",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121": {
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121",
+      "kind": "berufsinformation",
+      "title": "BIBB Berufesuche – Maschinen- und Anlagenführer/in (51121)",
+      "mapIds": [
+        "maf-druckverarbeitung",
+        "maf-kunststoff",
+        "maf-lebensmittel",
+        "maf-metall",
+        "maf-packmittel",
+        "maf-textil",
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "bibb-51121"
+      ],
+      "standLabel": null,
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/BuchbinderMedientechnDruckverarbeitung11-03-25-E_03.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/BuchbinderMedientechnDruckverarbeitung11-03-25-E_03.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Buchbinder/in und Medientechnologe/-technologin Druckverarbeitung (Beschluss 25.03.2011) – Lernfelder 1–8 als Referenz",
+      "mapIds": [
+        "maf-druckverarbeitung"
+      ],
+      "sourceIds": [
+        "rlp-mtdv"
+      ],
+      "standLabel": "25.03.2011",
+      "kmkName": "Medientechnologe Druckverarbeitung/Medientechnologin Druckverarbeitung",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/KuKTechnologe-12-03-22idf23-03-31-mitEL.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/KuKTechnologe-12-03-22idf23-03-31-mitEL.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Kunststoff- und Kautschuktechnologe/-technologin (Beschluss 22.03.2012 i. d. F. 31.03.2023) – Lernfelder 1–8 als Referenz für Kunststoff",
+      "mapIds": [
+        "maf-kunststoff"
+      ],
+      "sourceIds": [
+        "rlp-kuk"
+      ],
+      "standLabel": "31.03.2023",
+      "kmkName": "Kunststoff- und Kautschuktechnologe und Kunststoff- und Kautschuktechnologin",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/FKLmt.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/FKLmt.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Fachkraft für Lebensmitteltechnik (Beschluss 10.12.1999) – Lernfelder 1–9 als Referenz",
+      "mapIds": [
+        "maf-lebensmittel"
+      ],
+      "sourceIds": [
+        "rlp-fklmt"
+      ],
+      "standLabel": "10.12.1999",
+      "kmkName": "Fachkraft für Lebensmitteltechnik",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Industriemechaniker/in (Beschluss 25.03.2004 i. d. F. 23.02.2018) – Lernfelder 1–9 als Referenz für Metall",
+      "mapIds": [
+        "maf-metall"
+      ],
+      "sourceIds": [
+        "rlp-im"
+      ],
+      "standLabel": "23.02.2018",
+      "kmkName": "Industriemechaniker/Industriemechanikerin",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Packmitteltechnologe11-03-25-E.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Packmitteltechnologe11-03-25-E.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Packmitteltechnologe/-technologin (Beschluss 25.03.2011) – Lernfelder 1–8 als Referenz",
+      "mapIds": [
+        "maf-packmittel"
+      ],
+      "sourceIds": [
+        "rlp-pack"
+      ],
+      "standLabel": "25.03.2011",
+      "kmkName": "Packmitteltechnologe/Packmitteltechnologin",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://berufsbildung.nrw.de/system/files/media/document/file/produktionsmechanik_textil.pdf": {
+      "url": "https://berufsbildung.nrw.de/system/files/media/document/file/produktionsmechanik_textil.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Produktionsmechaniker-Textil / Produktprüfer-Textil (Beschluss 18.03.2005 i. d. F. 15.03.2007), Lernfelder 1–10 PM – Wiedergabe im Landeslehrplan NRW (QUA-LiS)",
+      "mapIds": [
+        "maf-textil"
+      ],
+      "sourceIds": [
+        "rlp-pmtextil"
+      ],
+      "standLabel": "KMK-Beschluss 18.03.2005 i. d. F. 15.03.2007 (Wiedergabe NRW; KMK-Datei nicht auffindbar)",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    },
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/ProduktveredelerTextil.pdf": {
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/ProduktveredelerTextil.pdf",
+      "kind": "rahmenlehrplan",
+      "title": "KMK Rahmenlehrplan Produktveredler-Textil / Produktveredlerin-Textil (Beschluss 18.03.2005) – Lernfelder 1–8 als Referenz",
+      "mapIds": [
+        "maf-textilveredelung"
+      ],
+      "sourceIds": [
+        "rlp-pvtextil"
+      ],
+      "standLabel": "18.03.2005",
+      "kmkName": "Produktveredler Textil/ Produktveredlerin Textil",
+      "etag": null,
+      "lastModified": null,
+      "contentHash": null,
+      "httpStatus": null,
+      "checkedAt": null
+    }
+  }
+}

@@ -93,9 +93,15 @@ paths:
   /courses/{id}/refresh:
     post:
       operationId: refreshCourse
-      summary: Weekly source refresh (Hermes / manual)
+      summary: Weekly source refresh (Hermes / manual); selective via sourceIds/moduleIds/blockIds (AP-16)
       parameters:
         - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
       responses:
         '200':
           description: Refresh result
@@ -206,10 +212,35 @@ components:
         publishedUnits: { type: integer }
         blockedUnits: { type: integer }
         mock: { type: boolean }
+    RefreshRequest:
+      type: object
+      description: Selective refresh targets from the Quellen-Monitor (sourceIds → modules/blocks)
+      properties:
+        mapId: { type: string, description: Curriculum map id (e.g. maf-metall) }
+        sourceIds:
+          type: array
+          items: { type: string }
+        moduleIds:
+          type: array
+          items: { type: string }
+        blockIds:
+          type: array
+          items: { type: string }
     RefreshResult:
       type: object
       required: [courseId, sourcesChanged, mock]
       properties:
         courseId: { type: string }
+        mapId: { type: string, nullable: true }
         sourcesChanged: { type: boolean }
+        selective: { type: boolean }
+        sourceIds:
+          type: array
+          items: { type: string }
+        moduleIds:
+          type: array
+          items: { type: string }
+        blockIds:
+          type: array
+          items: { type: string }
         mock: { type: boolean }

@@ -1,0 +1,2293 @@
+{
+  "id": "maf-lebensmittel",
+  "family": "maf",
+  "title": "Maschinen- und Anlagenführer/in – Schwerpunkt Lebensmitteltechnik (Referenz Fachkraft für Lebensmitteltechnik)",
+  "version": "2026-10-03",
+  "status": "Entwurf – Freigabe durch Sinan offen",
+  "keyword": "Maschinen- und Anlagenführer",
+  "variantLabel": "Schwerpunkt Lebensmitteltechnik, Referenz-RLP Fachkraft für Lebensmitteltechnik (Lernfelder 1–9)",
+  "durationYears": 2,
+  "durationNote": "§ 2 MaschFüAusbV: Die Ausbildung dauert zwei Jahre. Ein drittes und viertes Jahr gibt es nur als Fortsetzung in einem anderen Beruf nach § 10. Das ist nicht Teil dieses Kurses.",
+  "referenceRlp": {
+    "sourceId": "rlp-fklmt",
+    "why": "Der KMK-RLP MAF nennt für Lebensmitteltechnik drei Fortsetzungsberufe. Referenz ist die Fachkraft für Lebensmitteltechnik (1999), weil sie branchenübergreifend ist und Lernfelder hat; Lernfelder 1–9 (280 + 280 Std.) bilden die schulische Achse.",
+    "alternatives": [
+      "Brauer und Mälzer / Brauerin und Mälzerin (KMK 18.12.2020) für Brauereien",
+      "Fachkraft für Fruchtsafttechnik (KMK 09.08.1984, ohne Lernfelder)"
+    ]
+  },
+  "unit": {
+    "minutesMin": 5,
+    "minutesMax": 10,
+    "minutesAvg": 7.5,
+    "questionsMin": 5,
+    "questionsMax": 8,
+    "questionTypes": [
+      "auswahl",
+      "zuordnen",
+      "lueckentext",
+      "reihenfolge",
+      "rechnen"
+    ],
+    "explanationWithSource": true
+  },
+  "defaultQuestionMix": {
+    "auswahl": 40,
+    "zuordnen": 20,
+    "lueckentext": 15,
+    "reihenfolge": 10,
+    "rechnen": 15
+  },
+  "rules": [
+    "Ohne amtliche Quelle wird kein Lerninhalt erzeugt; jede Einheit speichert sourceUrl und sourceFetchedAt.",
+    "IHK-Prüfungsaufgaben werden nicht kopiert; Prüfungstrainings sind eigene Fälle nach der Struktur der Verordnung.",
+    "Keine Personendaten in Prompts oder Beispielen.",
+    "Blöcke mit safety=true: Richter setzt safetyFlag, 10 Prozent Stichprobe durch einen Menschen vor Veröffentlichung.",
+    "Qualitäts-Schwelle (D-18/D-25): sourceFidelity=1, uniqueness=1, niveau>=4, language>=4."
+  ],
+  "assumptions": [
+    "Referenz-Rahmenlehrplan ist Fachkraft für Lebensmitteltechnik; Brauereien brauchen später eine Variante mit RLP Brauer und Mälzer.",
+    "Einheiten-Budget: 1 Einheit je Unterrichtsstunde des RLP; übrige Module wie maf-metall.",
+    "Anlage II.D: Nr. 1–2 zusammen 10 Wochen, Nr. 3–4 zusammen 16 Wochen (Klammern der Verordnung)."
+  ],
+  "aoBerufsbild": [
+    {
+      "id": "1",
+      "title": "Berufsbildung, Arbeits- und Tarifrecht"
+    },
+    {
+      "id": "2",
+      "title": "Aufbau und Organisation des Ausbildungsbetriebes"
+    },
+    {
+      "id": "3",
+      "title": "Sicherheit und Gesundheitsschutz bei der Arbeit"
+    },
+    {
+      "id": "4",
+      "title": "Umweltschutz"
+    },
+    {
+      "id": "5",
+      "title": "Zuordnen und Handhaben von Werk-, Betriebs- und Hilfsstoffen"
+    },
+    {
+      "id": "6",
+      "title": "Betriebliche und technische Kommunikation"
+    },
+    {
+      "id": "7",
+      "title": "Planen und Vorbereiten von Arbeitsabläufen"
+    },
+    {
+      "id": "8",
+      "title": "Prüfen"
+    },
+    {
+      "id": "9",
+      "title": "Branchenspezifische Fertigungstechniken"
+    },
+    {
+      "id": "10",
+      "title": "Steuerungs- und Regelungstechnik"
+    },
+    {
+      "id": "11",
+      "title": "Einrichten und Bedienen von Produktionsanlagen"
+    },
+    {
+      "id": "12",
+      "title": "Steuern des Materialflusses"
+    },
+    {
+      "id": "13",
+      "title": "Warten und Inspizieren von Maschinen und Anlagen"
+    },
+    {
+      "id": "14",
+      "title": "Durchführen von qualitätssichernden Maßnahmen"
+    }
+  ],
+  "aoZeitrahmen": {
+    "sections": [
+      {
+        "id": "anlage-I",
+        "title": "Anlage I – Berufliche Grundbildung, 1. Ausbildungsjahr (alle Schwerpunkte)",
+        "sourceId": "ao-anlage",
+        "expectedWeeks": 52,
+        "rows": [
+          {
+            "lfdNr": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "berufsbild": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "weeks": null,
+            "note": "während der gesamten Ausbildung zu vermitteln"
+          },
+          {
+            "lfdNr": [
+              "5"
+            ],
+            "berufsbild": [
+              "5"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "6"
+            ],
+            "berufsbild": [
+              "6"
+            ],
+            "weeks": 8
+          },
+          {
+            "lfdNr": [
+              "7"
+            ],
+            "berufsbild": [
+              "7"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "8"
+            ],
+            "berufsbild": [
+              "8"
+            ],
+            "weeks": 6
+          },
+          {
+            "lfdNr": [
+              "9",
+              "10",
+              "11"
+            ],
+            "berufsbild": [
+              "9",
+              "10",
+              "11"
+            ],
+            "weeks": 22
+          },
+          {
+            "lfdNr": [
+              "12"
+            ],
+            "berufsbild": [
+              "12"
+            ],
+            "weeks": 2
+          },
+          {
+            "lfdNr": [
+              "13"
+            ],
+            "berufsbild": [
+              "13"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "14"
+            ],
+            "berufsbild": [
+              "14"
+            ],
+            "weeks": 2
+          }
+        ]
+      },
+      {
+        "id": "anlage-II-D",
+        "title": "Anlage II.D – Berufliche Fachbildung, 2. Ausbildungsjahr, Schwerpunkt Lebensmitteltechnik",
+        "sourceId": "ao-anlage",
+        "expectedWeeks": 52,
+        "rows": [
+          {
+            "lfdNr": [
+              "1",
+              "2"
+            ],
+            "berufsbild": [
+              "5",
+              "7"
+            ],
+            "weeks": 10
+          },
+          {
+            "lfdNr": [
+              "3",
+              "4"
+            ],
+            "berufsbild": [
+              "9",
+              "10"
+            ],
+            "weeks": 16
+          },
+          {
+            "lfdNr": [
+              "5"
+            ],
+            "berufsbild": [
+              "11"
+            ],
+            "weeks": 18
+          },
+          {
+            "lfdNr": [
+              "6"
+            ],
+            "berufsbild": [
+              "12"
+            ],
+            "weeks": 2
+          },
+          {
+            "lfdNr": [
+              "7"
+            ],
+            "berufsbild": [
+              "13"
+            ],
+            "weeks": 4
+          },
+          {
+            "lfdNr": [
+              "8"
+            ],
+            "berufsbild": [
+              "14"
+            ],
+            "weeks": 2
+          }
+        ]
+      }
+    ]
+  },
+  "exam": {
+    "summary": "Zwischenprüfung zu Beginn des 2. Ausbildungsjahres (§ 8). Abschlussprüfung (§ 9): praktischer Teil (höchstens 7 Stunden, bis zu 2 Aufgaben) und schriftlicher Teil mit Produktionstechnik 50 %, Produktionsplanung 30 %, Wirtschafts- und Sozialkunde 20 %. Gebiete laut § 9 Abs. 3 für diesen Schwerpunkt.",
+    "gradedParts": [
+      {
+        "id": "PRAK",
+        "part": "Abschlussprüfung",
+        "bereich": "Praktischer Teil (§ 9 Abs. 2)",
+        "form": "praktisch",
+        "duration": "höchstens 7 Stunden, bis zu 2 Aufgaben",
+        "weightPercent": null,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PRAK-1",
+            "title": "Einrichten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage"
+          },
+          {
+            "id": "PRAK-2",
+            "title": "Umrüsten, in Betrieb nehmen und Bedienen einer Maschine oder Anlage"
+          },
+          {
+            "id": "PRAK-3",
+            "title": "Durchführen einer vorbeugenden Instandsetzung einschließlich der Inbetriebnahme"
+          }
+        ]
+      },
+      {
+        "id": "PT",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Produktionstechnik",
+        "form": "schriftlich",
+        "duration": "120 Minuten",
+        "weightPercent": 50,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PT-a",
+            "title": "Roh-, Zusatz- und Hilfsstoffe sowie Halbfabrikate"
+          },
+          {
+            "id": "PT-b",
+            "title": "Funktion von Maschinen und Anlagen"
+          },
+          {
+            "id": "PT-c",
+            "title": "Zerkleinerungs-, Trenn- und Sortierverfahren"
+          },
+          {
+            "id": "PT-d",
+            "title": "Abfüllen, Etikettieren und Verpacken"
+          },
+          {
+            "id": "PT-e",
+            "title": "Kochen, Mischen und Haltbarmachen"
+          },
+          {
+            "id": "PT-f",
+            "title": "lebensmittelrechtliche Bestimmungen und Hygienevorschriften"
+          },
+          {
+            "id": "PT-g",
+            "title": "Fertigungstechniken"
+          }
+        ]
+      },
+      {
+        "id": "PP",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Produktionsplanung",
+        "form": "schriftlich",
+        "duration": "60 Minuten",
+        "weightPercent": 30,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "PP-a",
+            "title": "Arbeitsschritte"
+          },
+          {
+            "id": "PP-b",
+            "title": "Qualitätssicherung"
+          },
+          {
+            "id": "PP-c",
+            "title": "vorbeugende Instandhaltung"
+          },
+          {
+            "id": "PP-d",
+            "title": "Materialfluss"
+          },
+          {
+            "id": "PP-e",
+            "title": "Maschinenbelegung"
+          }
+        ]
+      },
+      {
+        "id": "WISO",
+        "part": "Abschlussprüfung schriftlich",
+        "bereich": "Wirtschafts- und Sozialkunde",
+        "form": "schriftlich",
+        "duration": "60 Minuten",
+        "weightPercent": 20,
+        "sourceId": "ao-p9",
+        "gebiete": [
+          {
+            "id": "WISO-1",
+            "title": "allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt"
+          }
+        ]
+      }
+    ],
+    "ungraded": [
+      {
+        "id": "ZP",
+        "title": "Zwischenprüfung (§ 8)",
+        "sourceId": "ao-p8",
+        "text": "zu Beginn des 2. Ausbildungsjahres; praktische Aufgabe höchstens 3 Stunden plus höchstens 60 Minuten schriftlich; Beispiel: Positionieren von Maschinenelementen; Stoff des 1. Ausbildungsjahres"
+      }
+    ],
+    "bestehen": "Praktischer und schriftlicher Teil jeweils mindestens ausreichend; in zwei schriftlichen Prüfungsbereichen mindestens ausreichend, im dritten nicht ungenügend (§ 9 Abs. 7). Mündliche Ergänzungsprüfung möglich, Gewichtung 2:1 (§ 9 Abs. 5)."
+  },
+  "totals": {
+    "modules": 17,
+    "unitsTarget": 850,
+    "hoursAtAvgUnit": 106.3,
+    "questionsMin": 4250,
+    "questionsMax": 6800,
+    "rlpHoursByYear": {
+      "1": 280,
+      "2": 280
+    }
+  },
+  "phases": [
+    {
+      "id": "A",
+      "title": "Pilot-Kern: Querschnitt, LF1, LF2, MAF-Kern",
+      "moduleIds": [
+        "M0",
+        "LF1",
+        "LF2",
+        "PA"
+      ],
+      "why": "Inhaltsstoffe, Lagern, Produktionsanlagen.",
+      "unitsTarget": 280
+    },
+    {
+      "id": "B",
+      "title": "Rest Jahr 1 und Zwischenprüfung",
+      "moduleIds": [
+        "LF3",
+        "LF4",
+        "ZP",
+        "QS"
+      ],
+      "why": "Vorbehandeln, Verpacken, Zwischenprüfungs-Training, Qualitätssicherung.",
+      "unitsTarget": 160
+    },
+    {
+      "id": "C",
+      "title": "Fachbildung Jahr 2, Teil 1",
+      "moduleIds": [
+        "LF5",
+        "LF6",
+        "LF7"
+      ],
+      "why": "Reinigen und Warten, Qualität prüfen, Verpackungsprozesse steuern.",
+      "unitsTarget": 160
+    },
+    {
+      "id": "D",
+      "title": "Fachbildung Jahr 2, Teil 2 und Abschlussprüfung",
+      "moduleIds": [
+        "LF8",
+        "LF9",
+        "WISO",
+        "SBP",
+        "APPT",
+        "APPP"
+      ],
+      "why": "Konservieren, Getränke, WiSo und beide schriftlichen Prüfungstrainings.",
+      "unitsTarget": 250
+    }
+  ],
+  "modules": [
+    {
+      "id": "M0",
+      "order": 0,
+      "title": "Querschnitt: Beruf, Betrieb, Sicherheit, Umwelt",
+      "kind": "querschnitt",
+      "year": 1,
+      "niveau": "Grundbildung – wird über beide Jahre verteilt wiederholt",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
+        },
+        {
+          "ref": "Anlage I Nr. 2",
+          "berufsbild": "2"
+        },
+        {
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
+        },
+        {
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
+        }
+      ],
+      "examAreas": [
+        "WISO-1"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "M0-1",
+          "title": "Ausbildung, Ausbildungsvertrag und Berufsbild",
+          "units": 15,
+          "topics": [
+            "Ausbildungsvertrag: Abschluss, Dauer (2 Jahre, § 2), Beendigung",
+            "Rechte und Pflichten aus dem Ausbildungsvertrag",
+            "Berichtsheft als Ausbildungsnachweis (§ 7)",
+            "Ausbildungsrahmenplan und betrieblicher Ausbildungsplan (§ 5, § 6)",
+            "Die 14 Berufsbildpositionen (§ 4)",
+            "Fünf Schwerpunkte (§ 5) und Fortsetzung der Ausbildung (§ 10)",
+            "Berufliche Fortbildung",
+            "Arbeitsvertrag und Tarifvertrag: wesentliche Teile"
+          ],
+          "sourceIds": [
+            "ao",
+            "ao-anlage",
+            "bibb-51121"
+          ]
+        },
+        {
+          "id": "M0-2",
+          "title": "Ausbildungsbetrieb: Aufbau, Grundfunktionen, Mitbestimmung",
+          "units": 10,
+          "topics": [
+            "Aufbau und Aufgaben des Betriebes",
+            "Grundfunktionen: Beschaffung, Fertigung, Absatz, Verwaltung",
+            "Wirtschaftsorganisationen, Berufsvertretungen, Gewerkschaften",
+            "Betriebsrat, Jugend- und Auszubildendenvertretung"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "M0-3",
+          "title": "Sicherheit und Gesundheitsschutz bei der Arbeit",
+          "units": 20,
+          "topics": [
+            "Gefährdungen am Arbeitsplatz erkennen, Gefährdungsbeurteilung, Betriebsanweisung",
+            "Persönliche Schutzausrüstung",
+            "Arbeitsschutz- und Unfallverhütungsvorschriften",
+            "Verhalten bei Unfällen, erste Maßnahmen",
+            "Vorbeugender Brandschutz, Verhalten bei Bränden",
+            "Schutzeinrichtungen, Not-Halt, Freischalten und gegen Wiedereinschalten sichern, Restenergie"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "M0-4",
+          "title": "Umweltschutz in der Fertigung",
+          "units": 15,
+          "topics": [
+            "Umweltbelastungen durch den Betrieb an Beispielen",
+            "Betriebliche Umweltschutz-Regelungen",
+            "Wirtschaftliche und umweltschonende Energie- und Materialverwendung",
+            "Abfälle vermeiden, Stoffe trennen und fachgerecht entsorgen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        }
+      ],
+      "note": "Laut Anlage während der gesamten Ausbildung zu vermitteln. Der Plan-Agent streut diese Einheiten über alle Lernfelder (etwa jede fünfte Einheit)."
+    },
+    {
+      "id": "LF1",
+      "order": 1,
+      "title": "Lebensmittelinhaltsstoffe untersuchen",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 5",
+          "berufsbild": "5"
+        },
+        {
+          "ref": "Anlage I Nr. 8",
+          "berufsbild": "8"
+        },
+        {
+          "ref": "Anlage I Nr. 14",
+          "berufsbild": "14"
+        }
+      ],
+      "examAreas": [
+        "PT-a",
+        "PT-f"
+      ],
+      "unitsTarget": 80,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF1-1",
+          "title": "Chemischer Aufbau und Reaktionen der Inhaltsstoffe",
+          "units": 18,
+          "topics": [
+            "Kohlenhydrate, Fette, Eiweiße",
+            "Reaktionen bei der Verarbeitung"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF1-2",
+          "title": "Technologische Eigenschaften",
+          "units": 12,
+          "topics": [
+            "Eigenschaften für die Verarbeitung ableiten",
+            "Versuche auswerten"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF1-3",
+          "title": "Ernährungsphysiologie und Nährwerte",
+          "units": 16,
+          "topics": [
+            "Ernährungsphysiologische Bewertung",
+            "Nährwerte berechnen",
+            "Regeln gesunder Ernährung"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF1-4",
+          "title": "Qualitätsmanagement: Aufbau, Lebensmittelrecht, Zertifizierung",
+          "units": 16,
+          "topics": [
+            "Innerbetrieblicher Aufbau des QM",
+            "Lebensmittelrechtliche Bestimmungen",
+            "Zertifizierung"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF1-5",
+          "title": "Arbeitssicherheit im Labor",
+          "units": 10,
+          "topics": [
+            "Umgang mit Chemikalien",
+            "Laboreinrichtungen sicher nutzen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "LF1-6",
+          "title": "EDV und Dokumentation",
+          "units": 8,
+          "topics": [
+            "Ergebnisse digital erfassen",
+            "Dokumentieren"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 1,
+        "title": "Lebensmittelinhaltsstoffe untersuchen",
+        "hours": 80,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF2",
+      "order": 2,
+      "title": "Lebensmittel und Materialien lagern",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 12",
+          "berufsbild": "12"
+        },
+        {
+          "ref": "Anlage I Nr. 5",
+          "berufsbild": "5"
+        },
+        {
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
+        }
+      ],
+      "examAreas": [
+        "PT-a",
+        "PP-d"
+      ],
+      "unitsTarget": 80,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF2-1",
+          "title": "Lagerbedingungen, Hygiene, Warenverderb",
+          "units": 18,
+          "topics": [
+            "Lagerbedingungen für Lebensmittel und Materialien",
+            "Hygiene",
+            "Warenverderb"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF2-2",
+          "title": "Physikalische, chemische, biochemische Veränderungen",
+          "units": 14,
+          "topics": [
+            "Veränderungen bei der Lagerung",
+            "Einflussfaktoren"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF2-3",
+          "title": "Schädlingsbekämpfung",
+          "units": 8,
+          "topics": [
+            "Schädlinge erkennen",
+            "Bekämpfung und Vorbeugung"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF2-4",
+          "title": "Lager- und Fördertechnik",
+          "units": 16,
+          "topics": [
+            "Lagertechnik",
+            "Fördertechnik",
+            "Einsatzmöglichkeiten bewerten"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF2-5",
+          "title": "Materialverwaltung, Bestandskontrollen, Inventur",
+          "units": 12,
+          "topics": [
+            "Bestände verwalten",
+            "Bestandskontrolle",
+            "Inventur"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF2-6",
+          "title": "Berechnungen zur Lagerhaltung",
+          "units": 12,
+          "topics": [
+            "Lagerkennzahlen",
+            "Mengen und Kapazitäten"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 2,
+        "title": "Lebensmittel und Materialien lagern",
+        "hours": 80,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF3",
+      "order": 3,
+      "title": "Lebensmittel vorbehandeln",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 9",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage I Nr. 11",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage I Nr. 7",
+          "berufsbild": "7"
+        }
+      ],
+      "examAreas": [
+        "PT-c",
+        "PT-g",
+        "PT-b",
+        "PP-a"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF3-1",
+          "title": "Stoffveränderungen bei der Vorbehandlung",
+          "units": 8,
+          "topics": [
+            "Stoffveränderungen",
+            "Bewertung"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF3-2",
+          "title": "Anordnung von Produktionsanlagen, Organisation, Fließbilder",
+          "units": 12,
+          "topics": [
+            "Anordnung von Anlagen",
+            "Organisation der Produktion",
+            "Fließbilder lesen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF3-3",
+          "title": "Reinigungs-, Schäl-, Zerkleinerungsverfahren und -maschinen",
+          "units": 12,
+          "topics": [
+            "Reinigen",
+            "Schälen",
+            "Zerkleinern"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF3-4",
+          "title": "Trenn- und Mischverfahren",
+          "units": 8,
+          "topics": [
+            "Trennverfahren",
+            "Mischverfahren"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF3-5",
+          "title": "Thermische Behandlungsverfahren",
+          "units": 8,
+          "topics": [
+            "Erhitzen, Kühlen",
+            "Wirkung auf das Lebensmittel"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF3-6",
+          "title": "Messtechnik und Berechnungen",
+          "units": 8,
+          "topics": [
+            "Messverfahren",
+            "Themenbezogene Berechnungen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "LF3-7",
+          "title": "Arbeitssicherheit und Hygiene an Maschinen",
+          "units": 4,
+          "topics": [
+            "Arbeitsschutz an Maschinen",
+            "Hygienevorschriften"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ],
+          "safety": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 3,
+        "title": "Lebensmittel vorbehandeln",
+        "hours": 60,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF4",
+      "order": 4,
+      "title": "Lebensmittel verpacken",
+      "kind": "lernfeld",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 9",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
+        },
+        {
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
+        }
+      ],
+      "examAreas": [
+        "PT-d",
+        "PT-f"
+      ],
+      "unitsTarget": 60,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF4-1",
+          "title": "Funktionen und Anforderungen einer Verpackung",
+          "units": 14,
+          "topics": [
+            "Funktionen",
+            "Produktspezifische Anforderungen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF4-2",
+          "title": "Verpackungsmaterialien",
+          "units": 12,
+          "topics": [
+            "Materialien",
+            "Auswahl nach Produkt"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF4-3",
+          "title": "Rechtliche Bestimmungen und Kennzeichnung",
+          "units": 12,
+          "topics": [
+            "Kennzeichnungspflichten",
+            "Rechtliche Bestimmungen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF4-4",
+          "title": "Verpackungsanlagen und Ablauf",
+          "units": 12,
+          "topics": [
+            "Verpackungsanlagen",
+            "Ablauf von Verpackungsprozessen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF4-5",
+          "title": "Umweltschutz und Berechnungen",
+          "units": 10,
+          "topics": [
+            "Ökologische und ökonomische Gesichtspunkte",
+            "Berechnungen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 4,
+        "title": "Lebensmittel verpacken",
+        "hours": 60,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "ZP",
+      "order": 5,
+      "title": "Zwischenprüfung: Training (§ 8)",
+      "kind": "pruefung",
+      "year": 1,
+      "niveau": "Grundbildung (Zwischenprüfungsniveau)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 7",
+          "berufsbild": "7"
+        },
+        {
+          "ref": "Anlage I Nr. 3",
+          "berufsbild": "3"
+        },
+        {
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
+        },
+        {
+          "ref": "Anlage I Nr. 6",
+          "berufsbild": "6"
+        }
+      ],
+      "examAreas": [
+        "ZP"
+      ],
+      "unitsTarget": 20,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "ZP-1",
+          "title": "Aufbau und Ablauf der Zwischenprüfung",
+          "units": 4,
+          "topics": [
+            "Zeitpunkt: Beginn 2. Ausbildungsjahr",
+            "Praktische Aufgabe höchstens 3 Stunden, schriftlich höchstens 60 Minuten",
+            "Was nachzuweisen ist"
+          ],
+          "sourceIds": [
+            "ao-p8"
+          ]
+        },
+        {
+          "id": "ZP-2",
+          "title": "Planungsaufgabe: Arbeitsschritte, Arbeitsmittel, Unterlagen",
+          "units": 6,
+          "topics": [
+            "Arbeitsschritte planen",
+            "Arbeitsmittel auswählen",
+            "Technische Unterlagen nutzen"
+          ],
+          "sourceIds": [
+            "ao-p8",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "ZP-3",
+          "title": "Positionieren von Maschinenelementen",
+          "units": 6,
+          "topics": [
+            "Vorgehen beim Positionieren und Ausrichten",
+            "Prüfen und dokumentieren",
+            "Sicherheit und Umweltschutz im Auftrag"
+          ],
+          "sourceIds": [
+            "ao-p8"
+          ],
+          "safety": true
+        },
+        {
+          "id": "ZP-4",
+          "title": "Gemischte Wiederholung Jahr 1",
+          "units": 4,
+          "topics": [
+            "Fragen quer über die Lernfelder des 1. Jahres und M0"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        }
+      ],
+      "note": "Eigene Übungsaufgaben nach der Struktur von § 8. Keine IHK-Prüfungsaufgaben."
+    },
+    {
+      "id": "LF5",
+      "order": 6,
+      "title": "Produktionsanlagen reinigen, pflegen und warten",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.D Nr. 7",
+          "berufsbild": "13"
+        },
+        {
+          "ref": "Anlage II.D Nr. 5",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage II.D Nr. 1",
+          "berufsbild": "5"
+        }
+      ],
+      "examAreas": [
+        "PP-c",
+        "PT-b",
+        "PT-f",
+        "PRAK-3"
+      ],
+      "unitsTarget": 80,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF5-1",
+          "title": "Reinigungs- und Desinfektionsmittel",
+          "units": 16,
+          "topics": [
+            "Mittel und Wirkung",
+            "Einsatz nach Plan"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF5-2",
+          "title": "Werkstoffe und Schmierstoffe",
+          "units": 12,
+          "topics": [
+            "Werkstoffe in Lebensmittelanlagen",
+            "Schmierstoffe"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF5-3",
+          "title": "Maschinenelemente und Baugruppen",
+          "units": 16,
+          "topics": [
+            "Maschinenelemente",
+            "Baugruppen von Anlagen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF5-4",
+          "title": "Wartungs- und Schmierpläne, Fließbilder",
+          "units": 16,
+          "topics": [
+            "Wartungspläne",
+            "Schmierpläne",
+            "Fließbilder erstellen und lesen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF5-5",
+          "title": "Arbeitssicherheit und Umweltschutz beim Reinigen",
+          "units": 12,
+          "topics": [
+            "Umgang mit Reinigungs- und Desinfektionsmitteln",
+            "Umweltschutz"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "LF5-6",
+          "title": "Berechnungen",
+          "units": 8,
+          "topics": [
+            "Dosierungen",
+            "Konzentrationen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 5,
+        "title": "Produktionsanlagen reinigen, pflegen und warten",
+        "hours": 80,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF6",
+      "order": 7,
+      "title": "Lebensmittelqualität prüfen und sicherstellen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.D Nr. 8",
+          "berufsbild": "14"
+        },
+        {
+          "ref": "Anlage I Nr. 8",
+          "berufsbild": "8"
+        }
+      ],
+      "examAreas": [
+        "PT-f",
+        "PP-b"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF6-1",
+          "title": "Rechtliche Bestimmungen, amtliche Lebensmittelüberwachung",
+          "units": 10,
+          "topics": [
+            "Rechtliche Vorgaben",
+            "Amtliche Überwachung"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF6-2",
+          "title": "Sensorische und physikalische Untersuchungen",
+          "units": 10,
+          "topics": [
+            "Sensorik",
+            "Physikalische Prüfungen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF6-3",
+          "title": "Chemische und mikrobiologische Untersuchungen",
+          "units": 12,
+          "topics": [
+            "Chemische Analytik",
+            "Mikrobiologie"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF6-4",
+          "title": "Dokumentation, Auswertung, Berechnungen",
+          "units": 8,
+          "topics": [
+            "Ergebnisse dokumentieren",
+            "Auswerten"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 6,
+        "title": "Lebensmittelqualität prüfen und sicherstellen",
+        "hours": 40,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF7",
+      "order": 8,
+      "title": "Verpackungsprozesse steuern und kontrollieren",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.D Nr. 4",
+          "berufsbild": "10"
+        },
+        {
+          "ref": "Anlage II.D Nr. 5",
+          "berufsbild": "11"
+        }
+      ],
+      "examAreas": [
+        "PT-d",
+        "PT-b",
+        "PP-d",
+        "PRAK-1"
+      ],
+      "unitsTarget": 40,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 15,
+        "lueckentext": 10,
+        "reihenfolge": 15,
+        "rechnen": 25
+      },
+      "blocks": [
+        {
+          "id": "LF7-1",
+          "title": "Elektrizitätslehre und Gefahren des elektrischen Stroms",
+          "units": 12,
+          "topics": [
+            "Grundgrößen",
+            "Gefahren des elektrischen Stroms"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ],
+          "rechnen": true,
+          "safety": true
+        },
+        {
+          "id": "LF7-2",
+          "title": "MSR-Technik in Verpackungsprozessen",
+          "units": 10,
+          "topics": [
+            "Messen, Steuern, Regeln",
+            "Regelkreise für Temperatur, Druck, Geschwindigkeit"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF7-3",
+          "title": "Verpackungsprozesse und Verschlusskontrollen",
+          "units": 10,
+          "topics": [
+            "Prozesse vergleichen",
+            "Verschlusskontrollen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF7-4",
+          "title": "Qualitätsmanagement und Dokumentation",
+          "units": 8,
+          "topics": [
+            "QM-Vorgaben",
+            "Dokumentation"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 7,
+        "title": "Verpackungsprozesse steuern und kontrollieren",
+        "hours": 40,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "PA",
+      "order": 9,
+      "title": "Produktionsanlagen einrichten, bedienen und übergeben (MAF-Kern)",
+      "kind": "ao-kern",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau praktische und schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 11",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage I Nr. 12",
+          "berufsbild": "12"
+        },
+        {
+          "ref": "Anlage II.D Nr. 5",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage II.D Nr. 6",
+          "berufsbild": "12"
+        }
+      ],
+      "examAreas": [
+        "PT-b",
+        "PP-a",
+        "PP-d",
+        "PP-e",
+        "PRAK-1",
+        "PRAK-2"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "PA-1",
+          "title": "Anlagentypen der Lebensmittelproduktion",
+          "units": 8,
+          "topics": [
+            "Koch- und Mischanlagen",
+            "Abfülllinien, Sterilisationsanlagen",
+            "Etikettier-, Pack- und Palettieranlagen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-2",
+          "title": "Rüsten und Umrüsten, Prozessdaten einstellen und optimieren",
+          "units": 10,
+          "topics": [
+            "Rüsten und Umrüsten nach Vorgaben",
+            "Prozessdaten einstellen und optimieren",
+            "Rüstzeit berechnen"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ],
+          "rechnen": true
+        },
+        {
+          "id": "PA-3",
+          "title": "Inbetriebnahme unter Sicherheitsbestimmungen",
+          "units": 6,
+          "topics": [
+            "Inbetriebnahme Schritt für Schritt",
+            "Schutzeinrichtungen prüfen"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ],
+          "safety": true
+        },
+        {
+          "id": "PA-4",
+          "title": "Produktionsprozesse nach Verfahrensparametern überwachen",
+          "units": 6,
+          "topics": [
+            "Parameter überwachen",
+            "Abweichungen erkennen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-5",
+          "title": "Störungen und Abweichungen: erkennen, Ursachen, beseitigen",
+          "units": 6,
+          "topics": [
+            "Störungen feststellen",
+            "Ursachen eingrenzen",
+            "Beseitigen oder veranlassen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-6",
+          "title": "Reinigen und Pflegen von Geräten, Maschinen, Anlagen und Mehrwegverpackungen",
+          "units": 8,
+          "topics": [
+            "Reinigungs- und Pflegepläne",
+            "Mehrwegverpackungen reinigen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-7",
+          "title": "Lebensmittelrecht und Hygiene im Fertigungsprozess",
+          "units": 6,
+          "topics": [
+            "Lebensmittelrechtliche Bestimmungen anwenden",
+            "Hygienevorschriften beachten"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ],
+          "safety": true
+        },
+        {
+          "id": "PA-8",
+          "title": "Materialfluss im Arbeitsbereich",
+          "units": 4,
+          "topics": [
+            "Materialfluss überwachen und sicherstellen",
+            "Störungen im Materialfluss beseitigen"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "PA-9",
+          "title": "Übergabe und Dokumentation",
+          "units": 6,
+          "topics": [
+            "Maschine oder Anlage übergeben",
+            "Produktionsstand und Veränderungen dokumentieren"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ]
+        }
+      ],
+      "note": "Berufskern laut Anlage II.D Nr. 5 und Nr. 6. Der Referenz-Rahmenlehrplan deckt das nicht 1:1 ab, darum eigenes Modul direkt aus der Ausbildungsordnung. Deckt auch die praktischen Prüfungsaufgaben nach § 9 Abs. 2."
+    },
+    {
+      "id": "LF8",
+      "order": 10,
+      "title": "Lebensmittel konservieren",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.D Nr. 3",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage II.D Nr. 5",
+          "berufsbild": "11"
+        }
+      ],
+      "examAreas": [
+        "PT-e",
+        "PT-g"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF8-1",
+          "title": "Physikalische Konservierungsverfahren",
+          "units": 14,
+          "topics": [
+            "Erhitzen, Kühlen, Gefrieren, Trocknen",
+            "Wirkung auf Qualität und Lagerfähigkeit"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF8-2",
+          "title": "Chemische und biochemische Verfahren",
+          "units": 14,
+          "topics": [
+            "Konservierungsstoffe",
+            "Fermentation"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF8-3",
+          "title": "Anlagen und Energieversorgung",
+          "units": 12,
+          "topics": [
+            "Aufbau und Funktion der Anlagen",
+            "Energieversorgung"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "LF8-4",
+          "title": "Hygiene und Arbeitssicherheit",
+          "units": 10,
+          "topics": [
+            "Hygiene",
+            "Arbeitssicherheit"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "LF8-5",
+          "title": "Berechnungen",
+          "units": 10,
+          "topics": [
+            "Haltbarkeit",
+            "Mengen und Energie"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 8,
+        "title": "Lebensmittel konservieren",
+        "hours": 60,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "LF9",
+      "order": 11,
+      "title": "Getränke herstellen",
+      "kind": "lernfeld",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.D Nr. 3",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage II.D Nr. 5",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage II.D Nr. 4",
+          "berufsbild": "10"
+        }
+      ],
+      "examAreas": [
+        "PT-d",
+        "PT-e",
+        "PT-g",
+        "PP-e"
+      ],
+      "unitsTarget": 60,
+      "safety": true,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "LF9-1",
+          "title": "Herstellung und Abfüllung von Getränken",
+          "units": 16,
+          "topics": [
+            "Alkoholfreie, alkoholische, alkaloidhaltige Getränke",
+            "Abfüllen"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF9-2",
+          "title": "Lebensmittelrecht, Zusatzstoffe, Light-Produkte",
+          "units": 10,
+          "topics": [
+            "Rechtliche Bestimmungen",
+            "Zusatzstoffe",
+            "Light-Produkte"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF9-3",
+          "title": "Verfahrenstechnik, Druckbehälter, MSR-Technik",
+          "units": 14,
+          "topics": [
+            "Verfahrenstechnik",
+            "Druckbehälter sicher betreiben",
+            "MSR-Technik"
+          ],
+          "sourceIds": [
+            "rlp-fklmt",
+            "ao-anlage"
+          ],
+          "safety": true
+        },
+        {
+          "id": "LF9-4",
+          "title": "Entsorgungstechnik, Fließbilder, Qualitätsmanagement",
+          "units": 10,
+          "topics": [
+            "Entsorgung",
+            "Fließbilder",
+            "QM"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ]
+        },
+        {
+          "id": "LF9-5",
+          "title": "Berechnungen",
+          "units": 10,
+          "topics": [
+            "Mischungen",
+            "Ausbeute"
+          ],
+          "sourceIds": [
+            "rlp-fklmt"
+          ],
+          "rechnen": true
+        }
+      ],
+      "rlpLernfeld": {
+        "nr": 9,
+        "title": "Getränke herstellen",
+        "hours": 60,
+        "sourceId": "rlp-fklmt",
+        "viaSourceId": "rlp-maf"
+      }
+    },
+    {
+      "id": "QS",
+      "order": 12,
+      "title": "Qualitätssichernde Maßnahmen",
+      "kind": "ao-kern",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 14",
+          "berufsbild": "14"
+        },
+        {
+          "ref": "Anlage II.D Nr. 8",
+          "berufsbild": "14"
+        }
+      ],
+      "examAreas": [
+        "PP-b"
+      ],
+      "unitsTarget": 20,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "QS-1",
+          "title": "Aufgaben und Ziele qualitätssichernder Maßnahmen",
+          "units": 6,
+          "topics": [
+            "Qualitätsbegriff",
+            "Aufgaben und Ziele der Qualitätssicherung",
+            "Prüfen, Abweichung erkennen, Korrektur, Dokumentation"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "QS-2",
+          "title": "Ursachen von Qualitätsabweichungen, Korrekturmaßnahmen",
+          "units": 8,
+          "topics": [
+            "Ursachen feststellen",
+            "Korrekturmaßnahmen einleiten",
+            "Qualitätsdaten dokumentieren"
+          ],
+          "sourceIds": [
+            "ao-anlage",
+            "ao-p9"
+          ]
+        },
+        {
+          "id": "QS-3",
+          "title": "Kontinuierliche Verbesserung und kundenorientiertes Arbeiten",
+          "units": 6,
+          "topics": [
+            "Zur Verbesserung von Arbeitsvorgängen beitragen",
+            "Kundenorientiert arbeiten"
+          ],
+          "sourceIds": [
+            "ao-anlage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WISO",
+      "order": 13,
+      "title": "Wirtschafts- und Sozialkunde",
+      "kind": "wiso",
+      "year": 2,
+      "niveau": "Prüfungsbereich WiSo (20 %, 60 Minuten)",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
+        },
+        {
+          "ref": "Anlage I Nr. 2",
+          "berufsbild": "2"
+        }
+      ],
+      "examAreas": [
+        "WISO-1"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "WISO-1",
+          "title": "Junge Menschen in Ausbildung und Beruf",
+          "units": 16,
+          "topics": [
+            "Duales System: Beteiligte, Ausbildungsordnung, Rahmenlehrplan",
+            "Rechte und Pflichten aus Ausbildungs- und Arbeitsverhältnis (Jugendarbeitsschutz, Arbeitszeit, Urlaub, Kündigungsschutz)",
+            "Tarifliche Auseinandersetzung und betriebliche Mitbestimmung",
+            "Wandel der Arbeitswelt, Digitalisierung, lebenslanges Lernen",
+            "Leben, Lernen und Arbeiten in Europa"
+          ],
+          "sourceIds": [
+            "kmk-wiso",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "WISO-2",
+          "title": "Nachhaltige Existenzsicherung",
+          "units": 12,
+          "topics": [
+            "Säulen der sozialen Sicherung, Versicherungsprinzipien",
+            "Positionen der Entgeltabrechnung",
+            "Private Vorsorge",
+            "Karriere- und Lebensplanung, Existenzgründung"
+          ],
+          "sourceIds": [
+            "kmk-wiso"
+          ]
+        },
+        {
+          "id": "WISO-3",
+          "title": "Unternehmen, Organisationen und private Marktteilnehmende",
+          "units": 12,
+          "topics": [
+            "Ziele, Aufbau und Perspektiven von Unternehmen, Wertschöpfungskette, Wirtschaftskreislauf",
+            "Bedürfnisse, Bedarf, Kaufkraft",
+            "Rechtsgeschäfte: Kauf-, Miet-, Kreditvertrag, Verbraucherschutz",
+            "Soziale Marktwirtschaft, Europa, globale Vernetzung, Standortwettbewerb"
+          ],
+          "sourceIds": [
+            "kmk-wiso"
+          ]
+        }
+      ],
+      "note": "Inhalt nach dem KMK-Qualifikationsprofil 2021 (40 Unterrichtsstunden). Keine Personendaten in Beispielen."
+    },
+    {
+      "id": "SBP",
+      "order": 14,
+      "title": "Standardberufsbildpositionen 2021: Nachhaltigkeit und digitalisierte Arbeitswelt (Empfehlung)",
+      "kind": "querschnitt",
+      "year": 1,
+      "niveau": "Grundbildung – Empfehlung BIBB-Hauptausschuss 172, nicht Teil der MaschFüAusbV 2004",
+      "aoPositions": [
+        {
+          "ref": "Anlage I Nr. 4",
+          "berufsbild": "4"
+        },
+        {
+          "ref": "Anlage I Nr. 1",
+          "berufsbild": "1"
+        }
+      ],
+      "examAreas": [
+        "WISO-1"
+      ],
+      "unitsTarget": 20,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 25,
+        "lueckentext": 20,
+        "reihenfolge": 10,
+        "rechnen": 5
+      },
+      "blocks": [
+        {
+          "id": "SBP-1",
+          "title": "Umweltschutz und Nachhaltigkeit",
+          "units": 8,
+          "topics": [
+            "Materialien und Energie unter wirtschaftlichen, umweltverträglichen und sozialen Gesichtspunkten nutzen",
+            "Vorschläge für nachhaltiges Handeln im eigenen Arbeitsbereich",
+            "Zielkonflikte zwischen ökonomisch, ökologisch, sozial"
+          ],
+          "sourceIds": [
+            "bibb-ha172"
+          ]
+        },
+        {
+          "id": "SBP-2",
+          "title": "Digitalisierte Arbeitswelt",
+          "units": 12,
+          "topics": [
+            "Datenschutz und Datensicherheit bei eigenen, betrieblichen und fremden Daten",
+            "Risiken digitaler Medien, betriebliche Regelungen",
+            "Informationen in digitalen Netzen recherchieren, prüfen, bewerten",
+            "Lern- und Arbeitstechniken, digitale Lernmedien, lebensbegleitendes Lernen",
+            "Zusammenarbeit über Bereichsgrenzen, Wertschätzung und Vielfalt"
+          ],
+          "sourceIds": [
+            "bibb-ha172"
+          ]
+        }
+      ],
+      "note": "Die MaschFüAusbV von 2004 enthält die vier modernisierten Standardberufsbildpositionen nicht. Der BIBB-Hauptausschuss empfiehlt seit 2020, sie trotzdem in allen Berufen zu vermitteln. Darum als eigenes Querschnittsmodul, im Lernpfad gestreut wie M0; in der Prüfung nur über WiSo relevant."
+    },
+    {
+      "id": "APPT",
+      "order": 15,
+      "title": "Abschlussprüfung: Training Produktionstechnik (§ 9)",
+      "kind": "pruefung",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.D Nr. 3",
+          "berufsbild": "9"
+        },
+        {
+          "ref": "Anlage II.D Nr. 1",
+          "berufsbild": "5"
+        }
+      ],
+      "examAreas": [
+        "PT-a",
+        "PT-b",
+        "PT-c",
+        "PT-d",
+        "PT-e",
+        "PT-f",
+        "PT-g"
+      ],
+      "unitsTarget": 40,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 40,
+        "zuordnen": 20,
+        "lueckentext": 15,
+        "reihenfolge": 10,
+        "rechnen": 15
+      },
+      "blocks": [
+        {
+          "id": "APPT-1",
+          "title": "Fälle zu Roh-, Zusatz- und Hilfsstoffe sowie Halbfabrikate, Funktion von Maschinen und Anlagen, Zerkleinerungs-, Trenn- und Sortierverfahren, Abfüllen, Etikettieren und Verpacken",
+          "units": 18,
+          "topics": [
+            "Praxisbezogene Fälle: Roh-, Zusatz- und Hilfsstoffe sowie Halbfabrikate",
+            "Praxisbezogene Fälle: Funktion von Maschinen und Anlagen",
+            "Praxisbezogene Fälle: Zerkleinerungs-, Trenn- und Sortierverfahren",
+            "Praxisbezogene Fälle: Abfüllen, Etikettieren und Verpacken"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        },
+        {
+          "id": "APPT-2",
+          "title": "Fälle zu Kochen, Mischen und Haltbarmachen, lebensmittelrechtliche Bestimmungen und Hygienevorschriften, Fertigungstechniken",
+          "units": 18,
+          "topics": [
+            "Praxisbezogene Fälle: Kochen, Mischen und Haltbarmachen",
+            "Praxisbezogene Fälle: lebensmittelrechtliche Bestimmungen und Hygienevorschriften",
+            "Praxisbezogene Fälle: Fertigungstechniken"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        },
+        {
+          "id": "APPT-3",
+          "title": "Prüfungsformat und Zeitplanung",
+          "units": 4,
+          "topics": [
+            "120 Minuten, 50 Prozent Gewicht",
+            "Praxisbezogene Fälle lesen und strukturieren"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        }
+      ],
+      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt D. Keine IHK-Prüfungsaufgaben."
+    },
+    {
+      "id": "APPP",
+      "order": 16,
+      "title": "Abschlussprüfung: Training Produktionsplanung (§ 9)",
+      "kind": "pruefung",
+      "year": 2,
+      "niveau": "Fachbildung (Niveau schriftliche Abschlussprüfung)",
+      "aoPositions": [
+        {
+          "ref": "Anlage II.D Nr. 2",
+          "berufsbild": "7"
+        },
+        {
+          "ref": "Anlage II.D Nr. 5",
+          "berufsbild": "11"
+        },
+        {
+          "ref": "Anlage II.D Nr. 7",
+          "berufsbild": "13"
+        },
+        {
+          "ref": "Anlage II.D Nr. 8",
+          "berufsbild": "14"
+        }
+      ],
+      "examAreas": [
+        "PP-a",
+        "PP-b",
+        "PP-c",
+        "PP-d",
+        "PP-e"
+      ],
+      "unitsTarget": 30,
+      "safety": false,
+      "questionMix": {
+        "auswahl": 35,
+        "zuordnen": 20,
+        "lueckentext": 10,
+        "reihenfolge": 25,
+        "rechnen": 10
+      },
+      "blocks": [
+        {
+          "id": "APPP-1",
+          "title": "Fälle zu Arbeitsschritte, Qualitätssicherung",
+          "units": 12,
+          "topics": [
+            "Praxisbezogene Fälle: Arbeitsschritte",
+            "Praxisbezogene Fälle: Qualitätssicherung"
+          ],
+          "sourceIds": [
+            "ao-p9",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "APPP-2",
+          "title": "Fälle zu vorbeugende Instandhaltung, Materialfluss, Maschinenbelegung",
+          "units": 12,
+          "topics": [
+            "Praxisbezogene Fälle: vorbeugende Instandhaltung",
+            "Praxisbezogene Fälle: Materialfluss",
+            "Praxisbezogene Fälle: Maschinenbelegung"
+          ],
+          "sourceIds": [
+            "ao-p9",
+            "ao-anlage"
+          ]
+        },
+        {
+          "id": "APPP-3",
+          "title": "Prüfungsformat und Zeitplanung",
+          "units": 6,
+          "topics": [
+            "60 Minuten, 30 Prozent Gewicht",
+            "Planungsunterlagen und Protokolle lesen"
+          ],
+          "sourceIds": [
+            "ao-p9"
+          ]
+        }
+      ],
+      "note": "Eigene praxisbezogene Fälle nach den Gebieten aus § 9 Abs. 3 für Schwerpunkt D. Keine IHK-Prüfungsaufgaben."
+    }
+  ],
+  "sources": [
+    {
+      "id": "ao",
+      "title": "MaschFüAusbV – Verordnung über die Berufsausbildung zum Maschinen- und Anlagenführer (Volltext, Stand Art. 2 V v. 14.6.2023)",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-anlage",
+      "title": "MaschFüAusbV Anlage (zu § 5) – Ausbildungsrahmenplan mit zeitlichen Richtwerten, Abschnitte I und II.A–E",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-p8",
+      "title": "MaschFüAusbV § 8 Zwischenprüfung",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-p9",
+      "title": "MaschFüAusbV § 9 Abschlussprüfung (Prüfungsgebiete je Schwerpunkt, Abs. 3 Nr. 1–5)",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "ao-bgbl",
+      "title": "BGBl. I 2004 Nr. 19 (BIBB-Kopie der Verordnung inkl. Anlage)",
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "rlp-maf",
+      "title": "KMK Rahmenlehrplan Maschinen- und Anlagenführer/in (Beschluss 25.03.2004 i. d. F. 31.03.2023) – verweist je Schwerpunkt auf die RLP der Fortsetzungsberufe",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "kmk-wiso",
+      "title": "KMK Kompetenzorientiertes Qualifikationsprofil Wirtschafts- und Sozialkunde gewerblich-technischer Ausbildungsberufe (Beschluss 17.06.2021, 40 Unterrichtsstunden)",
+      "url": "https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "bibb-ha172",
+      "title": "BIBB Hauptausschuss-Empfehlung Nr. 172 vom 17.11.2020: Anwendung der modernisierten Standardberufsbildpositionen in der Ausbildungspraxis (Empfehlung für Berufe mit Verordnung vor 2021)",
+      "url": "https://www.bibb.de/dokumente/pdf/HA172.pdf",
+      "kind": "empfehlung",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "bibb-51121",
+      "title": "BIBB Berufesuche – Maschinen- und Anlagenführer/in (51121)",
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121",
+      "kind": "berufsinformation",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    },
+    {
+      "id": "rlp-fklmt",
+      "title": "KMK Rahmenlehrplan Fachkraft für Lebensmitteltechnik (Beschluss 10.12.1999) – Lernfelder 1–9 als Referenz",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/FKLmt.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03",
+      "via": "Exa web_fetch (Cloud-Agent-Egress zu gesetze-im-internet.de und kmk.org gesperrt); Verordnungstexte gegen BIBB-Kopie des BGBl. gegengelesen"
+    }
+  ]
+}
