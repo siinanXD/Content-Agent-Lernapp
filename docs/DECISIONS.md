@@ -118,3 +118,20 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 - **Entscheidung:** Weiter ohne Live-Keys (Mocks, Seeds, Plan-JSON); Blocker dokumentieren. Vercel-Deploy blockiert bis Team-Scope re-auth.
 - **Warum:** `CLOUD_AGENT_INJECTED_SECRET_NAMES` = nur `RAILWAY_API_TOKEN`; Anthropic/OpenAI/Langfuse/Supabase **absent**. Vercel MCP `list_teams` leer + 403 auf Team-Projekte.
 
+### D-16 — AP-04 Plan: deterministic MAF day plans (2 variants) without API key
+
+- **Links:** MaschFüAusbV §4 Berufsbild / §8–§9 Prüfung; KMK RLP MAF (verweist auf verwandte Metall-RLPs); PRODUCT.md (2–3 h/Tag, 5–10 min Einheiten); `src/lib/plan/maf-plan-seed.ts`
+- **Entscheidung:** Seed liefert **Prüfungsvorbereitung 2 Monate (40 Tage × 2,5 h)** und **Weiterbildung 3 Monate (60 Tage × 2 h)** als JSON; Topics aus AO/RLP/Prüfungsstruktur (keine IHK-Aufgaben). Live-Pfad `claude-sonnet-5-5` structured JSON wenn Key da.
+- **Warum:** SIN-182 Akzeptanz = Tagesplan für 2 Varianten; ohne Anthropic-Key darf AP-04 nicht blockieren.
+
+### D-17 — AP-05 Generate: one complete Lernfeld seed + Batch path
+
+- **Links:** [Message Batches](https://platform.claude.com/docs/en/build-with-claude/batch-processing) (50 %); model `claude-sonnet-5-5`; `src/lib/generate/maf-lernfeld-seed.ts`; AO/RLP source URLs from D-14
+- **Entscheidung:** Seed erzeugt Lernfeld **Sicherheit und Gesundheitsschutz** (3 Einheiten, je 5–8 Fragen + Erklärungen + Quellenlinks). Live Messages; optional `useBatch` → `POST /v1/messages/batches` mit Seed-Rückgabe bis Poll. Keine IHK-Aufgabentexte, keine PII.
+- **Warum:** SIN-183 Akzeptanz = 1 Lernfeld komplett; ohne Key weiterarbeiten; Batch senkt Kosten unter €20-Deckel.
+
+### D-18 — AP-06 Quality gate: fixture goldset + thresholds block publish
+
+- **Links:** PRODUCT.md Qualitätstabelle; Langfuse EU (Cloud EU region, see D-11); Judge `gpt-5.4-mini` (D-07); `src/lib/quality/*`
+- **Entscheidung:** Offline-Fixture (12 Sample-MAF-Fragen inkl. bekannter Fail-Fälle) kalibriert Zielwerte; Schwellen `sourceFidelity=1`, `uniqueness=1`, `niveau≥4`, `language≥4`. `/evaluate` speichert Ergebnis; `/publish` liefert **409** ohne Evaluate und **422** unter Schwelle. Langfuse-Ingest nur wenn `LANGFUSE_*` gesetzt; OpenAI-Judge nur mit `OPENAI_API_KEY`.
+- **Warum:** SIN-184 darf ohne Keys nicht stoppen; Schwelle muss Publish blockieren. Live-70er-Goldset: D-25.
