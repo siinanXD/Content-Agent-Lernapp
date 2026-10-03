@@ -168,3 +168,16 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 
 ### D-23 — AP-11 Pilot: seed/fixture path without live LLM
 
+- **Links:** Linear [SIN-189](https://linear.app/sinan-kahraman/issue/SIN-189/ap-11-pilotkurs-maf-komplett); `docs/pilot/MAF-PILOT.md`; `npm run pilot:maf`; Deckel €20/Kurslauf
+- **Entscheidung:** Pilot akzeptiert den **Seed/Fixture**-Pfad (create→research→plan→generate→evaluate→publish) mit `liveLlm: false` und `estimatedCostEur: 0`. Live-Langfuse-Kosten/Bewertung folgen, sobald Keys da sind.
+- **Warum:** Secrets absent; Publish-Gate und AO/RLP-Seeds decken die Pipeline-Akzeptanz für diesen Boot.
+
+### D-24 — AP-12 Learning loop: fixture scaffold, no PII, no training
+
+- **Links:** Linear [SIN-190](https://linear.app/sinan-kahraman/issue/SIN-190/ap-12-lern-schleife-aus-nutzungsdaten); `docs/learning/LOOP.md`; `POST /api/learning/weekly`
+- **Entscheidung:** Scaffold rankt Top-5 schwache Einheiten aus Fixture-Aggregaten und schlägt Prompt-Patches vor. Kein Modell-Training; keine PII; Live-Aggregation erst nach Pilot + DSGVO-Einwilligung.
+- **Warum:** SIN-190 hängt an Nutzungsdaten; ohne Traffic liefert der Scaffold die API/Regel-Form.
+
+### D-26 — AP-13 Curriculum-Map MAF: zwei Jahre, RLP Industriemechaniker als Referenz, 870 Einheiten
+
+- **Links:** [MaschFüAusbV](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html) (§ 2 zwei Jahre, § 4 Berufsbild, § 10 Fortsetzung); [Anlage zu § 5](https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html) (Wochen je Ausbildungsjahr); [§ 8](https://www.gesetze-im-internet.de/maschf_ausbv/__8.html); [§ 9](https://www.gesetze-im-internet.de/maschf_ausbv/__9.html); [BGBl. I 2004 Nr. 19 via BIBB](https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/regulation/maschinen_und_anlagenfuehrer.pdf); [KMK RLP MAF 31.03.2023](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf) (keine eigenen Lernfelder, verweist auf Fortsetzungsberufe); [KMK RLP Industriemechaniker 23.02.2018](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf) (LF 1–9: 320 + 280 Std.); [KMK WiSo-Qualifikationsprofil 17.06.2021](https://www.kmk.org/fileadmin/Dateien/veroeffentlichungen_beschluesse/2021/2021_06_17-Berufsschule-Unterricht-Wirtschafts-Sozialkunde.pdf) (40 Std.); Linear [SIN-191](https://linear.app/sinan-kahraman/issue/SIN-191); `docs/content/MAF-CURRICULUM.md`; `docs/content/maf-curriculum.json`; `src/lib/content/maf-curriculum.ts`
