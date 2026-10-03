@@ -181,11 +181,17 @@ components:
                       type: array
                       items:
                         type: object
-                        required: [id, title, minutes]
+                        required: [id, title, minutes, moduleId, blockId, sourceKind, niveau]
                         properties:
                           id: { type: string }
                           title: { type: string }
                           minutes: { type: integer }
+                          moduleId: { type: string, description: Curriculum module id (e.g. M0, LF1) }
+                          blockId: { type: string, description: Curriculum block id (e.g. M0-3) }
+                          sourceKind:
+                            type: string
+                            enum: [ausbildungsordnung, rahmenlehrplan, pruefung, berufsinformation, empfehlung]
+                          niveau: { type: string }
         mock: { type: boolean }
     GenerateResult:
       type: object
@@ -193,6 +199,26 @@ components:
       properties:
         courseId: { type: string }
         unitsGenerated: { type: integer }
+        moduleId: { type: string, description: Curriculum module id of generated block }
+        blockId: { type: string, description: Curriculum block id of generated content }
+        lernfeld:
+          type: object
+          properties:
+            id: { type: string }
+            title: { type: string }
+            moduleId: { type: string }
+            blockId: { type: string }
+            units:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  moduleId: { type: string }
+                  blockId: { type: string }
+                  safetyFlag: { type: boolean }
+                  niveau: { type: string }
+                  variant: { type: string, enum: [standard, ablauf, rechnen, sicherheit] }
         mock: { type: boolean }
     EvaluateResult:
       type: object

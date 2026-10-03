@@ -140,8 +140,8 @@ export const CONTENT_DIR = path.join(process.cwd(), "docs", "content");
 export const MAF_METALL_PATH = path.join(CONTENT_DIR, "maf-metall.json");
 
 /**
- * v1 map (Metall only, loaded by src/lib/content/maf-curriculum.ts). Superseded by
- * maf-metall.json; kept until AP-14 (PR #20) moves to loadCurriculum(). See D-28.
+ * v1 map (Metall only). Superseded by maf-metall.json; plan/generate (AP-14 / D-32)
+ * use loadMafCurriculum() → maf-metall.json. Legacy file kept for diffs / migration.
  */
 export const LEGACY_FILES = new Set(["maf-curriculum.json"]);
 

@@ -17,19 +17,27 @@ import {
   type QuestionEval,
   type QualityScores,
 } from "./schemas";
+import { loadMafCurriculum } from "@/lib/content/curriculum";
 import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
 
 /** D-07: independent OpenAI family, cheapest Mini that meets the gate. */
 export const JUDGE_MODEL = "gpt-5.4-mini";
 const JUDGE_CHUNK = 10;
 
-type EvalItem = {
+export type EvalItem = {
   id: string;
   unitId: string;
   prompt: string;
   correct: string | string[];
   explanation: string;
   sourceUrl: string;
+  /** Curriculum refs (AP-14) — niveau judged per module year, not course mean. */
+  moduleId?: string;
+  blockId?: string;
+  year?: 1 | 2 | 3;
+  niveauHint?: string;
+  /** Pre-set when curriculum block/module is marked safety. */
+  safety?: boolean;
 };
 
 /**
@@ -137,13 +145,18 @@ function heuristicScores(item: EvalItem): QualityScores {
       ? !/und auch|beide|a und b/i.test(item.correct)
       : item.correct.length === 1;
   const looksLikeExamLeak = /geheime ihk|prüfungsaufgabe kop/i.test(item.prompt);
-  const safetyFlag = /sicherheit|not-halt|schutz|gefahr|elektr/i.test(
-    `${item.prompt} ${item.explanation}`,
-  );
+  const safetyFlag =
+    item.safety === true ||
+    /sicherheit|not-halt|schutz|gefahr|elektr/i.test(`${item.prompt} ${item.explanation}`);
+  // Year 1 = Zwischenprüfung, year 2+ = Abschlussprüfung — both need ≥4 at their module niveau.
+  const year = item.year ?? 1;
+  const baseOk =
+    hasSource && item.explanation.trim().length > 12 && !looksLikeExamLeak;
+  const niveau = baseOk ? 4 : year >= 2 && hasSource ? 3 : 2;
   return {
     sourceFidelity: hasSource && !looksLikeExamLeak ? 1 : 0,
     uniqueness: unique ? 1 : 0,
-    niveau: hasSource && item.explanation.trim().length > 12 && !looksLikeExamLeak ? 4 : 2,
+    niveau,
     language: item.prompt.trim().length > 0 && item.prompt.length < 400 ? 4 : 3,
     safetyFlag,
   };
@@ -174,11 +187,12 @@ async function liveJudgeChunk(key: string, items: EvalItem[]): Promise<QuestionE
           role: "system",
           content:
             "Du bist Richter für Lernfragen zum Maschinen- und Anlagenführer (Ausbildungsordnung, keine IHK-Originale, keine Personendaten). " +
-            "Bewerte jede Frage unabhängig. Skalen: sourceFidelity 0 oder 1 (1 = Antwort folgt aus der zitierten amtlichen Quelle/Erklärung). " +
+            "Bewerte jede Frage unabhängig gegen das Modul-Niveau (Jahr 1 = Zwischenprüfung, Jahr 2+ = Abschlussprüfung) — nicht gegen einen Kurs-Mittelwert. " +
+            "Skalen: sourceFidelity 0 oder 1 (1 = Antwort folgt aus der zitierten amtlichen Quelle/Erklärung). " +
             "uniqueness 0 oder 1 (1 = genau eine richtige Antwort). " +
-            "niveau ganze Zahl 1,2,3,4 oder 5 — 4 ist Prüfungsniveau der Ausbildung, 5 schwerer; Unterstufe 1–3 nur bei offensichtlichen Fehlern. " +
+            "niveau ganze Zahl 1,2,3,4 oder 5 — 4 = angemessen für das angegebene Modul-Jahr/Niveau, 5 schwerer; Unterstufe 1–3 nur bei offensichtlichen Fehlern. " +
             "language ganze Zahl 1,2,3,4 oder 5 — 4 verständliches Deutsch, 5 sehr klar. " +
-            "safetyFlag true nur bei Maschinen-/Elektrosicherheit. " +
+            "safetyFlag true bei Maschinen-/Elektrosicherheit oder wenn safety=true vorgegeben ist. " +
             "Antworte ausschließlich als JSON {\"items\":[{\"id\":\"g01\",\"sourceFidelity\":1,\"uniqueness\":1,\"niveau\":4,\"language\":5,\"safetyFlag\":false,\"reasons\":[\"kurz\"]}]}",
         },
         {
@@ -190,6 +204,11 @@ async function liveJudgeChunk(key: string, items: EvalItem[]): Promise<QuestionE
               correct: i.correct,
               explanation: i.explanation,
               sourceUrl: i.sourceUrl,
+              moduleId: i.moduleId,
+              blockId: i.blockId,
+              year: i.year,
+              niveauHint: i.niveauHint,
+              safety: i.safety,
             })),
           ),
         },
@@ -259,6 +278,9 @@ function toQuestionEval(
 
 function flattenSeedQuestions(): EvalItem[] {
   const lf = mafSeedLernfeldSicherheit();
+  const c = loadMafCurriculum();
+  const mod = c.modules.find((m) => m.id === lf.moduleId);
+  const block = mod?.blocks.find((b) => b.id === lf.blockId);
   return lf.units.flatMap((u) =>
     u.questions.map((q) => ({
       id: `${u.id}-${q.id}`,
@@ -267,6 +289,11 @@ function flattenSeedQuestions(): EvalItem[] {
       correct: q.correct,
       explanation: q.explanation,
       sourceUrl: q.sourceUrl,
+      moduleId: u.moduleId ?? lf.moduleId,
+      blockId: u.blockId ?? lf.blockId,
+      year: mod?.year,
+      niveauHint: u.niveau ?? mod?.niveau,
+      safety: u.safetyFlag ?? block?.safety ?? mod?.safety,
     })),
   );
 }

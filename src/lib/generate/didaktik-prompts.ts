@@ -1,7 +1,6 @@
 /**
  * AP-18e: Generate prompt templates for the four didactic variants.
- * Used by generate-agent; AP-14 (PR #20) should call buildDidaktikBlockPrompt
- * instead of the v1 explanation-only skeleton after rebase onto this schema.
+ * AP-14 generate-agent calls buildDidaktikBlockPrompt for each curriculum block.
  */
 
 import {
