@@ -33,10 +33,16 @@ Langfuse dataset name: `maf-goldset-70` (Langfuse Cloud EU).
 - `POST /api/courses/{id}/evaluate` → scores + per-question results
 - `POST /api/courses/{id}/publish` → **409** if not evaluated; **422** if below threshold; **200** if passed
 
+## Phase A goldset (AP-15)
+
+`docs/quality/maf-goldset-phase-a.json` — 70 AO/BIBB items **plus** ≥5 own items per module `M0`, `LF1`, `LF2`, `PA` (dataset name `maf-goldset-phase-a`). Module baselines: `docs/quality/module-targets-phase-a.json`.
+
 ## Commands
 
 ```bash
 npm run quality:sync-goldset   # upsert 70 items into Langfuse
 npm run quality:calibrate      # OpenAI judge → GOLDSET_TARGET + Langfuse dataset
 npm run quality:smoke          # live evaluate + 409/422/200 publish gate
+npm run ap15:phase-a:dry       # secret + chunk preflight (no spend)
+npm run ap15:phase-a           # live Phase A Batch → judge → Supabase publish
 ```
