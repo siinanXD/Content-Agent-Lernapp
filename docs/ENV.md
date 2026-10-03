@@ -40,7 +40,9 @@ Injizierte Secret-Namen:
 | `NEXT_PUBLIC_SUPABASE_URL` | optionaler Alias | nicht nötig, solange Server `SUPABASE_URL` liest |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | optionaler Alias | nicht nötig, solange Server `SUPABASE_ANON_KEY` liest |
 
-Nicht erwartet / nicht gesetzt: `AI_GATEWAY_API_KEY`, `FIGMA_ACCESS_TOKEN`, `LINEAR_API_KEY`, `HF_TOKEN` (MCP ist separat authentifiziert).
+Optional für AP-16 Hermes-Alerts (fehlen = Kanal überspringen, Package bleibt grün): `LINEAR_API_KEY`, `LINEAR_TEAM_ID`, `LINEAR_PROJECT_ID`.
+
+Nicht erwartet: `AI_GATEWAY_API_KEY`, `FIGMA_ACCESS_TOKEN`, `HF_TOKEN` (MCP ist separat authentifiziert).
 
 ## Vercel (`content-agent`)
 
@@ -52,13 +54,14 @@ Noch nicht auf Vercel (gegenüber Hermes-Vorlage): `ANTHROPIC_WORKSPACE_ID`, `TE
 
 ## Railway / Hermes
 
-Vorlage: `docs/ops/railway.env.example` auf Branch `cursor/ap10-12-scaffold-ff57`. Live-Deploy bleibt blockiert, bis Telegram-Bot und Chat-ID gesetzt sind.
+Vorlage: `docs/ops/railway.env.example`. Live-Deploy bleibt blockiert, bis Telegram-Bot und Chat-ID gesetzt sind. AP-16 Quellen-Monitor: Live-HTTP auf Railway/GHA; Cloud-Agent nur offline/fixtures (`docs/ops/HERMES.md`).
 
 ## Was noch gesetzt werden muss
 
 1. `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) — der API-Key ist schon da; ohne Workspace-ID schlägt `GET /v1/models` mit 400 fehl. Neue Cloud-Agent-Secrets gelten erst im **nächsten** Lauf.
 2. `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL` für AP-10 (Railway EU).
-3. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
+3. Optional AP-16: `LINEAR_API_KEY` + `LINEAR_TEAM_ID` (+ `LINEAR_PROJECT_ID`) für Issues „Quelle geändert: \<Map\>“.
+4. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
 
 ## Check
 
