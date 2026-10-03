@@ -163,16 +163,41 @@ function heuristicScores(item: EvalItem): QualityScores {
 }
 
 export async function liveJudge(key: string, items: EvalItem[]): Promise<QuestionEval[]> {
-  const out: QuestionEval[] = [];
-  for (let i = 0; i < items.length; i += JUDGE_CHUNK) {
-    const chunk = items.slice(i, i + JUDGE_CHUNK);
-    const judged = await liveJudgeChunk(key, chunk);
-    out.push(...judged);
-  }
-  return out;
+  const { questions } = await liveJudgeWithUsage(key, items);
+  return questions;
 }
 
-async function liveJudgeChunk(key: string, items: EvalItem[]): Promise<QuestionEval[]> {
+export async function liveJudgeWithUsage(
+  key: string,
+  items: EvalItem[],
+): Promise<{ questions: QuestionEval[]; usage: { prompt_tokens: number; completion_tokens: number } }> {
+  const out: QuestionEval[] = [];
+  let prompt_tokens = 0;
+  let completion_tokens = 0;
+  for (let i = 0; i < items.length; i += JUDGE_CHUNK) {
+    const chunk = items.slice(i, i + JUDGE_CHUNK);
+    const judged = await liveJudgeChunkWithUsage(key, chunk);
+    out.push(...judged.questions);
+    prompt_tokens += judged.usage.prompt_tokens;
+    completion_tokens += judged.usage.completion_tokens;
+  }
+  return { questions: out, usage: { prompt_tokens, completion_tokens } };
+}
+
+export type JudgeChunkResult = {
+  questions: QuestionEval[];
+  usage: { prompt_tokens: number; completion_tokens: number };
+};
+
+export async function liveJudgeChunk(key: string, items: EvalItem[]): Promise<QuestionEval[]> {
+  const { questions } = await liveJudgeChunkWithUsage(key, items);
+  return questions;
+}
+
+export async function liveJudgeChunkWithUsage(
+  key: string,
+  items: EvalItem[],
+): Promise<JudgeChunkResult> {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -235,7 +260,7 @@ async function liveJudgeChunk(key: string, items: EvalItem[]): Promise<QuestionE
     }>;
   };
   const byId = new Map((parsed.items ?? []).map((i) => [i.id, i]));
-  return items.map((item) => {
+  const questions = items.map((item) => {
     const j = byId.get(item.id);
     const scores: QualityScores = j
       ? {
@@ -248,6 +273,13 @@ async function liveJudgeChunk(key: string, items: EvalItem[]): Promise<QuestionE
       : heuristicScores(item);
     return toQuestionEval(item, scores, j?.reasons ?? []);
   });
+  return {
+    questions,
+    usage: {
+      prompt_tokens: data.usage?.prompt_tokens ?? 0,
+      completion_tokens: data.usage?.completion_tokens ?? 0,
+    },
+  };
 }
 
 function clampScore(n: number): number {

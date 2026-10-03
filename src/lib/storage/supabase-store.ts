@@ -117,17 +117,21 @@ async function loadCourse(id: string): Promise<Course | undefined> {
 
   const unitRows = (units ?? []) as UnitRow[];
   const questionRows = (questions ?? []) as QuestionRow[];
-  if (courseRow.lernfeld && unitRows.length) {
+  // Prefer full AP-15 payload (includes moduleId/blockId/Didaktik fields).
+  if (isLernfeld(courseRow.lernfeld) && courseRow.lernfeld.units?.length) {
+    course.generated = courseRow.lernfeld;
+  } else if (courseRow.lernfeld && unitRows.length) {
     const byUnit = new Map<string, QuestionRow[]>();
     for (const q of questionRows) {
       const list = byUnit.get(q.unit_id) ?? [];
       list.push(q);
       byUnit.set(q.unit_id, list);
     }
+    const meta = courseRow.lernfeld as { id: string; title: string; focus: string };
     course.generated = {
-      id: courseRow.lernfeld.id,
-      title: courseRow.lernfeld.title,
-      focus: courseRow.lernfeld.focus,
+      id: meta.id,
+      title: meta.title,
+      focus: meta.focus,
       units: unitRows.map(
         (u): GeneratedUnit => ({
           id: u.id,
@@ -318,15 +322,13 @@ export const supabaseStorage: CourseStorage = {
       }
     }
 
+    // AP-15: persist full GeneratedLernfeld in courses.lernfeld jsonb (moduleId/blockId/sections).
+    // Normalized units/questions remain for listing; loadCourse prefers full payload when present.
     const { error: stErr } = await sb
       .from("courses")
       .update({
         status: "generated",
-        lernfeld: {
-          id: generated.id,
-          title: generated.title,
-          focus: generated.focus,
-        },
+        lernfeld: generated,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
