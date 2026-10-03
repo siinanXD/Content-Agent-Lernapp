@@ -1,1 +1,14 @@
-$file:/workspace/Content-Agent-Lernapp/public/generated/lockout-flow.svg
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="280" viewBox="0 0 420 280" role="img" aria-label="Ablauf Freischalten sichern prüfen">
+  <rect width="420" height="280" fill="#f4f7f8"/>
+  <rect x="90" y="24" width="240" height="44" rx="6" fill="#1f6f8b"/>
+  <text x="210" y="52" text-anchor="middle" fill="#ffffff" font-size="14" font-family="Arial,sans-serif">Freischalten</text>
+  <line x1="210" y1="68" x2="210" y2="96" stroke="#0b3a4a" stroke-width="2"/>
+  <polygon points="210,104 204,94 216,94" fill="#0b3a4a"/>
+  <rect x="60" y="108" width="300" height="44" rx="6" fill="#1f6f8b"/>
+  <text x="210" y="136" text-anchor="middle" fill="#ffffff" font-size="14" font-family="Arial,sans-serif">Gegen Wiedereinschalten sichern</text>
+  <line x1="210" y1="152" x2="210" y2="180" stroke="#0b3a4a" stroke-width="2"/>
+  <polygon points="210,188 204,178 216,178" fill="#0b3a4a"/>
+  <rect x="70" y="192" width="280" height="44" rx="6" fill="#0b3a4a"/>
+  <text x="210" y="220" text-anchor="middle" fill="#ffffff" font-size="14" font-family="Arial,sans-serif">Spannungsfreiheit feststellen</text>
+</svg>
