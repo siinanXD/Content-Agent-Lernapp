@@ -1,87 +1,50 @@
 # Content-Agent-Lernapp
 
-Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen Kurs aus amtlichen Quellen erzeugt und aktuell hält.
+Lern-App, die aus einem Schlagwort (z. B. Ausbildungsberuf) einen prüfungsnahen Kurs erzeugt: Recherche amtlicher Quellen → Plan → Generate → Quality-Gate → Publish.
 
-## Stack (current)
+Produktregeln: [`docs/PRODUCT.md`](docs/PRODUCT.md). Architekturentscheidungen: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
-| Layer | Choice |
+## Stack (kurz)
+
+| Schicht | Wahl |
 | --- | --- |
-| App | Next.js 16 + React 19 + TypeScript + Tailwind 4 |
-| Hosting | Vercel |
-| Persistence | Supabase EU (AP-17) with in-memory mock fallback |
-| Quality / tracing | Langfuse Cloud EU — legacy REST on `main`; v4 / SDK v5 cutover in draft [PR #17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17) ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197)) |
-| Ops scaffold | Hermes weekly source check + Telegram (AP-10/AP-16) |
-| Models | Claude for generate (Batch); OpenAI mini as judge (D-06/D-07) |
+| App | Next.js (App Router) + TypeScript auf Vercel |
+| UI | shadcn/ui |
+| Daten | Supabase EU (bevorzugt Frankfurt) |
+| Generator | Claude Sonnet 5.5 (+ Batch); Haiku nur nach Gate |
+| Judge | OpenAI `gpt-5.4-mini` |
+| Observability | Langfuse Cloud **EU**, **platform v4** via **JS/TS SDK v5** (`@langfuse/tracing` / `@langfuse/otel` / `@langfuse/client`, OTLP) |
+| Ops (später) | Hermes Agent auf Railway |
 
-## Docs
-
-- [`docs/PRODUCT.md`](docs/PRODUCT.md) — Konzept und Bauplan AP-00–AP-12
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
-- [`AGENTS.md`](AGENTS.md) — Entscheidungs- und Stopp-Regeln
-- [`docs/content/README.md`](docs/content/README.md) — Curriculum-Maps (AP-13): MAF in allen fünf Schwerpunkten und Industriekaufleute 2024
-- [`docs/content/DIDAKTIK.md`](docs/content/DIDAKTIK.md) — Didaktik-Vorgabe (AP-18): Schablone je Einheit, Fragestufen, Wiederholung, Prüfungsmodus, Bilder
-- [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Vorgängerversion v1 (nur Metall); runtime loader uses `docs/content/maf-metall.json` via AP-14 ([PR #24](https://github.com/siinanXD/Content-Agent-Lernapp/pull/24))
-
-## Local development
+## Lokal
 
 ```bash
 npm install
 npm run dev
 ```
 
-Dev server: [http://127.0.0.1:43123](http://127.0.0.1:43123) (`npm run dev` → port 43123).
-
-### Learner UI (AP-08 + AP-18 Didaktik)
-
-Playable path (Figma approved by Sinan 2026-10-02; Didaktik D-31):
-
-1. `/` Start — Schlagwort + Lernvariante → Kurs erzeugen  
-2. `/lernpfad` — Module/Blöcke, Wiederholung, Prüfungsmodus  
-3. `/einheit/unit-03` — sections + alle 5 Fragetypen (+ Bildfragen)  
-4. `/wiederholung` — Leitner 1/3/7/14  
-5. `/pruefung` — schriftliche Teile aus `exam.gradedParts` (MAF PT/PP/WiSo)  
-6. `/ergebnis` — Punkte + Ampel je Gebiet  
-7. `/profil` — Fortschritt, Stapelgröße, Prüfungsreife  
-
-Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`. Phase-A SVGs: `npm run content:mermaid`.
+Env-Namen und Secrets-Status: [`docs/ENV.md`](docs/ENV.md) (keine Werte committen).
 
 ```bash
-npm test
-npm run content:mermaid
-npm run test:a11y
-npm run test:lighthouse   # app must be running on :43123
-npm run hermes:dry-run    # AP-10 scaffold (no live Telegram)
-npm run pilot:maf         # AP-11 seed/fixture pipeline (app on :43123)
-npm run supabase:verify   # when SUPABASE_* present
-npm run build
-npm run lint
+npm test                 # unit (node:test)
+npm run test:a11y        # axe + Lighthouse CI (Chrome)
+npm run quality:smoke    # live evaluate + publish gate (needs OPENAI + LANGFUSE)
 ```
 
-A11y gates (axe critical/serious + Lighthouse a11y ≥ 0.9) run in CI via `.github/workflows/a11y.yml` and must not be disabled.
+## API (MVP)
 
-Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
+OpenAPI: [`openapi/openapi.yaml`](openapi/openapi.yaml)
 
-## Phase A (AP-15)
+- `POST /api/courses` — Kurs anlegen
+- `POST /api/courses/{id}/research|plan|generate|evaluate|publish`
+- `GET /api/courses/{id}` — Status
 
-First live course slice after the curriculum map: modules `M0`, `LF1`, `LF2`, `PA` (~280 units), generate with Claude Batch, judge with OpenAI mini, publish only through the quality gate. Tracked in [SIN-193](https://linear.app/sinan-kahraman/issue/SIN-193). Costs and scores should land in Langfuse Cloud EU — prefer completing the v4 cutover ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197) / [PR #17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17)) before relying on dashboards for that run.
+Ohne `SUPABASE_*`: In-Memory-Store (Dev). Ohne Modell-Keys: Fixture-/Seed-Pfade wo vorgesehen.
 
-## Deploy
+## Qualität
 
-Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).
+Hard-Gate vor Publish (PRODUCT): `sourceFidelity=1`, `uniqueness=1`, `niveau≥4`, `language≥4`. Details: [`docs/quality/README.md`](docs/quality/README.md).
 
-## Secrets
+## Lizenz / Inhalt
 
-Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.
-
-### Supabase persistence (AP-17)
-
-- Migrations: `supabase/migrations/` (additive SQL + RLS). Runbook: [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
-- With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
-- Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
-- Verify tables (when keys present): `npm run supabase:verify`.
-- If `package-lock.json` was split for transport: `npm run lock:assemble` (gzip chunks under `scripts/ap17-lock-chunks/`), then prefer a normal `npm install` for day-to-day work.
-
-## Repo
-
-https://github.com/siinanXD/Content-Agent-Lernapp
+Keine IHK-Originalprüfungen. Inhalte aus Ausbildungsordnung, Rahmenlehrplan und öffentlichen Quellen mit Link + Abrufdatum.
