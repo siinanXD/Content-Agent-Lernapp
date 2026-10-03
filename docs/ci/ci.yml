@@ -1,2 +1,42 @@
-# probe
+# SIN-201: copy this file to `.github/workflows/ci.yml` (GitHub PAT lacks `workflow` scope for agents).
+# Required PR build gate — lint, typecheck, production build.
+# package-lock.json is not committed; assemble from AP-17 chunks before npm ci.
+# Node 22 matches `.github/workflows/source-check.yml` (no `.nvmrc` / `engines.node` on main yet).
 name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble package-lock.json
+        run: node scripts/assemble-package-lock.mjs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
+        env:
+          COURSE_STORAGE: mock
