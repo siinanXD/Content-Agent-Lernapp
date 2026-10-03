@@ -28,6 +28,9 @@ Contract: [`docs/api/openapi.yaml`](api/openapi.yaml) · Postman: [`docs/api/pos
 | POST | `/api/courses/{id}/evaluate` | AP-06 |
 | POST | `/api/courses/{id}/publish` | AP-06 |
 | POST | `/api/courses/{id}/refresh` | AP-10 (weekly) |
+| POST | `/api/progress` | AP-17 (anonymous learning events) |
+
+Storage: `getStorage()` → Supabase when `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` are set; otherwise in-memory `mock-store` (tests / no secrets). See D-27 and `docs/ops/SUPABASE.md`.
 
 Mocks respond with `"mock": true` until live agents replace them. Until AP-10, pipeline starts are manual.
 
