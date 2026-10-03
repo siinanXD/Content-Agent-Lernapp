@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { UnitImageView } from "@/components/learner/unit-image";
