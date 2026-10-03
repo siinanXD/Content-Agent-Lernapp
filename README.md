@@ -9,7 +9,7 @@ Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen 
 | App | Next.js 16 + React 19 + TypeScript + Tailwind 4 |
 | Hosting | Vercel |
 | Persistence | Supabase EU (AP-17) with in-memory mock fallback |
-| Quality / tracing | Langfuse Cloud EU — legacy REST on `main`; v4 / SDK v5 cutover in draft [PR #17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17) ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197)) |
+| Quality / tracing | Langfuse Cloud EU — JS/TS SDK v5 / platform v4 OTEL ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197); clean rebase supersedes [#17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17)/[#28](https://github.com/siinanXD/Content-Agent-Lernapp/pull/28)) |
 | Ops scaffold | Hermes weekly source check + Telegram (AP-10/AP-16) |
 | Models | Claude for generate (Batch); OpenAI mini as judge (D-06/D-07) |
 
@@ -64,7 +64,7 @@ Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF
 
 ## Phase A (AP-15)
 
-First live course slice after the curriculum map: modules `M0`, `LF1`, `LF2`, `PA` (~280 units), generate with Claude Batch, judge with OpenAI mini, publish only through the quality gate. Tracked in [SIN-193](https://linear.app/sinan-kahraman/issue/SIN-193). Costs and scores should land in Langfuse Cloud EU — prefer completing the v4 cutover ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197) / [PR #17](https://github.com/siinanXD/Content-Agent-Lernapp/pull/17)) before relying on dashboards for that run.
+First live course slice after the curriculum map: modules `M0`, `LF1`, `LF2`, `PA` (~280 units), generate with Claude Batch, judge with OpenAI mini, publish only through the quality gate. Tracked in [SIN-193](https://linear.app/sinan-kahraman/issue/SIN-193). Costs and scores should land in Langfuse Cloud EU — prefer completing the v4 cutover ([SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197)) before relying on dashboards for that run.
 
 ## Deploy
 
@@ -73,6 +73,8 @@ Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).
 ## Secrets
 
 Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.
+
+Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`docs/quality/README.md`).
 
 ### Supabase persistence (AP-17)
 
