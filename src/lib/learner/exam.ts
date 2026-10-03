@@ -1,6 +1,7 @@
 /**
  * Exam mode from curriculum exam.gradedParts (AP-18c).
  * Open tasks: sample solution + checklist only — never AI graded.
+ * Client-safe: uses exam-catalog (no node:fs). Server tests may sync-check the map.
  */
 
 import {
@@ -11,20 +12,20 @@ import {
   type ExamSet,
   type TrafficLight,
 } from "@/lib/content/didaktik";
-import {
-  loadMafCurriculum,
-  type Curriculum,
-  type ExamPart,
-} from "@/lib/content/curriculum";
 import type { GeneratedQuestion } from "@/lib/generate/maf-lernfeld-seed";
 import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
 import { PLAYABLE_UNITS, type PathQuestion } from "@/lib/learner/playable-path";
+import {
+  MAF_EXAM_PARTS,
+  MAF_MAP_ID,
+  type CatalogExamPart,
+} from "@/lib/learner/exam-catalog";
 
 export type ExamPartView = {
   id: string;
   title: string;
   bereich: string;
-  form: ExamPart["form"];
+  form: CatalogExamPart["form"];
   durationMinutes: number | null;
   weightPercent: number | null;
   simulated: boolean;
@@ -43,8 +44,8 @@ export type AreaResult = {
 };
 
 /** Written graded parts only — practical / Fachaufgabe not simulated (DIDAKTIK §6). */
-export function listExamParts(c: Curriculum = loadMafCurriculum()): ExamPartView[] {
-  return c.exam.gradedParts.map((p) => {
+export function listExamParts(parts: CatalogExamPart[] = MAF_EXAM_PARTS): ExamPartView[] {
+  return parts.map((p) => {
     const durationMinutes = parseDurationMinutes(p.duration);
     const simulated = p.form === "schriftlich";
     return {
@@ -63,27 +64,25 @@ export function listExamParts(c: Curriculum = loadMafCurriculum()): ExamPartView
 
 export function buildExamSet(
   partId: string,
-  c: Curriculum = loadMafCurriculum(),
+  parts: CatalogExamPart[] = MAF_EXAM_PARTS,
+  mapId: string = MAF_MAP_ID,
 ): ExamSet | null {
-  const part = c.exam.gradedParts.find((p) => p.id === partId);
+  const part = parts.find((p) => p.id === partId);
   if (!part || part.form !== "schriftlich") return null;
   const durationMinutes = parseDurationMinutes(part.duration) ?? 60;
   const target = examQuestionTarget(part.id, durationMinutes);
-  const pool = collectQuestionsForPart(part, c);
+  const pool = collectQuestionsForPart(part);
   const questionIds = pool.slice(0, Math.max(target, 1)).map((q) => q.id);
   return {
-    id: `exam-${c.id}-${part.id}`,
-    mapId: c.id,
+    id: `exam-${mapId}-${part.id}`,
+    mapId,
     partId: part.id,
     durationMinutes,
     questionIds,
   };
 }
 
-function collectQuestionsForPart(
-  part: ExamPart,
-  c: Curriculum,
-): PathQuestion[] {
+function collectQuestionsForPart(part: CatalogExamPart): PathQuestion[] {
   const areaIds = new Set<string>([part.id, ...part.gebiete.map((g) => g.id)]);
   const fromPlayable = PLAYABLE_UNITS.flatMap((u) =>
     u.questions.filter((q) =>
@@ -91,10 +90,10 @@ function collectQuestionsForPart(
     ),
   );
   if (fromPlayable.length > 0) {
-    // Prefer playable demo questions; pad by cycling if needed for UI demo.
     const padded = [...fromPlayable];
     let i = 0;
-    while (padded.length < examQuestionTarget(part.id, parseDurationMinutes(part.duration))) {
+    const target = examQuestionTarget(part.id, parseDurationMinutes(part.duration));
+    while (padded.length < target) {
       const base = fromPlayable[i % fromPlayable.length]!;
       padded.push({ ...base, id: `${base.id}-pad-${padded.length}` });
       i += 1;
@@ -136,7 +135,6 @@ export function getExamQuestions(partId: string): PathQuestion[] {
   const byId = new Map(
     PLAYABLE_UNITS.flatMap((u) => u.questions).map((q) => [q.id, q] as const),
   );
-  // padded ids fall back to base question content
   return set.questionIds
     .map((id) => {
       const direct = byId.get(id);
@@ -153,16 +151,18 @@ export function scoreByArea(
   gebiete: Array<{ id: string; title: string }>,
 ): AreaResult[] {
   const areas =
-    gebiete.length > 0
-      ? gebiete
-      : [{ id: "ALL", title: "Gesamt" }];
+    gebiete.length > 0 ? gebiete : [{ id: "ALL", title: "Gesamt" }];
 
   return areas.map((g) => {
     const relevant = answers.filter(
-      (a) => g.id === "ALL" || a.examAreas.includes(g.id) || a.examAreas.includes("WISO-1"),
+      (a) =>
+        g.id === "ALL" ||
+        a.examAreas.includes(g.id) ||
+        a.examAreas.includes("WISO-1"),
     );
     const total = relevant.length || answers.length;
-    const correct = (relevant.length ? relevant : answers).filter((a) => a.correct).length;
+    const correct = (relevant.length ? relevant : answers).filter((a) => a.correct)
+      .length;
     const ratio = total === 0 ? 0 : correct / total;
     const light = trafficLight(ratio);
     return {

@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { loadMafCurriculum } from "@/lib/content/curriculum";
+import { parseDurationMinutes } from "@/lib/content/didaktik";
+import { MAF_EXAM_PARTS } from "./exam-catalog";
 import { buildExamSet, listExamParts, scoreByArea } from "./exam";
 
 describe("exam mode (AP-18c)", () => {
@@ -13,6 +16,17 @@ describe("exam mode (AP-18c)", () => {
     assert.equal(wiso?.durationMinutes, 60);
     assert.equal(pt?.simulated, true);
     assert.equal(parts.find((p) => p.id === "PRAK")?.simulated, false);
+  });
+
+  it("keeps client catalog in sync with maf-metall.json gradedParts", () => {
+    const c = loadMafCurriculum();
+    for (const cat of MAF_EXAM_PARTS) {
+      const map = c.exam.gradedParts.find((p) => p.id === cat.id);
+      assert.ok(map, `missing ${cat.id} in map`);
+      assert.equal(map!.form, cat.form);
+      assert.equal(parseDurationMinutes(map!.duration), parseDurationMinutes(cat.duration));
+      assert.equal(map!.weightPercent, cat.weightPercent);
+    }
   });
 
   it("builds exam set for PT without AI grading fields", () => {
