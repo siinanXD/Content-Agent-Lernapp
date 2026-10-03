@@ -1,0 +1,1 @@
+$file:/tmp/pr-clean-bundled/contents/b1-04.txt
