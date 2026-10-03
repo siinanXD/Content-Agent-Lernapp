@@ -1,1 +1,1 @@
-$file:/tmp/mcp-pending/DECISIONS_CONTENT.md
+PLACEHOLDER_LOAD_FROM_/tmp/mcp-pending/DECISIONS_CONTENT.md
