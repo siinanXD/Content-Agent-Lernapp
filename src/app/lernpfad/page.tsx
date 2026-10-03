@@ -8,9 +8,13 @@ import {
   activePathUnits,
   groupUnitsByModule,
   PLAYABLE_TODAY,
+  type PathUnit,
   type PathUnitStatus,
 } from "@/lib/learner/playable-path";
-import { usingPhaseASnapshot } from "@/lib/learner/phase-a-path";
+import {
+  fetchPhaseAPathUnits,
+  usingPhaseASnapshot,
+} from "@/lib/learner/phase-a-path";
 import { loadSession, type LearnerSession } from "@/lib/learner/session";
 import { dueItems, loadStack, stackSize } from "@/lib/learner/leitner";
 import { listExamParts } from "@/lib/learner/exam";
@@ -25,16 +29,23 @@ export default function LernpfadPage() {
   const [session, setSession] = useState<LearnerSession | null>(null);
   const [dueCount, setDueCount] = useState(0);
   const [stackCount, setStackCount] = useState(0);
-  const pathUnits = activePathUnits();
+  const [pathUnits, setPathUnits] = useState<PathUnit[]>(() => activePathUnits());
   const groups = groupUnitsByModule(pathUnits);
   const examParts = listExamParts().filter((p) => p.simulated);
-  const phaseA = usingPhaseASnapshot();
+  const phaseA = usingPhaseASnapshot() && pathUnits.length > 6;
 
   useEffect(() => {
     setSession(loadSession());
     const stack = loadStack();
     setDueCount(dueItems(stack).length);
     setStackCount(stackSize(stack));
+    let cancelled = false;
+    fetchPhaseAPathUnits().then((units) => {
+      if (!cancelled && units.length) setPathUnits(units);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const subtitle = session

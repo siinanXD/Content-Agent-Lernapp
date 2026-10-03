@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { UnitImageView } from "@/components/learner/unit-image";
@@ -11,7 +11,12 @@ import {
 } from "@/components/learner/question-panel";
 import { useA11y } from "@/components/a11y/a11y-provider";
 import { speakGerman } from "@/lib/a11y/preferences";
-import { getUnit, unitExplanation } from "@/lib/learner/playable-path";
+import {
+  getUnit,
+  unitExplanation,
+  type PathUnit,
+} from "@/lib/learner/playable-path";
+import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
 import { loadSession, saveSession } from "@/lib/learner/session";
 import {
   loadStack,
@@ -24,12 +29,44 @@ export default function EinheitPage() {
   const params = useParams<{ unitId: string }>();
   const router = useRouter();
   const { prefs } = useA11y();
-  const unit = useMemo(() => getUnit(params.unitId), [params.unitId]);
+  const [unit, setUnit] = useState<PathUnit | undefined>(() =>
+    getUnit(params.unitId),
+  );
+  const [loading, setLoading] = useState(!unit);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const local = getUnit(params.unitId);
+    if (local) {
+      setUnit(local);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetchPhaseAPathUnits().then(() => {
+      if (cancelled) return;
+      setUnit(getUnit(params.unitId));
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [params.unitId]);
+
+  if (loading) {
+    return (
+      <MobileShell>
+        <main className="flex flex-1 flex-col gap-4 px-6 py-16">
+          <p className="text-[var(--color-text-secondary)]">Einheit wird geladen…</p>
+        </main>
+      </MobileShell>
+    );
+  }
 
   if (!unit) {
     return (
