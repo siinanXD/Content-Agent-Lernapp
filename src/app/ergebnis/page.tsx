@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { PLAYABLE_TODAY } from "@/lib/learner/playable-path";
-import { loadSession, type LearnerSession } from "@/lib/learner/session";
+import { loadSession } from "@/lib/learner/session";
+import { useAfterMount } from "@/lib/use-after-mount";
 import type { TrafficLight } from "@/lib/content/didaktik";
 
 const lightClass: Record<TrafficLight, string> = {
@@ -15,11 +15,7 @@ const lightClass: Record<TrafficLight, string> = {
 };
 
 export default function ErgebnisPage() {
-  const [session, setSession] = useState<LearnerSession | null>(null);
-
-  useEffect(() => {
-    setSession(loadSession());
-  }, []);
+  const session = useAfterMount(loadSession, null);
 
   const result = session?.lastResult;
   const title = result?.unitTitle ?? "Elektrische Gefahren";

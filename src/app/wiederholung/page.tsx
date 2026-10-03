@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { BottomNav } from "@/components/learner/bottom-nav";
@@ -20,17 +20,17 @@ import {
 } from "@/lib/learner/leitner";
 import { getQuestionById } from "@/lib/learner/playable-path";
 import { loadSession, saveSession } from "@/lib/learner/session";
+import { useAfterMount } from "@/lib/use-after-mount";
 
 export default function WiederholungPage() {
-  const [stack, setStack] = useState<LeitnerStack | null>(null);
+  const loadedStack = useAfterMount<LeitnerStack | null>(loadStack, null);
+  // After an answer the page works on the updated stack, as before.
+  const [answeredStack, setAnsweredStack] = useState<LeitnerStack | null>(null);
+  const stack = answeredStack ?? loadedStack;
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    setStack(loadStack());
-  }, []);
 
   const due = useMemo(
     () => (stack ? dueItems(stack, new Date(), 10) : []),
@@ -51,7 +51,7 @@ export default function WiederholungPage() {
         })
       : markWrong(nextStack, currentItem.questionId);
     saveStack(nextStack);
-    setStack(nextStack);
+    setAnsweredStack(nextStack);
     if (result.correct) setCorrectCount((c) => c + 1);
   }
 

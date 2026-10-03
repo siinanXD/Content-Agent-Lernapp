@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -13,6 +12,7 @@ import {
   saveA11yPrefs,
   type A11yPreferences,
 } from "@/lib/a11y/preferences";
+import { useAfterMount } from "@/lib/use-after-mount";
 
 const Ctx = createContext<{
   prefs: A11yPreferences;
@@ -23,14 +23,13 @@ const Ctx = createContext<{
 });
 
 export function A11yProvider({ children }: { children: ReactNode }) {
-  const [prefs, setPrefsState] = useState<A11yPreferences>(DEFAULT_A11Y);
-
-  useEffect(() => {
-    setPrefsState(loadA11yPrefs());
-  }, []);
+  const storedPrefs = useAfterMount(loadA11yPrefs, DEFAULT_A11Y);
+  // A change made through setPrefs wins over the value read on mount.
+  const [changedPrefs, setChangedPrefs] = useState<A11yPreferences | null>(null);
+  const prefs = changedPrefs ?? storedPrefs;
 
   function setPrefs(next: A11yPreferences) {
-    setPrefsState(next);
+    setChangedPrefs(next);
     saveA11yPrefs(next);
   }
 

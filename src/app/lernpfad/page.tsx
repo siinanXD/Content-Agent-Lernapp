@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import {
@@ -15,9 +15,15 @@ import {
   fetchPhaseAPathUnits,
   usingPhaseASnapshot,
 } from "@/lib/learner/phase-a-path";
-import { loadSession, type LearnerSession } from "@/lib/learner/session";
-import { dueItems, loadStack, stackSize } from "@/lib/learner/leitner";
+import { loadSession } from "@/lib/learner/session";
+import {
+  dueItems,
+  loadStack,
+  stackSize,
+  type LeitnerStack,
+} from "@/lib/learner/leitner";
 import { listExamParts } from "@/lib/learner/exam";
+import { useAfterMount } from "@/lib/use-after-mount";
 
 const statusTone: Record<PathUnitStatus, string> = {
   done: "bg-[var(--color-feedback-success)] text-white",
@@ -26,19 +32,16 @@ const statusTone: Record<PathUnitStatus, string> = {
 };
 
 export default function LernpfadPage() {
-  const [session, setSession] = useState<LearnerSession | null>(null);
-  const [dueCount, setDueCount] = useState(0);
-  const [stackCount, setStackCount] = useState(0);
+  const session = useAfterMount(loadSession, null);
+  const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
+  const dueCount = useMemo(() => (stack ? dueItems(stack).length : 0), [stack]);
+  const stackCount = stack ? stackSize(stack) : 0;
   const [pathUnits, setPathUnits] = useState<PathUnit[]>(() => activePathUnits());
   const groups = groupUnitsByModule(pathUnits);
   const examParts = listExamParts().filter((p) => p.simulated);
   const phaseA = usingPhaseASnapshot() && pathUnits.length > 6;
 
   useEffect(() => {
-    setSession(loadSession());
-    const stack = loadStack();
-    setDueCount(dueItems(stack).length);
-    setStackCount(stackSize(stack));
     let cancelled = false;
     fetchPhaseAPathUnits().then((units) => {
       if (!cancelled && units.length) setPathUnits(units);

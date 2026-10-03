@@ -1,22 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useA11y } from "@/components/a11y/a11y-provider";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { Progress } from "@/components/ui/progress";
-import { loadSession, type LearnerSession } from "@/lib/learner/session";
-import { loadStack, stackSize } from "@/lib/learner/leitner";
+import { loadSession } from "@/lib/learner/session";
+import { loadStack, stackSize, type LeitnerStack } from "@/lib/learner/leitner";
+import { useAfterMount } from "@/lib/use-after-mount";
 
 export default function ProfilPage() {
-  const [session, setSession] = useState<LearnerSession | null>(null);
-  const [reviewSize, setReviewSize] = useState(0);
+  const session = useAfterMount(loadSession, null);
+  const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
+  const reviewSize = stack ? stackSize(stack) : 0;
   const { prefs, setPrefs } = useA11y();
-
-  useEffect(() => {
-    setSession(loadSession());
-    setReviewSize(stackSize(loadStack()));
-  }, []);
 
   const daysDone = 15;
   const daysTotal = session?.variant === "weiterbildung" ? 60 : 40;
