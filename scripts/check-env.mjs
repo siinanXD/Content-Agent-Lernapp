@@ -29,6 +29,15 @@ const OPTIONAL_NEXT_PUBLIC_ALIASES = [
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
 ];
 
+const OPTIONAL_OBSERVABILITY = [
+  "NEXT_PUBLIC_SENTRY_DSN",
+  "SENTRY_AUTH_TOKEN",
+  "SENTRY_ORG",
+  "SENTRY_PROJECT",
+  "NEXT_PUBLIC_POSTHOG_KEY",
+  "NEXT_PUBLIC_POSTHOG_HOST",
+];
+
 function status(name) {
   const raw = process.env[name];
   if (raw === undefined) return { name, state: "MISSING", length: 0 };
@@ -50,6 +59,10 @@ printGroup("Anthropic workspace (needed for live Claude)", ANTHROPIC_WORKSPACE);
 printGroup(
   "Optional Next.js aliases (not extra Supabase secrets)",
   OPTIONAL_NEXT_PUBLIC_ALIASES,
+);
+printGroup(
+  "Optional observability (Sentry EU + PostHog EU; missing = no-op)",
+  OPTIONAL_OBSERVABILITY,
 );
 
 const missingLive = REQUIRED_LIVE.map(status).filter((r) => r.state !== "SET");

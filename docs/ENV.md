@@ -43,6 +43,11 @@ Injizierte Secret-Namen:
 | `HERMES_APP_BASE_URL` | **fehlt** | blockiert Wochenjob gegen die App |
 | `NEXT_PUBLIC_SUPABASE_URL` | optionaler Alias | nicht nötig, solange Server `SUPABASE_URL` liest |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | optionaler Alias | nicht nötig, solange Server `SUPABASE_ANON_KEY` liest |
+| `NEXT_PUBLIC_SENTRY_DSN` | **fehlt** (optional) | Sentry EU; ohne Wert = No-Op (SIN-203) |
+| `SENTRY_AUTH_TOKEN` | optional | Source-Maps-Upload im Vercel-Build |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | optional | zu `SENTRY_AUTH_TOKEN` |
+| `NEXT_PUBLIC_POSTHOG_KEY` | **fehlt** (optional) | PostHog EU Project API Key; ohne = No-Op |
+| `NEXT_PUBLIC_POSTHOG_HOST` | optional | Default im Code `https://eu.i.posthog.com` |
 
 Optional für AP-16 Hermes-Alerts (fehlen = Kanal überspringen, Package bleibt grün): `LINEAR_API_KEY`, `LINEAR_TEAM_ID`, `LINEAR_PROJECT_ID`.
 
@@ -56,6 +61,8 @@ Supabase auf Vercel: `SUPABASE_URL` und `SUPABASE_ANON_KEY` sind gesetzt (kein f
 
 Noch nicht auf Vercel (gegenüber Hermes-Vorlage / Cloud-Agent): `ANTHROPIC_WORKSPACE_ID` (nachziehen, damit Preview/Production denselben Workspace wie der Agent nutzen), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL`. `RAILWAY_API_TOKEN` gehört zum Worker, nicht zur App.
 
+Observability (SIN-203, optional): `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` (+ optional `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`). Setup-Schritte: `docs/ops/SENTRY-POSTHOG.md`.
+
 ## Railway / Hermes
 
 Vorlage: `docs/ops/railway.env.example`. Live-Deploy bleibt blockiert, bis Telegram-Bot und Chat-ID gesetzt sind. AP-16 Quellen-Monitor: Live-HTTP auf Railway/GHA; Cloud-Agent nur offline/fixtures (`docs/ops/HERMES.md`).
@@ -64,8 +71,9 @@ Vorlage: `docs/ops/railway.env.example`. Live-Deploy bleibt blockiert, bis Teleg
 
 1. Vercel: `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) an Production/Preview angleichen (Cloud-Agent hat es bereits). Console-API-Credits für AP-15 Batch budgetieren — Max-Abo deckt das nicht (D-33).
 2. `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL` für AP-10 (Railway EU).
-3. Optional AP-16: `LINEAR_API_KEY` + `LINEAR_TEAM_ID` (+ `LINEAR_PROJECT_ID`) für Issues „Quelle geändert: \<Map\>“.
-4. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
+3. Optional AP-16: `LINEAR_API_KEY` + `LINEAR_TEAM_ID` (+ `LINEAR_PROJECT_ID`) für Issues „Quelle geändert: <Map>“.
+4. Optional Observability (SIN-203): Sentry EU `NEXT_PUBLIC_SENTRY_DSN` (+ Source-Maps `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`) und PostHog EU `NEXT_PUBLIC_POSTHOG_KEY` + `NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com` — siehe `docs/ops/SENTRY-POSTHOG.md`.
+5. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
 
 ## Check
 

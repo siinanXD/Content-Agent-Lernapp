@@ -28,10 +28,6 @@
     "ap15:regen-dropped:dry": "node --import tsx scripts/ap15-regen-dropped.ts --dry-run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.2",
-    "next": "16.3.8",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
     "@langfuse/client": "^5.11.1",
     "@langfuse/otel": "^5.11.1",
     "@langfuse/tracing": "^5.11.1",
@@ -39,7 +35,13 @@
     "@opentelemetry/core": "^2.0.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
     "@opentelemetry/sdk-node": "^0.222.0",
-    "@opentelemetry/sdk-trace-base": "^2.0.1"
+    "@opentelemetry/sdk-trace-base": "^2.0.1",
+    "@sentry/nextjs": "^11.4.0",
+    "@supabase/supabase-js": "^2.117.2",
+    "next": "16.3.8",
+    "posthog-js": "^1.435.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
