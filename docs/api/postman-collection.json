@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Content-Agent-Lernapp Pipeline",
-    "description": "Generated from docs/api/openapi.yaml — mock pipeline routes.",
+    "description": "Generated from docs/api/openapi.yaml — mock pipeline routes. Plan units and generate payloads carry curriculum moduleId/blockId (AP-14 / maf-curriculum.json).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
