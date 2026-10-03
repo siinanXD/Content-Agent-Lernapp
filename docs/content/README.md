@@ -29,6 +29,8 @@ Stand 2026-10-03 · Status aller Maps: **Entwurf, Freigabe durch Sinan offen** �
 
 ## Aufbau einer Map
 
+Wie eine Einheit innen aufgebaut ist (Erklärung, Fragestufen, Wiederholung, Prüfungsmodus, Bilder), steht in [`DIDAKTIK.md`](DIDAKTIK.md) (AP-18, D-31).
+
 1. **Modul** = Lernfeld (Schule), Kernbereich aus der Ausbildungsordnung (Betrieb), Querschnitt oder Prüfungstraining
 2. **Block** = Themenblock mit Quellen-IDs (Ausbildungsordnung/Anlage und/oder Rahmenlehrplan)
 3. **Einheit** = 5–10 Minuten: kurze Erklärung, 5–8 Fragen (Auswahl, Zuordnen, Lückentext, Reihenfolge, Rechnen), jede Antwort mit Erklärung und Quelle
