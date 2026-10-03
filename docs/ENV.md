@@ -32,6 +32,8 @@ Injizierte Secret-Namen:
 | `LANGFUSE_PUBLIC_KEY` | gesetzt | Prefix `pk-lf`; Projekt `Content AGent` auf EU-Host → 200 |
 | `LANGFUSE_SECRET_KEY` | gesetzt | Prefix `sk-lf` |
 | `LANGFUSE_BASE_URL` | gesetzt | offizieller EU-Host (Ireland); US-Host lehnt dieselben Keys mit 401 ab |
+| `LANGFUSE_TRACING_ENVIRONMENT` | optional | SDK v5 env attribute (nicht im Code setzen) |
+| `LANGFUSE_RELEASE` | optional | SDK v5 release attribute (nicht im Code setzen) |
 | `SUPABASE_URL` | **gesetzt** | Host `*.supabase.co`; Auth-Health → 200 |
 | `SUPABASE_ANON_KEY` | **gesetzt** | JWT-Form; Auth-Health mit Anon → 200 |
 | `SUPABASE_SERVICE_ROLE_KEY` | gesetzt | JWT-Form; `/rest/v1/` → 200 |

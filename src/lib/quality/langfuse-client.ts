@@ -1,14 +1,34 @@
 /**
- * Langfuse Cloud EU client.
- * Docs: https://langfuse.com/docs · EU region (override with LANGFUSE_BASE_URL)
- * Dataset API: POST /api/public/v2/datasets, POST /api/public/dataset-items
- * Scores: POST /api/public/scores
- * Traces: POST /api/public/ingestion (public ingest)
+ * Langfuse Cloud EU client — JS/TS SDK v5 (platform v4 / observations-first).
+ *
+ * Docs:
+ * - https://langfuse.com/docs/observability/sdk/overview
+ * - https://langfuse.com/docs/observability/sdk/upgrade-path/js-v4-to-v5
+ * - https://langfuse.com/integrations/native/opentelemetry/migration-to-v4
+ * - https://langfuse.com/faq/all/deprecated-api-migration
+ *
+ * Ingestion uses OTLP via @langfuse/otel (not the legacy public REST ingest API).
+ * Scores use LangfuseClient.score (supported batched score events).
+ * Datasets use LangfuseClient api.datasets + dataset.createItem / dataset.get.
  */
+import { LangfuseClient } from "@langfuse/client";
+import {
+  getActiveTraceId,
+  propagateAttributes,
+  startActiveObservation,
+} from "@langfuse/tracing";
 import { LANGFUSE_DATASET_NAME } from "./maf-goldset";
 import type { GoldQuestion } from "./maf-goldset-fixture";
+import {
+  ensureLangfuseOtel,
+  flushLangfuseOtel,
+} from "./langfuse-otel";
 
 export const LANGFUSE_EU_HOST = ["https://", "cloud.", "langfuse.com"].join("");
+
+/** Declared SDK major used by this repo (resolved versions are in package-lock.json). */
+export const LANGFUSE_SDK_MAJOR = 5 as const;
+export const LANGFUSE_SDK_MIN_VERSION = "5.4.0" as const;
 
 export type LangfuseConfig = {
   publicKey: string;
@@ -31,27 +51,36 @@ export function langfuseConfigured(): boolean {
   return getLangfuseConfig() !== null;
 }
 
-function authHeader(cfg: LangfuseConfig): string {
-  return `Basic ${Buffer.from(`${cfg.publicKey}:${cfg.secretKey}`).toString("base64")}`;
-}
-
-async function langfuseFetch(
-  cfg: LangfuseConfig,
-  path: string,
-  init?: RequestInit,
-): Promise<Response> {
-  return fetch(`${cfg.baseUrl}${path}`, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      authorization: authHeader(cfg),
-      ...(init?.headers ?? {}),
-    },
+function createClient(cfg: LangfuseConfig): LangfuseClient {
+  return new LangfuseClient({
+    publicKey: cfg.publicKey,
+    secretKey: cfg.secretKey,
+    baseUrl: cfg.baseUrl,
   });
 }
 
+/** Stringify metadata values for propagateAttributes (Record<string, string>, ≤200 chars). */
+function stringMetadata(
+  input: Record<string, unknown>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value === undefined || value === null) continue;
+    const raw =
+      typeof value === "string"
+        ? value
+        : typeof value === "number" || typeof value === "boolean"
+          ? String(value)
+          : JSON.stringify(value);
+    out[key] = raw.length <= 200 ? raw : `${raw.slice(0, 197)}...`;
+  }
+  return out;
+}
+
 /**
- * Best-effort ingest of an evaluation trace + numeric scores. Never throws.
+ * Best-effort evaluation observation + numeric scores. Never throws.
+ * Root observation carries overall input/output (v4 observations-first model).
+ * Correlating attributes are set via propagateAttributes before the observation.
  */
 export async function recordEvaluationTrace(payload: {
   name: string;
@@ -63,54 +92,75 @@ export async function recordEvaluationTrace(payload: {
   const cfg = getLangfuseConfig();
   if (!cfg) return null;
 
-  const traceId = crypto.randomUUID();
   try {
-    const ingest = await langfuseFetch(cfg, "/api/public/ingestion", {
-      method: "POST",
-      body: JSON.stringify({
-        batch: [
-          {
-            id: crypto.randomUUID(),
-            type: "trace-create",
-            timestamp: new Date().toISOString(),
-            body: {
-              id: traceId,
-              name: payload.name,
-              metadata: {
+    ensureLangfuseOtel();
+    const client = createClient(cfg);
+
+    let traceId: string | undefined;
+
+    await propagateAttributes(
+      {
+        traceName: payload.name,
+        tags: ["quality-gate", "course-evaluate", "ap-06"],
+        metadata: stringMetadata({
+          courseId: payload.courseId,
+          dataset: LANGFUSE_DATASET_NAME,
+          passed: payload.passed,
+          ...(payload.metadata ?? {}),
+        }),
+      },
+      async () => {
+        await startActiveObservation(
+          payload.name,
+          async (observation) => {
+            observation.update({
+              input: {
                 courseId: payload.courseId,
+                name: payload.name,
+              },
+              output: {
                 passed: payload.passed,
                 scores: payload.scores,
-                dataset: LANGFUSE_DATASET_NAME,
-                ...payload.metadata,
               },
-            },
-          },
-        ],
-      }),
-    });
-    if (!ingest.ok) return null;
+              metadata: {
+                courseId: payload.courseId,
+                dataset: LANGFUSE_DATASET_NAME,
+              },
+            });
 
-    const numeric: Array<[string, number]> = [];
-    for (const [name, value] of Object.entries(payload.scores)) {
-      if (typeof value === "number") numeric.push([name, value]);
-      if (typeof value === "boolean") numeric.push([name, value ? 1 : 0]);
-    }
-    await Promise.all(
-      numeric.map(([name, value]) =>
-        langfuseFetch(cfg, "/api/public/scores", {
-          method: "POST",
-          body: JSON.stringify({
-            traceId,
-            name,
-            value,
-            dataType: "NUMERIC",
-            comment: payload.passed ? "pass" : "below_quality_threshold",
-            metadata: { courseId: payload.courseId },
-          }),
-        }),
-      ),
+            traceId = getActiveTraceId() ?? observation.traceId;
+
+            for (const [name, value] of Object.entries(payload.scores)) {
+              const numeric =
+                typeof value === "number"
+                  ? value
+                  : typeof value === "boolean"
+                    ? value
+                      ? 1
+                      : 0
+                    : null;
+              if (numeric === null) continue;
+              // Observation-level scores (v4 evaluators target observations).
+              client.score.observation(
+                { otelSpan: observation.otelSpan },
+                {
+                  name,
+                  value: numeric,
+                  dataType: "NUMERIC",
+                  comment: payload.passed ? "pass" : "below_quality_threshold",
+                  metadata: { courseId: payload.courseId },
+                },
+              );
+            }
+          },
+          { asType: "evaluator" },
+        );
+      },
     );
-    return traceId;
+
+    await client.score.flush();
+    await flushLangfuseOtel();
+    return traceId ?? null;
   } catch {
     return null;
   }
@@ -123,73 +173,76 @@ export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
   const cfg = getLangfuseConfig();
   if (!cfg) return null;
 
-  const created = await langfuseFetch(cfg, "/api/public/v2/datasets", {
-    method: "POST",
-    body: JSON.stringify({
-      name: LANGFUSE_DATASET_NAME,
-      description:
-        "70 original MAF practice items from MaschFüAusbV/BIBB (not IHK exam copies).",
-      metadata: {
-        retrievedAt: "2026-10-02",
-        ihkExamCopy: false,
-        itemCount: items.length,
-      },
-    }),
-  });
-  // 200/201 create, 409 already exists — both OK
-  if (!created.ok && created.status !== 409) return null;
+  try {
+    const client = createClient(cfg);
 
-  let upserted = 0;
-  for (const item of items) {
-    const res = await langfuseFetch(cfg, "/api/public/dataset-items", {
-      method: "POST",
-      body: JSON.stringify({
-        datasetName: LANGFUSE_DATASET_NAME,
-        id: `maf-${item.id}`,
-        input: {
-          prompt: item.prompt,
-          correct: item.correct,
-          explanation: item.explanation,
-          sourceUrl: item.sourceUrl,
-          unitId: item.unitId,
-        },
-        expectedOutput: item.expected,
+    try {
+      await client.api.datasets.create({
+        name: LANGFUSE_DATASET_NAME,
+        description:
+          "70 original MAF practice items from MaschFüAusbV/BIBB (not IHK exam copies).",
         metadata: {
-          sourceFetchedAt: "sourceFetchedAt" in item ? item.sourceFetchedAt : "2026-10-02",
+          retrievedAt: "2026-10-02",
           ihkExamCopy: false,
+          itemCount: items.length,
         },
-        status: "ACTIVE",
-      }),
-    });
-    if (res.ok) upserted += 1;
+      });
+    } catch {
+      // Dataset may already exist (409) — continue upserting items.
+    }
+
+    let upserted = 0;
+    for (const item of items) {
+      try {
+        await client.dataset.createItem({
+          datasetName: LANGFUSE_DATASET_NAME,
+          id: `maf-${item.id}`,
+          input: {
+            prompt: item.prompt,
+            correct: item.correct,
+            explanation: item.explanation,
+            sourceUrl: item.sourceUrl,
+            unitId: item.unitId,
+          },
+          expectedOutput: item.expected,
+          metadata: {
+            sourceFetchedAt:
+              "sourceFetchedAt" in item ? item.sourceFetchedAt : "2026-10-02",
+            ihkExamCopy: false,
+          },
+          status: "ACTIVE",
+        });
+        upserted += 1;
+      } catch {
+        // skip failed item; continue
+      }
+    }
+    return { dataset: LANGFUSE_DATASET_NAME, upserted };
+  } catch {
+    return null;
   }
-  return { dataset: LANGFUSE_DATASET_NAME, upserted };
 }
 
 export async function fetchGoldsetFromLangfuse(): Promise<GoldQuestion[] | null> {
   const cfg = getLangfuseConfig();
   if (!cfg) return null;
   try {
-    const url = `/api/public/dataset-items?datasetName=${encodeURIComponent(LANGFUSE_DATASET_NAME)}&limit=100`;
-    const res = await langfuseFetch(cfg, url);
-    if (!res.ok) return null;
-    const body = (await res.json()) as {
-      data?: Array<{
-        id?: string;
-        input?: {
-          prompt?: string;
-          correct?: string;
-          explanation?: string;
-          sourceUrl?: string;
-          unitId?: string;
-        };
-        expectedOutput?: GoldQuestion["expected"];
-      }>;
-    };
-    const rows = (body.data ?? [])
+    const client = createClient(cfg);
+    const dataset = await client.dataset.get(LANGFUSE_DATASET_NAME, {
+      fetchItemsPageSize: 100,
+    });
+    const rows = (dataset.items ?? [])
       .map((row): GoldQuestion | null => {
-        const input = row.input;
-        const expected = row.expectedOutput;
+        const input = row.input as
+          | {
+              prompt?: string;
+              correct?: string;
+              explanation?: string;
+              sourceUrl?: string;
+              unitId?: string;
+            }
+          | undefined;
+        const expected = row.expectedOutput as GoldQuestion["expected"] | undefined;
         if (!input?.prompt || !input.correct || !input.sourceUrl || !expected) {
           return null;
         }

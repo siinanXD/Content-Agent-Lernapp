@@ -18,6 +18,7 @@ import {
   fetchGoldsetFromLangfuse,
   langfuseConfigured,
 } from "../src/lib/quality/langfuse-client";
+import { shutdownLangfuseOtel } from "../src/lib/quality/langfuse-otel";
 
 type Json = Record<string, unknown>;
 
@@ -143,7 +144,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await shutdownLangfuseOtel();
+  });
