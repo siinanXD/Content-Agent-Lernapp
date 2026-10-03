@@ -1,4 +1,6 @@
-import goldsetJson from "../../../docs/quality/maf-goldset-phase-a.json";
+import { inflateSync } from "node:zlib";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import moduleTargetsJson from "../../../docs/quality/module-targets-phase-a.json";
 import type { GoldQuestion } from "./maf-goldset-fixture";
 
@@ -17,7 +19,18 @@ export type PhaseAGoldsetFile = {
   items: PhaseAGoldItem[];
 };
 
-export const MAF_GOLDSET_PHASE_A = goldsetJson as PhaseAGoldsetFile;
+/** Inflate docs/quality/_restore/maf-goldset-phase-a.json.zlib.b64 (canonical 90-item SoT). */
+function loadPhaseAGoldset(): PhaseAGoldsetFile {
+  const b64Path = join(
+    __dirname,
+    "../../../docs/quality/_restore/maf-goldset-phase-a.json.zlib.b64",
+  );
+  const b64 = readFileSync(b64Path, "utf8").trim();
+  const raw = inflateSync(Buffer.from(b64, "base64")).toString("utf8");
+  return JSON.parse(raw) as PhaseAGoldsetFile;
+}
+
+export const MAF_GOLDSET_PHASE_A = loadPhaseAGoldset();
 export const MAF_GOLDSET_PHASE_A_ITEMS: PhaseAGoldItem[] = MAF_GOLDSET_PHASE_A.items;
 export const LANGFUSE_PHASE_A_DATASET = "maf-goldset-phase-a";
 
