@@ -1,0 +1,9 @@
+{
+  "courseId": "e22073de-7020-4380-9002-c70d46c25e25",
+  "keyword": "Maschinen- und Anlagenführer",
+  "phase": "A",
+  "publishedAt": "2026-10-03T12:39:55.000Z",
+  "unitCount": 170,
+  "units": [],
+  "note": "Units loaded from Supabase via GET /api/learner/phase-a — not embedded (size)."
+}
