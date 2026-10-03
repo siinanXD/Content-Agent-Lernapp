@@ -14,7 +14,7 @@ import {
 } from "@/lib/content/didaktik";
 import type { GeneratedQuestion } from "@/lib/generate/maf-lernfeld-seed";
 import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
-import { PLAYABLE_UNITS, type PathQuestion } from "@/lib/learner/playable-path";
+import { activePathUnits, type PathQuestion } from "@/lib/learner/playable-path";
 import {
   MAF_EXAM_PARTS,
   MAF_MAP_ID,
@@ -84,7 +84,7 @@ export function buildExamSet(
 
 function collectQuestionsForPart(part: CatalogExamPart): PathQuestion[] {
   const areaIds = new Set<string>([part.id, ...part.gebiete.map((g) => g.id)]);
-  const fromPlayable = PLAYABLE_UNITS.flatMap((u) =>
+  const fromPlayable = activePathUnits().flatMap((u) =>
     u.questions.filter((q) =>
       q.examAreas.some((a) => areaIds.has(a) || a === "WISO-1"),
     ),
@@ -133,7 +133,7 @@ export function getExamQuestions(partId: string): PathQuestion[] {
   const set = buildExamSet(partId);
   if (!set) return [];
   const byId = new Map(
-    PLAYABLE_UNITS.flatMap((u) => u.questions).map((q) => [q.id, q] as const),
+    activePathUnits().flatMap((u) => u.questions).map((q) => [q.id, q] as const),
   );
   return set.questionIds
     .map((id) => {
