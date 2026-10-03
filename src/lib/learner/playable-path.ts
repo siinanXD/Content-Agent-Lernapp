@@ -226,19 +226,33 @@ export const PLAYABLE_TODAY = {
   nextTitle: "Not-Aus und Verriegelung",
 };
 
+/** Active path: Phase A snapshot when present (AP-15), else Sicherheit seed. */
+export function activePathUnits(): PathUnit[] {
+  try {
+    // Lazy require avoids circular import at module init.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { phaseAPathUnits } = require("./phase-a-path") as {
+      phaseAPathUnits: () => PathUnit[];
+    };
+    return phaseAPathUnits();
+  } catch {
+    return PLAYABLE_UNITS;
+  }
+}
+
 export function getUnit(id: string): PathUnit | undefined {
-  return PLAYABLE_UNITS.find((u) => u.id === id);
+  return activePathUnits().find((u) => u.id === id);
 }
 
 export function getQuestionById(id: string): PathQuestion | undefined {
-  for (const u of PLAYABLE_UNITS) {
+  for (const u of activePathUnits()) {
     const q = u.questions.find((item) => item.id === id);
     if (q) return q;
   }
   return undefined;
 }
 
-export function groupUnitsByModule(units: PathUnit[] = PLAYABLE_UNITS): PathModuleGroup[] {
+export function groupUnitsByModule(units: PathUnit[] = activePathUnits()): PathModuleGroup[] {
   const modules = new Map<string, PathModuleGroup>();
   for (const unit of units) {
     let mod = modules.get(unit.moduleId);
