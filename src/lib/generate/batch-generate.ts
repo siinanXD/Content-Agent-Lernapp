@@ -4,6 +4,7 @@
  */
 
 import {
+  blockSources,
   loadMafCurriculum,
   modulesForPhase,
   type Curriculum,
@@ -16,9 +17,10 @@ import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
 import type { GeneratedLernfeld, GeneratedUnit } from "./maf-lernfeld-seed";
 import { addClaudeUsage, type CostLedger, emptyLedger } from "@/lib/quality/cost-guard";
 
-/** Units per Batch request — keeps JSON parseable under max_tokens. */
-export const UNITS_PER_CHUNK = 4;
-export const MAX_OUTPUT_TOKENS = 16384;
+/** Units per Batch request — 2 keeps Didaktik JSON under typical output size. */
+export const UNITS_PER_CHUNK = 2;
+/** claude-sonnet-5-5 supports up to 128k; 64k leaves headroom for 2 full units. */
+export const MAX_OUTPUT_TOKENS = 64000;
 
 export type BatchChunkTarget = {
   customId: string;
@@ -85,18 +87,18 @@ Unit-IDs: "${block.id}-u${unitOffset + 1}" … "${block.id}-u${unitOffset + unit
 Keine anderen Einheiten. (Kurs-Stichwort: ${keyword})`;
 }
 
-export async function submitPhaseBatch(opts: {
+export async function submitChunkTargets(opts: {
   keyword: string;
-  phaseId?: string;
+  targets: BatchChunkTarget[];
 }): Promise<BatchSubmitResult> {
   const c = loadMafCurriculum();
-  const { targets, unitTarget } = phaseAChunks(opts.phaseId ?? "A", c);
-  if (targets.length === 0) throw new Error("No Phase A chunks");
+  if (opts.targets.length === 0) throw new Error("No chunks to submit");
+  const unitTarget = opts.targets.reduce((s, t) => s + t.unitCount, 0);
 
   const res = await anthropicFetch("/v1/messages/batches", {
     method: "POST",
     body: JSON.stringify({
-      requests: targets.map((t) => ({
+      requests: opts.targets.map((t) => ({
         custom_id: t.customId,
         params: {
           model: GENERATOR_MODEL,
@@ -127,10 +129,35 @@ export async function submitPhaseBatch(opts: {
   if (!data.id) throw new Error("Batch submit missing id");
   return {
     batchId: data.id,
-    customIds: targets.map((t) => t.customId),
-    chunkCount: targets.length,
+    customIds: opts.targets.map((t) => t.customId),
+    chunkCount: opts.targets.length,
     unitTarget,
   };
+}
+
+export async function submitPhaseBatch(opts: {
+  keyword: string;
+  phaseId?: string;
+}): Promise<BatchSubmitResult> {
+  const c = loadMafCurriculum();
+  const { targets } = phaseAChunks(opts.phaseId ?? "A", c);
+  return submitChunkTargets({ keyword: opts.keyword, targets });
+}
+
+/** Rebuild chunk targets for unit slots still missing after a partial batch. */
+export function missingChunkTargets(
+  haveUnitIds: Set<string>,
+  phaseId = "A",
+  c: Curriculum = loadMafCurriculum(),
+): BatchChunkTarget[] {
+  const { targets } = phaseAChunks(phaseId, c);
+  return targets.filter((t) => {
+    for (let i = 0; i < t.unitCount; i++) {
+      const id = `${t.block.id}-u${t.unitOffset + i + 1}`;
+      if (!haveUnitIds.has(id)) return true;
+    }
+    return false;
+  });
 }
 
 export async function submitRegenBatch(opts: {
@@ -307,19 +334,50 @@ function annotateUnit(
   u: GeneratedUnit,
   meta: { module: CurriculumModule; block: CurriculumBlock } | null,
 ): GeneratedUnit {
-  if (!meta) return u;
-  const variant = variantFromBlock({
-    rechnen: meta.block.rechnen,
-    safety: meta.block.safety || meta.module.safety,
-    topics: meta.block.topics,
-  });
+  const c = loadMafCurriculum();
+  const defaultUrl =
+    (meta ? blockSources(c, meta.block)[0]?.url : undefined) ??
+    c.sources[0]?.url ??
+    "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";
+  const fetched =
+    (meta ? blockSources(c, meta.block)[0]?.fetchedAt : undefined) ??
+    c.version ??
+    "2026-10-03";
+  const variant = meta
+    ? variantFromBlock({
+        rechnen: meta.block.rechnen,
+        safety: meta.block.safety || meta.module.safety,
+        topics: meta.block.topics,
+      })
+    : u.variant;
+  const raw = u as GeneratedUnit & { source_url?: string; source_fetched_at?: string };
+  const sourceUrl = u.sourceUrl || raw.source_url || defaultUrl;
+  const sourceFetchedAt = u.sourceFetchedAt || raw.source_fetched_at || fetched;
+  const minutes =
+    typeof u.minutes === "number" && u.minutes > 0 ? u.minutes : 8;
+  const questions = (u.questions ?? []).map((q, i) => ({
+    ...q,
+    id: q.id || `q${i + 1}`,
+    type: q.type || "auswahl",
+    prompt: q.prompt || "",
+    correct: q.correct ?? "",
+    explanation: q.explanation || "",
+    sourceUrl: q.sourceUrl || sourceUrl,
+  }));
   return {
     ...u,
-    moduleId: u.moduleId || meta.module.id,
-    blockId: u.blockId || meta.block.id,
-    niveau: u.niveau || meta.module.niveau,
-    safetyFlag: u.safetyFlag ?? Boolean(meta.block.safety || meta.module.safety),
+    id: u.id || `${meta?.block.id ?? "u"}-u1`,
+    title: u.title || meta?.block.title || "Einheit",
+    minutes,
+    explanation: u.explanation || u.sections?.kern || "",
+    sourceUrl,
+    sourceFetchedAt,
+    moduleId: u.moduleId || meta?.module.id,
+    blockId: u.blockId || meta?.block.id,
+    niveau: u.niveau || meta?.module.niveau,
+    safetyFlag: u.safetyFlag ?? Boolean(meta?.block.safety || meta?.module.safety),
     variant: u.variant || variant,
+    questions,
   };
 }
 
