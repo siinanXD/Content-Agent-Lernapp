@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import { A11yProvider } from "@/components/a11y/a11y-provider";
 import { ServiceWorkerRegister } from "@/components/a11y/service-worker-register";
+import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -44,10 +45,12 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-[var(--color-bg-canvas)] text-[var(--color-text-primary)]">
-        <A11yProvider>
-          <ServiceWorkerRegister />
-          {children}
-        </A11yProvider>
+        <PostHogProvider>
+          <A11yProvider>
+            <ServiceWorkerRegister />
+            {children}
+          </A11yProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
