@@ -59,6 +59,7 @@ Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (
 - With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
 - Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
 - Verify tables (when keys present): `npm run supabase:verify`.
+- On this PR branch, regenerate the lockfile before `npm ci`: `npm run lock:assemble` (gzip chunks under `scripts/ap17-lock-chunks/`).
 
 ## Repo
 
