@@ -21,20 +21,23 @@ npm run dev
 
 Dev server: [http://127.0.0.1:43123](http://127.0.0.1:43123) (`npm run dev` → port 43123).
 
-### Learner UI (AP-08 draft)
+### Learner UI (AP-08 + AP-18 Didaktik)
 
-Playable path (Figma approved by Sinan 2026-10-02):
+Playable path (Figma approved by Sinan 2026-10-02; Didaktik D-31):
 
 1. `/` Start — Schlagwort + Lernvariante → Kurs erzeugen  
-2. `/lernpfad` — heutige Einheiten  
-3. `/einheit/unit-03` — Erklärung + Fragen  
-4. `/ergebnis` — Punkte / Serie / weiter  
-5. `/profil` — Fortschritt  
+2. `/lernpfad` — Module/Blöcke, Wiederholung, Prüfungsmodus  
+3. `/einheit/unit-03` — sections + alle 5 Fragetypen (+ Bildfragen)  
+4. `/wiederholung` — Leitner 1/3/7/14  
+5. `/pruefung` — schriftliche Teile aus `exam.gradedParts` (MAF PT/PP/WiSo)  
+6. `/ergebnis` — Punkte + Ampel je Gebiet  
+7. `/profil` — Fortschritt, Stapelgröße, Prüfungsreife  
 
-Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`.
+Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`. Phase-A SVGs: `npm run content:mermaid`.
 
 ```bash
 npm test
+npm run content:mermaid
 npm run test:a11y
 npm run test:lighthouse   # app must be running on :43123
 npm run hermes:dry-run    # AP-10 scaffold (no live Telegram)

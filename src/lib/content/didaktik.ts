@@ -84,10 +84,11 @@ export type ExamSet = {
   mapId: string;
   partId: string;
   durationMinutes: number;
-  /** How many questions the set should have; `questionIds` may be shorter when the pool is too small. */
-  targetCount: number;
   questionIds: string[];
-  byArea: Record<string, number>;
+  /** Set by buildExamSet(): how many questions the set should have; `questionIds` may be shorter when the pool is too small. */
+  targetCount?: number;
+  /** Set by buildExamSet(): questions per Gebiet. */
+  byArea?: Record<string, number>;
 };
 
 export type Ampel = "gruen" | "gelb" | "rot";
@@ -363,10 +364,10 @@ export function dueReviews(items: ReviewItem[], now: Date, max: number = REVIEWS
     .slice(0, max);
 }
 
+/** German alias of trafficLight() on a 0–100 scale. */
 export function ampel(percent: number): Ampel {
-  if (percent >= AMPEL.gruen) return "gruen";
-  if (percent >= AMPEL.gelb) return "gelb";
-  return "rot";
+  const light = trafficLight(percent / 100);
+  return light === "green" ? "gruen" : light === "yellow" ? "gelb" : "rot";
 }
 
 /** "120 Minuten" → 120; anything without a minute figure (e.g. "höchstens 7 Stunden") → null. */
@@ -463,6 +464,99 @@ export function buildExamSet(
     questionIds: chosen.map((q) => q.id),
     byArea,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Helpers used by the learner UI, the seed and the prompts (merged from the
+// parallel AP-18 branch; same thresholds as above, English light names).
+// ---------------------------------------------------------------------------
+
+/** Leitner intervals in days keyed by stage (same values as LEITNER_DAYS). */
+export const LEITNER_INTERVALS_DAYS = {
+  1: 1,
+  2: 3,
+  3: 7,
+  4: 14,
+} as const;
+
+/** Traffic-light thresholds for exam area readiness as ratios (AMPEL / 100). */
+export const EXAM_TRAFFIC = {
+  greenMin: AMPEL.gruen / 100,
+  yellowMin: AMPEL.gelb / 100,
+} as const;
+
+export type TrafficLight = "green" | "yellow" | "red";
+
+export function trafficLight(ratio: number): TrafficLight {
+  if (ratio >= EXAM_TRAFFIC.greenMin) return "green";
+  if (ratio >= EXAM_TRAFFIC.yellowMin) return "yellow";
+  return "red";
+}
+
+export function trafficLabel(light: TrafficLight): string {
+  if (light === "green") return "Prüfungsreif";
+  if (light === "yellow") return "Vertiefen";
+  return "Wiederholen";
+}
+
+/** Join sections into the legacy explanation string (fallback for old UI/data). */
+export function explanationFromSections(sections: UnitSections): string {
+  return [sections.einstieg, sections.kern, sections.beispiel, sections.merksatz]
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** Prefer sections when present; otherwise use explanation. */
+export function resolveExplanation(
+  unit: { sections?: UnitSections; explanation: string; explanationSimple?: string },
+  simpleLanguage: boolean,
+): string {
+  if (simpleLanguage && unit.explanationSimple?.trim()) {
+    return unit.explanationSimple.trim();
+  }
+  if (unit.sections) {
+    return explanationFromSections(unit.sections);
+  }
+  return unit.explanation;
+}
+
+/** Variant from block flags only (no title); deriveVariant() is the full rule. */
+export function variantFromBlock(flags: { rechnen?: boolean; safety?: boolean; topics?: string[] }): UnitVariant {
+  if (flags.safety) return "sicherheit";
+  if (flags.rechnen) return "rechnen";
+  const topics = (flags.topics ?? []).join(" ").toLowerCase();
+  if (/\b(planen|durchführen|in betrieb|ablauf|rüsten|umrüsten|verfahren)\b/.test(topics)) {
+    return "ablauf";
+  }
+  return "standard";
+}
+
+/**
+ * Target question counts for exam parts by part id, falling back to ~4 min/question.
+ * examQuestionCount() is the duration-only rule; both agree for PT/PP/WISO/T1/T2A/T2C.
+ */
+export function examQuestionTarget(partId: string, durationMinutes: number | null): number {
+  const defaults: Record<string, number> = {
+    PT: 30,
+    PP: 15,
+    WISO: 15,
+    ZP: 15,
+    T1: 25,
+    T2: 40,
+    T2A: 40,
+    T2C: 15,
+  };
+  if (defaults[partId] != null) return defaults[partId]!;
+  if (durationMinutes != null && durationMinutes > 0) {
+    return examQuestionCount(durationMinutes);
+  }
+  return 15;
+}
+
+export function altTextOk(alt: string): boolean {
+  const t = alt.trim();
+  return t.length > 0 && t.length <= LIMITS.altChars;
 }
 
 function addDays(d: Date, days: number): Date {

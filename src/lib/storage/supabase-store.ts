@@ -144,6 +144,9 @@ async function loadCourse(id: string): Promise<Course | undefined> {
             correct: q.correct,
             explanation: q.explanation,
             sourceUrl: q.source_url,
+            // Legacy rows predate AP-18; callers treat missing level/examAreas as optional.
+            level: undefined,
+            examAreas: undefined,
           })),
         }),
       ),

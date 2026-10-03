@@ -1,7 +1,14 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const routes = ["/", "/lernpfad", "/profil"];
+const routes = [
+  "/",
+  "/lernpfad",
+  "/profil",
+  "/einheit/unit-03",
+  "/wiederholung",
+  "/pruefung",
+];
 
 for (const route of routes) {
   test(`axe: no critical/serious on ${route}`, async ({ page }) => {
@@ -10,7 +17,7 @@ for (const route of routes) {
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();
     const violations = results.violations.filter((v) =>
-      ["critical", "serious"].includes(v.impact ?? "")
+      ["critical", "serious"].includes(v.impact ?? ""),
     );
     expect(violations, JSON.stringify(violations, null, 2)).toHaveLength(0);
   });

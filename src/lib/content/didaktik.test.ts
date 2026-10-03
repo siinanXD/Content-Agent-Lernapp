@@ -226,7 +226,7 @@ describe("AP-18 didactics contract (docs/content/DIDAKTIK.md)", () => {
     assert.equal(set.questionIds.length, 30);
     assert.equal(new Set(set.questionIds).size, 30);
     assert.equal(set.durationMinutes, 120);
-    for (const area of areas) assert.equal(set.byArea[area], 5, `${area} gets an equal share`);
+    for (const area of areas) assert.equal(set.byArea?.[area], 5, `${area} gets an equal share`);
 
     const recent = buildExamSet(metall, "PT", pool, { recentQuestionIds: set.questionIds })!;
     assert.ok(recent.questionIds.every((id) => !set.questionIds.includes(id)));

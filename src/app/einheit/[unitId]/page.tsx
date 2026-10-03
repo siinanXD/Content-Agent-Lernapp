@@ -3,12 +3,22 @@
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { OptionChoice } from "@/components/ui/option-choice";
 import { MobileShell } from "@/components/learner/mobile-shell";
+import { UnitImageView } from "@/components/learner/unit-image";
+import {
+  QuestionPanel,
+  type AnswerResult,
+} from "@/components/learner/question-panel";
 import { useA11y } from "@/components/a11y/a11y-provider";
 import { speakGerman } from "@/lib/a11y/preferences";
-import { getUnit } from "@/lib/learner/playable-path";
+import { getUnit, unitExplanation } from "@/lib/learner/playable-path";
 import { loadSession, saveSession } from "@/lib/learner/session";
+import {
+  loadStack,
+  markCorrect,
+  markWrong,
+  saveStack,
+} from "@/lib/learner/leitner";
 
 export default function EinheitPage() {
   const params = useParams<{ unitId: string }>();
@@ -16,9 +26,10 @@ export default function EinheitPage() {
   const { prefs } = useA11y();
   const unit = useMemo(() => getUnit(params.unitId), [params.unitId]);
   const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [lastCorrect, setLastCorrect] = useState(false);
+  const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
 
   if (!unit) {
     return (
@@ -36,17 +47,36 @@ export default function EinheitPage() {
     );
   }
 
-  const current = unit;
-  const question = current.questions[index];
-  const total = current.questions.length;
-  const explanation = prefs.simpleLanguage
-    ? "Vor dem Arbeiten: Strom aus. Gegen Wiedereinschalten sichern. Prüfen, dass kein Strom da ist. Schutzkleidung tragen."
-    : current.explanation;
+  const question = unit.questions[index];
+  const total = unit.questions.length;
+  const explanation = unitExplanation(unit, prefs.simpleLanguage);
 
-  function checkAnswer() {
-    if (!question || !selected || revealed) return;
-    if (selected === question.correct) setCorrectCount((c) => c + 1);
+  function applyLeitner(qid: string, correct: boolean, anwenden: boolean) {
+    let stack = loadStack();
+    stack = correct
+      ? markCorrect(stack, qid, { anwenden })
+      : markWrong(stack, qid);
+    saveStack(stack);
+  }
+
+  function onChecked(result: AnswerResult) {
+    if (!question) return;
+    if (result.selfChecked) {
+      if (result.correct) setCorrectCount((c) => c + 1);
+      setLastCorrect(result.correct);
+      setAwaitSelfCheck(false);
+      applyLeitner(question.id, result.correct, question.level === "anwenden");
+      return;
+    }
+    if (revealed) return;
     setRevealed(true);
+    setLastCorrect(result.correct);
+    if (question.sampleSolution && !question.choices?.length) {
+      setAwaitSelfCheck(true);
+      return;
+    }
+    if (result.correct) setCorrectCount((c) => c + 1);
+    applyLeitner(question.id, result.correct, question.level === "anwenden");
   }
 
   function finish(scored: number) {
@@ -61,64 +91,74 @@ export default function EinheitPage() {
       ...session,
       totalPoints: session.totalPoints + points,
       lastResult: {
-        unitId: current.id,
-        unitTitle: current.title,
+        unitId: unit!.id,
+        unitTitle: unit!.title,
         correct: scored,
         total,
         points,
+        kind: "unit",
       },
     });
     router.push("/ergebnis");
   }
 
   function next() {
-    if (!question) return;
+    if (!question || awaitSelfCheck) return;
     if (index + 1 >= total) {
       finish(correctCount);
       return;
     }
     setIndex((i) => i + 1);
-    setSelected(null);
     setRevealed(false);
-  }
-
-  function optionState(choice: string) {
-    if (!revealed) return selected === choice ? "selected" : "default";
-    if (choice === question!.correct) return "correct";
-    if (choice === selected) return "wrong";
-    return "default";
+    setLastCorrect(false);
+    setAwaitSelfCheck(false);
   }
 
   return (
     <MobileShell>
       <header className="px-6 pb-2 pt-12">
         <p className="text-sm text-[var(--color-text-secondary)]">
-          Einheit {current.indexLabel} · {current.minutes} Min
+          Einheit {unit.indexLabel} · {unit.minutes} Min · {unit.variant}
         </p>
         <h1
           className="mt-1 text-[26px] font-bold text-[var(--color-text-primary)]"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {current.title}
+          {unit.title}
         </h1>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+          {unit.moduleTitle} · {unit.blockTitle}
+        </p>
       </header>
 
       <section className="px-6 py-2">
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
-          <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-            Erklärung
-          </p>
-          <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-primary)]">
-            {explanation}
-          </p>
+          {unit.sections ? (
+            <div className="flex flex-col gap-3">
+              <SectionBlock label="Einstieg" text={unit.sections.einstieg} />
+              <SectionBlock label="Kern" text={unit.sections.kern} />
+              <SectionBlock label="Beispiel" text={unit.sections.beispiel} />
+              <SectionBlock label="Merksatz" text={unit.sections.merksatz} />
+            </div>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+                Erklärung
+              </p>
+              <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-primary)]">
+                {explanation}
+              </p>
+            </>
+          )}
+          {unit.image ? <UnitImageView image={unit.image} /> : null}
           <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
-            {current.sourceLabel}
+            {unit.sourceLabel}
           </p>
           {prefs.readAloud ? (
             <Button
               variant="secondary"
               className="mt-3"
-              onClick={() => speakGerman(`${current.title}. ${explanation}`)}
+              onClick={() => speakGerman(`${unit.title}. ${explanation}`)}
             >
               Erklärung vorlesen
             </Button>
@@ -129,7 +169,7 @@ export default function EinheitPage() {
       {question ? (
         <section className="flex flex-1 flex-col gap-3 px-6 pb-8 pt-4">
           <p className="text-sm text-[var(--color-text-secondary)]">
-            Frage {index + 1} von {total}
+            Frage {index + 1} von {total} · {question.type} · {question.level}
           </p>
           <h2
             className="text-lg font-medium leading-6 text-[var(--color-text-primary)]"
@@ -137,28 +177,39 @@ export default function EinheitPage() {
           >
             {question.prompt}
           </h2>
-          <div className="flex flex-col gap-2.5">
-            {question.choices.map((choice) => (
-              <OptionChoice
-                key={choice}
-                label={choice}
-                state={optionState(choice)}
-                disabled={revealed}
-                onSelect={() => setSelected(choice)}
-              />
-            ))}
-          </div>
-          {!revealed ? (
-            <Button onClick={checkAnswer} disabled={!selected} className="mt-2">
-              Antwort prüfen
-            </Button>
-          ) : (
-            <Button onClick={next} className="mt-2">
-              {index + 1 >= total ? "Ergebnis anzeigen" : "Weiter"}
-            </Button>
-          )}
+          <QuestionPanel
+            key={question.id}
+            question={question}
+            revealed={revealed}
+            onChecked={onChecked}
+          />
+          {revealed && !awaitSelfCheck ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm leading-5 text-[var(--color-text-secondary)]" role="status">
+                {lastCorrect ? "Richtig. " : "Nicht ganz. "}
+                {question.explanation}
+                {question.sourceUrl ? ` Quelle: ${question.sourceUrl}` : ""}
+              </p>
+              <Button onClick={next} className="mt-1">
+                {index + 1 >= total ? "Ergebnis anzeigen" : "Weiter"}
+              </Button>
+            </div>
+          ) : null}
         </section>
       ) : null}
     </MobileShell>
+  );
+}
+
+function SectionBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <div>
+      <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+        {label}
+      </p>
+      <p className="mt-1 text-[15px] leading-6 text-[var(--color-text-primary)]">
+        {text}
+      </p>
+    </div>
   );
 }

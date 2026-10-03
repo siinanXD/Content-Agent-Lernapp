@@ -17,7 +17,9 @@
     "hermes:dry-run": "node --import tsx scripts/hermes-dry-run.mjs",
     "pilot:maf": "node --import tsx scripts/pilot-maf.mjs",
     "supabase:verify": "node scripts/verify-supabase-schema.mjs",
-    "lock:assemble": "node scripts/assemble-package-lock.mjs"
+    "lock:assemble": "node scripts/assemble-package-lock.mjs",
+    "content:mermaid": "node scripts/mermaid-to-svg.mjs",
+    "prebuild": "node scripts/mermaid-to-svg.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
@@ -36,6 +38,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "lighthouse": "^12.8.2",
+    "mermaid": "^11.17.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

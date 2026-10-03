@@ -34,13 +34,17 @@ Storage: `getStorage()` → Supabase when `SUPABASE_URL` + `SUPABASE_SERVICE_ROL
 
 Mocks respond with `"mock": true` until live agents replace them. Until AP-10, pipeline starts are manual.
 
-## App screens (AP-07/08)
+## App screens (AP-07/08 + AP-18)
 
 1. Start — keyword + learning variant
-2. Path — map of units + today’s goal
-3. Unit — explanation + questions
-4. Result — score, streak, tomorrow
-5. Profile — % progress to exam
+2. Path — modules/blocks + today’s goal (reviews first)
+3. Unit — didactic sections + five question types (+ image questions)
+4. Review — Leitner stack (1/3/7/14)
+5. Exam — written parts from `exam.gradedParts` (sample solution only for open tasks)
+6. Result — score, streak, traffic light per exam area
+7. Profile — progress, review stack size, exam readiness
+
+Didaktik contract: `docs/content/DIDAKTIK.md` · D-31. Phase-A images: `npm run content:mermaid` → `public/generated/`.
 
 Figma is the only source for colors, spacing, components.
 
