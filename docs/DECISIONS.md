@@ -145,4 +145,15 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 ### D-19 — AP-07 Figma Design-System + Token-Spiegel (Freigabe Sinan)
 
 - **Links:** [Figma: Content-Agent-Lernapp Design](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz); `docs/design/FIGMA.md`; `docs/design/tokens.json`; `src/app/globals.css`; Linear [SIN-185](https://linear.app/sinan-kahraman/issue/SIN-185/ap-07-figma-design-system-und-5-screens)
-- **Entscheidung:** Design-System in Figma angelegt (Color/Spacing/Radius-Variablen; Komponenten Button, Input, Progress, OptionChoice; 5 Screens Start→Profil). CSS-Token-Spiegel im Repo. Visuelle Richtung: Teal `#0B5F6E` / Hero `#0A3D4A` / Accent Messing `#A67C00` / Canvas `#EAF0F4`; Typo Space Grotesk + IBM Plex Sans; WCAG 2.2 AA ≥4,5:1. Bewusst ohne Cream/Terracotta- und Lila-Klischees. **Keine automatische Done-Markierung** — *
+- **Entscheidung:** Design-System in Figma angelegt (Color/Spacing/Radius-Variablen; Komponenten Button, Input, Progress, OptionChoice; 5 Screens Start→Profil). CSS-Token-Spiegel im Repo. Visuelle Richtung: Teal `#0B5F6E` / Hero `#0A3D4A` / Accent Messing `#A67C00` / Canvas `#EAF0F4`; Typo Space Grotesk + IBM Plex Sans; WCAG 2.2 AA ≥4,5:1. Bewusst ohne Cream/Terracotta- und Lila-Klischees. **Keine automatische Done-Markierung** — **Freigabe durch Sinan erforderlich**, bevor AP-08 die Datei als verbindlich nutzt.
+- **Warum:** PRODUCT.md verlangt einmaliges Figma der 5 Hauptscreens und menschliche Freigabe; Code-Agenten sollen Tokens nicht erfinden.
+
+### D-20 — AP-08 Learner UI: playable path from approved Figma
+
+- **Links:** Figma `0SWGDO2ioBD3MyXiAnrbRz`; routes `/`, `/lernpfad`, `/einheit/[unitId]`, `/ergebnis`, `/profil`; Linear [SIN-186](https://linear.app/sinan-kahraman/issue/SIN-186/ap-08-5-hauptscreens-spielbar)
+- **Entscheidung:** App Router screens implementieren die 5 freigegebenen Figma-Hauptscreens mit Token-Spiegel; spielbarer Pfad Start→Lernpfad→Einheit→Ergebnis (sessionStorage). Inhalt aus MAF-Sicherheit-Seed / AO-RLP-Copy, keine IHK-Aufgaben.
+- **Warum:** SIN-186 Akzeptanz = eine Einheit spielbar; Design nach Sinan-Freigabe verbindlich.
+
+### D-21 — AP-09 a11y gates + offline shell
+
+- **Links:** [axe-core](https://github.com/dequelabs/axe-core); Playwright `@axe-core/playwright`; Lighthouse accessi
