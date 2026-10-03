@@ -1,1 +1,1 @@
-$file:/tmp/pr-clean-bundled/contents/b1-06.txt
+$file:/tmp/pr-clean-bundled/b1raw/06.txt
