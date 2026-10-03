@@ -1,1 +1,1 @@
-PLACEHOLDER
+$file:/workspace/Content-Agent-Lernapp/src/lib/generate/maf-lernfeld-seed.ts
