@@ -1,1 +1,1 @@
-$file:/workspace/Content-Agent-Lernapp/src/app/lernpfad/page.tsx
+PLACEHOLDER_WILL_REPLACE
