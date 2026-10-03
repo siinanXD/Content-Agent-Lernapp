@@ -234,3 +234,8 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 - **Warum:** Langfuse Cloud schaltet Legacy-Ingest am 2026-11-16 ab; observations-first Modell braucht OTEL + propagated attributes.
 
 
+### D-35 — Sentry EU + PostHog EU for production errors and Einheit usage
+
+- **Links:** [Sentry Next.js](https://docs.sentry.io/platforms/javascript/guides/nextjs/); [Sentry Data Storage Location](https://docs.sentry.io/organization/data-storage-location/) (EU → `ingest.de.sentry.io`); [PostHog Next.js](https://posthog.com/docs/libraries/next-js); PostHog Cloud EU host `https://eu.i.posthog.com`; Linear [SIN-203](https://linear.app/sinan-kahraman/issue/SIN-203/sentry-und-posthog-in-content-agent-lernapp-einbauen); runbook `docs/ops/SENTRY-POSTHOG.md`
+- **Entscheidung:** (1) **Sentry** via `@sentry/nextjs` — `instrumentation.ts` / `instrumentation-client.ts` / `sentry.server.config.ts` / `sentry.edge.config.ts` / `withSentryConfig` in `next.config.ts` / `global-error.tsx`. DSN nur über `NEXT_PUBLIC_SENTRY_DSN`; fehlt der Wert → SDK bleibt No-Op. Source-Maps nur mit `SENTRY_AUTH_TOKEN` (+ `SENTRY_ORG` / `SENTRY_PROJECT`). (2) **PostHog** Cloud EU: Provider in `layout.tsx`, Events in `src/lib/analytics.ts` (`unit_started`, `unit_completed`, `question_answered`) verdrahtet in der Einheit-Seite. Keys `NEXT_PUBLIC_POSTHOG_KEY` + `NEXT_PUBLIC_POSTHOG_HOST` optional (Default-Host EU). (3) Keine Secrets im Repo; Live-Verify nach Vercel-Env durch Sinan.
+- **Warum:** SIN-203 Akzeptanz — Fehler vor Nutzer-Meldungen, Nutzung je Lerneinheit; Builds/Tests ohne Observability-Keys müssen grün bleiben (parallel zu SIN-201 CI).
