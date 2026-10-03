@@ -32,43 +32,4 @@ Injizierte Secret-Namen:
 | `LANGFUSE_PUBLIC_KEY` | gesetzt | Prefix `pk-lf`; Projekt `Content AGent` auf EU-Host → 200 |
 | `LANGFUSE_SECRET_KEY` | gesetzt | Prefix `sk-lf` |
 | `LANGFUSE_BASE_URL` | gesetzt | offizieller EU-Host (Ireland); US-Host lehnt dieselben Keys mit 401 ab |
-| `SUPABASE_URL` | **gesetzt** | Host `*.supabase.co`; Auth-Health → 200 |
-| `SUPABASE_ANON_KEY` | **gesetzt** | JWT-Form; Auth-Health mit Anon → 200 |
-| `SUPABASE_SERVICE_ROLE_KEY` | gesetzt | JWT-Form; `/rest/v1/` → 200 |
-| `RAILWAY_API_TOKEN` | gesetzt | UUID-Form; allein nicht genug für Hermes |
-| `TELEGRAM_BOT_TOKEN` | **fehlt** | blockiert AP-10 Live |
-| `TELEGRAM_CHAT_ID` | **fehlt** | blockiert AP-10 Live |
-| `HERMES_APP_BASE_URL` | **fehlt** | blockiert Wochenjob gegen die App |
-| `NEXT_PUBLIC_SUPABASE_URL` | optionaler Alias | nicht nötig, solange Server `SUPABASE_URL` liest |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | optionaler Alias | nicht nötig, solange Server `SUPABASE_ANON_KEY` liest |
-
-Optional für AP-16 Hermes-Alerts (fehlen = Kanal überspringen, Package bleibt grün): `LINEAR_API_KEY`, `LINEAR_TEAM_ID`, `LINEAR_PROJECT_ID`.
-
-Nicht erwartet: `AI_GATEWAY_API_KEY`, `FIGMA_ACCESS_TOKEN`, `HF_TOKEN` (MCP ist separat authentifiziert).
-
-## Vercel (`content-agent`)
-
-Gleiche acht Keys wie die App-Secrets, **ohne** `RAILWAY_API_TOKEN`. Target nur **production + preview**, nicht **development**. Werte nicht entschlüsselt.
-
-Supabase auf Vercel: `SUPABASE_URL` und `SUPABASE_ANON_KEY` sind gesetzt (kein fehlendes Secret). `NEXT_PUBLIC_*` wäre nur ein Client-Alias.
-
-Noch nicht auf Vercel (gegenüber Hermes-Vorlage / Cloud-Agent): `ANTHROPIC_WORKSPACE_ID` (nachziehen, damit Preview/Production denselben Workspace wie der Agent nutzen), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL`. `RAILWAY_API_TOKEN` gehört zum Worker, nicht zur App.
-
-## Railway / Hermes
-
-Vorlage: `docs/ops/railway.env.example`. Live-Deploy bleibt blockiert, bis Telegram-Bot und Chat-ID gesetzt sind. AP-16 Quellen-Monitor: Live-HTTP auf Railway/GHA; Cloud-Agent nur offline/fixtures (`docs/ops/HERMES.md`).
-
-## Was noch gesetzt werden muss
-
-1. Vercel: `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) an Production/Preview angleichen (Cloud-Agent hat es bereits). Console-API-Credits für AP-15 Batch budgetieren — Max-Abo deckt das nicht (D-33).
-2. `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HERMES_APP_BASE_URL` für AP-10 (Railway EU).
-3. Optional AP-16: `LINEAR_API_KEY` + `LINEAR_TEAM_ID` (+ `LINEAR_PROJECT_ID`) für Issues „Quelle geändert: \<Map\>“.
-4. Nicht nötig: extra Supabase-URL/Anon-Key. `SUPABASE_URL` + `SUPABASE_ANON_KEY` sind vorhanden. `NEXT_PUBLIC_*` nur, wenn der Browser sie direkt lesen soll. Niemals `SUPABASE_SERVICE_ROLE_KEY` als `NEXT_PUBLIC_`.
-
-## Check
-
-```bash
-node scripts/check-env.mjs
-```
-
-Gibt nur `SET` / `EMPTY` / `MISSING` plus Länge aus, keine Werte.
+| `LANGFUSE_TRACING_ENVIRONMENT` | optional 
