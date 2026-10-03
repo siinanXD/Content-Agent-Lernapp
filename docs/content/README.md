@@ -29,7 +29,7 @@ Stand 2026-10-03 · Status aller Maps: **Entwurf, Freigabe durch Sinan offen** �
 
 ## Aufbau einer Map
 
-Wie eine Einheit innen aufgebaut ist (Erklärung, Fragestufen, Wiederholung, Prüfungsmodus, Bilder), steht in [`DIDAKTIK.md`](DIDAKTIK.md) (AP-18, D-31).
+Wie eine Einheit innen aufgebaut ist (Erklärung, Fragestufen, Wiederholung, Prüfungsmodus, Bilder), steht in [`DIDAKTIK.md`](DIDAKTIK.md) (AP-18, D-31). Der Vertrag dazu ist `src/lib/content/didaktik.ts`, eine Beispiel-Einheit liegt in `beispiele/`.
 
 1. **Modul** = Lernfeld (Schule), Kernbereich aus der Ausbildungsordnung (Betrieb), Querschnitt oder Prüfungstraining
 2. **Block** = Themenblock mit Quellen-IDs (Ausbildungsordnung/Anlage und/oder Rahmenlehrplan)

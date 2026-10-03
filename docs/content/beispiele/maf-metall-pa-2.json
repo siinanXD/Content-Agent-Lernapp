@@ -1,0 +1,146 @@
+{
+  "$comment": "Beispiel-Einheit nach docs/content/DIDAKTIK.md (AP-18, D-31). Selbst verfasst aus Anlage II.A Nr. 5 MaschFüAusbV und § 9; keine IHK-Aufgaben. Wird in src/lib/content/didaktik.test.ts gegen validateUnit() geprüft und dient AP-14 als Vorlage für den Generate-Prompt.",
+  "id": "maf-metall-PA-2-u1",
+  "title": "Rüsten, Umrüsten und Rüstzeit",
+  "minutes": 8,
+  "moduleId": "PA",
+  "blockId": "PA-2",
+  "variant": "rechnen",
+  "sections": {
+    "einstieg": "Du sollst die Anlage von Teil A auf Teil B umrüsten, und die nächste Schicht wartet auf die ersten Gutteile.",
+    "kern": "Rüsten heißt: Du bereitest Maschine und Anlage für einen neuen Auftrag vor. Dazu gehören Werkzeug wechseln, Vorrichtungen spannen, Programm laden, Parameter einstellen und das erste Teil prüfen. Umrüsten ist dasselbe beim Wechsel von einem Produkt auf ein anderes. Die Rüstzeit ist die Zeit, in der die Anlage kein Stück fertigt. Sie gehört zur Auftragszeit, aber nicht zur Stückzeit. Die Stückzeit ist die Zeit je Teil. Die Auftragszeit für ein Los ist Rüstzeit plus Stückzahl mal Stückzeit. Je kleiner das Los, desto stärker fällt die Rüstzeit ins Gewicht. Darum rüstest du nach dem Rüstplan, legst Werkzeuge vorher bereit und dokumentierst den Rüstvorgang.",
+    "beispiel": "Rüstzeit 20 Minuten, Stückzeit 2 Minuten, Los 100 Stück. Auftragszeit = 20 min + 100 × 2 min = 220 Minuten. Bei einem Los von 10 Stück sind es 20 + 20 = 40 Minuten; die Rüstzeit macht dann die Hälfte aus.",
+    "merksatz": "Rüstzeit ist Zeit ohne Stück, darum so kurz wie möglich."
+  },
+  "explanation": "Rüsten bereitet die Anlage für einen neuen Auftrag vor; Umrüsten ist der Wechsel von einem Produkt auf ein anderes. Die Rüstzeit ist Zeit ohne gefertigtes Stück. Auftragszeit = Rüstzeit + Stückzahl × Stückzeit. Rüsten erfolgt nach Rüstplan und wird dokumentiert (Anlage II.A Nr. 5 MaschFüAusbV).",
+  "explanationSimple": "Rüsten heißt: die Anlage für einen neuen Auftrag vorbereiten. In dieser Zeit entsteht kein Teil. Darum soll die Rüstzeit kurz sein. Auftragszeit = Rüstzeit + Stückzahl mal Stückzeit.",
+  "image": {
+    "src": "generated/maf-metall/pa-2-ruestvorgang.svg",
+    "alt": "Flussdiagramm Rüstvorgang: Rüstplan lesen, Werkzeuge bereitlegen, Anlage sichern, umrüsten, Erstteil prüfen, freigeben",
+    "kind": "flow",
+    "source": {
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "license": "eigene Erzeugung aus den Schritten der Einheit (Mermaid), CC0-1.0"
+    },
+    "generatedFrom": "flowchart TD\n  A[Auftrag und Rüstplan lesen] --> B[Werkzeuge und Vorrichtungen bereitlegen]\n  B --> C[Anlage stoppen und sichern]\n  C --> D[Umrüsten nach Rüstplan]\n  D --> E[Erstteil prüfen]\n  E --> F[Freigabe und Rüstvorgang dokumentieren]"
+  },
+  "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+  "sourceFetchedAt": "2026-10-03T00:00:00.000Z",
+  "questions": [
+    {
+      "id": "maf-metall-PA-2-u1-q1",
+      "type": "auswahl",
+      "level": "erinnern",
+      "prompt": "Was ist die Rüstzeit?",
+      "choices": [
+        "Die Zeit, in der die Anlage für einen Auftrag vorbereitet wird und kein Stück fertigt.",
+        "Die Zeit je gefertigtem Teil.",
+        "Die Pause zwischen zwei Schichten.",
+        "Die Zeit für die jährliche Wartung der Anlage."
+      ],
+      "correct": "Die Zeit, in der die Anlage für einen Auftrag vorbereitet wird und kein Stück fertigt.",
+      "explanation": "Rüsten gehört laut Anlage II.A Nr. 5 zum Vorbereiten der Produktionsanlage. In der Rüstzeit entsteht kein Teil; die Zeit je Teil heißt Stückzeit.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "examAreas": ["PT-d"]
+    },
+    {
+      "id": "maf-metall-PA-2-u1-q2",
+      "type": "lueckentext",
+      "level": "erinnern",
+      "prompt": "Die ___ ist die Zeit je gefertigtem Teil, die ___ ist die Zeit zum Vorbereiten der Anlage.",
+      "blanks": ["Stückzeit", "Rüstzeit", "Schichtzeit", "Wartezeit"],
+      "correct": ["Stückzeit", "Rüstzeit"],
+      "explanation": "Stückzeit = Zeit je Teil, Rüstzeit = Vorbereitungszeit ohne Teil. Beide zusammen ergeben mit der Stückzahl die Auftragszeit (Anlage II.A Nr. 5).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "examAreas": ["PP-a"]
+    },
+    {
+      "id": "maf-metall-PA-2-u1-q3",
+      "type": "zuordnen",
+      "level": "verstehen",
+      "prompt": "Ordne die Begriffe ihrer Erklärung zu.",
+      "pairs": [
+        ["Rüsten", "Anlage für einen neuen Auftrag vorbereiten"],
+        ["Umrüsten", "Von einem Produkt auf ein anderes wechseln"],
+        ["Stückzeit", "Zeit je gefertigtem Teil"],
+        ["Auftragszeit", "Rüstzeit plus Stückzahl mal Stückzeit"]
+      ],
+      "correct": [
+        "Anlage für einen neuen Auftrag vorbereiten",
+        "Von einem Produkt auf ein anderes wechseln",
+        "Zeit je gefertigtem Teil",
+        "Rüstzeit plus Stückzahl mal Stückzeit"
+      ],
+      "explanation": "Rüsten und Umrüsten beschreiben das Vorbereiten der Anlage (Anlage II.A Nr. 5). Stückzeit und Auftragszeit sind die Zeitgrößen, mit denen du den Auftrag planst.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "examAreas": ["PT-d", "PP-a"]
+    },
+    {
+      "id": "maf-metall-PA-2-u1-q4",
+      "type": "auswahl",
+      "level": "verstehen",
+      "prompt": "Warum fällt die Rüstzeit bei kleinen Losen stärker ins Gewicht?",
+      "choices": [
+        "Weil sie auf weniger Stücke verteilt wird.",
+        "Weil kleine Teile länger dauern.",
+        "Weil die Stückzeit bei kleinen Losen steigt.",
+        "Weil die Anlage bei kleinen Losen öfter gewartet wird."
+      ],
+      "correct": "Weil sie auf weniger Stücke verteilt wird.",
+      "explanation": "Die Rüstzeit fällt einmal je Los an. Bei 10 Stück trägt jedes Teil ein Zehntel der Rüstzeit, bei 100 Stück nur ein Hundertstel (Beispiel der Einheit, Anlage II.A Nr. 5).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "examAreas": ["PP-a"]
+    },
+    {
+      "id": "maf-metall-PA-2-u1-q5",
+      "type": "reihenfolge",
+      "level": "verstehen",
+      "prompt": "Bringe die Schritte des Rüstvorgangs in die richtige Reihenfolge.",
+      "steps": [
+        "Erstteil prüfen",
+        "Anlage stoppen und sichern",
+        "Auftrag und Rüstplan lesen",
+        "Freigabe und Rüstvorgang dokumentieren",
+        "Umrüsten nach Rüstplan",
+        "Werkzeuge und Vorrichtungen bereitlegen"
+      ],
+      "correct": [
+        "Auftrag und Rüstplan lesen",
+        "Werkzeuge und Vorrichtungen bereitlegen",
+        "Anlage stoppen und sichern",
+        "Umrüsten nach Rüstplan",
+        "Erstteil prüfen",
+        "Freigabe und Rüstvorgang dokumentieren"
+      ],
+      "explanation": "Erst planen und bereitlegen, dann die Anlage sichern und umrüsten, zuletzt das Erstteil prüfen und freigeben. So verlangt es Anlage II.A Nr. 5 (Rüsten nach Vorgaben, Dokumentation).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "examAreas": ["PT-d", "PRAK-1"]
+    },
+    {
+      "id": "maf-metall-PA-2-u1-q6",
+      "type": "rechnen",
+      "level": "anwenden",
+      "prompt": "Rüstzeit 30 Minuten, Stückzeit 1,5 Minuten, Los 200 Stück. Wie lang ist die Auftragszeit in Minuten?",
+      "correct": "330 Minuten",
+      "explanation": "Auftragszeit = Rüstzeit + Stückzahl × Stückzeit = 30 min + 200 × 1,5 min = 30 + 300 = 330 Minuten. Die Rüstzeit zählt einmal, die Stückzeit je Teil (Anlage II.A Nr. 5).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "examAreas": ["PP-a"]
+    },
+    {
+      "id": "maf-metall-PA-2-u1-q7",
+      "type": "auswahl",
+      "level": "anwenden",
+      "prompt": "Du hast ohne Rüstplan gerüstet und das falsche Werkzeug gewählt. Das Erstteil ist Ausschuss. Was ist der richtige nächste Schritt?",
+      "choices": [
+        "Anlage stoppen, Rüstplan prüfen, Werkzeug tauschen und ein neues Erstteil prüfen.",
+        "Weiterfertigen und die Teile später aussortieren.",
+        "Die Stückzeit erhöhen, damit die Teile besser werden.",
+        "Den Fehler erst bei der Übergabe an die nächste Schicht melden."
+      ],
+      "correct": "Anlage stoppen, Rüstplan prüfen, Werkzeug tauschen und ein neues Erstteil prüfen.",
+      "explanation": "Die Abschlussprüfung verlangt laut § 9, dass du Produktionsanlagen nach Vorgaben rüstest und Abweichungen erkennst und beseitigst. Ausschuss wird sofort gestoppt, nie weitergefertigt.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+      "examAreas": ["PT-d", "PRAK-1"]
+    }
+  ]
+}

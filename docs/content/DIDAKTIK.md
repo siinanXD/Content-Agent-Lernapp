@@ -1,6 +1,6 @@
 # Didaktik-Vorgabe: Lernen, Üben, Prüfen (AP-18)
 
-Stand 2026-10-03 · Status: **Entwurf, Freigabe durch Sinan offen** · Linear [SIN-196](https://linear.app/sinan-kahraman/issue/SIN-196) · Entscheidung D-31 in `docs/DECISIONS.md` · gilt für alle Maps in `docs/content/*.json`.
+Stand 2026-10-03 · Status: **von Sinan freigegeben (2026-10-03), 18a umgesetzt** · Linear [SIN-196](https://linear.app/sinan-kahraman/issue/SIN-196) · Entscheidung D-31 in `docs/DECISIONS.md` · gilt für alle Maps in `docs/content/*.json`.
 
 Diese Vorgabe legt fest, wie eine Lerneinheit aufgebaut ist, wie Wissen abgefragt wird, wie Wiederholung funktioniert, wie die Prüfungsvorbereitung aussieht und wo Bilder eingesetzt werden. Sie ist die Schablone für den Inhalts-Agenten (AP-14, AP-15) und die Vorlage für die Screens (Figma, AP-07/AP-08). Ohne diese Schablone würden die 280 Einheiten der Phase A nach einer Form erzeugt, die danach geändert wird, und müssten neu erzeugt werden.
 
@@ -63,11 +63,13 @@ Pro Einheit 5 bis 8 Fragen, aufsteigend nach Stufe:
 Regeln je Fragetyp:
 
 - **Auswahl:** 4 Optionen, genau 1 richtig. Distraktoren plausibel und aus demselben Thema. Keine Optionen „alle“ oder „keine der genannten“.
-- **Zuordnen:** 3 bis 5 Paare, Begriffe links, Erklärungen rechts, höchstens 1 Ablenker.
-- **Lückentext:** 1 bis 2 Lücken, Wortliste mit 1 bis 2 Ablenkern. Die Lücke trägt den Fachbegriff, kein Füllwort.
-- **Reihenfolge:** 4 bis 6 Schritte, nur eindeutig geordnete Abläufe (Verordnung oder Rahmenlehrplan geben die Reihenfolge vor).
+- **Zuordnen:** 3 bis 5 Paare, Begriffe links, Erklärungen rechts, höchstens 1 Ablenker. Daten: `pairs` = Paare, `correct` = rechte Seiten in der Reihenfolge der linken.
+- **Lückentext:** 1 bis 2 Lücken, Wortliste mit 1 bis 2 Ablenkern. Die Lücke trägt den Fachbegriff, kein Füllwort. Daten: `blanks` = Wortliste, `correct` = Lösungen in Reihenfolge der Lücken.
+- **Reihenfolge:** 4 bis 6 Schritte, nur eindeutig geordnete Abläufe (Verordnung oder Rahmenlehrplan geben die Reihenfolge vor). Daten: `steps` = gemischt, `correct` = richtige Reihenfolge.
 - **Rechnen:** realistische Zahlen, Einheit Pflicht, Rechenweg in der Erklärung, Toleranz oder Rundungsregel angegeben.
 - **Bildfragen:** Bild-Auswahl („Welches Zeichen bedeutet …?“) und Bild-Zuordnung („Benenne die Teile 1 bis 5“) als Unterformen von Auswahl und Zuordnen (Abschnitt 7).
+
+Bei 5, 6 oder 8 Fragen wird der Mix 2/3/2 skaliert (5: 1/3/1, 6: 2/2/2, 8: 2/4/2), Abweichung je Stufe höchstens 1. Die Fragen stehen aufsteigend nach Stufe.
 
 **Rückmeldung:** sofort nach jeder Antwort. Erklärung höchstens 60 Wörter mit Quelle. Bei falscher Antwort steht die richtige Antwort mit Begründung dabei. Der Fragetypen-Mix je Modul kommt aus `questionMix` der Map.
 
@@ -95,7 +97,7 @@ Ein Prüfungssatz je Eintrag in `exam.gradedParts` der Map. Zeit und Gewichtung 
 | Industriekaufleute | Teil 2 schriftlich | 150 Minuten | 40 Fragen aus LF 8 bis 13 |
 | Industriekaufleute | WiSo | 60 Minuten | 15 Fragen |
 
-Annahme für die Fragenzahl: etwa 4 Minuten je Frage. Freigabe offen.
+Regel für die Fragenzahl: etwa 4 Minuten je Frage, aufgerundet auf volle 5 Fragen (`examQuestionCount()`). Prüfungssätze entstehen aus dem Fragenpool der Module mit passendem `examAreas`, gleichmäßig über die Gebiete verteilt (`buildExamSet()`).
 
 Regeln:
 
@@ -135,6 +137,8 @@ Regeln:
 Fertige Lösung für Flussdiagramme: [Mermaid](https://github.com/mermaid-js/mermaid) (MIT, 90 000 Sterne, aktiv) rendert Diagramme aus Text und liefert SVG. Läuft als Build-Schritt in Node, keine Laufzeit-Abhängigkeit in der App. Erfüllt die Regel „fertige Open-Source-Lösung vor Eigenbau“.
 
 ## 8. Schema-Erweiterung (Vorgabe für AP-14 und AP-15)
+
+Umgesetzt in `src/lib/content/didaktik.ts` (Typen, Grenzwerte `LIMITS`, `validateUnit()`, Leitner `leitnerNext()`, `ampel()`, `writtenExamParts()`, `buildExamSet()`), getestet in `didaktik.test.ts`. Eine vollständige Beispiel-Einheit liegt in [`beispiele/maf-metall-pa-2.json`](beispiele/maf-metall-pa-2.json) (Block PA-2, Variante rechnen, 7 Fragen, Flussdiagramm) und ist die Vorlage für den Generate-Prompt. Die v1-Typen `GeneratedUnit` und `GeneratedQuestion` tragen die neuen Felder optional, damit bestehende Seeds weiter laufen; `validateUnit()` verlangt sie für neuen Inhalt.
 
 ```ts
 type UnitSections = { einstieg: string; kern: string; beispiel: string; merksatz: string };
@@ -181,7 +185,7 @@ type ExamSet = { id: string; mapId: string; partId: string; durationMinutes: num
 
 | Schritt | Inhalt | Aufwand |
 | --- | --- | --- |
-| 18a | Vorgabe freigeben, Schema erweitern, Tests | 1 bis 2 Tage |
+| 18a | Vorgabe freigeben, Schema erweitern, Tests. **Erledigt 2026-10-03** (`didaktik.ts`, Beispiel-Einheit, 11 Tests) | 1 bis 2 Tage |
 | 18b | Einheit-Seite: 4 weitere Fragetypen und Bildfragen | 2 Tage |
 | 18c | Figma und Code: Lernpfad gruppiert, Wiederholung, Prüfungsmodus, Ergebnis je Gebiet | 3 Tage |
 | 18d | Bild-Pipeline: Mermaid als Build-Schritt, SVG-Vorlagen für Skizze und Diagramm, Lizenzfelder | 2 Tage |

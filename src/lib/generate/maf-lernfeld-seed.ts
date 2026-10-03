@@ -2,6 +2,8 @@
  * Seed content for one complete MAF Lernfeld (AP-05 acceptance).
  * Sources cite AO/RLP structure only — no IHK exam task copies, no PII.
  */
+import type { DidaktikQuestion, DidaktikUnit } from "../content/didaktik";
+
 export type QuestionType =
   | "auswahl"
   | "zuordnen"
@@ -9,6 +11,10 @@ export type QuestionType =
   | "reihenfolge"
   | "rechnen";
 
+/**
+ * v1 question plus the optional AP-18 fields (docs/content/DIDAKTIK.md, D-31).
+ * New content fills them; validateUnit() in src/lib/content/didaktik.ts enforces the rules.
+ */
 export type GeneratedQuestion = {
   id: string;
   type: QuestionType;
@@ -17,8 +23,9 @@ export type GeneratedQuestion = {
   correct: string | string[];
   explanation: string;
   sourceUrl: string;
-};
+} & Partial<Pick<DidaktikQuestion, "level" | "pairs" | "steps" | "blanks" | "image" | "examAreas">>;
 
+/** v1 unit plus the optional AP-18 fields; `explanation` stays as the fallback summary of `sections`. */
 export type GeneratedUnit = {
   id: string;
   title: string;
@@ -27,7 +34,7 @@ export type GeneratedUnit = {
   questions: GeneratedQuestion[];
   sourceUrl: string;
   sourceFetchedAt: string;
-};
+} & Partial<Pick<DidaktikUnit, "moduleId" | "blockId" | "variant" | "sections" | "explanationSimple" | "image" | "safetyFlag">>;
 
 export type GeneratedLernfeld = {
   id: string;
