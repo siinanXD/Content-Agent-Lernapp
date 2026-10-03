@@ -1,0 +1,551 @@
+{
+  "id": "maf-metall-curriculum-v1",
+  "title": "Maschinen- und Anlagenführer/in — Curriculum-Map Metall- und Kunststofftechnik",
+  "fetchedAt": "2026-10-03",
+  "occupation": {
+    "name": "Maschinen- und Anlagenführer/Maschinen- und Anlagenführerin",
+    "schwerpunkt": "Metall- und Kunststofftechnik",
+    "bibbCode": "51121",
+    "durationYears": 2,
+    "durationSource": {
+      "ref": "MaschFüAusbV § 2",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__2.html"
+    }
+  },
+  "scope": {
+    "inScope": "Zwei Ausbildungsjahre MAF Metall als Agent-Vorgabe (Plan/Generate).",
+    "outOfScope": [
+      "IHK-Prüfungsaufgaben (Originale)",
+      "Personendaten",
+      "Verbindliche Inhalte des optionalen Anschlussjahres (§ 10)"
+    ]
+  },
+  "unitBudgetRule": {
+    "description": "Digitale Einheiten-Zielzahl = RLP-Zeitrichtwert in Stunden / 10 (ganzzahlig). Deckt nicht Schulstunden 1:1 ab; steuert Agent-Produktion (5–10 Min./Einheit, 5–8 Fragen).",
+    "divisor": 10,
+    "year1Units": 32,
+    "year2Units": 28,
+    "totalLernfeldUnits": 60
+  },
+  "questionTypeMix": {
+    "auswahl": 0.4,
+    "zuordnen": 0.2,
+    "lueckentext": 0.15,
+    "reihenfolge": 0.15,
+    "rechnen": 0.1
+  },
+  "axes": {
+    "betrieb": {
+      "name": "Ausbildungsrahmenplan (Betrieb)",
+      "sourceRef": "MaschFüAusbV Anlage zu § 5",
+      "sourceUrl": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "year1WeeksTimed": 52,
+      "year2WeeksTimedMetall": 52,
+      "note": "Nr. 1–4 (Berufsbildung, Betrieb, Sicherheit, Umweltschutz) werden während der gesamten Ausbildung vermittelt und haben keine eigenen Wochen-Richtwerte."
+    },
+    "schule": {
+      "name": "KMK Rahmenlehrplan (Berufsschule)",
+      "mafRlpUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf",
+      "imRlpUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf",
+      "note": "KMK-RLP MAF verweist für Schwerpunkt Metall auf die ersten zwei Jahre des RLP Industriemechaniker (LF 1–9).",
+      "year1Hours": 320,
+      "year2Hours": 280
+    }
+  },
+  "examModules": {
+    "zwischenpruefung": {
+      "ref": "MaschFüAusbV § 8",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html",
+      "timing": "Beginn des zweiten Ausbildungsjahres",
+      "scope": "Anlage 1. Ausbildungsjahr + wesentlicher Berufsschullehrstoff",
+      "practicalMaxHours": 3,
+      "writtenMaxMinutes": 60
+    },
+    "abschlusspruefung": {
+      "ref": "MaschFüAusbV § 9",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+      "practicalMaxHours": 7,
+      "writtenWeights": {
+        "produktionstechnik": 0.5,
+        "produktionsplanung": 0.3,
+        "wiso": 0.2
+      },
+      "writtenMaxMinutes": {
+        "produktionstechnik": 120,
+        "produktionsplanung": 60,
+        "wiso": 60
+      }
+    }
+  },
+  "anschlussmodul": {
+    "optional": true,
+    "ref": "MaschFüAusbV § 10",
+    "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__10.html",
+    "title": "Optionale Fortsetzung (kein Kursinhalt MAF)",
+    "note": "Erfolgreicher MAF-Abschluss kann u. a. im 3./4. Jahr Industriemechaniker fortgesetzt werden. Nicht Teil des zweijährigen MAF-Kurses; nur als Hinweis für Lernende.",
+    "exampleTargetsMetall": [
+      "Industriemechaniker/Industriemechanikerin",
+      "Zerspanungsmechaniker/Zerspanungsmechanikerin",
+      "Werkzeugmechaniker/Werkzeugmechanikerin",
+      "Fertigungsmechaniker/Fertigungsmechanikerin",
+      "Feinwerkmechaniker/Feinwerkmechanikerin"
+    ]
+  },
+  "years": [
+    {
+      "year": 1,
+      "label": "1. Ausbildungsjahr — Berufliche Grundbildung",
+      "rlpHours": 320,
+      "unitBudget": 32,
+      "aoWeeksTimed": 52,
+      "aoBlocks": [
+        {
+          "aoNr": "Anlage I Nr. 1–4",
+          "aoParagraph": "§ 4 Nr. 1–4",
+          "title": "Berufsbildung, Betrieb, Sicherheit, Umweltschutz",
+          "weeks": null,
+          "timing": "während der gesamten Ausbildung"
+        },
+        {
+          "aoNr": "Anlage I Nr. 5",
+          "aoParagraph": "§ 4 Nr. 5",
+          "title": "Werk-, Betriebs- und Hilfsstoffe",
+          "weeks": 4
+        },
+        {
+          "aoNr": "Anlage I Nr. 6",
+          "aoParagraph": "§ 4 Nr. 6",
+          "title": "Betriebliche und technische Kommunikation",
+          "weeks": 8
+        },
+        {
+          "aoNr": "Anlage I Nr. 7",
+          "aoParagraph": "§ 4 Nr. 7",
+          "title": "Planen und Vorbereiten von Arbeitsabläufen",
+          "weeks": 4
+        },
+        {
+          "aoNr": "Anlage I Nr. 8",
+          "aoParagraph": "§ 4 Nr. 8",
+          "title": "Prüfen",
+          "weeks": 6
+        },
+        {
+          "aoNr": "Anlage I Nr. 9",
+          "aoParagraph": "§ 4 Nr. 9",
+          "title": "Branchenspezifische Fertigungstechniken",
+          "weeks": 22
+        },
+        {
+          "aoNr": "Anlage I Nr. 10–11",
+          "aoParagraph": "§ 4 Nr. 10–11",
+          "title": "Steuerungstechnik / Produktionsanlagen unterscheiden",
+          "weeks": null,
+          "timing": "integriert in Fertigung und Einrichten"
+        },
+        {
+          "aoNr": "Anlage I Nr. 12",
+          "aoParagraph": "§ 4 Nr. 12",
+          "title": "Steuern des Materialflusses",
+          "weeks": 2
+        },
+        {
+          "aoNr": "Anlage I Nr. 13",
+          "aoParagraph": "§ 4 Nr. 13",
+          "title": "Warten und Inspizieren",
+          "weeks": 4
+        },
+        {
+          "aoNr": "Anlage I Nr. 14",
+          "aoParagraph": "§ 4 Nr. 14",
+          "title": "Qualitätssichernde Maßnahmen",
+          "weeks": 2
+        }
+      ],
+      "lernfelder": [
+        {
+          "id": "lf-01",
+          "nr": 1,
+          "title": "Fertigen von Bauelementen mit handgeführten Werkzeugen",
+          "rlpHours": 80,
+          "unitBudget": 8,
+          "blocks": [
+            {
+              "id": "y1-lf01-b1",
+              "title": "Werkstoffe und Handwerkzeuge zuordnen",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 5", "Anlage I Nr. 5"],
+              "lfSource": "KMK RLP Industriemechaniker LF 1",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y1-lf01-b2",
+              "title": "Manuelle Fertigungsverfahren anwenden",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 9", "Anlage I Nr. 9"],
+              "lfSource": "KMK RLP Industriemechaniker LF 1",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y1-lf01-b3",
+              "title": "Messen und Prüfen an Handarbeiten",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 8", "Anlage I Nr. 8"],
+              "lfSource": "KMK RLP Industriemechaniker LF 1",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            }
+          ]
+        },
+        {
+          "id": "lf-02",
+          "nr": 2,
+          "title": "Fertigen von Bauelementen mit Maschinen",
+          "rlpHours": 80,
+          "unitBudget": 8,
+          "blocks": [
+            {
+              "id": "y1-lf02-b1",
+              "title": "Maschinenarten und Funktionen unterscheiden",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 11", "Anlage I Nr. 11"],
+              "lfSource": "KMK RLP Industriemechaniker LF 2",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y1-lf02-b2",
+              "title": "Maschinelle Fertigungstechniken anwenden",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 9", "Anlage I Nr. 9"],
+              "lfSource": "KMK RLP Industriemechaniker LF 2",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y1-lf02-b3",
+              "title": "Arbeitsschutz an Maschinen",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 3", "Anlage I Nr. 3"],
+              "lfSource": "KMK RLP Industriemechaniker LF 2",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            }
+          ]
+        },
+        {
+          "id": "lf-03",
+          "nr": 3,
+          "title": "Herstellen von einfachen Baugruppen",
+          "rlpHours": 80,
+          "unitBudget": 8,
+          "blocks": [
+            {
+              "id": "y1-lf03-b1",
+              "title": "Technische Unterlagen und Kommunikation",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 6", "Anlage I Nr. 6"],
+              "lfSource": "KMK RLP Industriemechaniker LF 3",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y1-lf03-b2",
+              "title": "Fügen und Montieren einfacher Baugruppen",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 9", "Anlage I Nr. 9"],
+              "lfSource": "KMK RLP Industriemechaniker LF 3",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y1-lf03-b3",
+              "title": "Arbeitsabläufe planen und vorbereiten",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 7", "Anlage I Nr. 7"],
+              "lfSource": "KMK RLP Industriemechaniker LF 3",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionsplanung"]
+            }
+          ]
+        },
+        {
+          "id": "lf-04",
+          "nr": 4,
+          "title": "Warten technischer Systeme",
+          "rlpHours": 80,
+          "unitBudget": 8,
+          "blocks": [
+            {
+              "id": "y1-lf04-b1",
+              "title": "Wartung und Inspektion nach Vorgaben",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 13", "Anlage I Nr. 13"],
+              "lfSource": "KMK RLP Industriemechaniker LF 4",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionsplanung"]
+            },
+            {
+              "id": "y1-lf04-b2",
+              "title": "Betriebsstoffe, Umweltschutz und Entsorgung",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 4", "§ 4 Nr. 5", "Anlage I Nr. 4–5"],
+              "lfSource": "KMK RLP Industriemechaniker LF 4",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Wirtschafts- und Sozialkunde"]
+            },
+            {
+              "id": "y1-lf04-b3",
+              "title": "Sicherheit bei Instandhaltungsarbeiten",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 3", "Anlage I Nr. 3"],
+              "lfSource": "KMK RLP Industriemechaniker LF 4",
+              "examRefs": ["§ 8 Zwischenprüfung", "§ 9 Produktionstechnik"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "year": 2,
+      "label": "2. Ausbildungsjahr — Berufliche Fachbildung Metall- und Kunststofftechnik",
+      "rlpHours": 280,
+      "unitBudget": 28,
+      "aoWeeksTimed": 52,
+      "aoBlocks": [
+        {
+          "aoNr": "Anlage II.A Nr. 1",
+          "aoParagraph": "§ 4 Nr. 5",
+          "title": "Werk-, Betriebs- und Hilfsstoffe (Fachstufe)",
+          "weeks": 8
+        },
+        {
+          "aoNr": "Anlage II.A Nr. 2",
+          "aoParagraph": "§ 4 Nr. 7",
+          "title": "Planen und Vorbereiten von Arbeitsabläufen (Fachstufe)",
+          "weeks": null,
+          "timing": "integriert mit Werkstoffen / Fertigung"
+        },
+        {
+          "aoNr": "Anlage II.A Nr. 3",
+          "aoParagraph": "§ 4 Nr. 9",
+          "title": "Branchenspezifische Fertigungstechniken Metall/Kunststoff",
+          "weeks": 18
+        },
+        {
+          "aoNr": "Anlage II.A Nr. 4",
+          "aoParagraph": "§ 4 Nr. 10",
+          "title": "Steuerungs- und Regelungstechnik bedienen",
+          "weeks": null,
+          "timing": "integriert mit Einrichten"
+        },
+        {
+          "aoNr": "Anlage II.A Nr. 5",
+          "aoParagraph": "§ 4 Nr. 11",
+          "title": "Einrichten und Bedienen von Produktionsanlagen",
+          "weeks": 18
+        },
+        {
+          "aoNr": "Anlage II.A Nr. 6",
+          "aoParagraph": "§ 4 Nr. 12",
+          "title": "Steuern des Materialflusses",
+          "weeks": 2
+        },
+        {
+          "aoNr": "Anlage II.A Nr. 7",
+          "aoParagraph": "§ 4 Nr. 13",
+          "title": "Warten und Inspizieren (Fachstufe)",
+          "weeks": 4
+        },
+        {
+          "aoNr": "Anlage II.A Nr. 8",
+          "aoParagraph": "§ 4 Nr. 14",
+          "title": "Qualitätssichernde Maßnahmen (Fachstufe)",
+          "weeks": 2
+        }
+      ],
+      "lernfelder": [
+        {
+          "id": "lf-05",
+          "nr": 5,
+          "title": "Fertigen von Einzelteilen mit Werkzeugmaschinen",
+          "rlpHours": 80,
+          "unitBudget": 8,
+          "blocks": [
+            {
+              "id": "y2-lf05-b1",
+              "title": "Werkzeugmaschinen rüsten und einrichten",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 11", "Anlage II.A Nr. 5"],
+              "lfSource": "KMK RLP Industriemechaniker LF 5",
+              "examRefs": ["§ 9 Produktionstechnik", "§ 9 praktischer Teil"]
+            },
+            {
+              "id": "y2-lf05-b2",
+              "title": "Spanen und Technologiedaten einstellen",
+              "unitBudget": 3,
+              "aoRefs": ["§ 4 Nr. 9", "Anlage II.A Nr. 3"],
+              "lfSource": "KMK RLP Industriemechaniker LF 5",
+              "examRefs": ["§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y2-lf05-b3",
+              "title": "Toleranzen und Oberflächen zuordnen",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 9", "Anlage II.A Nr. 3"],
+              "lfSource": "KMK RLP Industriemechaniker LF 5",
+              "examRefs": ["§ 9 Produktionstechnik"]
+            }
+          ]
+        },
+        {
+          "id": "lf-06",
+          "nr": 6,
+          "title": "Installieren und Inbetriebnehmen steuerungstechnischer Systeme",
+          "rlpHours": 60,
+          "unitBudget": 6,
+          "blocks": [
+            {
+              "id": "y2-lf06-b1",
+              "title": "Steuerungs- und Regelungseinrichtungen bedienen",
+              "unitBudget": 4,
+              "aoRefs": ["§ 4 Nr. 10", "Anlage II.A Nr. 4"],
+              "lfSource": "KMK RLP Industriemechaniker LF 6",
+              "examRefs": ["§ 9 Produktionstechnik", "§ 9 praktischer Teil"]
+            },
+            {
+              "id": "y2-lf06-b2",
+              "title": "Prozessdaten einstellen und überwachen",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 11", "Anlage II.A Nr. 5"],
+              "lfSource": "KMK RLP Industriemechaniker LF 6",
+              "examRefs": ["§ 9 Produktionsplanung"]
+            }
+          ]
+        },
+        {
+          "id": "lf-07",
+          "nr": 7,
+          "title": "Montieren von technischen Teilsystemen",
+          "rlpHours": 40,
+          "unitBudget": 4,
+          "blocks": [
+            {
+              "id": "y2-lf07-b1",
+              "title": "Baugruppen montieren und demontieren",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 9", "Anlage II.A Nr. 3"],
+              "lfSource": "KMK RLP Industriemechaniker LF 7",
+              "examRefs": ["§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y2-lf07-b2",
+              "title": "Materialfluss im Arbeitsbereich sicherstellen",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 12", "Anlage II.A Nr. 6"],
+              "lfSource": "KMK RLP Industriemechaniker LF 7",
+              "examRefs": ["§ 9 Produktionsplanung"]
+            }
+          ]
+        },
+        {
+          "id": "lf-08",
+          "nr": 8,
+          "title": "Fertigen auf numerisch gesteuerten Werkzeugmaschinen",
+          "rlpHours": 60,
+          "unitBudget": 6,
+          "blocks": [
+            {
+              "id": "y2-lf08-b1",
+              "title": "CNC-Fertigung vorbereiten und überwachen",
+              "unitBudget": 4,
+              "aoRefs": ["§ 4 Nr. 9", "§ 4 Nr. 11", "Anlage II.A Nr. 3", "Anlage II.A Nr. 5"],
+              "lfSource": "KMK RLP Industriemechaniker LF 8",
+              "examRefs": ["§ 9 Produktionstechnik"]
+            },
+            {
+              "id": "y2-lf08-b2",
+              "title": "CNC einrichten und Prozessparameter optimieren",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 11", "Anlage II.A Nr. 5"],
+              "lfSource": "KMK RLP Industriemechaniker LF 8",
+              "examRefs": ["§ 9 Produktionstechnik", "§ 9 praktischer Teil"]
+            }
+          ]
+        },
+        {
+          "id": "lf-09",
+          "nr": 9,
+          "title": "Instandsetzen von technischen Systemen",
+          "rlpHours": 40,
+          "unitBudget": 4,
+          "blocks": [
+            {
+              "id": "y2-lf09-b1",
+              "title": "Störungen feststellen und Instandsetzung einleiten",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 11", "§ 4 Nr. 13", "Anlage II.A Nr. 5", "Anlage II.A Nr. 7"],
+              "lfSource": "KMK RLP Industriemechaniker LF 9",
+              "examRefs": ["§ 9 Produktionsplanung", "§ 9 praktischer Teil"]
+            },
+            {
+              "id": "y2-lf09-b2",
+              "title": "Qualitätssicherung und kontinuierliche Verbesserung",
+              "unitBudget": 2,
+              "aoRefs": ["§ 4 Nr. 14", "Anlage II.A Nr. 8"],
+              "lfSource": "KMK RLP Industriemechaniker LF 9",
+              "examRefs": ["§ 9 Produktionsplanung"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "MaschFüAusbV § 2 Ausbildungsdauer",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__2.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "MaschFüAusbV § 5 Ausbildungsrahmenplan",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__5.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "MaschFüAusbV Anlage (zu § 5) Ausbildungsrahmenplan",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/anlage.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "MaschFüAusbV § 8 Zwischenprüfung",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__8.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "MaschFüAusbV § 9 Abschlussprüfung",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+      "kind": "pruefung",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "MaschFüAusbV § 10 Anrechnungsregelung / Anschluss",
+      "url": "https://www.gesetze-im-internet.de/maschf_ausbv/__10.html",
+      "kind": "ausbildungsordnung",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "KMK Rahmenlehrplan MAF (25.03.2004 i. d. F. 31.03.2023)",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/MaschinenAnlagenfuehrer04-03-25idF23-03-31.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "KMK Rahmenlehrplan Industriemechaniker (LF 1–9 Stunden)",
+      "url": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriemechaniker-IH04-03-25-idf-18-02-23.pdf",
+      "kind": "rahmenlehrplan",
+      "fetchedAt": "2026-10-03"
+    },
+    {
+      "title": "BIBB Berufesuche 51121",
+      "url": "https://www.bibb.de/dienst/berufesuche/de/index_berufesuche.php/profile/apprenticeship/51121",
+      "kind": "berufsinformation",
+      "fetchedAt": "2026-10-03"
+    }
+  ]
+}
