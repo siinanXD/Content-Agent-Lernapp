@@ -217,4 +217,12 @@ Duolingo-Alternativen auf GitHub hatten ≤2★ oder ungeeignete Lizenzen → **
 ### D-32 — AP-14 Plan-/Generate-Agent an Curriculum-Map gebunden (Didaktik-Prompts)
 
 - **Links:** Linear [SIN-192](https://linear.app/sinan-kahraman/issue/SIN-192); `docs/content/maf-metall.json`; `src/lib/content/curriculum.ts`; `src/lib/plan/maf-plan-seed.ts`; `src/lib/plan/plan-agent.ts`; `src/lib/generate/generate-agent.ts`; `src/lib/generate/didaktik-prompts.ts`; `src/lib/quality/evaluate-agent.ts`; `docs/api/openapi.yaml`; D-26; D-31
-- **Entscheidung:** Plan-Agent liest `loadMafCurriculum()` (Pilot: `maf-metall.json`), Module
+- **Entscheidung:** Plan-Agent liest `loadMafCurriculum()` (Pilot: `maf-metall.json`), Module in `order`, M0 etwa jede 5. Einheit; jede Plan-Einheit trägt `moduleId`/`blockId`/`sourceKind`/`niveau`; Varianten 40×2,5 h / 60×2 h bleiben. Generate baut **einen Didaktik-Prompt/Batch-Request pro Block** via `buildDidaktikBlockPrompt` (Themen, Quellen-URLs, Jahr/Niveau, Mix, Variante, Einheitenzahl); Ausgabe + Seed tragen `moduleId`/`blockId`; Prompt verbietet IHK-Aufgaben und Personendaten; `rechnen`/`sicherheit`-Varianten aus D-31. Evaluate prüft `niveau` gegen Modul-Jahr (ZP vs. AP), nicht Kurs-Mittelwert, und übernimmt `safetyFlag` aus der Map. Ohne API-Key bleibt Seed-Fallback (M0-3). Live-Erzeugung ganzer Phasen = AP-15.
+- **Warum:** Ohne Map-Bindung bleiben Plan/Generate generisch; nach AP-18 muss die Bindung die Didaktik-Schablonen nutzen statt der v1-explanation-only Skeleton-Prompts aus dem alten PR #20.
+
+
+### D-33 — Langfuse platform v4: JS/TS SDK v5 OTEL ingestion
+
+- **Links:** [Upgrade to Langfuse v4](https://langfuse.com/faq/all/upgrade-to-langfuse-v4); [JS/TS v4 → v5](https://langfuse.com/docs/observability/sdk/upgrade-path/js-v4-to-v5); [Custom ingestion → OTEL](https://langfuse.com/integrations/native/opentelemetry/migration-to-v4); [Deprecated API migration](https://langfuse.com/faq/all/deprecated-api-migration); D-05; D-25; Linear [SIN-197](https://linear.app/sinan-kahraman/issue/SIN-197)
+- **Entscheidung:** Quality-gate Ingest migriert von raw legacy public REST ingest (`trace-create` events) auf **`@langfuse/tracing` + `@langfuse/otel` + `@langfuse/client` ≥ 5.4.0** (aktuell 5.11.1). Root-Observation trägt Input/Output; Attribute via `propagateAttributes`; Scores observation-level; Datasets über SDK. Optional `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`. OTEL-Peers auf v2 via `package.json` `overrides` + `.npmrc` `legacy-peer-deps=true` (Koexistenz mit lighthouse→sentry OTEL v1).
+- **Warum:** Langfuse Cloud schaltet Legacy-Ingest am 2026-11-16 ab; observations-first Modell braucht OTEL + propagated attributes.
