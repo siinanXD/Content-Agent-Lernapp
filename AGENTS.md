@@ -45,10 +45,21 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 1. Issue starten (In Progress) / zuweisen, bevor Code geschrieben wird — zuerst **AP-00**.
 2. Scope und Akzeptanzkriterien des Issues einhalten; Annahmen in `docs/DECISIONS.md` festhalten.
-3. Branch: `cursor/<kurzname>-85a9`. Pull Request öffnen, Review, Merge.
+3. Branch: `cursor/<kurzname>-85a9` (Cursor) oder `claude/<kurzname>` (Claude). Pull Request öffnen. Gemerged wird automatisch, siehe „Pull Requests und Merge“.
 4. Nach Merge Issue schließen und nächsten Block laut Bauplan starten.
 5. Reihenfolge: AP-00 → AP-01 → AP-02 nacheinander; danach Pipeline (AP-03–AP-06) und App (AP-07–AP-09) parallel möglich; Hermes **AP-10** zuletzt unter Infra; **AP-11** Pilot; **AP-12** Lern-Schleife nach dem Pilot.
 6. Blocker nach 3 PR-Reparatur-Runden oder bei fehlenden Secrets: kurz melden und mit Arbeit ohne Live-Keys weitermachen (Docs, Scaffold, Mocks, OpenAPI, Linear).
+
+## Pull Requests und Merge (SIN-207)
+
+- 1 Linear-Issue = 1 PR. Klein halten: lieber zwei PRs als einen großen.
+- PR-Titel = Commit auf `main` (Squash-Merge): Conventional Commit mit Linear-ID, z. B. `feat(lernpfad): Fortschrittsbalken (SIN-123)`. Der Check `pr-title` prüft das.
+- Das Risiko setzt der Workflow `pr-gate` automatisch als Label `risk:low`, `risk:medium` oder `risk:high`. Nie selbst setzen oder entfernen.
+  - `risk:low` und `risk:medium`: Auto-Merge (Squash), sobald `build`, `pr-title` und `merge-gate` grün sind. Nicht selbst mergen.
+  - `risk:high` (`.github/`, `supabase/migrations/`, Auth, Middleware/Proxy, Env/Secrets, `vercel.json`, `next.config.*`, `src/lib/storage/`, Zahlungen, sehr große PRs): wartet, bis Sinan das Label `freigegeben` setzt. Neue Commits heben die Freigabe auf.
+  - Label `no-automerge` stoppt den Auto-Merge für einen PR.
+- `build` prüft Lint, Typecheck, Unit-Tests, Build, Playwright-Smoke und axe-core.
+- Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.
 
 ## Technik (siehe DECISIONS.md)
 

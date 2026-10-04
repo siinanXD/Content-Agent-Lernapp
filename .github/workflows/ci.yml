@@ -1,4 +1,5 @@
-# Required PR build gate — lint, typecheck, production build.
+# Required PR build gate — lint, typecheck, unit tests, production build,
+# Playwright smoke + axe-core against `next start` (SIN-207).
 # package-lock.json is not committed; assemble from AP-17 chunks before npm ci.
 # Node 22 matches `.github/workflows/source-check.yml` (no `.nvmrc` / `engines.node` on main yet).
 name: ci
@@ -35,7 +36,29 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm test
+
       - name: Production build
         run: npm run build
         env:
           COURSE_STORAGE: mock
+
+      # SIN-207: Die App startet sich selbst und wird im Browser geprüft.
+      # Smoke (Seiten rendern, /api/health) + axe-core (WCAG 2.1 AA) gegen `next start`.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke + accessibility (Playwright)
+        run: npx playwright test
+        env:
+          COURSE_STORAGE: mock
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
