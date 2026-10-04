@@ -81,7 +81,8 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 - Cursor zuerst. Hat Cursor kein Guthaben, setze das Label `claude` auf das Issue oder kommentiere `@claude`.
 - Der Workflow `.github/workflows/claude.yml` startet Claude (`claude-code-action@v1`, nur für Nutzer mit Schreibrechten).
-- Immer Draft-PR, nie selbst mergen.
+- Draft-PR nur, solange du noch arbeitest. Fertig und lokal geprüft: auf „Ready for review" stellen. Draft-PRs werden nie automatisch gemerged.
+- Nie selbst mergen. Das übernimmt der Auto-Merge (siehe Abschnitt Pull Requests und Merge).
 - Commit-Nachrichten enthalten `Part of SIN-xxx` (die Issue-Nummer des Auftrags).
 - Maximal 3 Reparaturrunden pro Pull Request, dann stoppen und den Blocker melden.
 
