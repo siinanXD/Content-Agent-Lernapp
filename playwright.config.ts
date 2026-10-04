@@ -1,5 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Lokal/CI: startet `next start` auf Port 43123.
+// Gegen eine Preview: PLAYWRIGHT_BASE_URL setzen (optional mit
+// VERCEL_AUTOMATION_BYPASS_SECRET für geschützte Vercel-Previews).
+const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL;
+const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
@@ -8,8 +14,14 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:43123",
+    baseURL: externalBaseURL ?? "http://127.0.0.1:43123",
     trace: "on-first-retry",
+    extraHTTPHeaders: bypassSecret
+      ? {
+          "x-vercel-protection-bypass": bypassSecret,
+          "x-vercel-set-bypass-cookie": "true",
+        }
+      : undefined,
   },
   projects: [
     {
@@ -17,9 +29,12 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: "npm run start",
-    url: "http://127.0.0.1:43123",
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: externalBaseURL
+    ? undefined
+    : {
+        command: "npx next start --hostname 127.0.0.1 --port 43123",
+        url: "http://127.0.0.1:43123",
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });
