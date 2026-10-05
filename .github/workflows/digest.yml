@@ -1,0 +1,62 @@
+# Tages-Update (SIN-246): kurzer Kommentar mit @siinanXD im Issue „Loop-Status“ (Push über GitHub Mobile),
+# optional zusätzlich Telegram. Auslöser von außen per cron-job.org um 10:00 (slot=morgen) und 20:00
+# (slot=abend), Europe/Berlin, weil GitHubs schedule unzuverlässig feuert (siehe docs/autonomy/README.md).
+# Ein Lauf pro Tag + Slot: der Merker steht im Kommentar, eine Wiederholung sendet nichts doppelt.
+# Secrets: LINEAR_API_KEY. Optional: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID und die Kennzahl-Secrets aus status.yml.
+name: digest
+
+on:
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "Tageszeit des Updates"
+        type: choice
+        options: [morgen, abend]
+        default: morgen
+      dry_run:
+        description: "Nur ausgeben, nichts schreiben"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: digest-${{ inputs.slot }}
+      cancel-in-progress: false
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
+      SLOT: ${{ inputs.slot }}
+      DRY: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Update senden
+        run: |
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/digest.mjs --slot "$SLOT" --dry-run
+          else node scripts/autonomy/digest.mjs --slot "$SLOT"; fi
