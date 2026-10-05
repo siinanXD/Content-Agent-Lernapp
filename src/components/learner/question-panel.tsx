@@ -239,8 +239,9 @@ function OrderQuestion({
     order.length === steps.length && order.every((s, i) => s === steps[i]);
 
   return (
-    <div className="flex flex-col gap-2.5" role="list" aria-label="Reihenfolge">
+    <div className="flex flex-col gap-2.5">
       {question.image ? <UnitImageView image={question.image} /> : null}
+      <div className="flex flex-col gap-2.5" role="list" aria-label="Reihenfolge">
       {order.map((step, i) => (
         <div
           key={`${step}-${i}`}
@@ -270,6 +271,7 @@ function OrderQuestion({
           </button>
         </div>
       ))}
+      </div>
       {!revealed ? (
         <Button onClick={() => onChecked({ correct })} className="mt-2">
           Antwort prüfen
