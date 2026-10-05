@@ -38,7 +38,7 @@ export default function EinstellungenPage() {
 
   const shownReminder = reminder ?? storedReminder;
   const shownConsent =
-    consent !== undefined ? consent : (storedOnboarding?.consent ?? false);
+    (consent !== undefined ? consent : storedOnboarding?.consent) ?? false;
 
   function updateReminder(next: Reminder) {
     setReminder(next);
