@@ -1,0 +1,131 @@
+# Vorlage (SIN-223) → nach .github/workflows/dispatch.yml kopieren (der Agent darf dort nicht schreiben).
+# Dispatcher: alle 30 Min das nächste Linear-Issue (Todo, keine offenen Blocker, höchste Priorität).
+# Cursor zuerst: Claude übernimmt nur Issues mit Label `claude` oder solche, die seit 1 h unberührt in Todo
+# liegen und zu denen kein offener PR gehört. Max. 2 Issues parallel, Reparaturen max. 3 Runden (repair.yml).
+# Budget: Ist AGENT_PAUSED_UNTIL (Repo-Variable) in der Zukunft, startet nichts. Meldet Claude sein Limit,
+# setzt der Lauf die Variable auf den Reset-Zeitpunkt und stellt das Issue zurück auf Todo.
+# Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN; optional AGENT_VARIABLES_TOKEN (fein-granulares PAT mit
+# Repo-Recht „Variables: write“, nötig zum Setzen von AGENT_PAUSED_UNTIL). Dry-Run: Eingabe `dry_run` = true.
+name: dispatch
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Nur anzeigen, nichts starten"
+        type: boolean
+        default: true
+  # Nach Merge: Linear auf Done. Blocker nach 3 Runden: Kommentar in Linear.
+  pull_request:
+    types: [closed, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+jobs:
+  dispatch:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Nie zwei Dispatcher-Läufe gleichzeitig; ein wartender Lauf genügt, laufende werden nicht abgebrochen.
+    concurrency:
+      group: dispatch
+      cancel-in-progress: false
+    env:
+      AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Nächstes Issue wählen
+        id: pick
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/dispatch.mjs --dry-run
+          else node scripts/autonomy/dispatch.mjs; fi
+      - name: Claude im Automationsmodus
+        id: claude
+        if: steps.pick.outputs.found == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: ${{ steps.pick.outputs.prompt }}
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 60
+            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+
+      # Fehler oder Limit: Issue zurück auf Todo (kein blockierter Slot). Bei Limit Pause bis Reset.
+      - name: Fehler auswerten
+        id: limit
+        if: failure() && steps.claude.outcome == 'failure'
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          IDENTIFIER: ${{ steps.pick.outputs.identifier }}
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          node scripts/autonomy/dispatch.mjs --reset "$IDENTIFIER"
+          if [ -f "$EXECUTION_FILE" ]; then node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE"; fi
+      - name: Pause bis Reset setzen
+        if: failure() && steps.limit.outputs.until != ''
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_VARIABLES_TOKEN }}
+          UNTIL: ${{ steps.limit.outputs.until }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::Secret AGENT_VARIABLES_TOKEN fehlt: AGENT_PAUSED_UNTIL=$UNTIL bitte von Hand setzen."
+          else
+            gh variable set AGENT_PAUSED_UNTIL --repo "$GITHUB_REPOSITORY" --body "$UNTIL"
+          fi
+
+  linear-done:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Eigene Gruppe je PR: darf nie hinter einem langen Dispatcher-Lauf warten oder verworfen werden.
+    concurrency:
+      group: dispatch-done-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Linear auf Done
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
+          [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --done "$id" || echo "Keine Linear-ID im Titel."
+
+  linear-blocker:
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'needs-human' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: dispatch-blocker-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Blocker-Kommentar in Linear
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          TITLE: ${{ github.event.pull_request.title }}
+          URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
+          [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --blocker "$id" "$URL" || echo "Keine Linear-ID im Titel."
