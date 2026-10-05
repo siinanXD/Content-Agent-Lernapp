@@ -6,6 +6,16 @@
 
 ---
 
+## SIN-246: Tages-Update um 10:00 und 20:00
+
+`digest.yml` schreibt zweimal täglich einen kurzen Kommentar mit @siinanXD ins Issue „Loop-Status“ (Push über GitHub Mobile): gebaut seit dem letzten Update (nach Spur), neue Entscheidungen, Plan, „Braucht dich“, Kennzahlen, Phase und Produktreife. Ein Lauf pro Tag + Slot; der Merker steht als HTML-Kommentar im Kommentar, nicht löschen. Entscheidung: `docs/decisions/SIN-246-tages-update.md`.
+
+**Einmalig von Sinan:** bei [cron-job.org](https://cron-job.org) zwei Jobs mit Zeitzone Europe/Berlin und dem Token aus SIN-238 (Actions: Read and write) anlegen: `POST https://api.github.com/repos/siinanXD/Content-Agent-Lernapp/actions/workflows/digest.yml/dispatches`, gleiche Header wie beim Status-Job, Body `{"ref":"main","inputs":{"slot":"morgen"}}` um 10:00 und `{"ref":"main","inputs":{"slot":"abend"}}` um 20:00. Optional Telegram: Secrets `TELEGRAM_BOT_TOKEN` und `TELEGRAM_CHAT_ID`.
+
+**Prüfen:** `npm run autonomy:digest:dry` (beide Varianten mit Fixture). Live: `gh workflow run digest.yml -f slot=morgen` (mit `-f dry_run=true` nur ausgeben).
+
+---
+
 ## SIN-238: Loop-Status, Wächter, externer Takt
 
 `status.yml` schreibt den Text des angepinnten Issues „Loop-Status“ (Label `loop-status`, wird beim ersten Lauf angelegt) neu: Jetzt, Schlange, letzte 24 h, Kontingente in %. Bei Stillstand oder Abbruch kommt ein Kommentar mit @siinanXD (Push über GitHub Mobile), je Vorfall einmal. Der Merker steht als HTML-Kommentar am Ende des Issue-Texts, nicht löschen. Entscheidung: D-47.

@@ -1,0 +1,30 @@
+{
+  "now": "2026-10-05T08:00:00Z",
+  "since": "2026-10-04T18:00:00Z",
+  "mergedPrs": [
+    { "title": "feat(lernpfad): Tagesziel als Ring (SIN-201)", "merged_at": "2026-10-05T06:10:00Z" },
+    { "title": "fix(generate): Quelle mit Abrufdatum speichern (SIN-218)", "merged_at": "2026-10-05T05:00:00Z" },
+    { "title": "feat(content): Modul M2 veröffentlicht (SIN-210)", "merged_at": "2026-10-04T20:00:00Z" },
+    { "title": "feat(autonomie): Free-Tier-Wächter im Planer (SIN-225)", "merged_at": "2026-10-05T07:00:00Z" },
+    { "title": "docs(old): schon im letzten Update (SIN-1)", "merged_at": "2026-10-04T10:00:00Z" }
+  ],
+  "decisions": [
+    { "name": "docs/decisions/SIN-246-tages-update.md", "text": "# SIN-246 — Tages-Update\n\n- **Entscheidung:** Zweimal täglich ein Kommentar im Loop-Status. Der Rest steht unten.\n" }
+  ],
+  "issues": [
+    { "identifier": "SIN-250", "title": "Fortschrittsbalken im Lernpfad", "priority": 2, "state": { "name": "Todo", "type": "unstarted" }, "labels": { "nodes": [{ "name": "frontend" }] } },
+    { "identifier": "SIN-251", "title": "Quellen-Monitor erweitern", "priority": 3, "state": { "name": "Todo", "type": "unstarted" }, "labels": { "nodes": [{ "name": "backend" }] } },
+    { "identifier": "SIN-252", "title": "Neues Design-Paket", "priority": 3, "state": { "name": "Todo", "type": "unstarted" }, "labels": { "nodes": [{ "name": "design" }] } }
+  ],
+  "openPrs": [
+    { "number": 80, "title": "chore(ci): Workflow ändern (SIN-230)", "labels": ["risk:high"] },
+    { "number": 81, "title": "feat(app): Beispiel (SIN-231)", "labels": ["risk:medium", "needs-human"] }
+  ],
+  "content": { "einheitenNeuWoche": 12, "bestehensquote": 84, "kostenWocheEur": 3.4 },
+  "quotas": [
+    { "name": "GitHub Actions: Läufe heute", "pct": 62.5 },
+    { "name": "Vercel Hobby: Deployments heute", "pct": 10 },
+    { "name": "Vercel Hobby: Build-Minuten", "pct": null }
+  ],
+  "readiness": { "green": 6, "total": 19 }
+}
