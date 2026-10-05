@@ -8,6 +8,7 @@ import type {
   LearningProgressEvent,
   QuestionEvaluationRecord,
   RecordProgressInput,
+  SharedModuleLink,
 } from "./types";
 
 type CourseRow = {
@@ -421,6 +422,36 @@ export const supabaseStorage: CourseStorage = {
         createdAt: row.created_at as string,
       }),
     );
+  },
+
+  async listSharedModuleLinks(courseId: string) {
+    const sb = getServiceSupabase();
+    const { data, error } = await sb
+      .from("course_shared_modules")
+      .select("module_key, sort_order, shared_modules(module_id, source_course_id)")
+      .eq("course_id", courseId)
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(`course_shared_modules_list: ${error.message}`);
+    type Row = {
+      module_key: string;
+      sort_order: number;
+      shared_modules:
+        | { module_id: string; source_course_id: string }
+        | Array<{ module_id: string; source_course_id: string }>
+        | null;
+    };
+    return ((data ?? []) as unknown as Row[]).flatMap((row): SharedModuleLink[] => {
+      const sm = Array.isArray(row.shared_modules) ? row.shared_modules[0] : row.shared_modules;
+      if (!sm) return [];
+      return [
+        {
+          key: row.module_key,
+          moduleId: sm.module_id,
+          sourceCourseId: sm.source_course_id,
+          sortOrder: row.sort_order,
+        },
+      ];
+    });
   },
 
   async recordProgress(input: RecordProgressInput) {

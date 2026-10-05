@@ -54,6 +54,15 @@ export type RecordProgressInput = {
   id?: string;
 };
 
+/** AP-20: Verknüpfung eines Kurses mit einem gemeinsamen Modul der Modul-Bibliothek. */
+export type SharedModuleLink = {
+  key: string;
+  moduleId: string;
+  /** Kurs, in dem die Einheiten des Moduls liegen (nicht kopiert). */
+  sourceCourseId: string;
+  sortOrder: number;
+};
+
 export type { QuestionEvaluationRecord };
 
 export type StorageBackend = "mock" | "supabase";
@@ -72,6 +81,8 @@ export interface CourseStorage {
   appendQuestionEvaluations(records: QuestionEvaluationRecord[]): Promise<void>;
   /** All judge rows for a course, oldest first. */
   listQuestionEvaluations(courseId: string): Promise<QuestionEvaluationRecord[]>;
+  /** Gemeinsame Module, die dieser Kurs per Verknüpfung zeigt (AP-20). */
+  listSharedModuleLinks(courseId: string): Promise<SharedModuleLink[]>;
   recordProgress(input: RecordProgressInput): Promise<LearningProgressEvent>;
   listProgress(anonymousId: string): Promise<LearningProgressEvent[]>;
 }
