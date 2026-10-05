@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-251 | SIN-251 — Entscheidungs-Index im selben PR | [SIN-251-index-im-selben-pr.md](decisions/SIN-251-index-im-selben-pr.md) |
 | SIN-250 | SIN-250 — Service-Worker: Cache folgt dem Deploy | [SIN-250-service-worker-cache.md](decisions/SIN-250-service-worker-cache.md) |
 | SIN-249 | SIN-249: Einheit öffnen robust, „Referenzberuf“ wird „Dein Betrieb“ | [SIN-249-einheit-oeffnen-betrieb.md](decisions/SIN-249-einheit-oeffnen-betrieb.md) |
+| SIN-248 | SIN-248: PR-Steckbrief als Gate-Kommentar | [SIN-248-pr-steckbrief.md](decisions/SIN-248-pr-steckbrief.md) |
 | SIN-246 | SIN-246 — Tages-Update um 10:00 und 20:00 | [SIN-246-tages-update.md](decisions/SIN-246-tages-update.md) |
 | SIN-245 | SIN-245 — Stil E (Orange/Weiß/Schwarz) aus Figma übernehmen | [SIN-245-stil-e.md](decisions/SIN-245-stil-e.md) |
 | SIN-240 | SIN-240 — Loop-Härtung: Agenten-Token überall, Abgleich, eine Datei je Entscheidung, Gate nach CI | [SIN-240-loop-haertung.md](decisions/SIN-240-loop-haertung.md) |
