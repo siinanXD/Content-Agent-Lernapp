@@ -1,8 +1,20 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
 
+/** Build-Kennung für den Service-Worker-Cache (SIN-250). */
+const buildId =
+  process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? `local-${Date.now()}`;
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  env: { NEXT_PUBLIC_BUILD_ID: buildId },
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+    ];
+  },
 };
 
 /**
