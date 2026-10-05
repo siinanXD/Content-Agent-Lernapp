@@ -101,6 +101,10 @@ Keine anderen Einheiten. (Kurs-Stichwort: ${keyword})`;
 export async function submitChunkTargets(opts: {
   keyword: string;
   targets: BatchChunkTarget[];
+  /** Default: GENERATOR_MODEL (Config). */
+  model?: string;
+  /** Gemeinsamer Präfix, optional mit cache_control (Prompt Caching). */
+  system?: Array<{ type: "text"; text: string; cache_control?: { type: "ephemeral" } }>;
 }): Promise<BatchSubmitResult> {
   const c = loadMafCurriculum();
   if (opts.targets.length === 0) throw new Error("No chunks to submit");
@@ -112,8 +116,9 @@ export async function submitChunkTargets(opts: {
       requests: opts.targets.map((t) => ({
         custom_id: t.customId,
         params: {
-          model: GENERATOR_MODEL,
+          model: opts.model ?? GENERATOR_MODEL,
           max_tokens: MAX_OUTPUT_TOKENS,
+          ...(opts.system ? { system: opts.system } : {}),
           messages: [
             {
               role: "user",
