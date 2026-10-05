@@ -7,8 +7,12 @@
 export type Schwerpunkt = {
   id: string;
   title: string;
-  /** Curriculum-Maps in docs/content; bei mehreren folgt die Referenzberuf-Auswahl. */
-  maps: Array<{ mapId: string; referenzberuf: string }>;
+  /**
+   * Curriculum-Maps in docs/content; bei mehreren folgt die Betriebsart-Auswahl.
+   * `betrieb` steht für Lernende da; `referenzberuf` nennt nur den Referenz-
+   * Rahmenlehrplan (kein anderer Beruf, SIN-249).
+   */
+  maps: Array<{ mapId: string; betrieb: string; referenzberuf: string }>;
   /** Default, wenn die zweite Auswahl übersprungen wird. */
   defaultMapId: string;
 };
@@ -19,9 +23,10 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
     id: "metall-kunststoff",
     title: "Metall- und Kunststofftechnik",
     maps: [
-      { mapId: "maf-metall", referenzberuf: "Industriemechaniker" },
+      { mapId: "maf-metall", betrieb: "Metallbetrieb", referenzberuf: "Industriemechaniker" },
       {
         mapId: "maf-kunststoff",
+        betrieb: "Kunststoffbetrieb",
         referenzberuf: "Kunststoff- und Kautschuktechnologe",
       },
     ],
@@ -33,9 +38,14 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
     maps: [
       {
         mapId: "maf-druckverarbeitung",
+        betrieb: "Druckweiterverarbeitung",
         referenzberuf: "Medientechnologe Druckverarbeitung",
       },
-      { mapId: "maf-packmittel", referenzberuf: "Packmitteltechnologe" },
+      {
+        mapId: "maf-packmittel",
+        betrieb: "Papier- und Packmittelverarbeitung",
+        referenzberuf: "Packmitteltechnologe",
+      },
     ],
     defaultMapId: "maf-druckverarbeitung",
   },
@@ -45,6 +55,7 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
     maps: [
       {
         mapId: "maf-textil",
+        betrieb: "Textiltechnik",
         referenzberuf: "Produktionsmechaniker-Textil",
       },
     ],
@@ -56,6 +67,7 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
     maps: [
       {
         mapId: "maf-textilveredelung",
+        betrieb: "Textilveredelung",
         referenzberuf: "Produktveredler-Textil",
       },
     ],
@@ -67,6 +79,7 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
     maps: [
       {
         mapId: "maf-lebensmittel",
+        betrieb: "Lebensmitteltechnik",
         referenzberuf: "Fachkraft für Lebensmitteltechnik",
       },
     ],
