@@ -1,0 +1,69 @@
+# Loop-Status und Wächter (SIN-238): schreibt den Text des angepinnten Issues „Loop-Status“ neu (Label
+# `loop-status`) und kommentiert mit @siinanXD, wenn die Kette still steht oder abbricht (einmal pro Vorfall).
+# Auslöser: nach jedem dispatch- und worker-Lauf, stündlich (schedule) und von außen alle 15 Min per
+# workflow_dispatch (cron-job.org, siehe docs/autonomy/README.md), weil GitHubs schedule unzuverlässig feuert.
+# Steht die Kette still (nichts läuft, aber Startbares da), stößt dieser Lauf dispatch.yml selbst an.
+# Secrets: LINEAR_API_KEY. Optional für Kontingente: VERCEL_TOKEN, SUPABASE_ACCESS_TOKEN, SENTRY_AUTH_TOKEN,
+# LANGFUSE_PUBLIC_KEY/LANGFUSE_SECRET_KEY; Variablen VERCEL_PROJECT_ID, VERCEL_TEAM_ID, SUPABASE_PROJECT_REF, SENTRY_ORG.
+# Ohne Wert steht in der Tabelle „nicht messbar“. AGENT_WORKFLOW_TOKEN: damit @claude im PR einen Lauf auslöst.
+name: status
+
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Nur ausgeben, nichts schreiben"
+        type: boolean
+        default: false
+  workflow_run:
+    workflows: [dispatch, worker]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  actions: write
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Ein Lauf zur Zeit; ein wartender Lauf reicht (der Text wird ohnehin komplett neu gebaut).
+    concurrency:
+      group: status
+      cancel-in-progress: false
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+      AGENT_WORKFLOW_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
+      DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Status schreiben und Wächter
+        id: status
+        run: |
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/status.mjs --dry-run
+          else node scripts/autonomy/status.mjs; fi
+      # Selbstheilung: Stillstand → Dispatcher anstoßen (nicht öfter als alle 10 Min, entscheidet status.mjs).
+      - name: Dispatcher anstoßen
+        if: steps.status.outputs.kick == 'true' && env.DRY != 'true'
+        run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
+        env:
+          GH_TOKEN: ${{ github.token }}
