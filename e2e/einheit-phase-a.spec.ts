@@ -68,7 +68,7 @@ test("Lernpfad → Einheit aus Phase-A-Daten öffnet ohne Fehler", async ({ page
   await node.click();
   await expect(page).toHaveURL(/\/einheit\//);
   await expect(page.getByText(/^Frage 1 von 1/)).toBeVisible();
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.locator('[data-state-kind="fehler"]')).toHaveCount(0);
 });
 
 test("Direktaufruf (Neuladen) mit Sonderzeichen in der Id öffnet die Einheit", async ({ page }) => {
@@ -79,6 +79,6 @@ test("Direktaufruf (Neuladen) mit Sonderzeichen in der Id öffnet die Einheit", 
 
 test("Unbekannte Einheit zeigt die Fehlerseite statt abzustürzen", async ({ page }) => {
   await page.goto("/einheit/gibt-es-nicht");
-  await expect(page.getByRole("alert")).toContainText("Einheit nicht gefunden");
+  await expect(page.locator('[role="alert"][data-state-kind="fehler"]')).toContainText("Einheit nicht gefunden");
   await expect(page.getByRole("button", { name: "Zum Lernpfad" })).toBeVisible();
 });
