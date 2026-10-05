@@ -10,6 +10,7 @@
  *       das Issue „Produkt-Abnahme MAF Metall“ für Sinan an und plant bis zur Antwort nur Fehler und Content.
  *       Davor: Free-Tier-Prüfung (ab 80 % ein Linear-Issue, SIN-225) und Wochenbericht (limits.mjs).
  *
+ * Content (SIN-226): Abdeckung je Curriculum-Map und Modul, Bestehensquote, Läufe, Regeln (content-metrics.mjs).
  * Kennzahlen ohne Zugang (Supabase, PostHog, Sentry, Kosten, Figma) stehen als „nicht verfügbar“ im Prompt.
  * Dry-Run: nur lesen, nichts in Linear anlegen.
  */
@@ -17,6 +18,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
 import { runLimitCheck } from "./limits.mjs";
+import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
 import {
   ABNAHME_TITLE,
@@ -142,7 +144,7 @@ export async function assessReadiness({ metrics, issues, env = process.env, read
   return { rows, abnahme: file.abnahme ?? null };
 }
 
-export function buildPlannerPrompt({ definition, issues, metrics, readiness = "", maintenance = false }) {
+export function buildPlannerPrompt({ definition, issues, metrics, readiness = "", content = "", maintenance = false }) {
   return [
     "Du bist der Planer für die Content-Agent-Lernapp (Regeln: AGENTS.md).",
     "Ziel: ein fertiges Produkt mit einem Modul (MAF Metall komplett), kein MVP. Vergleiche den Ist-Stand mit der Definition fertig und der Produktreife-Tabelle.",
@@ -150,6 +152,14 @@ export function buildPlannerPrompt({ definition, issues, metrics, readiness = ""
     "- frontend: Lern-Erlebnis, Screens, Motivation (Serie, Tagesziel, Wiederholung), Barrierefreiheit, Offline. Kennzahlen: Lighthouse, axe, PostHog-Abbrüche, Figma-Abgleich.",
     "- content: Abdeckung, Qualität, neue Berufe (nur mit amtlicher Quelle).",
     "- backend: Pipeline, Datenmodell, Kosten, Stabilität, Sentry-Fehler, Skalierung.",
+    "",
+    "Content-Regeln (SIN-226):",
+    "- Content-Lücken füllt die Content-Fabrik (AP-23) selbst. Lege dafür KEINE Issues an, außer die Fabrik hängt (2 Läufe ohne neues Modul).",
+    "- Bestehensquote eines Moduls unter 70 %: Issue „Prompt/Didaktik für Modul X verbessern“.",
+    "- Alle Maps über 90 % abgedeckt: Issue „Curriculum-Map für nächsten Beruf anlegen“ (amtliche Quelle nötig), höchstens 1 neuer Beruf pro Monat.",
+    "- Lern-Schleife (AP-12): ab 50 aktiven Lernenden je Kurs die 5 schwächsten Einheiten als Issue.",
+    "- Nutze die Vorschläge im Abschnitt „Content“; ohne Vorschlag kein Content-Issue.",
+    "",
     "Keine Duplikate zu offenen Issues. Pro Issue: ein Arbeitspaket, ein PR. Kein Inhalt ohne amtliche Quelle, keine Personendaten.",
     "",
     "Figma zuerst (SIN-239):",
@@ -169,6 +179,9 @@ export function buildPlannerPrompt({ definition, issues, metrics, readiness = ""
     "",
     "## Produktreife MAF Metall (docs/PRODUCT.md)",
     readiness || "(nicht geprüft)",
+    "",
+    "## Content (Abdeckung je Beruf/Modul)",
+    content || "(nicht geprüft)",
     "",
     "## Offene Linear-Issues",
     ...(issues.length ? issues.map((i) => `- ${i.identifier} [${i.state.name}, Prio ${i.priority}] ${i.title}`) : ["(keine)"]),
@@ -270,12 +283,15 @@ export async function main(argv) {
   if (argv.includes("--context")) {
     const metrics = await collectMetrics();
     const { rows, abnahme } = await assessReadiness({ metrics, issues });
+    const sourceIssues = (issues ?? []).filter((i) => /quellen-monitor/i.test(i.title));
+    const content = renderContentSection(await collectContentMetrics(), { sourceIssues });
     const definition = extractSection(readFileSync("docs/PRODUCT.md", "utf8"), "Definition fertig");
     const prompt = buildPlannerPrompt({
       definition,
       issues: issues ?? [],
       metrics,
       readiness: renderReadiness(rows),
+      content,
       maintenance: inMaintenanceMode(rows, abnahme),
     });
     if (argv.includes("--out")) writeFileSync(arg("--out"), prompt);
