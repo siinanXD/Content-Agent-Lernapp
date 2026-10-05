@@ -1,6 +1,5 @@
 # Required PR build gate — lint, typecheck, unit tests, production build,
 # Playwright smoke + axe-core against `next start` (SIN-207).
-# package-lock.json is not committed; assemble from AP-17 chunks before npm ci.
 # Node 22 matches `.github/workflows/source-check.yml` (no `.nvmrc` / `engines.node` on main yet).
 name: ci
 
@@ -20,9 +19,6 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
-      - name: Assemble package-lock.json
-        run: node scripts/assemble-package-lock.mjs
 
       - uses: actions/setup-node@v4
         with:

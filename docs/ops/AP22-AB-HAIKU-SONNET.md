@@ -30,7 +30,7 @@ Annahme ~3 000 Input- und ~4 000 Output-Token je Einheit, ~7 Fragen je Einheit i
 
 ```bash
 export ANTHROPIC_API_KEY=… ANTHROPIC_WORKSPACE_ID=… OPENAI_API_KEY=…
-npm run lock:assemble && npm ci
+npm ci
 npm run ap22:ab:dry   # Vorprüfung, keine API-Kosten
 npm run ap22:ab       # schreibt docs/ops/ap22-runs/<runId>-ab-report.json
 ```

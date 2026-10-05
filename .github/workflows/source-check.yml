@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 22
       - name: Abhängigkeiten installieren
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Quellen gegen Lock vergleichen
         id: check
         shell: bash

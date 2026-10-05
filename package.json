@@ -26,7 +26,6 @@
     "hermes:dry-run": "node --import tsx scripts/hermes-dry-run.mjs",
     "pilot:maf": "node --import tsx scripts/pilot-maf.mjs",
     "supabase:verify": "node scripts/verify-supabase-schema.mjs",
-    "lock:assemble": "node scripts/assemble-package-lock.mjs",
     "content:mermaid": "node scripts/mermaid-to-svg.mjs",
     "prebuild": "node scripts/mermaid-to-svg.mjs",
     "pretest": "node scripts/materialize-goldset.mjs",
