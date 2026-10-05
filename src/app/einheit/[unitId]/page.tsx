@@ -32,8 +32,18 @@ import {
   trackUnitStarted,
 } from "@/lib/analytics";
 
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export default function EinheitPage() {
-  const params = useParams<{ unitId: string }>();
+  const rawParams = useParams<{ unitId: string }>();
+  // Next liefert die Id URL-kodiert; Ids wie „M0-1:u1“ würden sonst nie gefunden.
+  const params = { unitId: safeDecode(rawParams.unitId) };
   const router = useRouter();
   const { prefs } = useA11y();
   // The unit is resolved once per id: from seed/cache on the first render, or

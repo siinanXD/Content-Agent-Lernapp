@@ -44,8 +44,20 @@ function blockTitle(blockId?: string): string {
   return (phaseATitles.blocks as Record<string, string>)[blockId] ?? blockId;
 }
 
+/** Nur Einheiten mit Id, Titel und mindestens einer Frage sind spielbar (SIN-249). */
+function isPlayable(u: GeneratedUnit | null | undefined): u is GeneratedUnit {
+  return Boolean(
+    u &&
+      typeof u.id === "string" &&
+      u.id &&
+      typeof u.title === "string" &&
+      Array.isArray(u.questions) &&
+      u.questions.length > 0,
+  );
+}
+
 export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
-  return units.map((u, index): PathUnit => {
+  return units.filter(isPlayable).map((u, index): PathUnit => {
     let status: PathUnitStatus = "open";
     let statusLabel = "Noch offen";
     if (index < 2) {
@@ -61,14 +73,14 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
       title: u.title,
       status,
       statusLabel,
-      minutes: u.minutes,
-      explanation: u.explanation,
+      minutes: u.minutes ?? 5,
+      explanation: u.explanation ?? "",
       sections: u.sections,
       explanationSimple: u.explanationSimple,
       variant: u.variant ?? "standard",
       image: u.image,
       sourceLabel: `Quelle: ${
-        u.sourceUrl.includes("gesetze-im-internet") ? "MaschFüAusbV" : "KMK RLP"
+        (u.sourceUrl ?? "").includes("gesetze-im-internet") ? "MaschFüAusbV" : "KMK RLP"
       }`,
       moduleId: u.moduleId ?? "M0",
       moduleTitle: modTitle(u.moduleId),
@@ -84,9 +96,9 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
         pairs: q.pairs,
         steps: q.steps,
         blanks: q.blanks,
-        correct: q.correct,
-        explanation: q.explanation,
-        sourceUrl: q.sourceUrl,
+        correct: q.correct ?? "",
+        explanation: q.explanation ?? "",
+        sourceUrl: q.sourceUrl ?? "",
         examAreas: q.examAreas ?? [],
         image: q.image,
         sampleSolution: q.sampleSolution,
@@ -103,8 +115,9 @@ export function phaseAPathUnits(): PathUnit[] {
 }
 
 export function setPhaseAPathUnits(units: GeneratedUnit[]): PathUnit[] {
-  cachedUnits = mapGeneratedToPathUnits(units);
-  return cachedUnits;
+  const mapped = mapGeneratedToPathUnits(units);
+  if (mapped.length) cachedUnits = mapped;
+  return mapped;
 }
 
 export async function fetchPhaseAPathUnits(): Promise<PathUnit[]> {
@@ -112,7 +125,10 @@ export async function fetchPhaseAPathUnits(): Promise<PathUnit[]> {
     const res = await fetch("/api/learner/phase-a", { cache: "no-store" });
     if (!res.ok) return phaseAPathUnits();
     const data = (await res.json()) as { units?: GeneratedUnit[] };
-    if (data.units?.length) return setPhaseAPathUnits(data.units);
+    if (data.units?.length) {
+      const mapped = setPhaseAPathUnits(data.units);
+      if (mapped.length) return mapped;
+    }
   } catch {
     /* seed fallback */
   }

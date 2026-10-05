@@ -35,8 +35,9 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   const weiter = page.getByRole("button", { name: "Weiter", exact: true });
   await expect(weiter).toBeDisabled();
   await page.getByRole("button", { name: "Metall- und Kunststofftechnik" }).click();
-  // Zwei Maps: zweite Auswahl (Referenzberuf) mit Default
-  await expect(page.getByRole("group", { name: "Referenzberuf" })).toBeVisible();
+  // Zwei Maps: zweite Auswahl (Betrieb) mit Default; kein „Referenzberuf“ mehr (SIN-249)
+  await expect(page.getByRole("group", { name: "Dein Betrieb" })).toBeVisible();
+  await expect(page.getByText("Referenzberuf")).toHaveCount(0);
   await weiter.click();
 
   await expect(page).toHaveURL(/\/lernpfad$/);

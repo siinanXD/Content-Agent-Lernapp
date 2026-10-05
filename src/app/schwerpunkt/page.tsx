@@ -61,17 +61,21 @@ export default function SchwerpunktPage() {
         </div>
 
         {schwerpunkt && twoMaps ? (
-          <div role="group" aria-label="Referenzberuf" className="flex flex-col gap-2.5">
+          <div role="group" aria-label="Dein Betrieb" className="flex flex-col gap-2.5">
             <h2
               className="text-base font-medium text-[var(--color-text-primary)]"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Referenzberuf
+              Dein Betrieb
             </h2>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Beides ist Maschinen- und Anlagenführer/in. Die Wahl passt nur
+              Beispiele und Berufsschul-Themen an deinen Betrieb an.
+            </p>
             {schwerpunkt.maps.map((m) => (
               <OptionChoice
                 key={m.mapId}
-                label={m.referenzberuf}
+                label={m.betrieb}
                 state={m.mapId === mapId ? "selected" : "default"}
                 onSelect={() => setMapId(m.mapId)}
               />
