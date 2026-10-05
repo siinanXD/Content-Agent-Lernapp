@@ -243,7 +243,7 @@ jobs:
 
             // Auto-Merge an- oder ausschalten (GraphQL, Squash). Mit AGENT_WORKFLOW_TOKEN (SIN-237), denn Merges
             // mit github.token lösen keine Workflows aus (linear-done, post-merge). Rückfall: github.token.
-            const mergeGh = process.env.AGENT_TOKEN ? getOctokit(process.env.AGENT_TOKEN) : github;
+            const mergeGh = process.env.AGENT_TOKEN ? new github.constructor({ auth: process.env.AGENT_TOKEN }) : github;
             const autoOn = Boolean(pr.auto_merge);
             try {
               if (allowAutoMerge && !autoOn) {
