@@ -26,7 +26,7 @@ permissions:
   pull-requests: write
   issues: write
   id-token: write
-  actions: read
+  actions: write
 
 jobs:
   dispatch:
@@ -63,7 +63,15 @@ jobs:
           claude_args: |
             --model claude-sonnet-5-5
             --max-turns 60
-            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+
+      # Selbst-Anstoß (SIN-227): GitHubs Zeitplan ist unzuverlässig. Nach einem erfolgreichen Lauf
+      # startet der Dispatcher sich selbst neu; findet er nichts, endet die Kette.
+      - name: Nächstes Issue anstoßen
+        if: success() && steps.pick.outputs.found == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
 
       # Fehler oder Limit: Issue zurück auf Todo (kein blockierter Slot). Bei Limit Pause bis Reset.
       - name: Fehler auswerten
