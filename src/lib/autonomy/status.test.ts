@@ -25,7 +25,7 @@ test("Status: jede Meldung nur einmal pro Vorfall, danach wieder frei", () => {
   const healthy = { ...fixture(), failures: {}, runs: fixture().runs.filter((x: { id: number }) => x.id !== 1) };
   const cleared = analyze(healthy, limits, parseState(first.body));
   assert.ok(!cleared.state.reported.includes("worker-failed:1"));
-  const back = analyze(fixture(), limits, cleared.state);
+  const back = analyze(fixture(), limits, cleared.state as Parameters<typeof analyze>[2]);
   assert.ok(back.fresh.some((i: { key: string }) => i.key === "worker-failed:1"));
 });
 
@@ -46,7 +46,7 @@ test("Status: Stillstand, hängendes In Progress, Freigabe-Wartezeit", () => {
 
 test("Status: kein Alarm bei laufendem Worker und frischen Daten", () => {
   const snap = fixture();
-  snap.runs = snap.runs.filter((r: { name: string }) => r.name !== "worker" || r.status === "in_progress");
+  snap.runs = snap.runs.filter((r: { name: string; status?: string }) => r.name !== "worker" || r.status === "in_progress");
   snap.prs = [];
   snap.usage = {};
   snap.issues = snap.issues.filter((i: { identifier: string }) => i.identifier !== "SIN-200");
@@ -73,7 +73,7 @@ test("Status: Merge-Konflikt → @claude, nach 2 Versuchen Sinan", () => {
   assert.match(ask.text, /^@claude .*origin\/main/);
   assert.ok(!keys(first).includes("conflict:65"));
   // Zu früh: keine zweite Bitte, keine Eskalation.
-  const soon = analyze(snap, limits, first.state);
+  const soon = analyze(snap, limits, first.state as Parameters<typeof analyze>[2]);
   assert.equal(soon.actions.filter((a: { type: string }) => a.type === "ask-claude").length, 0);
   // Nach Wartezeit: zweite Bitte, dann Eskalation.
   const later = (min: number, st: object) =>
@@ -94,7 +94,7 @@ test("Status: merge-gate rot trotz Freigabe → Hinweis, Linear-Abgleich → Don
   assert.ok(keys(r).includes("stale-gate:70"));
   assert.match(r.incidents.find((i: { key: string }) => i.key === "stale-gate:70")?.text ?? "", /entfernen und neu setzen/);
   assert.deepEqual(
-    r.actions.filter((a: { type: string }) => a.type === "linear-done").map((a: { issue: { identifier: string } }) => a.issue.identifier),
+    r.actions.filter((a: { type: string }) => a.type === "linear-done").map((a) => (a as { issue: { identifier: string } }).issue.identifier),
     ["SIN-200"],
   );
 });
@@ -125,18 +125,18 @@ test("Status: Kontingent-Prozent und nicht messbar", () => {
 
 test("Status: collectUsage ohne Tokens → nicht messbar, mit Vercel-Token → Zahl", async () => {
   const now = new Date("2026-10-05T12:00:00Z");
-  const runs = [{ created_at: "2026-10-05T01:00:00Z" }, { created_at: "2026-10-04T23:00:00Z" }];
-  const none = await collectUsage({ env: {}, now, runs, fetchImpl: (async () => assert.fail("kein Netz")) as unknown as typeof fetch });
+  const runs = [{ created_at: "2026-10-05T01:00:00Z" }, { created_at: "2026-10-04T23:00:00Z" }] as never[];
+  const none = await collectUsage({ env: {} as unknown as NodeJS.ProcessEnv, now, runs, fetchImpl: (async () => assert.fail("kein Netz")) as unknown as typeof fetch });
   assert.equal(none.github_actions_laeufe_tag, 1);
   assert.match(none.vercel_deployments_tag.error, /VERCEL_TOKEN/);
   const mock = (async (url: string) => {
     assert.match(url, /api\.vercel\.com\/v6\/deployments/);
     return { ok: true, json: async () => ({ deployments: [{}, {}, {}] }) };
   }) as unknown as typeof fetch;
-  const withToken = await collectUsage({ env: { VERCEL_TOKEN: "t" }, now, runs, fetchImpl: mock });
+  const withToken = await collectUsage({ env: { VERCEL_TOKEN: "t" } as unknown as NodeJS.ProcessEnv, now, runs, fetchImpl: mock });
   assert.equal(withToken.vercel_deployments_tag, 3);
   const failing = (async () => ({ ok: false, status: 403 })) as unknown as typeof fetch;
-  const bad = await collectUsage({ env: { VERCEL_TOKEN: "t" }, now, runs, fetchImpl: failing });
+  const bad = await collectUsage({ env: { VERCEL_TOKEN: "t" } as unknown as NodeJS.ProcessEnv, now, runs, fetchImpl: failing });
   assert.match(bad.vercel_deployments_tag.error, /403/);
 });
 
