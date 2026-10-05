@@ -39,9 +39,27 @@ async function fetchAllPrs() {
   return (await res.json()).map((p) => ({ title: p.title, head: p.head?.ref, state: p.state, merged: Boolean(p.merged_at) }));
 }
 
-/** Setzt Linear nach PR-Stand (Merge → Done, ohne Merge geschlossen → Todo); gibt die Issues danach zurück. */
-async function syncWithPrs(issues, prs, dry) {
-  const actions = reconcile(issues, prs);
+/** Kennungen (SIN-123) der Worker-Läufe, die gerade laufen oder warten (Lauf-Titel „worker SIN-123“, SIN-238). */
+async function fetchRunningWorkers() {
+  const { GITHUB_REPOSITORY: repo, GITHUB_TOKEN: token } = process.env;
+  if (!repo || !token) return undefined;
+  const ids = [];
+  for (const status of ["in_progress", "queued"]) {
+    const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/worker.yml/runs?status=${status}&per_page=50`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+    });
+    if (!res.ok) return undefined; // Läufe unbekannt: lieber nichts zurücksetzen
+    for (const r of (await res.json()).workflow_runs ?? []) ids.push(String(r.display_title ?? "").match(/SIN-\d+/)?.[0]);
+  }
+  return ids.filter(Boolean);
+}
+
+/**
+ * Setzt Linear nach PR- und Worker-Stand (Merge → Done; ohne Merge geschlossen oder seit 60 Min weder Worker noch PR → Todo);
+ * gibt die Issues danach zurück.
+ */
+async function syncWithPrs(issues, prs, dry, runningWorkers) {
+  const actions = reconcile(issues, prs, { runningWorkers });
   for (const { issue, to } of actions) {
     console.log(`${dry ? "[dry-run] " : ""}Abgleich: ${issue.identifier} → ${to}`);
     if (!dry) await setState(issue, to);
@@ -105,7 +123,12 @@ export async function main(argv) {
 
   const doneAt = argv.indexOf("--done");
   if (doneAt >= 0) {
-    const issue = await findByIdentifier(argv[doneAt + 1]);
+    // Schon erledigte Issues (z. B. durch den Abgleich) sind kein Fehler: der Lauf nach dem Merge soll grün bleiben.
+    const issue = await findByIdentifier(argv[doneAt + 1]).catch((e) => {
+      console.log(e.message);
+      return null;
+    });
+    if (!issue) return;
     if (dry) return console.log(`[dry-run] ${issue.identifier} → Done`);
     await setState(issue, "Done");
     return console.log(`${issue.identifier} → Done`);
@@ -125,7 +148,12 @@ export async function main(argv) {
       ? JSON.parse(readFileSync(argv[fixtureAt + 1], "utf8"))
       : await fetchProjectIssues(linear);
   // Erst abgleichen, dann Slots zählen (auch bei Pause): gemergte PRs geben ihren Slot frei.
-  const issues = await syncWithPrs(fetched, fixtureAt >= 0 ? [] : await fetchAllPrs(), dry);
+  const issues = await syncWithPrs(
+    fetched,
+    fixtureAt >= 0 ? [] : await fetchAllPrs(),
+    dry,
+    fixtureAt >= 0 ? undefined : await fetchRunningWorkers(),
+  );
   // Budget: nicht pausiert; Cursor hat zuerst Vorrang; höchstens 2 parallel (pickNext).
   if (isPaused(process.env.AGENT_PAUSED_UNTIL)) {
     console.log(`Nichts zu starten: pausiert bis ${parsePausedUntil(process.env.AGENT_PAUSED_UNTIL).toISOString()}`);

@@ -114,10 +114,12 @@ export function buildPrompt(issue) {
     "",
     issue.description ?? "(ohne Beschreibung)",
     "",
-    "Regeln: AGENTS.md. Lies zuerst docs/PRODUCT.md und docs/DECISIONS.md.",
+    "Regeln: AGENTS.md. Lies zuerst docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
+    `Entscheidungen und Annahmen: eine neue Datei docs/decisions/${issue.identifier}-<kurz>.md (Kopf: Links, Entscheidung, Annahmen, Warum). docs/DECISIONS.md nie bearbeiten, den Index erzeugt ein Skript.`,
     `Arbeite auf einem neuen Branch claude/${issue.identifier.toLowerCase()}. Ein PR pro Arbeitspaket, Reparaturen im selben PR.`,
     `PR-Titel als Conventional Commit mit (${issue.identifier}), Body beginnt mit "Part of ${issue.identifier}". Kein Draft, nie selbst mergen.`,
     `Höchstens ${MAX_REPAIR_ROUNDS} Reparatur-Runden. Bei einem Blocker: stoppen und den Blocker im PR beschreiben.`,
+    "Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, `npm run typecheck`, `npm run lint` und `npm test` ausführen. Rot? Erst beheben. Kein PR mit bekannten roten Checks.",
     "Frontend: Werte (Farben, Abstände, Texte) aus Figma lesen, nicht schätzen: `node scripts/autonomy/figma.mjs --node <ID>` (Datei 0SWGDO2ioBD3MyXiAnrbRz, Token FIGMA_ACCESS_TOKEN nur lesend; fehlt er, im PR „nicht verfügbar“ schreiben).",
     "Keine neuen Komponenten, Farben oder Screens im Code erfinden. Fehlt etwas in Figma, lege ein Linear-Issue mit Label `design` an, statt zu improvisieren.",
   ].join("\n");
@@ -133,16 +135,24 @@ export function prMentions(pr, identifier) {
  * Abgleich vor der Auswahl (SIN-237): Issues in „In Progress“ mit gemergtem PR → Done, nur geschlossene
  * PRs ohne offenen → Todo. Ohne PR bleibt das Issue (der Worker läuft evtl. noch). PRs: { title, head, state, merged }.
  */
-export function reconcile(issues, prs) {
+export function reconcile(issues, prs, /** @type {{ runningWorkers?: string[], now?: Date }} */ { runningWorkers, now = new Date() } = {}) {
   const actions = [];
   for (const issue of issues) {
     if (issue.state?.name !== "In Progress") continue;
     const mine = prs.filter((p) => prMentions(p, issue.identifier));
     if (mine.some((p) => p.merged)) actions.push({ issue, to: "Done" });
     else if (mine.length && !mine.some((p) => p.state === "open")) actions.push({ issue, to: "Todo" });
+    // SIN-240: weder PR noch laufender Worker seit STUCK_MIN → zurück auf Todo (nur, wenn die Läufe bekannt sind).
+    else if (!mine.length && runningWorkers && !runningWorkers.includes(issue.identifier) && stuckMinutes(issue, now) > STUCK_MIN) {
+      actions.push({ issue, to: "Todo" });
+    }
   }
   return actions;
 }
+
+/** So lange darf „In Progress“ ohne Worker und ohne PR stehen, bevor der Abgleich das Issue freigibt. */
+export const STUCK_MIN = 60;
+const stuckMinutes = (issue, now) => (new Date(now).getTime() - new Date(issue.updatedAt ?? now).getTime()) / 60000;
 
 export async function stateIdByName(teamId, name, call = linear) {
   const data = await call(

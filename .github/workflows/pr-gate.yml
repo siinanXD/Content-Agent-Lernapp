@@ -19,19 +19,60 @@ name: pr-gate
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  # SIN-240: Ist `ci` fertig, wird das Gate neu bewertet (Job `regate`). Ein eigener Lauf dieser Datei hinge nicht
+  # am Head-Commit des PRs, darum startet `regate` den letzten pr-gate-Lauf des Commits neu.
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
 
 permissions:
   contents: write
   pull-requests: write
   issues: write
+  actions: write
 
 # Kein cancel-in-progress: Ein abgebrochener Lauf darf keine Entscheidung verschlucken.
 concurrency:
-  group: pr-gate-${{ github.event.pull_request.number }}
+  group: pr-gate-${{ github.event.pull_request.number || github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
+  # Gate neu bewerten, wenn CI fertig ist: Freigabe (`freigegeben`) gilt, egal ob vor oder nach Grün gesetzt,
+  # und ein vergessenes Auto-Merge wird nachgeholt. Das Neustarten hängt am selben Commit, nicht an einem Label-Ereignis.
+  regate:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Letzten pr-gate-Lauf des Commits neu starten
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const run = context.payload.workflow_run;
+            let number = run.pull_requests?.[0]?.number;
+            if (!number) {
+              const { data } = await github.rest.pulls.list({ owner, repo, state: "open", head: `${owner}:${run.head_branch}` });
+              number = data[0]?.number;
+            }
+            if (!number) { core.info("Kein offener PR."); return; }
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+            if (pr.state !== "open" || pr.draft || pr.head.sha !== run.head_sha) {
+              core.info("PR geschlossen, Draft oder schon neuer Commit: nichts zu tun.");
+              return;
+            }
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner, repo, workflow_id: "pr-gate.yml", event: "pull_request", head_sha: run.head_sha, per_page: 20,
+            });
+            const latest = data.workflow_runs.sort((a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt)[0];
+            if (!latest) { core.info("Kein pr-gate-Lauf zu diesem Commit."); return; }
+            if (latest.status !== "completed") { core.info("pr-gate läuft noch und bewertet frisch."); return; }
+            await github.rest.actions.reRunWorkflow({ owner, repo, run_id: latest.id });
+            core.info(`pr-gate-Lauf ${latest.id} neu gestartet (PR #${number}).`);
+
   pr-title:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -56,6 +97,7 @@ jobs:
           echo "PR-Titel ok."
 
   merge-gate:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -118,6 +160,10 @@ jobs:
             const MARKER = "<!-- pr-gate -->";
             const KEYS_RE = /<!-- pr-gate approved-keys: (\[.*?\]) -->/;
             const BOT = "github-actions[bot]";
+            // Labels und Auto-Merge mit dem Agenten-Token (SIN-240): Ereignisse von github.token lösen keine Folge-
+            // Workflows aus. Der Hinweis-Kommentar bleibt beim Standard-Token, denn der Marker wird am Autor
+            // (BOT) erkannt. Ohne Secret (Fork- und Dependabot-PRs, dort mergt nie jemand automatisch): github.token.
+            const agent = process.env.AGENT_TOKEN ? getOctokit(process.env.AGENT_TOKEN) : github;
             // Wer freigeben darf. Labels von Bots/Agenten (z. B. claude[bot]) zählen nicht.
             const APPROVERS = [owner];
             // Freigabe-Labels: `freigegeben` ist der Standard, `owner-approved` bleibt aus dem
@@ -167,21 +213,21 @@ jobs:
             // Labels anlegen (falls neu) und genau ein Risiko-Label setzen (risk:low entfällt).
             for (const [name, meta] of Object.entries({ ...RISK_LABELS,
               freigegeben: { color: "1D76DB", description: "Sinan hat einen risk:high-PR freigegeben" } })) {
-              try { await github.rest.issues.createLabel({ owner, repo, name, ...meta }); }
+              try { await agent.rest.issues.createLabel({ owner, repo, name, ...meta }); }
               catch (e) { if (e.status !== 422) throw e; }
             }
             for (const l of labels.filter((l) => l.startsWith("risk:") && l !== risk)) {
-              try { await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: l }); }
+              try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: l }); }
               catch (e) { if (e.status !== 404) throw e; }
             }
             if (!labels.includes(risk)) {
-              await github.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: [risk] });
+              await agent.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: [risk] });
             }
             if (isFork) return;
 
             const removeApprovals = async () => {
               for (const l of APPROVALS.filter((l) => labels.includes(l))) {
-                try { await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: l }); }
+                try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: l }); }
                 catch (e) { if (e.status !== 404) throw e; }
               }
               labels = labels.filter((l) => !APPROVALS.includes(l));
@@ -241,9 +287,9 @@ jobs:
               await github.rest.issues.deleteComment({ owner, repo, comment_id: mine.id });
             }
 
-            // Auto-Merge an- oder ausschalten (GraphQL, Squash). Mit AGENT_WORKFLOW_TOKEN (SIN-237), denn Merges
-            // mit github.token lösen keine Workflows aus (linear-done, post-merge). Rückfall: github.token.
-            const mergeGh = process.env.AGENT_TOKEN ? new github.constructor({ auth: process.env.AGENT_TOKEN }) : github;
+            // Auto-Merge an- oder ausschalten (GraphQL, Squash) mit dem Agenten-Token (SIN-237): Merges mit
+            // github.token lösen keine Workflows aus (linear-done, post-merge).
+            const mergeGh = agent;
             const autoOn = Boolean(pr.auto_merge);
             try {
               if (allowAutoMerge && !autoOn) {
