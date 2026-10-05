@@ -9,7 +9,7 @@
  *   npm run ap15:phase-a -- --resume-batch=<id>
  *   npm run ap15:phase-a -- --dry-run
  */
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   collectBatchUnits,
