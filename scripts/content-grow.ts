@@ -206,7 +206,7 @@ async function main() {
   // Stufe a: Reparatur zuerst.
   const repair = runRepair(dry);
   report.repair = { ran: !dry, costEur: repair.costEur };
-  let spent = repair.costEur;
+  const spent = repair.costEur;
   if (repair.budgetStop || overBudget(spent)) {
     report.costEur = spent;
     report.stopReason = "Deckel in der Reparatur erreicht; Rest im nächsten Lauf";
