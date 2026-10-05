@@ -1,0 +1,55 @@
+# Vorlage (SIN-223) → nach .github/workflows/planner.yml kopieren (der Agent darf dort nicht schreiben).
+# Planer: sonntags Definition fertig (PRODUCT.md), offene Linear-Issues und Kennzahlen lesen,
+# Claude schreibt plan.json, das Skript legt höchstens 5 Issues als Todo an. Ersetzt den Frontend-Agent.
+# Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN; optional SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+# SENTRY_AUTH_TOKEN/SENTRY_ORG/SENTRY_PROJECT, POSTHOG_PERSONAL_API_KEY/POSTHOG_PROJECT_ID.
+name: planner
+
+on:
+  schedule:
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Nur anzeigen, nichts in Linear anlegen"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
+      POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
+      DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Kontext sammeln
+        run: node scripts/autonomy/planner.mjs --context --out /tmp/planner-prompt.md
+      - name: Claude schreibt den Plan
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: "Lies /tmp/planner-prompt.md und folge der Anweisung dort. Schreibe plan.json im Repo-Wurzelverzeichnis."
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 15
+            --allowedTools "Read,Write,Glob,Grep"
+      - name: Issues anlegen (max. 5)
+        run: |
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/planner.mjs --create plan.json --dry-run
+          else node scripts/autonomy/planner.mjs --create plan.json; fi

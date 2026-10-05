@@ -52,11 +52,12 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 ## Pull Requests und Merge (SIN-207)
 
-- 1 Linear-Issue = 1 PR. Klein halten: lieber zwei PRs als einen großen.
+- Ein PR pro Arbeitspaket (1 Linear-Issue = 1 PR). Reparaturen kommen in denselben PR, kein Folge-PR.
+- Der Dispatcher (`dispatch.yml`, alle 2 h) startet das nächste Todo-Issue ohne offene Blocker, höchstens 2 parallel. Der Planer (`planner.yml`, sonntags) legt höchstens 5 Issues pro Woche an. Beide laufen mit `--dry-run` ohne Änderungen.
 - PR-Titel = Commit auf `main` (Squash-Merge): Conventional Commit mit Linear-ID, z. B. `feat(lernpfad): Fortschrittsbalken (SIN-123)`. Der Check `pr-title` prüft das.
-- Das Risiko setzt der Workflow `pr-gate` automatisch als Label `risk:low`, `risk:medium` oder `risk:high`. Nie selbst setzen oder entfernen.
-  - `risk:low` und `risk:medium`: Auto-Merge (Squash), sobald `build`, `pr-title` und `merge-gate` grün sind. Nicht selbst mergen.
-  - `risk:high` (`.github/`, `supabase/migrations/`, Auth, Middleware/Proxy, Env/Secrets, `vercel.json`, `next.config.*`, `src/lib/storage/`, Zahlungen, sehr große PRs): wartet, bis Sinan das Label `freigegeben` setzt. Neue Commits heben die Freigabe auf.
+- Das Risiko setzt der Workflow `pr-gate` automatisch als Label `risk:medium` (Standard) oder `risk:high`. Nie selbst setzen oder entfernen. Die Regeln stehen in `scripts/autonomy/risk.mjs` (SIN-223).
+  - `risk:medium`: Auto-Merge (Squash), sobald `build`, `pr-title` und `merge-gate` grün sind. Gilt auch für `.github/`, Migrationen (nur hinzufügen), `src/lib/storage/`, `.env.example`, `next.config.*`, `vercel.json`. Nicht selbst mergen.
+  - `risk:high` nur bei: Secret-Leak (gitleaks, Werte in Env-Dateien); Datenverlust (`drop`, `delete`, `truncate`, `alter ... drop` in Migrationen, Änderung bestehender Migrationen); geschwächter Sicherheit (RLS, Auth, erweiterte Workflow-`permissions`); Zahlungen; Grundsatz-Entscheidungen (`docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, Framework/DB/Hosting-Wechsel, `docs/design/`). Wartet, bis Sinan das Label `freigegeben` setzt. Die Freigabe bleibt bei Folge-Commits bestehen, außer ein neuer Commit bringt einen neuen High-Grund.
   - Label `no-automerge` stoppt den Auto-Merge für einen PR.
 - `build` prüft Lint, Typecheck, Unit-Tests, Build, Playwright-Smoke und axe-core.
 - Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.

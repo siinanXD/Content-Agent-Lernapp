@@ -1,0 +1,24 @@
+[
+  {
+    "id": "a",
+    "identifier": "SIN-901",
+    "title": "Beispiel mit Blocker",
+    "description": "Wird übersprungen.",
+    "priority": 1,
+    "url": "https://linear.app/sinan-kahraman/issue/SIN-901",
+    "state": { "id": "s1", "name": "Todo", "type": "unstarted" },
+    "team": { "id": "t1" },
+    "inverseRelations": { "nodes": [{ "type": "blocks", "issue": { "identifier": "SIN-900", "state": { "type": "started" } } }] }
+  },
+  {
+    "id": "b",
+    "identifier": "SIN-902",
+    "title": "Beispiel frei",
+    "description": "Wird gewählt.",
+    "priority": 2,
+    "url": "https://linear.app/sinan-kahraman/issue/SIN-902",
+    "state": { "id": "s1", "name": "Todo", "type": "unstarted" },
+    "team": { "id": "t1" },
+    "inverseRelations": { "nodes": [] }
+  }
+]

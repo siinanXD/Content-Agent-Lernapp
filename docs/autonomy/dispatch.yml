@@ -1,0 +1,93 @@
+# Vorlage (SIN-223) → nach .github/workflows/dispatch.yml kopieren (der Agent darf dort nicht schreiben).
+# Dispatcher: alle 2 h das nächste Linear-Issue (Todo, keine offenen Blocker, höchste Priorität)
+# an Claude geben. Max. 2 Issues parallel, Reparaturen max. 3 Runden (repair.yml), danach Blocker-Kommentar.
+# Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN. Dry-Run: Eingabe `dry_run` = true, ändert nichts.
+name: dispatch
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Nur anzeigen, nichts starten"
+        type: boolean
+        default: true
+  # Nach Merge: Linear auf Done. Blocker nach 3 Runden: Kommentar in Linear.
+  pull_request:
+    types: [closed, labeled]
+
+concurrency:
+  group: dispatch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+jobs:
+  dispatch:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Nächstes Issue wählen
+        id: pick
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/dispatch.mjs --dry-run
+          else node scripts/autonomy/dispatch.mjs; fi
+      - name: Claude im Automationsmodus
+        if: steps.pick.outputs.found == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: ${{ steps.pick.outputs.prompt }}
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 60
+            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+
+  linear-done:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Linear auf Done
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
+          [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --done "$id" || echo "Keine Linear-ID im Titel."
+
+  linear-blocker:
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'needs-human' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Blocker-Kommentar in Linear
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          TITLE: ${{ github.event.pull_request.title }}
+          URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
+          [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --blocker "$id" "$URL" || echo "Keine Linear-ID im Titel."

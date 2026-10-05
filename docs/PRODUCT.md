@@ -97,7 +97,7 @@ Barrierefreiheit (Pflicht in jedem Arbeitspaket):
 - Funktioniert offline und auf alten Android-Geräten
 - Automatische Prüfung mit axe-core und Lighthouse bei jedem Merge, Fehler blockieren den Merge
 
-Frontend entwickelt sich weiter: Einmal pro Woche liest ein Agent die Nutzungsdaten (wo brechen Lernende ab) und legt maximal 3 Verbesserungs-Issues in Linear an. Die laufen dann durch den normalen Ablauf.
+Das Frontend entwickelt sich weiter: Der wöchentliche Planer (`.github/workflows/planner.yml`, SIN-223) liest die Nutzungsdaten (wo brechen Lernende ab) und legt maximal 5 Issues pro Woche in Linear an. Er ersetzt den früheren Frontend-Agent. Die Issues laufen dann durch den Dispatcher und den normalen Ablauf.
 
 Figma liefert Farben, Abstände und Komponenten. Die Code-Agenten lesen das Design über den Figma-Connector und erfinden kein eigenes.
 
@@ -232,6 +232,15 @@ Verboten:
 | Kosten laufen weg | Viele Berufe, viele Neuerzeugungen | Deckel pro Kurslauf, nur geänderte Einheiten neu erzeugen |
 
 Eine Ausbildung verkürzt die App nicht. Sie bereitet auf die schriftliche Prüfung vor. Über die Zulassung entscheidet die Kammer.
+
+## Definition fertig
+
+Die App gilt als fertig, wenn alle vier Punkte erfüllt sind. Der Planer misst den Ist-Stand daran und legt für jede Lücke Issues an.
+
+- **Funktionsfähig:** Start → Einheit → Ergebnis → Wiederholung → Prüfung funktioniert für jeden veröffentlichten Kurs, E2E grün.
+- **Evaluierbar:** Jede Frage ist bewertet, die Kosten pro Lauf sind gemessen, ein Langfuse-Dashboard zeigt beides.
+- **Skalierbar:** Neue Berufe entstehen nur über die Curriculum-Map. Die Content-Fabrik läuft wöchentlich.
+- **Frontend:** Die Screens entsprechen Figma (Tokens aus Figma), WCAG 2.2 AA.
 
 ## Nächster Schritt
 
