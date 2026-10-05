@@ -43,8 +43,11 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   await page.locator('[data-state="heute"]').first().click();
   await expect(page).toHaveURL(/\/einheit\//);
 
-  for (let guard = 0; guard < 30 && !/\/ergebnis$/.test(page.url()); guard++) {
+  const counter = page.getByText(/^Frage \d+ von \d+/);
+  for (let guard = 0; guard < 30; guard++) {
     const feedback = page.getByTestId("answer-feedback");
+    const progress = (await counter.textContent()) ?? "";
+    const isLast = /^Frage (\d+) von \1\b/.test(progress);
     if (!(await feedback.isVisible())) await answerCurrentQuestion(page);
     await expect(feedback).toBeVisible();
     const axe = await new AxeBuilder({ page })
@@ -53,9 +56,13 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
     expect(
       axe.violations.filter((v) => ["critical", "serious"].includes(v.impact ?? "")),
     ).toHaveLength(0);
-    await page
-      .getByRole("button", { name: /^(Weiter|Ergebnis anzeigen)$/ })
-      .click();
+    if (isLast) {
+      await page.getByRole("button", { name: "Ergebnis anzeigen", exact: true }).click();
+      await expect(page).toHaveURL(/\/ergebnis$/);
+      break;
+    }
+    await page.getByRole("button", { name: "Weiter", exact: true }).click();
+    await expect(counter).not.toHaveText(progress);
   }
 
   await expect(page).toHaveURL(/\/ergebnis$/);
