@@ -38,7 +38,8 @@ jobs:
     env:
       IDENTIFIER: ${{ inputs.identifier }}
       LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-      GH_TOKEN: ${{ github.token }}
+      # gh (auch `gh pr create` in Claude) mit dem Agenten-Token, sonst startet der PR keine Checks (SIN-240).
+      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       # Nur lesen (Infisical /content-agent-lernapp → Development). Fehlt er: „nicht verfügbar“ (SIN-239).
       FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
     steps:
@@ -49,9 +50,16 @@ jobs:
         run: |
           echo "::error::Absichtlicher Test-Fehler (SIN-238 fail_test)"
           exit 1
+      # Ohne Agenten-Token hätten PRs, Pushes und Merges des Loops keine Folge-Workflows (SIN-240): sofort laut scheitern.
+      - name: Agenten-Token prüfen
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret AGENT_WORKFLOW_TOKEN fehlt: Aktionen mit github.token lösen keine Folge-Workflows aus."
+            exit 1
+          fi
       - uses: actions/checkout@v6
         with:
-          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -65,7 +73,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Leer, wenn das Secret fehlt: dann nutzt die Action die Claude-GitHub-App wie bisher.
           github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           allowed_bots: "github-actions,github-actions[bot]"
           prompt: ${{ steps.pick.outputs.prompt }}

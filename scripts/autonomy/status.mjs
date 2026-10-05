@@ -189,9 +189,11 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   for (const p of openPrs.filter((x) => APPROVAL_LABELS.some((l) => labelNames(x).includes(l)) && checks[x.number]?.mergeGate === "failure")) {
     incidents.push({ key: `stale-gate:${p.number}`, text: `PR #${p.number}: \`merge-gate\` ist rot, obwohl freigegeben (Freigabe vor neuem Commit). Bitte Label \`freigegeben\` entfernen und neu setzen: ${p.html_url}` });
   }
-  for (const { issue } of reconcile(issues, prs.map((p) => ({ title: p.title, head: p.head, state: p.state, merged: Boolean(p.merged_at) }))).filter((a) => a.to === "Done")) {
-    actions.push({ type: "linear-done", issue });
-  }
+  // Abgleich wie im Dispatcher (SIN-240): Merge → Done; ohne Worker und PR seit 60 Min → Todo.
+  const runningWorkers = running.map((r) => idOf(r.display_title)).filter(Boolean);
+  const reconciled = reconcile(issues, prs.map((p) => ({ title: p.title, head: p.head, state: p.state, merged: Boolean(p.merged_at) })), { runningWorkers, now });
+  for (const { issue } of reconciled.filter((a) => a.to === "Done")) actions.push({ type: "linear-done", issue });
+  for (const { issue } of reconciled.filter((a) => a.to === "Todo")) actions.push({ type: "linear-todo", issue });
 
   // Merker: nur aktive Vorfälle bleiben; eine Meldung je Schlüssel, bis er verschwindet und später wiederkommt.
   const reportedBefore = new Set(prev.reported ?? []);
@@ -438,7 +440,10 @@ export async function main(argv, env = process.env) {
   const alert = renderAlert(res.fresh);
   console.log(res.body);
   if (alert) console.log(`\n--- Erwähnung ---\n${alert}`);
-  for (const a of res.actions) console.log(`\n--- Aktion ${a.type} ---\n${a.type === "linear-done" ? `${a.issue.identifier} → Done` : `PR #${a.pr}: ${a.text}`}`);
+  for (const a of res.actions) {
+    const what = a.type === "linear-done" ? `${a.issue.identifier} → Done` : a.type === "linear-todo" ? `${a.issue.identifier} → Todo` : `PR #${a.pr}: ${a.text}`;
+    console.log(`\n--- Aktion ${a.type} ---\n${what}`);
+  }
   output("kick", String(res.kick));
   if (dry || fixtureAt >= 0) return res;
 
@@ -454,6 +459,10 @@ export async function main(argv, env = process.env) {
     if (a.type === "linear-done") {
       await setState(a.issue, "Done");
       await comment(a.issue.id, "Status auf Done gesetzt: der PR ist gemergt (Loop-Wächter, SIN-238).");
+    }
+    if (a.type === "linear-todo") {
+      await setState(a.issue, "Todo");
+      await comment(a.issue.id, "Zurück auf Todo: seit über 60 Min weder Worker noch PR (Loop-Wächter, SIN-240).");
     }
   }
   return res;
