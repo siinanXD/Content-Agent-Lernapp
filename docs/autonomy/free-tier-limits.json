@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Free-Tier-Limits für den Loop-Status (SIN-238). SIN-225 liefert die Datei später offiziell; bis dahin gilt diese. `geprueft` = Datum, an dem der Wert in den offiziellen Docs stand; null = aus dem Gedächtnis angenommen, vor Verlass prüfen.",
+  "_hinweis": "Free-Tier-Limits für den Loop-Status (SIN-238). SIN-225: der Planer prüft diese Limits (limits.mjs), siehe docs/decisions/SIN-225-free-tier-waechter.md. `geprueft` = Datum, an dem der Wert in den offiziellen Docs stand; null = aus dem Gedächtnis angenommen, vor Verlass prüfen.",
   "warnschwelle_prozent": 80,
   "limits": {
     "github_actions_minuten": { "limit": null, "einheit": "min/Monat", "hinweis": "Repo öffentlich: Standard-Runner frei", "quelle": "https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions", "geprueft": null },
