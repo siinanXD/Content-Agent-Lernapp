@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -58,7 +58,7 @@ jobs:
       - name: Worker starten
         if: steps.pick.outputs.found == 'true' && env.DRY != 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           IDENTIFIERS: ${{ steps.pick.outputs.identifiers }}
         run: |
           for id in $IDENTIFIERS; do
@@ -88,7 +88,7 @@ jobs:
       # Frei gewordene Slots sofort füllen (SIN-237), nicht erst beim nächsten 30-Min-Lauf.
       - name: Dispatcher neu anstoßen
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
         run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main
 
   linear-blocker:

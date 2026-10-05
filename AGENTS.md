@@ -5,7 +5,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 ## Zuerst lesen
 
 1. `docs/PRODUCT.md` (Konzept, Arbeitspakete AP-00 bis AP-12)
-2. `docs/DECISIONS.md` (bisherige Entscheidungen)
+2. `docs/DECISIONS.md` (Index der bisherigen Entscheidungen; Einzeldateien in `docs/decisions/`)
 3. Das zugewiesene Linear-Issue
 
 ## Grundsatz
@@ -19,14 +19,14 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 1. Suche auf GitHub und Hugging Face nach einer fertigen Lösung
 2. Lies die offiziellen Docs von Anthropic, OpenAI, Hermes oder Langfuse zum aktuellen Stand. Nutze nie Modellnamen oder Funktionen aus dem Gedächtnis
-3. Schreibe die Entscheidung mit Links und einem Satz Begründung in docs/DECISIONS.md
+3. Schreibe die Entscheidung mit Links und einem Satz Begründung in `docs/decisions/<ISSUE-ID>-<kurz>.md` (eine Datei je Entscheidung, keine laufenden Nummern, SIN-240). `docs/DECISIONS.md` ist ein erzeugter Index: nie bearbeiten
 
 ### So wird entschieden
 
 - Fertige Open-Source-Lösung vor Eigenbau, wenn: Lizenz MIT oder Apache, letzter Commit jünger als 6 Monate, mehr als 500 Sterne
 - Das günstigste Modell, das die Qualitäts-Schwelle besteht
 - Bei zwei gleich guten Wegen: der mit weniger Abhängigkeiten
-- Nie zurückfragen. Bei Unsicherheit die Annahme in docs/DECISIONS.md notieren und weiterarbeiten
+- Nie zurückfragen. Bei Unsicherheit die Annahme in der Entscheidungsdatei (`docs/decisions/`) notieren und weiterarbeiten
 
 ### Stopp-Regeln
 
@@ -44,7 +44,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 ## Linear-Issues bearbeiten
 
 1. Issue starten (In Progress) / zuweisen, bevor Code geschrieben wird — zuerst **AP-00**.
-2. Scope und Akzeptanzkriterien des Issues einhalten; Annahmen in `docs/DECISIONS.md` festhalten.
+2. Scope und Akzeptanzkriterien des Issues einhalten; Annahmen in `docs/decisions/<ISSUE-ID>-<kurz>.md` festhalten.
 3. Branch: `cursor/<kurzname>-85a9` (Cursor) oder `claude/<kurzname>` (Claude). Pull Request öffnen. Gemerged wird automatisch, siehe „Pull Requests und Merge“.
 4. Nach Merge Issue schließen und nächsten Block laut Bauplan starten.
 5. Reihenfolge: AP-00 → AP-01 → AP-02 nacheinander; danach Pipeline (AP-03–AP-06) und App (AP-07–AP-09) parallel möglich; Hermes **AP-10** zuletzt unter Infra; **AP-11** Pilot; **AP-12** Lern-Schleife nach dem Pilot.
@@ -60,7 +60,10 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
   - `risk:high` nur bei: Secret-Leak (gitleaks, Werte in Env-Dateien); Datenverlust (`drop`, `delete`, `truncate`, `alter ... drop` in Migrationen, Änderung bestehender Migrationen); geschwächter Sicherheit (RLS, Auth, erweiterte Workflow-`permissions`); Zahlungen; Grundsatz-Entscheidungen (`docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, Framework/DB/Hosting-Wechsel, `docs/design/`). Wartet, bis Sinan das Label `freigegeben` setzt. Die Freigabe bleibt bei Folge-Commits bestehen, außer ein neuer Commit bringt einen neuen High-Grund.
   - Label `no-automerge` stoppt den Auto-Merge für einen PR.
 - `build` prüft Lint, Typecheck, Unit-Tests, Build, Playwright-Smoke und axe-core.
+- Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, Typecheck, Lint und Tests. Kein PR mit bekannten roten Checks (SIN-240).
+- Alles, was PRs anlegt, pusht, labelt oder mergt, läuft mit `AGENT_WORKFLOW_TOKEN`, nie mit `github.token` (dessen Ereignisse lösen keine Folge-Workflows aus).
 - Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.
+- Workflows: In github-script@v7 nie `getOctokit` verwenden (nicht definiert). Stattdessen `new github.constructor({ auth: process.env.AGENT_TOKEN })`.
 
 ## Technik (siehe DECISIONS.md)
 

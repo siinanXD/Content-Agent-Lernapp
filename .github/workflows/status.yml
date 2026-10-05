@@ -66,4 +66,4 @@ jobs:
         if: steps.status.outputs.kick == 'true' && env.DRY != 'true'
         run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}

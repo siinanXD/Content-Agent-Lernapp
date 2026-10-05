@@ -3,8 +3,8 @@
 # danach Label `needs-human` und ein Kommentar für Sinan (Stopp-Regel aus AGENTS.md).
 #
 # Nur für PRs aus diesem Repo, nie für Forks. Braucht das Secret
-# CLAUDE_CODE_OAUTH_TOKEN und die Claude GitHub App (pusht als App, damit `ci` neu läuft).
-# Mit AGENT_WORKFLOW_TOKEN pusht Claude als Token-Inhaber und darf auch .github/workflows/ ändern.
+# CLAUDE_CODE_OAUTH_TOKEN und AGENT_WORKFLOW_TOKEN (SIN-240): Claude pusht als Token-Inhaber,
+# damit `ci` neu läuft.
 name: repair
 
 on:
@@ -32,10 +32,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      # Ohne Agenten-Token hätten Pushes und Labels des Loops keine Folge-Workflows (SIN-240): sofort laut scheitern.
+      - name: Agenten-Token prüfen
+        env:
+          AGENT_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+        run: |
+          if [ -z "$AGENT_TOKEN" ]; then
+            echo "::error::Secret AGENT_WORKFLOW_TOKEN fehlt: Aktionen mit github.token lösen keine Folge-Workflows aus."
+            exit 1
+          fi
       - name: Runde zählen
         id: round
         uses: actions/github-script@v7
         with:
+          # Labels mit dem Agenten-Token, sonst löst `needs-human` den Blocker-Kommentar (dispatch.yml) nicht aus.
+          github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           script: |
             const run = context.payload.workflow_run;
             const { owner, repo } = context.repo;
@@ -83,7 +94,7 @@ jobs:
       - uses: actions/checkout@v4
         if: steps.round.outputs.go == 'true'
         with:
-          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
@@ -92,7 +103,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Leer, wenn das Secret fehlt: dann nutzt die Action die Claude-GitHub-App wie bisher.
           github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           additional_permissions: |
             actions: read
@@ -108,7 +118,7 @@ jobs:
             2. Lies die Logs des fehlgeschlagenen Laufs: `gh run view ${{ github.event.workflow_run.id }} --log-failed`
             3. Behebe nur die Ursache. Verboten: Tests, Lint-Regeln oder Barrierefreiheits-Tests abschalten oder abschwächen,
                Workflows unter .github/ ändern, Secrets anfassen.
-            4. Prüfe lokal, soweit möglich (`node scripts/assemble-package-lock.mjs && npm ci`, dann lint, typecheck, test).
+            4. Prüfe lokal, soweit möglich (`npm ci`, dann lint, typecheck, test). Vor dem Push `git fetch origin main && git merge origin/main`, danach die Tests erneut.
             5. Ein Commit, Conventional Commit mit derselben Linear-ID wie der PR-Titel
                („${{ steps.round.outputs.title }}“), z. B. `fix(ci): … (SIN-123)`. Dann auf den Branch pushen.
             6. Wenn du die Ursache nicht beheben kannst: nichts pushen, sondern im PR kurz den Blocker beschreiben.

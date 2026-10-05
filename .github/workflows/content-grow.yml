@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -90,7 +90,7 @@ jobs:
       - name: Bericht per PR einreichen
         if: env.DRY_RUN != 'true' && hashFiles('content-run-summary.md') != ''
         env:
-          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
         run: |
           # Nur der Bericht kommt in den PR; geänderte Dateien der Reparatur-Skripte bleiben draußen.
           git add docs/ops/content-runs
