@@ -174,6 +174,28 @@ export function addOpenAIUsage(
   });
 }
 
+/** AP-21: Phase A, Regen ganzer Einheiten: ~€7,24 für 110 verworfene Einheiten ≈ €0,066 je Einheit. */
+export const OLD_REGEN_EUR_PER_UNIT = 0.066;
+
+export type RepairCostComparison = {
+  /** Euro je reparierter (live gegangener) Einheit; null, wenn keine repariert wurde. */
+  newEurPerUnit: number | null;
+  oldEurPerUnit: number;
+  /** Positiv = neuer Weg ist günstiger. null, wenn keine repariert wurde. */
+  savingPct: number | null;
+};
+
+export function compareRepairCost(
+  ledger: CostLedger,
+  repairedUnits: number,
+  oldEurPerUnit = OLD_REGEN_EUR_PER_UNIT,
+): RepairCostComparison {
+  if (repairedUnits <= 0) return { newEurPerUnit: null, oldEurPerUnit, savingPct: null };
+  const newEurPerUnit = Math.round((ledger.eurEstimate / repairedUnits) * 1000) / 1000;
+  const savingPct = Math.round((1 - newEurPerUnit / oldEurPerUnit) * 100);
+  return { newEurPerUnit, oldEurPerUnit, savingPct };
+}
+
 /** Rough preflight for Phase A (280 units × ~6 questions) — must stay under budget. */
 export function phaseAPreflightUsd(units = 280, questionsPerUnit = 6): number {
   const genIn = units * 3000;
