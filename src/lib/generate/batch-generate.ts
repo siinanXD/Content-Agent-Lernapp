@@ -12,6 +12,7 @@ import {
   type CurriculumModule,
 } from "@/lib/content/curriculum";
 import { variantFromBlock } from "@/lib/content/didaktik";
+import { modulesToGenerate } from "@/lib/content/shared-modules";
 import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
 import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
 import type { GeneratedLernfeld, GeneratedUnit } from "./maf-lernfeld-seed";
@@ -51,11 +52,16 @@ export type BatchPollResult = {
   rawResultsPath?: string;
 };
 
+/**
+ * `publishedShared`: Module-IDs gemeinsamer Module (AP-20), die schon veröffentlicht
+ * sind. Sie werden nicht erneut erzeugt, sondern per Verknüpfung genutzt.
+ */
 export function phaseAChunks(
   phaseId = "A",
   c: Curriculum = loadMafCurriculum(),
+  publishedShared: ReadonlySet<string> = new Set(),
 ): { targets: BatchChunkTarget[]; unitTarget: number } {
-  const mods = modulesForPhase(c, phaseId);
+  const mods = modulesToGenerate(modulesForPhase(c, phaseId), publishedShared).generate;
   const targets: BatchChunkTarget[] = [];
   let unitTarget = 0;
   for (const mod of mods) {
@@ -143,9 +149,10 @@ export async function submitChunkTargets(opts: {
 export async function submitPhaseBatch(opts: {
   keyword: string;
   phaseId?: string;
+  publishedShared?: ReadonlySet<string>;
 }): Promise<BatchSubmitResult> {
   const c = loadMafCurriculum();
-  const { targets } = phaseAChunks(opts.phaseId ?? "A", c);
+  const { targets } = phaseAChunks(opts.phaseId ?? "A", c, opts.publishedShared);
   return submitChunkTargets({ keyword: opts.keyword, targets });
 }
 

@@ -77,6 +77,10 @@ export const mockStorage: CourseStorage = {
     return questionEvaluations.filter((r) => r.courseId === courseId);
   },
 
+  async listSharedModuleLinks() {
+    return [];
+  },
+
   async recordProgress(input) {
     if (!input.anonymousId?.trim()) {
       throw new Error("anonymousId_required");
