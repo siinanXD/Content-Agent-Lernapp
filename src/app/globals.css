@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  /* AP-07 design tokens — mirror of docs/design/tokens.json / Figma 0SWGDO2ioBD3MyXiAnrbRz
-     Freigabe durch Sinan erforderlich before treating as final for AP-08. */
-  --color-bg-canvas: #eaf0f4;
-  --color-bg-surface: #f7fafc;
-  --color-bg-hero: #0a3d4a;
-  --color-text-primary: #12202a;
-  --color-text-secondary: #3d5260;
-  --color-text-on-brand: #f4f8fa;
-  --color-brand-primary: #0b5f6e;
-  --color-brand-accent: #a67c00;
-  --color-border-subtle: #c5d2da;
-  --color-feedback-success: #1a6b45;
-  --color-feedback-danger: #a33b2a;
-  --color-focus-ring: #0b5f6e;
+  /* Design tokens, Stil E (Orange/Weiß/Schwarz), SIN-245.
+     Spiegel von docs/design/tokens.json / Figma 0SWGDO2ioBD3MyXiAnrbRz.
+     Weißer Text nur auf brand-primary (#c2410c), nie auf brand-accent (#ea580c). */
+  --color-bg-canvas: #fafaf9;
+  --color-bg-surface: #ffffff;
+  --color-bg-hero: #1c1917;
+  --color-text-primary: #1c1917;
+  --color-text-secondary: #57534e;
+  --color-text-on-brand: #fafaf9;
+  --color-brand-primary: #c2410c;
+  --color-brand-accent: #ea580c;
+  --color-border-subtle: #e7e5e4;
+  --color-feedback-success: #15803d;
+  --color-feedback-danger: #b91c1c;
+  --color-focus-ring: #c2410c;
 
   --space-4: 4px;
   --space-8: 8px;
@@ -27,12 +28,12 @@
 
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-lg: 16px;
 
-  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif,
-    sans-serif;
-  --font-body: var(--font-ibm-plex-sans), "IBM Plex Sans", ui-sans-serif,
-    sans-serif;
+  /* Geist für Text, Geist Mono für Kennungen und Zahlen (next/font in layout.tsx) */
+  --font-display: var(--font-geist-sans), "Geist", ui-sans-serif, sans-serif;
+  --font-body: var(--font-geist-sans), "Geist", ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
 
   /* Compatibility aliases used by existing scaffold */
   --background: var(--color-bg-canvas);
@@ -48,7 +49,7 @@
   --color-brand: var(--color-brand-primary);
   --color-accent: var(--color-brand-accent);
   --font-sans: var(--font-body);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {

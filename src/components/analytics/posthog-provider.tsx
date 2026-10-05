@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
+import { syncPostHogConsent } from "@/lib/analytics-consent";
 import { loadOnboarding } from "@/lib/learner/onboarding";
 
 /**
@@ -22,20 +23,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
     // Widerruf in den Einstellungen stoppt die Erfassung sofort.
     function sync() {
-      if (loadOnboarding().consent === true) {
-        if (!posthog.__loaded) {
-          posthog.init(key!, {
-            api_host: host,
-            person_profiles: "identified_only",
-            capture_pageview: true,
-            capture_pageleave: true,
-          });
-        } else {
-          posthog.opt_in_capturing();
-        }
-      } else if (posthog.__loaded) {
-        posthog.opt_out_capturing();
-      }
+      syncPostHogConsent(posthog, loadOnboarding().consent, { key: key!, host });
     }
     sync();
     window.addEventListener("cal-consent-change", sync);

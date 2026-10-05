@@ -82,6 +82,16 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Agenten erfinden keine neuen Komponenten im Code. Fehlt etwas, legen sie ein Design-Issue an, statt zu improvisieren.
 - Werte (Farben, Abstände, Texte) für Frontend-Issues aus Figma lesen, nicht schätzen: `node scripts/autonomy/figma.mjs --node <ID>` (Datei `0SWGDO2ioBD3MyXiAnrbRz`, Token `FIGMA_ACCESS_TOKEN` nur lesend). Fehlt der Token, im Bericht „nicht verfügbar“ schreiben.
 
+### Anti-Slop (SIN-243, Stil E)
+
+- Stil E: Orange, Weiß, Schwarz. Farben nur als Token (`var(--color-*)`), nie als Hex im Code. Keine Teal- oder Messing-Altfarben.
+- Weißer Text nur auf `brand/primary` (`#C2410C`), nie auf `brand/accent` (`#EA580C`); dort dunkler Text.
+- Schrift: Geist (Text), Geist Mono (Kennungen, Zahlen wie „M0 · 03“). Keine weitere Schriftart.
+- Keine Emojis, kein Glow, keine Mehrfach-Schatten, keine Verläufe, kein Lila-auf-Weiß, kein Dark-Mode-Default.
+- Keine Platzhalter-Texte („Lorem“, „Text folgt“ ohne Issue), keine erfundenen Zahlen oder Kennzahlen.
+- Keine Karten in Karten; eine Hero-Komposition je Screen; Texte kurz, deutsch, konkret.
+- Zugänglichkeit vor Optik: Kontrast ≥ 4,5:1, sichtbarer Fokus, Ziele ≥ 44 px.
+
 ## Qualität
 
 - Jeder Pull Request: Tests grün, axe-core und Lighthouse ohne Fehler.

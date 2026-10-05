@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { BottomNav } from "@/components/learner/bottom-nav";
-import { DailyGoal } from "@/components/ui/daily-goal";
+import { NextUpCard } from "@/components/ui/next-up-card";
 import { PathNode, type PathNodeState } from "@/components/ui/path-node";
+import { ProgressRing } from "@/components/ui/progress-ring";
+import { StatChip } from "@/components/ui/stat-chip";
 import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import {
@@ -71,6 +73,17 @@ export default function LernpfadPage() {
     };
   }, []);
 
+  // „Als Nächstes“: heutige Einheit, sonst die erste offene. Der Ring zählt
+  // die Einheiten ihres Moduls (SIN-245, Annahme in docs/decisions).
+  const nextUnit =
+    pathUnits.find((u) => u.status === "today") ??
+    pathUnits.find((u) => u.status === "open");
+  const ringUnits = nextUnit
+    ? pathUnits.filter((u) => u.moduleId === nextUnit.moduleId)
+    : pathUnits;
+  const ringDone = ringUnits.filter((u) => u.status === "done").length;
+  const ringTotal = ringUnits.length;
+
   const subtitle = session
     ? `${session.keyword} · ${
         session.variant === "pruefung"
@@ -81,35 +94,60 @@ export default function LernpfadPage() {
 
   return (
     <MobileShell>
-      <header className="px-6 pb-4 pt-12">
-        <h1
-          className="text-[28px] font-bold text-[var(--color-text-primary)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Lernpfad
-        </h1>
-        <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-          {subtitle}
-        </p>
-        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-          {phaseA
-            ? `Phase A · ${pathUnits.length} Einheiten (M0, LF1, LF2, PA)`
-            : "Demo-Seed Sicherheit — Phase A noch nicht veröffentlicht"}
-        </p>
+      <header className="px-6 pb-2 pt-12">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h1
+              className="text-[28px] font-bold leading-9 text-[var(--color-text-primary)]"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Lernpfad
+            </h1>
+            <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
+              {subtitle}
+            </p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+              {phaseA
+                ? `Phase A · ${pathUnits.length} Einheiten (M0, LF1, LF2, PA)`
+                : "Demo-Seed Sicherheit — Phase A noch nicht veröffentlicht"}
+            </p>
+          </div>
+          <ProgressRing
+            done={ringDone}
+            total={ringTotal}
+            label="erledigt"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 pt-2">
+          <StatChip
+            kind="serie"
+            value={`${session?.streakDays ?? 0} Tage`}
+            label="Serie"
+          />
+          <StatChip
+            kind="punkte"
+            value={(session?.totalPoints ?? 0).toLocaleString("de-DE")}
+            label="Punkte"
+          />
+          <StatChip
+            kind="wiederholung"
+            value={`${dueCount} fällig`}
+            label={`Wiederholungen, Stapel mit ${stackCount} Fragen`}
+          />
+        </div>
       </header>
 
-      <section className="flex flex-col gap-3 px-6">
+      <section className="flex flex-col gap-3 px-6 pt-2">
         {online ? null : <StateView kind="offline" />}
-        <DailyGoal
-          goal={
-            dueCount > 0
-              ? `${dueCount} fällige Wiederholungen, dann neue Einheiten`
-              : PLAYABLE_TODAY.goal
-          }
-          done={pathUnits.filter((u) => u.status === "done").length}
-          total={pathUnits.length}
-          hint={`Wiederholungsstapel: ${stackCount} Fragen`}
-        />
+        {nextUnit ? (
+          <NextUpCard
+            indexLabel={nextUnit.indexLabel}
+            title={nextUnit.title}
+            minutes={nextUnit.minutes}
+            preview={nextUnit.questions[0]?.prompt}
+            href={`/einheit/${nextUnit.id}`}
+          />
+        ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             href="/wiederholung"
@@ -150,7 +188,7 @@ export default function LernpfadPage() {
                   className="text-lg font-medium text-[var(--color-text-primary)]"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {mod.moduleId}: {mod.moduleTitle}
+                  {mod.moduleId} · {mod.moduleTitle}
                 </h2>
                 <p className="text-xs text-[var(--color-text-secondary)]">
                   Fortschritt {done}/{total}

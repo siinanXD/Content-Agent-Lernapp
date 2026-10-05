@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
-import { Geist_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { A11yProvider } from "@/components/a11y/a11y-provider";
 import { ServiceWorkerRegister } from "@/components/a11y/service-worker-register";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
-
-const ibmPlexSans = IBM_Plex_Sans({
-  variable: "--font-ibm-plex-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
 });
 
 const geistMono = Geist_Mono({
@@ -27,7 +20,7 @@ export const metadata: Metadata = {
   description:
     "Autonomer Kurs-Generator aus amtlichen Ausbildungsquellen — Pilot MAF.",
   manifest: "/manifest.webmanifest",
-  themeColor: "#0B5F6E",
+  themeColor: "#C2410C",
   appleWebApp: {
     capable: true,
     title: "Lernapp",
@@ -42,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="de"
-      className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-[var(--color-bg-canvas)] text-[var(--color-text-primary)]">
         <PostHogProvider>
