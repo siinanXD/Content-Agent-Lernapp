@@ -63,6 +63,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, Typecheck, Lint und Tests. Kein PR mit bekannten roten Checks (SIN-240).
 - Alles, was PRs anlegt, pusht, labelt oder mergt, läuft mit `AGENT_WORKFLOW_TOKEN`, nie mit `github.token` (dessen Ereignisse lösen keine Folge-Workflows aus).
 - Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.
+- Workflows: In github-script@v7 nie `getOctokit` verwenden (nicht definiert). Stattdessen `new github.constructor({ auth: process.env.AGENT_TOKEN })`.
 
 ## Technik (siehe DECISIONS.md)
 

@@ -163,7 +163,7 @@ jobs:
             // Labels und Auto-Merge mit dem Agenten-Token (SIN-240): Ereignisse von github.token lösen keine Folge-
             // Workflows aus. Der Hinweis-Kommentar bleibt beim Standard-Token, denn der Marker wird am Autor
             // (BOT) erkannt. Ohne Secret (Fork- und Dependabot-PRs, dort mergt nie jemand automatisch): github.token.
-            const agent = process.env.AGENT_TOKEN ? getOctokit(process.env.AGENT_TOKEN) : github;
+            const agent = process.env.AGENT_TOKEN ? new github.constructor({ auth: process.env.AGENT_TOKEN }) : github;
             // Wer freigeben darf. Labels von Bots/Agenten (z. B. claude[bot]) zählen nicht.
             const APPROVERS = [owner];
             // Freigabe-Labels: `freigegeben` ist der Standard, `owner-approved` bleibt aus dem
