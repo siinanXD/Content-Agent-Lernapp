@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { BottomNav } from "@/components/learner/bottom-nav";
+import { DailyGoal } from "@/components/ui/daily-goal";
+import { PathNode, type PathNodeState } from "@/components/ui/path-node";
+import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import {
   activePathUnits,
@@ -25,10 +28,22 @@ import {
 import { listExamParts } from "@/lib/learner/exam";
 import { useAfterMount } from "@/lib/use-after-mount";
 
-const statusTone: Record<PathUnitStatus, string> = {
-  done: "bg-[var(--color-feedback-success)] text-white",
-  today: "bg-[var(--color-brand-primary)] text-white",
-  open: "bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] border border-[var(--color-border-subtle)]",
+const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
+  done: "erledigt",
+  today: "heute",
+  open: "offen",
+};
+
+/** Seitlicher Versatz der Knoten (px) für den Zickzack. */
+const ZIGZAG = [0, 64, 128, 64];
+
+const subscribeOnline = (cb: () => void) => {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
 };
 
 export default function LernpfadPage() {
@@ -39,6 +54,11 @@ export default function LernpfadPage() {
   const [pathUnits, setPathUnits] = useState<PathUnit[]>(() => activePathUnits());
   const groups = groupUnitsByModule(pathUnits);
   const examParts = listExamParts().filter((p) => p.simulated);
+  const online = useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true,
+  );
   const phaseA = usingPhaseASnapshot() && pathUnits.length > 6;
 
   useEffect(() => {
@@ -79,22 +99,17 @@ export default function LernpfadPage() {
       </header>
 
       <section className="flex flex-col gap-3 px-6">
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Heutiges Ziel
-          </p>
-          <p
-            className="mt-1 text-base font-medium text-[var(--color-text-primary)]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {dueCount > 0
+        {online ? null : <StateView kind="offline" />}
+        <DailyGoal
+          goal={
+            dueCount > 0
               ? `${dueCount} fällige Wiederholungen, dann neue Einheiten`
-              : PLAYABLE_TODAY.goal}
-          </p>
-          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-            Wiederholungsstapel: {stackCount} Fragen
-          </p>
-        </div>
+              : PLAYABLE_TODAY.goal
+          }
+          done={pathUnits.filter((u) => u.status === "done").length}
+          total={pathUnits.length}
+          hint={`Wiederholungsstapel: ${stackCount} Fragen`}
+        />
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             href="/wiederholung"
@@ -112,6 +127,14 @@ export default function LernpfadPage() {
           </Link>
         </div>
       </section>
+
+      {groups.length === 0 ? (
+        <StateView
+          kind="leer"
+          title="Noch keine Einheiten"
+          text="Sobald Einheiten veröffentlicht sind, erscheint hier dein Pfad."
+        />
+      ) : null}
 
       {groups.map((mod) => {
         const done = mod.blocks
@@ -160,49 +183,26 @@ export default function LernpfadPage() {
                     </span>
                   ) : null}
                 </p>
-                <ul className="flex flex-col gap-2.5">
-                  {block.units.map((unit) => {
-                    const interactive =
-                      unit.status === "today" || unit.status === "open";
-                    const content = (
-                      <>
-                        <span
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-sm font-medium ${statusTone[unit.status]}`}
-                          style={{ fontFamily: "var(--font-display)" }}
-                        >
-                          {unit.indexLabel}
-                        </span>
-                        <span className="flex min-w-0 flex-col">
-                          <span
-                            className="truncate text-[15px] font-medium text-[var(--color-text-primary)]"
-                            style={{ fontFamily: "var(--font-display)" }}
-                          >
-                            {unit.title}
-                          </span>
-                          <span className="text-xs text-[var(--color-text-secondary)]">
-                            {unit.statusLabel}
-                          </span>
-                        </span>
-                      </>
-                    );
-                    return (
-                      <li key={unit.id}>
-                        {interactive ? (
-                          <Link
-                            href={`/einheit/${unit.id}`}
-                            className="flex items-center gap-3.5 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-                          >
-                            {content}
-                          </Link>
-                        ) : (
-                          <div className="flex items-center gap-3.5 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3.5">
-                            {content}
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
+                {/* 02b Karte: Zickzack-Pfad je Modul */}
+                <ol className="flex flex-col gap-5 py-2">
+                  {block.units.map((unit, i) => (
+                    <li
+                      key={unit.id}
+                      style={{ paddingLeft: ZIGZAG[i % ZIGZAG.length] }}
+                    >
+                      <PathNode
+                        state={NODE_STATE[unit.status]}
+                        indexLabel={unit.indexLabel}
+                        title={unit.title}
+                        href={
+                          unit.status === "done"
+                            ? undefined
+                            : `/einheit/${unit.id}`
+                        }
+                      />
+                    </li>
+                  ))}
+                </ol>
               </div>
             ))}
           </section>

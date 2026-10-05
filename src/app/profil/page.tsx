@@ -3,7 +3,9 @@
 import { useA11y } from "@/components/a11y/a11y-provider";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
+import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { loadSession } from "@/lib/learner/session";
 import { loadStack, stackSize, type LeitnerStack } from "@/lib/learner/leitner";
 import { useAfterMount } from "@/lib/use-after-mount";
@@ -100,6 +102,14 @@ export default function ProfilPage() {
             />
           </div>
         </div>
+
+        <Link
+          href="/einstellungen"
+          className="flex min-h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 text-sm font-medium text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Einstellungen
+        </Link>
       </section>
 
       <BottomNav />
@@ -116,31 +126,3 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ToggleRow({
-  id,
-  label,
-  checked,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label
-      htmlFor={id}
-      className="flex min-h-11 cursor-pointer items-center justify-between gap-3"
-    >
-      <span className="text-[15px] text-[var(--color-text-primary)]">{label}</span>
-      <input
-        id={id}
-        type="checkbox"
-        role="switch"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-9 accent-[var(--color-brand-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-      />
-    </label>
-  );
-}
