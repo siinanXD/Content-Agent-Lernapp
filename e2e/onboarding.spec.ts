@@ -32,7 +32,7 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   await page.getByRole("button", { name: "Ohne Nutzungsdaten weiter" }).click();
 
   await expect(page).toHaveURL(/\/schwerpunkt$/);
-  const weiter = page.getByRole("button", { name: "Weiter" });
+  const weiter = page.getByRole("button", { name: "Weiter", exact: true });
   await expect(weiter).toBeDisabled();
   await page.getByRole("button", { name: "Metall- und Kunststofftechnik" }).click();
   // Zwei Maps: zweite Auswahl (Referenzberuf) mit Default
