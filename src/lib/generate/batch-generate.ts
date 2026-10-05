@@ -68,24 +68,27 @@ export function phaseAChunks(
   publishedShared: ReadonlySet<string> = new Set(),
 ): { targets: BatchChunkTarget[]; unitTarget: number } {
   const mods = modulesToGenerate(modulesForPhase(c, phaseId), publishedShared).generate;
+  const targets = mods.flatMap(moduleChunks);
+  const unitTarget = mods.reduce((s, m) => s + m.blocks.reduce((n, b) => n + b.units, 0), 0);
+  return { targets, unitTarget };
+}
+
+/** Alle Chunk-Ziele eines Moduls (AP-23 erzeugt ein Modul pro Lauf). */
+export function moduleChunks(mod: CurriculumModule): BatchChunkTarget[] {
   const targets: BatchChunkTarget[] = [];
-  let unitTarget = 0;
-  for (const mod of mods) {
-    for (const block of mod.blocks) {
-      unitTarget += block.units;
-      for (let offset = 0; offset < block.units; offset += UNITS_PER_CHUNK) {
-        const unitCount = Math.min(UNITS_PER_CHUNK, block.units - offset);
-        targets.push({
-          customId: `maf-${block.id}-u${offset}-${offset + unitCount - 1}`,
-          module: mod,
-          block,
-          unitOffset: offset,
-          unitCount,
-        });
-      }
+  for (const block of mod.blocks) {
+    for (let offset = 0; offset < block.units; offset += UNITS_PER_CHUNK) {
+      const unitCount = Math.min(UNITS_PER_CHUNK, block.units - offset);
+      targets.push({
+        customId: `maf-${block.id}-u${offset}-${offset + unitCount - 1}`,
+        module: mod,
+        block,
+        unitOffset: offset,
+        unitCount,
+      });
     }
   }
-  return { targets, unitTarget };
+  return targets;
 }
 
 export function chunkPrompt(
