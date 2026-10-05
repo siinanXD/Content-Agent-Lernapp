@@ -1,4 +1,5 @@
 import type { GeneratedLernfeld } from "@/lib/generate/maf-lernfeld-seed";
+import type { QuestionEvaluationRecord } from "@/lib/quality/question-evaluations";
 
 export type CourseStatus =
   | "created"
@@ -53,6 +54,8 @@ export type RecordProgressInput = {
   id?: string;
 };
 
+export type { QuestionEvaluationRecord };
+
 export type StorageBackend = "mock" | "supabase";
 
 export interface CourseStorage {
@@ -65,6 +68,10 @@ export interface CourseStorage {
   setPlan(id: string, plan: unknown): Promise<Course | undefined>;
   setGenerated(id: string, generated: unknown): Promise<Course | undefined>;
   setEvaluation(id: string, evaluation: unknown): Promise<Course | undefined>;
+  /** Append-only: one row per judged question and run (AP-19). Never overwrites. */
+  appendQuestionEvaluations(records: QuestionEvaluationRecord[]): Promise<void>;
+  /** All judge rows for a course, oldest first. */
+  listQuestionEvaluations(courseId: string): Promise<QuestionEvaluationRecord[]>;
   recordProgress(input: RecordProgressInput): Promise<LearningProgressEvent>;
   listProgress(anonymousId: string): Promise<LearningProgressEvent[]>;
 }

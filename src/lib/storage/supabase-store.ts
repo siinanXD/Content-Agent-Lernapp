@@ -6,6 +6,7 @@ import type {
   CourseStatus,
   CourseStorage,
   LearningProgressEvent,
+  QuestionEvaluationRecord,
   RecordProgressInput,
 } from "./types";
 
@@ -363,6 +364,63 @@ export const supabaseStorage: CourseStorage = {
       .eq("id", id);
     if (stErr) throw new Error(`courses_evaluated: ${stErr.message}`);
     return loadCourse(id);
+  },
+
+  async appendQuestionEvaluations(records: QuestionEvaluationRecord[]) {
+    if (records.length === 0) return;
+    const sb = getServiceSupabase();
+    // insert only — history is never overwritten or deleted.
+    const { error } = await sb.from("question_evaluations").insert(
+      records.map((r) => ({
+        id: r.id,
+        question_id: r.questionId,
+        unit_id: r.unitId,
+        course_id: r.courseId,
+        run_id: r.runId,
+        judge_model: r.judgeModel,
+        prompt_version: r.promptVersion,
+        quellentreue: r.quellentreue,
+        eindeutigkeit: r.eindeutigkeit,
+        niveau: r.niveau,
+        sprache: r.sprache,
+        sicherheit_flag: r.sicherheitFlag,
+        passed: r.passed,
+        reason: r.reason ?? null,
+        langfuse_trace_id: r.langfuseTraceId ?? null,
+        created_at: r.createdAt,
+      })),
+    );
+    if (error) throw new Error(`question_evaluations_insert: ${error.message}`);
+  },
+
+  async listQuestionEvaluations(courseId: string) {
+    const sb = getServiceSupabase();
+    const { data, error } = await sb
+      .from("question_evaluations")
+      .select("*")
+      .eq("course_id", courseId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(`question_evaluations_list: ${error.message}`);
+    return (data ?? []).map(
+      (row): QuestionEvaluationRecord => ({
+        id: row.id as string,
+        questionId: row.question_id as string,
+        unitId: row.unit_id as string,
+        courseId: row.course_id as string,
+        runId: row.run_id as string,
+        judgeModel: row.judge_model as string,
+        promptVersion: row.prompt_version as string,
+        quellentreue: Number(row.quellentreue) === 1 ? 1 : 0,
+        eindeutigkeit: Number(row.eindeutigkeit) === 1 ? 1 : 0,
+        niveau: Number(row.niveau),
+        sprache: Number(row.sprache),
+        sicherheitFlag: Boolean(row.sicherheit_flag),
+        passed: Boolean(row.passed),
+        reason: (row.reason as string | null) ?? undefined,
+        langfuseTraceId: (row.langfuse_trace_id as string | null) ?? undefined,
+        createdAt: row.created_at as string,
+      }),
+    );
   },
 
   async recordProgress(input: RecordProgressInput) {

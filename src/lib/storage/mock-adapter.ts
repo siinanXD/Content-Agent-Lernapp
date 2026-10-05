@@ -11,10 +11,12 @@ import {
 import type {
   CourseStorage,
   LearningProgressEvent,
+  QuestionEvaluationRecord,
   RecordProgressInput,
 } from "./types";
 
 const progress = new Map<string, LearningProgressEvent>();
+const questionEvaluations: QuestionEvaluationRecord[] = [];
 
 function toProgress(input: RecordProgressInput): LearningProgressEvent {
   const id = input.id ?? crypto.randomUUID();
@@ -67,6 +69,14 @@ export const mockStorage: CourseStorage = {
     return setEvaluation(id, evaluation);
   },
 
+  async appendQuestionEvaluations(records) {
+    questionEvaluations.push(...records);
+  },
+
+  async listQuestionEvaluations(courseId) {
+    return questionEvaluations.filter((r) => r.courseId === courseId);
+  },
+
   async recordProgress(input) {
     if (!input.anonymousId?.trim()) {
       throw new Error("anonymousId_required");
@@ -84,4 +94,5 @@ export const mockStorage: CourseStorage = {
 /** Test helper */
 export function clearMockProgress() {
   progress.clear();
+  questionEvaluations.length = 0;
 }
