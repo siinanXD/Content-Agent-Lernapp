@@ -14,3 +14,4 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-240 | SIN-240 — Loop-Härtung: Agenten-Token überall, Abgleich, eine Datei je Entscheidung, Gate nach CI | [SIN-240-loop-haertung.md](decisions/SIN-240-loop-haertung.md) |
+| SIN-230 | SIN-230 — Design-Paket 1: Schwerpunkt-Auswahl, Einwilligung, Karte, Feedback | [SIN-230-design-paket-1.md](decisions/SIN-230-design-paket-1.md) |

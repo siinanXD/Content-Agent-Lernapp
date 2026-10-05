@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { StatChip } from "@/components/ui/stat-chip";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { PLAYABLE_TODAY } from "@/lib/learner/playable-path";
 import { loadSession } from "@/lib/learner/session";
@@ -48,9 +49,21 @@ export default function ErgebnisPage() {
         </p>
       </section>
 
-      <section className="flex flex-col gap-3 px-6 py-6">
-        <StatRow label="Punkte heute" value={`+${points}`} />
-        <StatRow label="Serie" value={`${session?.streakDays ?? 7} Tage`} />
+      <section
+        className="flex gap-3 px-6 py-6"
+        aria-label="Deine Werte"
+      >
+        <StatChip kind="punkte" value={`+${points}`} label="Punkte heute" />
+        <StatChip
+          kind="serie"
+          value={`${session?.streakDays ?? 7} Tage`}
+          label="Serie"
+        />
+        <StatChip
+          kind="wiederholung"
+          value={`${correct}/${total}`}
+          label="richtig"
+        />
       </section>
 
       {areaResults.length > 0 ? (
@@ -116,19 +129,5 @@ export default function ErgebnisPage() {
         </Link>
       </section>
     </MobileShell>
-  );
-}
-
-function StatRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-4">
-      <span className="text-[15px] text-[var(--color-text-primary)]">{label}</span>
-      <span
-        className="text-xl font-medium text-[var(--color-brand-primary)]"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {value}
-      </span>
-    </div>
   );
 }

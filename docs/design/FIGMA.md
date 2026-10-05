@@ -35,6 +35,33 @@ Deutsche Copy, Pilotkontext **Maschinen- und Anlagenführer (MAF)**, Quellenhinw
 
 Seite `Components` hält die Master-Komponenten; Screens nutzen Instanzen.
 
+### Design-Paket 1 (SIN-230)
+
+> Stand Code: nach Issue-Text gebaut, **nicht gegen Figma abgeglichen** (Token im Agent-Lauf nicht verfügbar, siehe D-48).
+
+| Komponente | Figma | Code | Varianten |
+| --- | --- | --- | --- |
+| `AnswerFeedback` | 16:153 | `src/components/ui/answer-feedback.tsx` | Richtig, Falsch: Icon, Titel, richtige Antwort, Erklärung, Quelle, Weiter-Button |
+| `PathNode` | 19:265 | `src/components/ui/path-node.tsx` | Erledigt, Heute, Offen, Gesperrt |
+| `StatChip` | 19:279 | `src/components/ui/stat-chip.tsx` | Serie, Punkte, Wiederholung |
+| `DailyGoal` | 19:280 | `src/components/ui/daily-goal.tsx` | Ziel + Fortschritt |
+| `BottomNav` | 12:73 | `src/components/learner/bottom-nav.tsx` | Icons, aktive Markierung oben |
+| Zustände | Screen 17 (21:409) | `src/components/ui/state-view.tsx` | Laden, Leer, Fehler, Offline |
+
+### Weitere Screens (SIN-230)
+
+| # | Frame | Figma | Route |
+| --- | --- | --- | --- |
+| 2 | `02 Lernpfad` (Modultitel-Fix) | – | `/lernpfad` |
+| 2b | `02b Lernpfad · Karte` | 19:287 | `/lernpfad` (ersetzt die Liste) |
+| 3b/3c | `03b/03c Einheit · Feedback richtig/falsch` | 16:154, 16:204 | `/einheit/[unitId]` |
+| 14 | `14 Einheit geschafft` | 16:265 | `/ergebnis` |
+| 0 | `00 Onboarding · Willkommen` | 20:312 | `/willkommen` |
+| 0b | `00b Einwilligung mit KI-Hinweis` | 20:343 | `/einwilligung` |
+| 15 | `15 Schwerpunkt wählen` | 20:356 | `/schwerpunkt` |
+| 16 | `16 Einstellungen` | 21:331 | `/einstellungen` (+ `/impressum`, `/datenschutz`, `/ki-hinweis`, `/quellen` als Gerüst „Text folgt“) |
+| 17 | `17 Zustände` | 21:409 | Komponente `StateView` |
+
 ## Tokens
 
 Spiegel im Repo: [`tokens.json`](./tokens.json) → CSS-Variablen in `src/app/globals.css`.

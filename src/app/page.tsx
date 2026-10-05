@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { loadOnboarding, needsOnboarding } from "@/lib/learner/onboarding";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { MobileShell } from "@/components/learner/mobile-shell";
@@ -13,6 +14,11 @@ export default function StartPage() {
   const router = useRouter();
   const [keyword, setKeyword] = useState("Maschinen- und Anlagenführer");
   const [variant, setVariant] = useState<Variant>("pruefung");
+
+  // Erster Start: erst Onboarding (00 → 00b → 15).
+  useEffect(() => {
+    if (needsOnboarding(loadOnboarding())) router.replace("/willkommen");
+  }, [router]);
 
   function startCourse() {
     const trimmed = keyword.trim();

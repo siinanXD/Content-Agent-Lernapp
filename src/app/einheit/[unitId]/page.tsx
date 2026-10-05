@@ -2,7 +2,10 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AnswerFeedback } from "@/components/ui/answer-feedback";
 import { Button } from "@/components/ui/button";
+import { StateView } from "@/components/ui/state-view";
+import { correctAnswerText } from "@/lib/learner/feedback";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { UnitImageView } from "@/components/learner/unit-image";
 import {
@@ -84,7 +87,8 @@ export default function EinheitPage() {
     return (
       <MobileShell>
         <main className="flex flex-1 flex-col gap-4 px-6 py-16">
-          <p className="text-[var(--color-text-secondary)]">Einheit wird geladen…</p>
+          <h1 className="sr-only">Einheit</h1>
+          <StateView kind="laden" title="Einheit wird geladen" />
         </main>
       </MobileShell>
     );
@@ -94,13 +98,14 @@ export default function EinheitPage() {
     return (
       <MobileShell>
         <main className="flex flex-1 flex-col gap-4 px-6 py-16">
-          <h1
-            className="text-2xl font-bold"
-            style={{ fontFamily: "var(--font-display)" }}
+          <h1 className="sr-only">Einheit</h1>
+          <StateView
+            kind="fehler"
+            title="Einheit nicht gefunden"
+            text="Diese Einheit gibt es nicht oder sie ist noch nicht veröffentlicht."
           >
-            Einheit nicht gefunden
-          </h1>
-          <Button onClick={() => router.push("/lernpfad")}>Zum Lernpfad</Button>
+            <Button onClick={() => router.push("/lernpfad")}>Zum Lernpfad</Button>
+          </StateView>
         </main>
       </MobileShell>
     );
@@ -266,16 +271,16 @@ export default function EinheitPage() {
             onChecked={onChecked}
           />
           {revealed && !awaitSelfCheck ? (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm leading-5 text-[var(--color-text-secondary)]" role="status">
-                {lastCorrect ? "Richtig. " : "Nicht ganz. "}
-                {question.explanation}
-                {question.sourceUrl ? ` Quelle: ${question.sourceUrl}` : ""}
-              </p>
-              <Button onClick={next} className="mt-1">
+            <AnswerFeedback
+              correct={lastCorrect}
+              correctAnswer={correctAnswerText(question)}
+              explanation={question.explanation}
+              source={question.sourceUrl || undefined}
+            >
+              <Button onClick={next}>
                 {index + 1 >= total ? "Ergebnis anzeigen" : "Weiter"}
               </Button>
-            </div>
+            </AnswerFeedback>
           ) : null}
         </section>
       ) : null}
