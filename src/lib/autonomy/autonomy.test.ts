@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { approvalStillValid, classifyRisk } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
+import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
 import { MAX_ISSUES_PER_WEEK, extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
 import {
   CHECKS,
@@ -290,4 +291,36 @@ test("Abgleich: gemergter PR → Done, ohne Merge geschlossen → Todo, sonst un
   assert.deepEqual(reconcile(issues, prs).map((a) => `${a.issue.identifier}:${a.to}`), ["SIN-7:Done", "SIN-8:Todo"]);
   assert.equal(prMentions({ title: "", head: "claude/sin-237" }, "SIN-237"), true);
   assert.equal(prMentions({ title: "x (SIN-2370)", head: "" }, "SIN-237"), false);
+});
+
+test("Planer-Dry-Run: Frontend ohne Design und mit Design unterscheidbar", () => {
+  const plain = { lane: "frontend", title: "Leerzustand", acceptance: ["ok"], priority: 3 };
+  const ui = { lane: "frontend", title: "Neuer Screen", acceptance: ["ok"], priority: 2, needsDesign: true, blockedBy: "SIN-12" };
+  const out = validatePlan([plain, ui]);
+  assert.equal(out.find((i) => i.title === "Leerzustand")?.needsDesign, false);
+  assert.equal(out.find((i) => i.title === "Neuer Screen")?.needsDesign, true);
+  assert.equal(validatePlan([{ ...plain, lane: "backend" }])[0].needsDesign, undefined);
+});
+
+test("Figma: Worker liest Werte über die API (Mock)", async () => {
+  const node = {
+    name: "Button",
+    type: "FRAME",
+    itemSpacing: 8,
+    fills: [{ type: "SOLID", color: { r: 11 / 255, g: 95 / 255, b: 110 / 255, a: 1 } }],
+    children: [{ name: "Label", type: "TEXT", characters: "Weiter" }],
+  };
+  const calls: string[] = [];
+  const fetchMock = (async (url: string, init: { headers: Record<string, string> }) => {
+    calls.push(`${url} ${init.headers["X-Figma-Token"]}`);
+    return { ok: true, json: async () => ({ nodes: { "1:2": { document: node } }, document: { children: [node] } }) };
+  }) as unknown as typeof fetch;
+  const v = await readNodeValues("KEY", "1:2", { FIGMA_ACCESS_TOKEN: "t" }, fetchMock);
+  assert.equal(v?.fills?.[0], "#0B5F6E");
+  assert.equal(v?.itemSpacing, 8);
+  assert.equal(v?.children?.[0].text, "Weiter");
+  assert.match(calls[0], /files\/KEY\/nodes\?ids=1%3A2 t$/);
+  assert.equal(await readNodeValues("KEY", "1:2", {}, fetchMock), null); // ohne Token: nicht verfügbar
+  const tokens = { color: { a: { value: "#0B5F6E" }, b: { value: "#FFFFFF" } } };
+  assert.deepEqual(await diffColorTokens(tokens, "KEY", { FIGMA_ACCESS_TOKEN: "t" }, fetchMock), ["b (#FFFFFF)"]);
 });

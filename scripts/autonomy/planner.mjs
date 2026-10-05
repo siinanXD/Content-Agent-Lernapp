@@ -15,6 +15,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
 import {
   ABNAHME_TITLE,
   DEFAULT_GOLDSET_TARGET,
@@ -108,7 +109,20 @@ export async function collectMetrics(env = process.env) {
       m.posthog = `Fehler: ${e.message}`;
     }
   }
+  m.figma_abgleich = await figmaTokenMetric(env);
   return m;
+}
+
+/** Abgleich Code ↔ Figma (SIN-239): Token-Farben aus docs/design/tokens.json gegen die Figma-Datei. */
+export async function figmaTokenMetric(env = process.env, fetchImpl = fetch) {
+  if (!env.FIGMA_ACCESS_TOKEN) return "nicht verfügbar";
+  try {
+    const tokens = JSON.parse(readFileSync("docs/design/tokens.json", "utf8"));
+    const diff = await diffColorTokens(tokens, tokens.meta?.figmaFileKey ?? DEFAULT_FILE_KEY, env, fetchImpl);
+    return diff.length ? `Abweichung, Token-Farben ohne Figma-Entsprechung: ${diff.join(", ")}` : "keine Abweichung";
+  } catch (e) {
+    return `Fehler: ${e.message}`;
+  }
 }
 
 /** Produktreife-Zeilen aus Kennzahlen, offenen Issues, Bestätigungsdatei und (mit Token) Figma. */
@@ -136,9 +150,11 @@ export function buildPlannerPrompt({ definition, issues, metrics, readiness = ""
     "- backend: Pipeline, Datenmodell, Kosten, Stabilität, Sentry-Fehler, Skalierung.",
     "Keine Duplikate zu offenen Issues. Pro Issue: ein Arbeitspaket, ein PR. Kein Inhalt ohne amtliche Quelle, keine Personendaten.",
     "",
-    "Figma zuerst: Braucht ein Frontend-Issue neue oder geänderte Oberfläche, setze `needsDesign: true` und `blockedBy` auf den Titel eines Design-Eintrags im Plan",
-    `(oder auf eine offene Kennung wie SIN-123). Design-Einträge haben \`lane: "design"\`, höchstens ${MAX_DESIGN_PER_WEEK} pro Woche (ein gebündeltes Paket), und werden in einer Sitzung mit Figma-Connector erledigt, nicht vom Dispatcher.`,
-    "Code-Issues bauen nur nach freigegebenem Figma-Frame; Design-Tokens kommen aus Figma (docs/design/).",
+    "Figma zuerst (SIN-239):",
+    "- Ohne Design-Issue: Änderungen, die nur vorhandene Figma-Komponenten und Tokens nutzen (Zustände, Texte, Abstände, Varianten bestehender Screens, Fehler-/Leer-/Ladezustände nach Screen 17). Dann `needsDesign: false`.",
+    "- Design nötig (`needsDesign: true`): neue Screens, neue Komponenten, neue Farben/Tokens, geänderte Navigation. Setze `blockedBy` auf den Titel eines Design-Eintrags im Plan (oder eine offene Kennung wie SIN-123).",
+    `- Bündle alle Design-Arbeiten zu höchstens ${MAX_DESIGN_PER_WEEK} Design-Paket pro Woche (\`lane: "design"\`, Label \`design\`, Backlog bis Sinan die Sitzung macht, kein Dispatcher-Lauf).`,
+    "- Agenten erfinden keine Komponenten im Code. Weicht der Code von Figma ab (Kennzahl `figma_abgleich`), plane die Abweichung als Issue.",
     ...(maintenance
       ? [
           "",
@@ -160,14 +176,14 @@ export function buildPlannerPrompt({ definition, issues, metrics, readiness = ""
     "",
     "## Ausgabe",
     'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "needsDesign": false, "blockedBy": "Titel oder SIN-123"}].',
-    "`needsDesign` und `blockedBy` nur bei Frontend-Issues mit neuer Oberfläche. Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
+    "`needsDesign` und `blockedBy` nur bei Frontend-Issues, die ein Design-Paket brauchen (siehe oben). Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
   ].join("\n");
 }
 
 /**
  * Prüft den Plan des Modells. Wirft bei ungültigen Einträgen, kürzt je Spur auf MAX_PER_LANE
  * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
- * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], blockedBy?: string }[]}
+ * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string }[]}
  */
 export function validatePlan(plan, existingTitles = [], { maintenance = false } = {}) {
   if (!Array.isArray(plan)) throw new Error("Plan muss eine Liste sein");
@@ -195,6 +211,7 @@ export function validatePlan(plan, existingTitles = [], { maintenance = false } 
       title: p.title.trim(),
       priority: p.priority,
       labels: p.lane === "design" ? ["design", "frontend"] : [p.lane],
+      ...(p.lane === "frontend" ? { needsDesign: Boolean(p.needsDesign) } : {}),
       ...(p.needsDesign ? { blockedBy } : {}),
       description: `${p.description ?? ""}${
         p.lane === "design" ? "\n\nWird in einer Claude-Sitzung mit Figma-Connector erledigt (nicht vom Dispatcher). Danach Frame zur Freigabe in docs/design/." : ""
@@ -273,7 +290,7 @@ export async function main(argv) {
     if (maintenance && !existingTitles.includes(ABNAHME_TITLE)) items.push({ ...abnahmeIssue(rows), lane: "abnahme" });
     console.log(`Produktreife\n\n${renderReadiness(rows)}\n\n${maintenance ? "Pflege-Modus: nur Fehler und Content.\n" : ""}`);
     if (dry) {
-      for (const it of items) console.log(`[dry-run] ${it.lane} P${it.priority} ${it.title}${it.blockedBy ? ` (blockiert durch: ${it.blockedBy})` : ""}`);
+      for (const it of items) console.log(`[dry-run] ${it.lane} P${it.priority} ${it.title}${it.lane === "frontend" ? (it.needsDesign ? " [Design nötig]" : " [ohne Design]") : ""}${it.blockedBy ? ` (blockiert durch: ${it.blockedBy})` : ""}`);
       return;
     }
     await createIssues(items, issues ?? []);
