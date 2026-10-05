@@ -1,4 +1,3 @@
-# Vorlage (SIN-227) → nach .github/workflows/dispatch.yml kopieren (der Agent-Token darf dort nicht schreiben).
 # Dispatcher: alle 30 Min wählt er bis zu 2 Linear-Issues (Todo, keine offenen Blocker, kein Label design/abnahme/
 # needs-human, Spuren frontend/content/backend abwechselnd) und startet je Issue einen eigenen Lauf von worker.yml.
 # Er hält keine Claude-Sitzung fest: die Gruppe `dispatch` ist nach Sekunden frei, die Worker laufen parallel,
@@ -43,6 +42,8 @@ jobs:
       DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
