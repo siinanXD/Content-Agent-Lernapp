@@ -13,6 +13,35 @@ export const CLAUDE_BATCH_OUT_PER_MTOK = 5.0;
 /** Prompt caching multipliers on the base input price (cache write 1.25×, cache read 0.1×). */
 export const CLAUDE_CACHE_WRITE_FACTOR = 1.25;
 export const CLAUDE_CACHE_READ_FACTOR = 0.1;
+/**
+ * Batch-Preise je 1M Token (USD) laut offizieller Preisseite, geprüft 2026-10-05 (D-41).
+ * Cache-Schreiben (5 min) = 1,25×, Cache-Lesen = 0,1× des Batch-Eingabepreises (Multiplikatoren stapeln mit Batch).
+ */
+export const CLAUDE_BATCH_PRICES: Record<string, { in: number; out: number }> = {
+  "claude-sonnet-5-5": { in: 1.0, out: 5.0 },
+  "claude-haiku-4-5-20251001": { in: 0.5, out: 2.5 },
+};
+
+/** Kosten in USD für gemessene Claude-Usage eines Modells zu Batch-Preisen. */
+export function claudeBatchUsd(
+  model: string,
+  c: {
+    claudeInputTokens: number;
+    claudeOutputTokens: number;
+    claudeCacheCreationTokens: number;
+    claudeCacheReadTokens: number;
+  },
+): number {
+  const p = CLAUDE_BATCH_PRICES[model];
+  if (!p) throw new Error(`Kein Batch-Preis für Modell ${model}`);
+  const usd =
+    (c.claudeInputTokens / 1e6) * p.in +
+    (c.claudeOutputTokens / 1e6) * p.out +
+    (c.claudeCacheCreationTokens / 1e6) * p.in * CLAUDE_CACHE_WRITE_FACTOR +
+    (c.claudeCacheReadTokens / 1e6) * p.in * CLAUDE_CACHE_READ_FACTOR;
+  return Math.round(usd * 10000) / 10000;
+}
+
 /** gpt-5.4-mini: $0.75 / $4.50 per 1M */
 export const GPT_JUDGE_IN_PER_MTOK = 0.75;
 export const GPT_JUDGE_OUT_PER_MTOK = 4.5;
