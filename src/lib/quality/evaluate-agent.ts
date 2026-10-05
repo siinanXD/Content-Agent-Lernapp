@@ -22,6 +22,8 @@ import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
 
 /** D-07: independent OpenAI family, cheapest Mini that meets the gate. */
 export const JUDGE_MODEL = "gpt-5.4-mini";
+/** Bump when the judge system prompt in liveJudgeChunkWithUsage changes. */
+export const JUDGE_PROMPT_VERSION = "2026-10-v1";
 const JUDGE_CHUNK = 10;
 
 export type EvalItem = {
@@ -124,6 +126,8 @@ export async function runEvaluateAgent(opts: {
     },
     mode,
     modelId,
+    runId: crypto.randomUUID(),
+    promptVersion: JUDGE_PROMPT_VERSION,
     langfuseTraceId,
     warning: warning ?? (meetsGoldsetTarget ? undefined : "Below calibrated goldset target; PRODUCT thresholds still applied."),
   };

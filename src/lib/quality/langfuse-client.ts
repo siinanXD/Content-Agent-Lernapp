@@ -17,6 +17,7 @@ import {
   propagateAttributes,
   startActiveObservation,
 } from "@langfuse/tracing";
+import type { CostLedger } from "./cost-guard";
 import { LANGFUSE_DATASET_NAME } from "./maf-goldset";
 import type { GoldQuestion } from "./maf-goldset-fixture";
 import {
@@ -164,6 +165,28 @@ export async function recordEvaluationTrace(payload: {
   } catch {
     return null;
   }
+}
+
+/** AP-19: write measured Claude usage (tokens incl. cache, cost) of a run to Langfuse. */
+export async function recordClaudeUsageTrace(payload: {
+  name: string;
+  courseId: string;
+  ledger: CostLedger;
+}): Promise<string | null> {
+  const l = payload.ledger;
+  return recordEvaluationTrace({
+    name: payload.name,
+    courseId: payload.courseId,
+    passed: !l.stopped,
+    scores: {
+      claudeInputTokens: l.claudeInputTokens,
+      claudeOutputTokens: l.claudeOutputTokens,
+      claudeCacheCreationTokens: l.claudeCacheCreationTokens,
+      claudeCacheReadTokens: l.claudeCacheReadTokens,
+      usdEstimate: l.usdEstimate,
+    },
+    metadata: { kind: "claude-usage", eurEstimate: l.eurEstimate },
+  });
 }
 
 export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{

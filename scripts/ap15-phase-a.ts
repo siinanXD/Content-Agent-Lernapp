@@ -24,7 +24,7 @@ import {
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { loadMafCurriculum, modulesForPhase } from "../src/lib/content/curriculum";
 import {
-  addClaudeUsage,
+  addClaudeLedger,
   addOpenAIUsage,
   BUDGET_EUR,
   emptyLedger,
@@ -33,15 +33,22 @@ import {
   type CostLedger,
 } from "../src/lib/quality/cost-guard";
 import {
+  JUDGE_PROMPT_VERSION,
   liveJudgeWithUsage,
   type EvalItem,
 } from "../src/lib/quality/evaluate-agent";
 import {
   aggregateScores,
   scoresPass,
+  type EvaluateResult,
   type QuestionEval,
 } from "../src/lib/quality/schemas";
-import { recordEvaluationTrace, langfuseConfigured } from "../src/lib/quality/langfuse-client";
+import {
+  recordClaudeUsageTrace,
+  recordEvaluationTrace,
+  langfuseConfigured,
+} from "../src/lib/quality/langfuse-client";
+import { toQuestionEvaluationRecords } from "../src/lib/quality/question-evaluations";
 import { getStorage } from "../src/lib/storage";
 import { runResearchAgent } from "../src/lib/research/research-agent";
 import { runPlanAgent } from "../src/lib/plan/plan-agent";
@@ -231,11 +238,7 @@ async function main() {
   });
 
   const collected = await collectBatchUnits(batchId);
-  ledger = addClaudeUsage(
-    ledger,
-    collected.ledger.claudeInputTokens,
-    collected.ledger.claudeOutputTokens,
-  );
+  ledger = addClaudeLedger(ledger, collected.ledger);
   unitsAccum = mergePhaseLernfeld([...unitsAccum, ...collected.units]).units;
   console.log(
     `collected units=${collected.units.length} total=${unitsAccum.length} failedChunks=${collected.failedCustomIds.length} cost~€${ledger.eurEstimate}`,
@@ -258,11 +261,7 @@ async function main() {
         onTick: (s) => console.log("retry", s.processing_status, s.request_counts),
       });
       const retryCollected = await collectBatchUnits(retry.batchId);
-      ledger = addClaudeUsage(
-        ledger,
-        retryCollected.ledger.claudeInputTokens,
-        retryCollected.ledger.claudeOutputTokens,
-      );
+      ledger = addClaudeLedger(ledger, retryCollected.ledger);
       unitsAccum = mergePhaseLernfeld([
         ...unitsAccum,
         ...retryCollected.units,
@@ -315,11 +314,7 @@ async function main() {
         onTick: (s) => console.log("regen", s.processing_status, s.request_counts),
       });
       const regenCollected = await collectBatchUnits(regen.batchId);
-      ledger = addClaudeUsage(
-        ledger,
-        regenCollected.ledger.claudeInputTokens,
-        regenCollected.ledger.claudeOutputTokens,
-      );
+      ledger = addClaudeLedger(ledger, regenCollected.ledger);
       const replaced = new Map(lernfeld.units.map((u) => [u.id, u]));
       for (const u of regenCollected.units) replaced.set(u.id, u);
       lernfeld = mergePhaseLernfeld([...replaced.values()]);
@@ -416,6 +411,8 @@ Nach Review: Stichprobe abhaken; bei inhaltlichen Fehlern Units über \`/refresh
     },
     mode: "live" as const,
     modelId: "gpt-5.4-mini",
+    runId,
+    promptVersion: JUDGE_PROMPT_VERSION,
     warning:
       dropped.length > 0
         ? `${dropped.length} units dropped after one regen`
@@ -446,6 +443,14 @@ Nach Review: Stichprobe abhaken; bei inhaltlichen Fehlern Units über \`/refresh
   if (tid) (evaluation as { langfuseTraceId?: string }).langfuseTraceId = tid;
 
   await storage.setEvaluation(course.id, evaluation);
+  await storage.appendQuestionEvaluations(
+    toQuestionEvaluationRecords(evaluation as EvaluateResult),
+  );
+  await recordClaudeUsageTrace({
+    name: "ap15-phase-a-claude-usage",
+    courseId: course.id,
+    ledger,
+  });
 
   let published = false;
   if (passed && !ledger.stopped) {

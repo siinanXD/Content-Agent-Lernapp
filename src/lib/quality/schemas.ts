@@ -33,6 +33,10 @@ export type EvaluateResult = {
   threshold: typeof QUALITY_THRESHOLDS;
   mode: "fixture" | "live" | "langfuse-offline";
   modelId?: string;
+  /** AP-19: groups the per-question rows of one judge run. */
+  runId?: string;
+  /** AP-19: version of the judge system prompt. */
+  promptVersion?: string;
   langfuseTraceId?: string;
   warning?: string;
 };

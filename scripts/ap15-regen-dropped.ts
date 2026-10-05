@@ -22,7 +22,7 @@ import {
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { loadMafCurriculum, modulesForPhase } from "../src/lib/content/curriculum";
 import {
-  addClaudeUsage,
+  addClaudeLedger,
   addOpenAIUsage,
   BUDGET_EUR,
   emptyLedger,
@@ -371,11 +371,7 @@ async function main() {
   });
 
   const collected = await collectBatchUnits(batchId);
-  ledger = addClaudeUsage(
-    ledger,
-    collected.ledger.claudeInputTokens,
-    collected.ledger.claudeOutputTokens,
-  );
+  ledger = addClaudeLedger(ledger, collected.ledger);
   console.log(
     `collected new=${collected.units.length} failed=${collected.failedCustomIds.length} run€=${ledger.eurEstimate} total€=${totalEur(ledger)}`,
   );
@@ -429,11 +425,7 @@ async function main() {
         onTick: (s) => console.log("regen2", s.processing_status, s.request_counts),
       });
       const regenCollected = await collectBatchUnits(regen.batchId);
-      ledger = addClaudeUsage(
-        ledger,
-        regenCollected.ledger.claudeInputTokens,
-        regenCollected.ledger.claudeOutputTokens,
-      );
+      ledger = addClaudeLedger(ledger, regenCollected.ledger);
       const replaced = new Map(newUnits.map((u) => [u.id, u]));
       for (const u of regenCollected.units) replaced.set(u.id, u);
       newUnits = [...replaced.values()];

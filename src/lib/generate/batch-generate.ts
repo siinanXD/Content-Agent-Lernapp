@@ -15,7 +15,12 @@ import { variantFromBlock } from "@/lib/content/didaktik";
 import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
 import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
 import type { GeneratedLernfeld, GeneratedUnit } from "./maf-lernfeld-seed";
-import { addClaudeUsage, type CostLedger, emptyLedger } from "@/lib/quality/cost-guard";
+import {
+  addClaudeMeasuredUsage,
+  type ClaudeUsage,
+  type CostLedger,
+  emptyLedger,
+} from "@/lib/quality/cost-guard";
 
 /** Units per Batch request — 2 keeps Didaktik JSON under typical output size. */
 export const UNITS_PER_CHUNK = 2;
@@ -268,7 +273,7 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
         type?: string;
         message?: {
           content?: Array<{ type: string; text?: string }>;
-          usage?: { input_tokens?: number; output_tokens?: number };
+          usage?: ClaudeUsage;
         };
         error?: { message?: string };
       };
@@ -281,11 +286,7 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
     const customId = row.custom_id ?? "";
     const usage = row.result?.message?.usage;
     if (usage) {
-      ledger = addClaudeUsage(
-        ledger,
-        usage.input_tokens ?? 0,
-        usage.output_tokens ?? 0,
-      );
+      ledger = addClaudeMeasuredUsage(ledger, usage);
     }
     if (row.result?.type !== "succeeded" || !row.result.message) {
       failedCustomIds.push(customId);

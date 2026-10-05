@@ -3,6 +3,7 @@ import { loadMafCurriculum } from "@/lib/content/curriculum";
 import { runGenerateAgent } from "@/lib/generate/generate-agent";
 import { runPlanAgent } from "@/lib/plan/plan-agent";
 import { runEvaluateAgent } from "@/lib/quality/evaluate-agent";
+import { toQuestionEvaluationRecords } from "@/lib/quality/question-evaluations";
 import { runResearchAgent } from "@/lib/research/research-agent";
 
 function notFound(id: string) {
@@ -161,6 +162,7 @@ export async function handleEvaluate(id: string) {
 
   const result = await runEvaluateAgent({ courseId: id, generated });
   await storage.setEvaluation(id, result);
+  await storage.appendQuestionEvaluations(toQuestionEvaluationRecords(result));
   return Response.json({
     mock: result.mode !== "live",
     ...result,
