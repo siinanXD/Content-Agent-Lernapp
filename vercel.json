@@ -5,5 +5,9 @@
     "deploymentEnabled": {
       "cursor/*": false
     }
+  },
+  "ignoreCommand": "bash scripts/vercel-ignore.sh",
+  "github": {
+    "autoJobCancelation": true
   }
 }

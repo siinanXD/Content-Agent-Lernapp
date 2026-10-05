@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { approvalStillValid, classifyRisk } from "../../../scripts/autonomy/risk.mjs";
+import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, pickNext } from "../../../scripts/autonomy/linear.mjs";
 import { extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
 
@@ -120,4 +121,33 @@ test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
   assert.throws(() => validatePlan([{ title: "x", acceptance: [], priority: 1 }]));
   assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 9 }]));
   assert.match(validatePlan([mk(1)])[0].description, /- \[ \] ok/);
+});
+
+test("Budget: Pause bis Reset", () => {
+  const now = new Date("2026-10-05T10:00:00Z");
+  assert.equal(isPaused("2026-10-05T12:00:00Z", now), true);
+  assert.equal(isPaused("2026-10-05T09:00:00Z", now), false);
+  assert.equal(isPaused("", now), false);
+  assert.equal(isPaused("müll", now), false);
+  assert.equal(isPaused(String(Math.floor(now.getTime() / 1000) + 60), now), true);
+});
+
+test("Budget: Reset-Zeit aus der Limit-Meldung", () => {
+  const now = new Date("2026-10-05T10:00:00Z");
+  assert.equal(pauseUntilFromLog("Claude AI usage limit reached|1791200000", now), new Date(1791200000 * 1000).toISOString());
+  assert.equal(pauseUntilFromLog("You've hit your limit · resets 3pm (UTC)", now), "2026-10-05T15:00:00.000Z");
+  assert.equal(pauseUntilFromLog("limit reached, resets 9am", now), "2026-10-06T09:00:00.000Z");
+  assert.equal(pauseUntilFromLog("rate limit, bitte später", now), "2026-10-05T15:00:00.000Z");
+  assert.equal(pauseUntilFromLog("Build failed", now), null);
+});
+
+test("Cursor zuerst: Claude nimmt nur Label, alte Todos ohne PR", () => {
+  const now = new Date("2026-10-05T10:00:00Z");
+  const base = { identifier: "SIN-7", updatedAt: "2026-10-05T09:30:00Z", labels: { nodes: [] } };
+  assert.equal(claudeMayTake(base, { now }), false);
+  assert.equal(claudeMayTake({ ...base, updatedAt: "2026-10-05T08:00:00Z" }, { now }), true);
+  assert.equal(claudeMayTake({ ...base, labels: { nodes: [{ name: "claude" }] } }, { now }), true);
+  const old = { ...base, updatedAt: "2026-10-05T08:00:00Z" };
+  assert.equal(claudeMayTake(old, { now, openPrs: [{ title: "feat: x (SIN-7)", head: "cursor/x-85a9" }] }), false);
+  assert.equal(claudeMayTake(old, { now, openPrs: [{ title: "feat: y (SIN-70)", head: "b" }] }), true); // SIN-70 ist ein anderes Issue
 });

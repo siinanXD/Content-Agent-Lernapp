@@ -22,7 +22,8 @@ export async function linear(query, variables = {}, { key = process.env.LINEAR_A
 }
 
 const ISSUE_FIELDS = `
-  id identifier title description priority url
+  id identifier title description priority url updatedAt
+  labels { nodes { name } }
   state { id name type }
   team { id }
   inverseRelations { nodes { type issue { identifier state { type } } } }`;
@@ -50,16 +51,16 @@ export function hasOpenBlockers(issue) {
 const rank = (p) => (p === 0 || p == null ? 5 : p);
 
 /**
- * Nächstes Issue: Status Todo, keine offenen Blocker, höchste Priorität (dann ältere Nummer zuerst).
+ * Nächstes Issue: Status Todo, keine offenen Blocker, `mayTake` (Cursor zuerst), höchste Priorität (dann ältere Nummer zuerst).
  * @returns {{ issue: any, reason: string }}
  */
-export function pickNext(issues, maxParallel = MAX_PARALLEL) {
+export function pickNext(issues, maxParallel = MAX_PARALLEL, mayTake = () => true) {
   const running = issues.filter((i) => i.state.type === "started").length;
   if (running >= maxParallel) return { issue: null, reason: `${running} Issues laufen schon (max. ${maxParallel})` };
   const todo = issues
-    .filter((i) => i.state.name === "Todo" && !hasOpenBlockers(i))
+    .filter((i) => i.state.name === "Todo" && !hasOpenBlockers(i) && mayTake(i))
     .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b));
-  return todo.length ? { issue: todo[0], reason: "ok" } : { issue: null, reason: "kein Todo ohne offene Blocker" };
+  return todo.length ? { issue: todo[0], reason: "ok" } : { issue: null, reason: "kein freies Todo (Blocker, oder Cursor hat noch Vorrang)" };
 }
 
 const numberOf = (i) => Number(String(i.identifier).split("-")[1] ?? 0);
