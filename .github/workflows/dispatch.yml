@@ -62,7 +62,7 @@ jobs:
           prompt: ${{ steps.pick.outputs.prompt }}
           claude_args: |
             --model claude-sonnet-5-5
-            --max-turns 60
+            --max-turns 150
             --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
 
       # Selbst-Anstoß (SIN-227): GitHubs Zeitplan ist unzuverlässig. Nach einem erfolgreichen Lauf
