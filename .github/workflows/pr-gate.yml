@@ -228,7 +228,7 @@ jobs:
                 ...(approved ? [`<!-- pr-gate approved-keys: ${JSON.stringify(approvedKeys)} -->`] : []),
                 approved
                   ? "**risk:high – freigegeben.** Merged automatisch, sobald alle Checks grün sind. Die Freigabe bleibt bei Folge-Commits, außer ein neuer High-Grund kommt dazu."
-                  : "**risk:high – wartet auf Freigabe von Sinan.** Zum Freigeben das Label `freigegeben` setzen.",
+                  : "**risk:high – wartet auf Freigabe von @siinanXD.** Zum Freigeben das Label `freigegeben` setzen.",
                 ...(note ? ["", note] : []),
                 "",
                 "Gründe:",
