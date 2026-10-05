@@ -20,6 +20,7 @@
     "test:lighthouse": "node scripts/lighthouse-gate.mjs http://127.0.0.1:43123/",
     "autonomy:dispatch:dry": "node scripts/autonomy/dispatch.mjs --dry-run --fixture docs/autonomy/fixture-issues.json",
     "autonomy:planner:dry": "node scripts/autonomy/planner.mjs --create docs/autonomy/fixture-plan.json --dry-run",
+    "autonomy:planner:context": "node scripts/autonomy/planner.mjs --context --dry-run",
     "hermes:dry-run": "node --import tsx scripts/hermes-dry-run.mjs",
     "pilot:maf": "node --import tsx scripts/pilot-maf.mjs",
     "supabase:verify": "node scripts/verify-supabase-schema.mjs",

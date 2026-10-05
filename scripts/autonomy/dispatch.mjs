@@ -6,13 +6,16 @@
  *   node scripts/autonomy/dispatch.mjs --done SIN-123   Linear auf Done (nach Merge)
  *   node scripts/autonomy/dispatch.mjs --blocker SIN-123 "Text"   Blocker-Kommentar
  *
- * Ausgabe für GitHub Actions: GITHUB_OUTPUT (found, identifier, prompt).
+ *   node scripts/autonomy/dispatch.mjs --prompt SIN-123   Prompt für den Worker-Lauf
+ *
+ * Ausgabe für GitHub Actions: GITHUB_OUTPUT (found, identifiers; beim Worker identifier, prompt).
+ * Der Dispatcher wählt nur (bis zu 2, Spuren abwechselnd); jedes Issue läuft in einem eigenen Worker-Lauf.
  * Dry-Run: nur lesen, nichts in Linear ändern. Ohne LINEAR_API_KEY: `--fixture datei.json`.
  */
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./budget.mjs";
-import { MAX_REPAIR_ROUNDS, buildPrompt, comment, fetchProjectIssues, linear, pickNext, setState } from "./linear.mjs";
+import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, fetchProjectIssues, laneOf, linear, pickMany, setState } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -59,6 +62,14 @@ export async function main(argv) {
     output("until", until);
     return;
   }
+  // Prompt für den Worker-Lauf: --prompt SIN-123 → GITHUB_OUTPUT (identifier, prompt).
+  const promptAt = argv.indexOf("--prompt");
+  if (promptAt >= 0) {
+    const issue = await findByIdentifier(argv[promptAt + 1]);
+    output("identifier", issue.identifier);
+    output("prompt", buildPrompt(issue));
+    return console.log(`Prompt für ${issue.identifier}`);
+  }
   // Issue zurück auf Todo, wenn Claude es nicht fertig bekam (Limit, Fehler), damit kein Slot blockiert.
   const resetAt = argv.indexOf("--reset");
   if (resetAt >= 0) {
@@ -96,19 +107,20 @@ export async function main(argv) {
     return;
   }
   const openPrs = fixtureAt >= 0 ? [] : await fetchOpenPrs();
-  const { issue, reason } = pickNext(issues, undefined, (i) => claudeMayTake(i, { openPrs }));
-  if (!issue) {
+  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, (i) => claudeMayTake(i, { openPrs }));
+  if (!picked.length) {
     console.log(`Nichts zu starten: ${reason}`);
     output("found", "false");
     return;
   }
-  const prompt = buildPrompt(issue);
-  console.log(`${dry ? "[dry-run] " : ""}Nächstes Issue: ${issue.identifier} (${issue.title}), Priorität ${issue.priority}`);
-  if (dry) console.log(`\n${prompt}`);
-  else await setState(issue, "In Progress");
+  for (const issue of picked) {
+    console.log(`${dry ? "[dry-run] " : ""}Nächstes Issue: ${issue.identifier} (${issue.title}), Spur ${laneOf(issue)}, Priorität ${issue.priority}`);
+    if (dry) console.log(`\n${buildPrompt(issue)}\n`);
+    else await setState(issue, "In Progress");
+  }
+  // Der Workflow startet je Kennung einen eigenen Worker-Lauf (worker.yml, SIN-227).
   output("found", "true");
-  output("identifier", issue.identifier);
-  output("prompt", prompt);
+  output("identifiers", picked.map((i) => i.identifier).join(" "));
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

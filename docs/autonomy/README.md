@@ -6,6 +6,21 @@
 
 ---
 
+## SIN-227: drei Spuren, Figma zuerst, Produktreife, Worker
+
+**Einmalig von Sinan** (der Agent-Token darf `.github/workflows/` nicht ändern; Entscheidung D-42):
+
+1. `dispatch.yml` und `planner.yml` aus diesem Ordner nach `.github/workflows/` kopieren (überschreiben), **neu:** `worker.yml` dorthin kopieren. Der Dispatcher wählt nur noch und startet je Issue einen Worker-Lauf; `dry_run` ist jetzt standardmäßig `false`.
+2. Optional Secret `FIGMA_ACCESS_TOKEN` (nur lesen) für den Abgleich Code ↔ Figma im Planer.
+3. Linear-Labels `frontend`, `content`, `backend`, `design`, `abnahme` (der Planer legt fehlende selbst an).
+4. Einmalige Freigabe der neuen Checkliste in `docs/PRODUCT.md` (Abschnitt „Produktreife“, `risk:high`).
+
+Prüfen: `npm run autonomy:dispatch:dry`, `npm run autonomy:planner:dry` (zeigt Produktreife-Tabelle und die Spuren), `npm run autonomy:planner:context` (der Prompt für Claude).
+
+Produktreife: Messwerte (Bestehensquote, offene `design`-Issues, Figma-Frames, Sentry) kommen vom Planer; alles andere zählt erst, wenn es in `docs/product-readiness.json` unter `bestaetigt` mit Datum und Beleg steht. Sinans Antwort auf die Abnahme kommt unter `abnahme.antwort` hinein und beendet den Pflege-Modus.
+
+---
+
 Der Agent-Token darf `.github/workflows/` nicht ändern. Diese Dateien muss Sinan von Hand übernehmen:
 
 1. `dispatch.yml` und `planner.yml` nach `.github/workflows/` kopieren. Secrets: `LINEAR_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` (optional für den Planer: Supabase, Sentry, PostHog).

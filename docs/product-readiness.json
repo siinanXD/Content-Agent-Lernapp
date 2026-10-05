@@ -1,0 +1,6 @@
+{
+  "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry; alles andere zählt nur mit Bestätigung.",
+  "goldsetTarget": 0.9,
+  "bestaetigt": {},
+  "abnahme": null
+}

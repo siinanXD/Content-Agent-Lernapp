@@ -1,0 +1,96 @@
+# Vorlage (SIN-227) → nach .github/workflows/worker.yml kopieren (der Agent-Token darf dort nicht schreiben).
+# Worker: bearbeitet genau ein Linear-Issue mit Claude. Wird vom Dispatcher je Issue gestartet; die
+# concurrency-Gruppe gilt je Issue, nicht global. So laufen bis zu 2 Issues wirklich parallel und ein
+# langer Claude-Lauf blockiert weder den Dispatcher noch ein anderes Issue.
+# Ergebnis: Hat Claude einen PR geöffnet, zählt der Lauf als Erfolg (auch bei --max-turns): kein Reset, keine
+# Pause, der Dispatcher wird angestoßen. Nur ohne PR: Issue zurück auf Todo; nur bei echter Usage-/Rate-Limit-
+# Meldung (Ergebnis-Eintrag des Logs, nicht max-turns) wird AGENT_PAUSED_UNTIL gesetzt.
+# Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN; optional AGENT_VARIABLES_TOKEN (PAT, nur „Variables: write“).
+name: worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      identifier:
+        description: "Linear-Kennung, z. B. SIN-123"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: write
+
+jobs:
+  work:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: worker-${{ inputs.identifier }}
+      cancel-in-progress: false
+    env:
+      IDENTIFIER: ${{ inputs.identifier }}
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prompt für das Issue holen
+        id: pick
+        run: node scripts/autonomy/dispatch.mjs --prompt "$IDENTIFIER"
+      - name: Claude im Automationsmodus
+        id: claude
+        # Ein Fehler (max-turns, Limit) darf den Lauf nicht sofort beenden: erst prüfen, ob ein PR existiert.
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: ${{ steps.pick.outputs.prompt }}
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 150
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+
+      - name: PR vorhanden?
+        id: pr
+        if: steps.claude.outcome == 'failure'
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
+          echo "has_pr=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      # Selbst-Anstoß: GitHubs Zeitplan ist unzuverlässig. Nach Erfolg (oder PR trotz Fehler) wählt der
+      # Dispatcher das nächste Issue; findet er keins, endet die Kette.
+      - name: Dispatcher anstoßen
+        if: steps.claude.outcome == 'success' || steps.pr.outputs.has_pr == 'true'
+        run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
+
+      # Kein PR: Issue zurück auf Todo (kein blockierter Slot). Pause nur bei echtem Limit.
+      - name: Fehler auswerten
+        id: limit
+        if: steps.claude.outcome == 'failure' && steps.pr.outputs.has_pr != 'true'
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          node scripts/autonomy/dispatch.mjs --reset "$IDENTIFIER"
+          if [ -f "$EXECUTION_FILE" ]; then node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE"; fi
+      - name: Pause bis Reset setzen
+        if: steps.limit.outputs.until != ''
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_VARIABLES_TOKEN }}
+          UNTIL: ${{ steps.limit.outputs.until }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::Secret AGENT_VARIABLES_TOKEN fehlt: AGENT_PAUSED_UNTIL=$UNTIL bitte von Hand setzen."
+          else
+            gh variable set AGENT_PAUSED_UNTIL --repo "$GITHUB_REPOSITORY" --body "$UNTIL"
+          fi
+      - name: Lauf ohne PR als fehlgeschlagen markieren
+        if: steps.claude.outcome == 'failure' && steps.pr.outputs.has_pr != 'true'
+        run: |
+          echo "::error::Claude-Lauf für $IDENTIFIER fehlgeschlagen, kein PR."
+          exit 1

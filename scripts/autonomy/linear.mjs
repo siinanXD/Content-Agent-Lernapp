@@ -50,17 +50,48 @@ export function hasOpenBlockers(issue) {
 /** Priorität in Linear: 1 dringend … 4 niedrig, 0 = keine (zählt als niedrigste). */
 const rank = (p) => (p === 0 || p == null ? 5 : p);
 
+/** Spuren (SIN-227), in dieser Reihenfolge abwechselnd bedient. Label je Spur = Name. */
+export const LANES = ["frontend", "content", "backend"];
+/** Issues mit diesen Labels bekommt der Dispatcher nie: Design (Figma-Sitzung), Abnahme und Blocker (Mensch). */
+export const HUMAN_LABELS = ["design", "abnahme", "needs-human"];
+
+const labelsOf = (issue) => (issue.labels?.nodes ?? []).map((l) => l.name.toLowerCase());
+export const isHumanIssue = (issue) => labelsOf(issue).some((l) => HUMAN_LABELS.includes(l));
+/** Spur eines Issues; ohne Spur-Label zählt es als `backend`. */
+export const laneOf = (issue) => LANES.find((l) => labelsOf(issue).includes(l)) ?? "backend";
+
 /**
- * Nächstes Issue: Status Todo, keine offenen Blocker, `mayTake` (Cursor zuerst), höchste Priorität (dann ältere Nummer zuerst).
- * @returns {{ issue: any, reason: string }}
+ * Bis zu `slots` Issues: Status Todo, keine offenen Blocker, kein `design`/Mensch-Issue, `mayTake` (Cursor zuerst).
+ * Spuren wechseln sich ab: Beginn bei der Spur nach der zuletzt gestarteten, danach reihum; innerhalb
+ * einer Spur höchste Priorität, dann ältere Nummer. Eine Spur ohne Kandidat wird übersprungen (kein Hungern).
  */
+export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true) {
+  const started = issues.filter((i) => i.state.type === "started");
+  const free = Math.max(0, MAX_PARALLEL - started.length);
+  const want = Math.min(slots, free);
+  if (want === 0) return { issues: [], reason: `${started.length} Issues laufen schon (max. ${MAX_PARALLEL})` };
+  const queues = Object.fromEntries(LANES.map((l) => [l, []]));
+  issues
+    .filter((i) => i.state.name === "Todo" && !isHumanIssue(i) && !hasOpenBlockers(i) && mayTake(i))
+    .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b))
+    .forEach((i) => queues[laneOf(i)].push(i));
+  const last = started.sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))[0];
+  let lane = last ? (LANES.indexOf(laneOf(last)) + 1) % LANES.length : 0;
+  const picked = [];
+  while (picked.length < want && LANES.some((l) => queues[l].length)) {
+    const next = queues[LANES[lane]].shift();
+    if (next) picked.push(next);
+    lane = (lane + 1) % LANES.length;
+  }
+  return picked.length
+    ? { issues: picked, reason: "ok" }
+    : { issues: [], reason: "kein freies Todo (Blocker, Design/Mensch, oder Cursor hat noch Vorrang)" };
+}
+
+/** Das nächste einzelne Issue (wie `pickMany` mit einem Slot). @returns {{ issue: any, reason: string }} */
 export function pickNext(issues, maxParallel = MAX_PARALLEL, mayTake = () => true) {
-  const running = issues.filter((i) => i.state.type === "started").length;
-  if (running >= maxParallel) return { issue: null, reason: `${running} Issues laufen schon (max. ${maxParallel})` };
-  const todo = issues
-    .filter((i) => i.state.name === "Todo" && !hasOpenBlockers(i) && mayTake(i))
-    .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b));
-  return todo.length ? { issue: todo[0], reason: "ok" } : { issue: null, reason: "kein freies Todo (Blocker, oder Cursor hat noch Vorrang)" };
+  const { issues: picked, reason } = pickMany(issues, Math.min(1, maxParallel), mayTake);
+  return { issue: picked[0] ?? null, reason };
 }
 
 const numberOf = (i) => Number(String(i.identifier).split("-")[1] ?? 0);
