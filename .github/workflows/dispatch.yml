@@ -85,6 +85,11 @@ jobs:
         run: |
           id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
           [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --done "$id" || echo "Keine Linear-ID im Titel."
+      # Frei gewordene Slots sofort füllen (SIN-237), nicht erst beim nächsten 30-Min-Lauf.
+      - name: Dispatcher neu anstoßen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main
 
   linear-blocker:
     if: github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'needs-human' && github.event.pull_request.head.repo.full_name == github.repository

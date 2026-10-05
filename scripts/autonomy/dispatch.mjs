@@ -15,7 +15,7 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./budget.mjs";
-import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, fetchProjectIssues, laneOf, linear, pickMany, setState } from "./linear.mjs";
+import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -26,6 +26,30 @@ async function fetchOpenPrs() {
   });
   if (!res.ok) throw new Error(`GitHub-PRs nicht lesbar: ${res.status}`);
   return (await res.json()).map((p) => ({ title: p.title, head: p.head?.ref }));
+}
+
+/** Zuletzt geänderte PRs (offen, gemergt, geschlossen) für den Abgleich mit Linear. */
+async function fetchAllPrs() {
+  const { GITHUB_REPOSITORY: repo, GITHUB_TOKEN: token } = process.env;
+  if (!repo || !token) return [];
+  const res = await fetch(`https://api.github.com/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) throw new Error(`GitHub-PRs nicht lesbar: ${res.status}`);
+  return (await res.json()).map((p) => ({ title: p.title, head: p.head?.ref, state: p.state, merged: Boolean(p.merged_at) }));
+}
+
+/** Setzt Linear nach PR-Stand (Merge → Done, ohne Merge geschlossen → Todo); gibt die Issues danach zurück. */
+async function syncWithPrs(issues, prs, dry) {
+  const actions = reconcile(issues, prs);
+  for (const { issue, to } of actions) {
+    console.log(`${dry ? "[dry-run] " : ""}Abgleich: ${issue.identifier} → ${to}`);
+    if (!dry) await setState(issue, to);
+  }
+  const target = new Map(actions.map((a) => [a.issue.identifier, a.to]));
+  return issues
+    .filter((i) => target.get(i.identifier) !== "Done")
+    .map((i) => (target.get(i.identifier) === "Todo" ? { ...i, state: { ...i.state, name: "Todo", type: "unstarted" } } : i));
 }
 
 async function findByIdentifier(identifier) {
@@ -96,10 +120,12 @@ export async function main(argv) {
     return console.log(`Blocker-Kommentar an ${issue.identifier}`);
   }
 
-  const issues =
+  const fetched =
     fixtureAt >= 0
       ? JSON.parse(readFileSync(argv[fixtureAt + 1], "utf8"))
       : await fetchProjectIssues(linear);
+  // Erst abgleichen, dann Slots zählen (auch bei Pause): gemergte PRs geben ihren Slot frei.
+  const issues = await syncWithPrs(fetched, fixtureAt >= 0 ? [] : await fetchAllPrs(), dry);
   // Budget: nicht pausiert; Cursor hat zuerst Vorrang; höchstens 2 parallel (pickNext).
   if (isPaused(process.env.AGENT_PAUSED_UNTIL)) {
     console.log(`Nichts zu starten: pausiert bis ${parsePausedUntil(process.env.AGENT_PAUSED_UNTIL).toISOString()}`);
