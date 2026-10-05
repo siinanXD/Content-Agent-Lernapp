@@ -50,7 +50,7 @@ jobs:
       - name: Secrets prüfen
         run: node scripts/check-env.mjs --require=ANTHROPIC_API_KEY,ANTHROPIC_WORKSPACE_ID,OPENAI_API_KEY,LANGFUSE_PUBLIC_KEY,LANGFUSE_SECRET_KEY,LANGFUSE_BASE_URL,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY
       - name: Abhängigkeiten installieren
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Quellen-Monitor
         id: sources
         shell: bash

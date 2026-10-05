@@ -1,0 +1,6 @@
+# SIN-236 — package-lock.json normal committen
+
+- **Links:** Linear [SIN-236](https://linear.app/sinan-kahraman/issue/SIN-236/package-lockjson-normal-committen-statt-in-stucken); [npm ci](https://docs.npmjs.com/cli/v10/commands/npm-ci); [package-lock.json](https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json)
+- **Entscheidung:** `package-lock.json` liegt als normale Datei im Repo. `scripts/ap17-lock-chunks/`, `scripts/assemble-package-lock.mjs` und das npm-Skript `lock:assemble` sind entfernt. Alle Workflows (`ci`, `source-check`, `content-grow`) nutzen `npm ci`; der Zusammensetz-Schritt und die `--allowedTools`-Freigabe dafür sind aus `ci.yml`, `worker.yml`, `claude.yml` und den Vorlagen unter `docs/autonomy/` raus. `repair.yml` nutzte schon `npm ci`.
+- **Annahmen:** Das Lockfile ist der bisherige Stand aus den Stücken, unverändert zusammengesetzt (602732 Bytes). Der Grund für die Stücke war vermutlich eine Dateigrößen-Grenze eines früheren Agenten; `.gitignore` schließt die Datei nicht aus. `content-grow.yml` stand ebenfalls auf `npm install` und wurde mit umgestellt. Dass `ci` auf dem PR grün ist, zeigt erst der CI-Lauf.
+- **Warum:** Agenten und CI bekommen mit `npm ci` dieselben Paketstände, und Paket-Updates ändern nur eine Datei.

@@ -37,7 +37,7 @@ Injected secrets in the Cloud Agent process were only `RAILWAY_API_TOKEN`. Supab
 
 ## App behavior
 
-After cloning branch `cursor/ap17-supabase-persist-8a73`, run `npm run lock:assemble` before `npm ci` (the full `package-lock.json` is assembled from `scripts/ap17-lock-chunks/`).
+`package-lock.json` is committed; `npm ci` needs no extra step.
 
 - `getStorage()` → Supabase when URL + service role are set; otherwise `mock-store` (tests / no secrets).
 - Override: `COURSE_STORAGE=mock`.

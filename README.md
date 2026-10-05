@@ -89,7 +89,6 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 - With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
 - Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
 - Verify tables (when keys present): `npm run supabase:verify`.
-- If `package-lock.json` was split for transport: `npm run lock:assemble` (gzip chunks under `scripts/ap17-lock-chunks/`), then prefer a normal `npm install` for day-to-day work.
 
 ## Repo
 
