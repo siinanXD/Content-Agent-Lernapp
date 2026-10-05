@@ -2,8 +2,18 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { approvalStillValid, classifyRisk } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
-import { hasOpenBlockers, pickNext } from "../../../scripts/autonomy/linear.mjs";
-import { extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
+import { hasOpenBlockers, laneOf, pickMany, pickNext } from "../../../scripts/autonomy/linear.mjs";
+import { MAX_ISSUES_PER_WEEK, extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
+import {
+  CHECKS,
+  abnahmeIssue,
+  evaluateReadiness,
+  expectedFrames,
+  figmaFileKey,
+  inMaintenanceMode,
+  isAllGreen,
+  renderReadiness,
+} from "../../../scripts/autonomy/readiness.mjs";
 
 const patch = (...lines: string[]) => lines.map((l) => (/^[+-]/.test(l) ? l : ` ${l}`)).join("\n");
 const file = (filename: string, p = "", status = "modified") => ({ filename, patch: p, status });
@@ -115,12 +125,103 @@ test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
   const md = "# X\n\n## Definition fertig\n\n- a\n- b\n\n## Weiter\n\nrest";
   assert.equal(extractDefinition(md), "- a\n- b");
   assert.equal(extractDefinition("## Definition fertig\n\nletzter"), "letzter");
-  const mk = (n: number) => ({ title: `T${n}`, acceptance: ["ok"], priority: 2 });
-  assert.equal(validatePlan(Array.from({ length: 8 }, (_, i) => mk(i))).length, 5);
+  const mk = (n: number, lane = "backend") => ({ lane, title: `T${n}`, acceptance: ["ok"], priority: 2 });
+  assert.equal(validatePlan(Array.from({ length: 8 }, (_, i) => mk(i))).length, 3);
   assert.equal(validatePlan([mk(1)], ["t1"]).length, 0);
-  assert.throws(() => validatePlan([{ title: "x", acceptance: [], priority: 1 }]));
-  assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 9 }]));
+  assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: [], priority: 1 }]));
+  assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: ["a"], priority: 9 }]));
+  assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 1 }]), /lane/);
   assert.match(validatePlan([mk(1)])[0].description, /- \[ \] ok/);
+});
+
+test("Planer: je Spur max. 3 (zusammen 9), 1 Design-Paket, Spur-Label", () => {
+  const plan = ["frontend", "content", "backend"].flatMap((lane, l) =>
+    Array.from({ length: 5 }, (_, i) => ({ lane, title: `${lane}${i}`, acceptance: ["ok"], priority: 2 + (l % 2) })),
+  );
+  plan.push(
+    { lane: "design", title: "D1", acceptance: ["ok"], priority: 2 },
+    { lane: "design", title: "D2", acceptance: ["ok"], priority: 2 },
+  );
+  const out = validatePlan(plan);
+  assert.equal(out.filter((i) => i.lane !== "design").length, MAX_ISSUES_PER_WEEK);
+  assert.equal(MAX_ISSUES_PER_WEEK, 9);
+  for (const lane of ["frontend", "content", "backend"]) assert.equal(out.filter((i) => i.lane === lane).length, 3);
+  assert.deepEqual(out.filter((i) => i.lane === "design").map((i) => i.title), ["D1"]);
+  assert.deepEqual(out[0].labels, ["design", "frontend"]); // Design zuerst angelegt
+  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content"]);
+});
+
+test("Planer: Frontend mit neuer Oberfläche braucht Design als Blocker", () => {
+  const ui = { lane: "frontend", title: "UI", acceptance: ["ok"], priority: 2, needsDesign: true };
+  assert.throws(() => validatePlan([ui]), /blockedBy/);
+  assert.throws(() => validatePlan([{ ...ui, blockedBy: "Gibt es nicht" }]), /blockedBy/);
+  const design = { lane: "design", title: "Frame", acceptance: ["ok"], priority: 2 };
+  const out = validatePlan([ui, design].map((p) => ({ ...p, ...(p === ui ? { blockedBy: "Frame" } : {}) })));
+  assert.equal(out.find((i) => i.title === "UI")?.blockedBy, "Frame");
+  assert.equal(validatePlan([{ ...ui, blockedBy: "SIN-12" }])[0].blockedBy, "SIN-12");
+  assert.throws(() => validatePlan([{ ...ui, lane: "backend", blockedBy: "SIN-12" }]), /nur für frontend/);
+});
+
+test("Planer: Pflege-Modus plant nur Backend und Content", () => {
+  const plan = ["frontend", "content", "backend", "design"].map((lane) => ({ lane, title: lane, acceptance: ["ok"], priority: 2 }));
+  assert.deepEqual(validatePlan(plan, [], { maintenance: true }).map((i) => i.lane).sort(), ["backend", "content"]);
+});
+
+test("Produktreife: Messung, Bestätigung, Tabelle, Abnahme und Pflege-Modus", () => {
+  const metrics = { bestehensquote_pct: 95, sentry_kritisch: 0 };
+  const expected = ["01 Start", "02 Lernpfad"];
+  const base = { metrics, issues: [issue("SIN-1", 2)], expected, figma: { frames: ["01 Start", "02 Lernpfad"] } };
+  const rows = evaluateReadiness(base);
+  const status = (id: string) => rows.find((r) => r.id === id)?.status;
+  assert.equal(status("content-quote"), "ok");
+  assert.equal(status("design-issues"), "ok");
+  assert.equal(status("design-figma"), "ok");
+  assert.equal(status("betrieb-sentry"), "ok");
+  assert.equal(status("recht-impressum"), "nicht verfügbar"); // ohne Bestätigung nie grün
+  assert.equal(isAllGreen(rows), false);
+  assert.match(renderReadiness(rows), /\| Content \| Bestehensquote/);
+
+  const design = issue("SIN-2", 2, { labels: { nodes: [{ name: "design" }] } });
+  assert.equal(evaluateReadiness({ ...base, issues: [design] }).find((r) => r.id === "design-issues")?.status, "offen");
+  assert.equal(evaluateReadiness({ ...base, metrics: { bestehensquote_pct: 80 } }).find((r) => r.id === "content-quote")?.status, "offen");
+  assert.equal(evaluateReadiness({ ...base, figma: { frames: ["01 Start"] } }).find((r) => r.id === "design-figma")?.detail, "fehlt in Figma: 02 Lernpfad");
+  assert.equal(evaluateReadiness({ ...base, figma: null }).find((r) => r.id === "design-figma")?.status, "nicht verfügbar");
+  assert.equal(evaluateReadiness({ ...base, issues: null }).find((r) => r.id === "design-issues")?.status, "nicht verfügbar");
+
+  const confirmations = Object.fromEntries(CHECKS.filter((c) => !c.auto).map((c) => [c.id, { datum: "2026-10-05", beleg: "PR" }]));
+  const green = evaluateReadiness({ ...base, confirmations });
+  assert.equal(isAllGreen(green), true);
+  assert.equal(inMaintenanceMode(green, null), true);
+  assert.equal(inMaintenanceMode(green, { antwort: "freigegeben" }), false);
+  assert.equal(inMaintenanceMode(rows, null), false);
+  assert.equal(evaluateReadiness({ ...base, confirmations: { "recht-ki": { datum: "2026-10-05" } } }).find((r) => r.id === "recht-ki")?.status, "nicht verfügbar");
+  assert.equal(abnahmeIssue(green).title, "Produkt-Abnahme MAF Metall");
+  assert.deepEqual(abnahmeIssue(green).labels, ["abnahme"]);
+});
+
+test("Figma-Soll aus FIGMA.md", () => {
+  const md = "| File key | `abc123` |\n| 1 | `01 Start` | Hero |\n| 2 | `02 Lernpfad` | Karte |";
+  assert.deepEqual(expectedFrames(md), ["01 Start", "02 Lernpfad"]);
+  assert.equal(figmaFileKey(md), "abc123");
+});
+
+test("Dispatcher: überspringt design-, abnahme- und needs-human-Issues", () => {
+  const withLabel = (id: string, name: string) => issue(id, 1, { labels: { nodes: [{ name }] } });
+  assert.equal(pickNext([withLabel("SIN-1", "design"), withLabel("SIN-2", "abnahme"), withLabel("SIN-3", "needs-human")]).issue, null);
+  assert.equal(pickNext([withLabel("SIN-1", "design"), issue("SIN-4", 4)]).issue.identifier, "SIN-4");
+});
+
+test("Dispatcher: Spuren wechseln sich ab, keine Spur verhungert", () => {
+  const lane = (id: string, name: string, p = 2) => issue(id, p, { labels: { nodes: [{ name }] } });
+  const todo = [lane("SIN-1", "backend", 1), lane("SIN-2", "backend", 1), lane("SIN-3", "frontend"), lane("SIN-4", "content")];
+  assert.deepEqual(pickMany(todo, 2).issues.map((i) => i.identifier), ["SIN-3", "SIN-4"]); // trotz niedrigerer Priorität
+  // Läuft schon ein Frontend-Issue, kommt als Nächstes Content.
+  const running = issue("SIN-9", 2, { state: { name: "In Progress", type: "started" }, labels: { nodes: [{ name: "frontend" }] }, updatedAt: "2026-10-05T10:00:00Z" });
+  assert.deepEqual(pickMany([running, ...todo], 2).issues.map((i) => i.identifier), ["SIN-4"]);
+  // Spur ohne Kandidat wird übersprungen.
+  assert.deepEqual(pickMany([lane("SIN-1", "backend"), lane("SIN-2", "backend")], 2).issues.map((i) => i.identifier), ["SIN-1", "SIN-2"]);
+  assert.equal(laneOf(issue("SIN-5", 2)), "backend"); // ohne Label
+  assert.equal(pickMany([], 2).issues.length, 0);
 });
 
 test("Budget: Pause bis Reset", () => {
@@ -139,6 +240,19 @@ test("Budget: Reset-Zeit aus der Limit-Meldung", () => {
   assert.equal(pauseUntilFromLog("limit reached, resets 9am", now), "2026-10-06T09:00:00.000Z");
   assert.equal(pauseUntilFromLog("rate limit, bitte später", now), "2026-10-05T15:00:00.000Z");
   assert.equal(pauseUntilFromLog("Build failed", now), null);
+});
+
+test("Budget: Pause nur bei echtem Limit, nie bei max-turns oder anderen Fehlern", () => {
+  const now = new Date("2026-10-05T10:00:00Z");
+  const run = (result: object, ...before: object[]) => JSON.stringify([...before, { type: "result", ...result }]);
+  // Lauf #7: --max-turns erreicht, PR fertig. Das Log nennt „limit“ nebenbei, darf aber nicht pausieren.
+  const chatter = { type: "user", message: "rate limit und usage limit reached stehen in docs/autonomy/README.md" };
+  assert.equal(pauseUntilFromLog(run({ subtype: "error_max_turns", is_error: true, result: "Reached max turns limit (60)" }, chatter), now), null);
+  assert.equal(pauseUntilFromLog(run({ subtype: "success", is_error: false, result: "fertig, usage limit reached" }), now), null);
+  assert.equal(pauseUntilFromLog(run({ subtype: "error_during_execution", is_error: true, result: "Build failed" }, chatter), now), null);
+  assert.equal(pauseUntilFromLog(run({ subtype: "success", is_error: true, result: "You've hit your limit · resets 3pm (UTC)" }), now), "2026-10-05T15:00:00.000Z");
+  assert.equal(pauseUntilFromLog(run({ subtype: "success", is_error: true, result: "Claude AI usage limit reached|1791200000" }), now), new Date(1791200000 * 1000).toISOString());
+  assert.equal(pauseUntilFromLog("[]", now), null);
 });
 
 test("Cursor zuerst: Claude nimmt nur Label, alte Todos ohne PR", () => {

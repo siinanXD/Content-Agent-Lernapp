@@ -1,66 +1,77 @@
-# Vorlage (SIN-223) → nach .github/workflows/dispatch.yml kopieren (der Agent darf dort nicht schreiben).
-# Dispatcher: alle 2 h das nächste Linear-Issue (Todo, keine offenen Blocker, höchste Priorität)
-# an Claude geben. Max. 2 Issues parallel, Reparaturen max. 3 Runden (repair.yml), danach Blocker-Kommentar.
-# Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN. Dry-Run: Eingabe `dry_run` = true, ändert nichts.
+# Vorlage (SIN-227) → nach .github/workflows/dispatch.yml kopieren (der Agent-Token darf dort nicht schreiben).
+# Dispatcher: alle 30 Min wählt er bis zu 2 Linear-Issues (Todo, keine offenen Blocker, kein Label design/abnahme/
+# needs-human, Spuren frontend/content/backend abwechselnd) und startet je Issue einen eigenen Lauf von worker.yml.
+# Er hält keine Claude-Sitzung fest: die Gruppe `dispatch` ist nach Sekunden frei, die Worker laufen parallel,
+# je Issue in einer eigenen Gruppe. Cursor zuerst: Claude übernimmt nur Issues mit Label `claude` oder solche,
+# die seit 1 h unberührt in Todo liegen und zu denen kein offener PR gehört. Max. 2 Issues parallel.
+# Budget: Ist AGENT_PAUSED_UNTIL (Repo-Variable) in der Zukunft, startet nichts (Pause setzt der Worker, nur bei echtem Limit).
+# Secrets: LINEAR_API_KEY. Dry-Run: Eingabe `dry_run` = true (Standard ist false).
 name: dispatch
 
 on:
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
         description: "Nur anzeigen, nichts starten"
         type: boolean
-        default: true
+        default: false
   # Nach Merge: Linear auf Done. Blocker nach 3 Runden: Kommentar in Linear.
   pull_request:
     types: [closed, labeled]
-
-concurrency:
-  group: dispatch
-  cancel-in-progress: false
 
 permissions:
   contents: write
   pull-requests: write
   issues: write
   id-token: write
-  actions: read
+  actions: write
 
 jobs:
   dispatch:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
+    # Nie zwei Wahl-Läufe gleichzeitig (sonst starten beide dasselbe Issue). Der Lauf dauert nur Sekunden.
+    concurrency:
+      group: dispatch
+      cancel-in-progress: false
+    env:
+      AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
+      GITHUB_TOKEN: ${{ github.token }}
+      DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Nächstes Issue wählen
+      - name: Issues wählen (max. 2, Spuren abwechselnd)
         id: pick
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
           if [ "$DRY" = "true" ]; then node scripts/autonomy/dispatch.mjs --dry-run
           else node scripts/autonomy/dispatch.mjs; fi
-      - name: Claude im Automationsmodus
-        if: steps.pick.outputs.found == 'true'
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: ${{ steps.pick.outputs.prompt }}
-          claude_args: |
-            --model claude-sonnet-5-5
-            --max-turns 60
-            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+      # Je Issue ein eigener Worker-Lauf (eigene concurrency-Gruppe je Issue in worker.yml).
+      - name: Worker starten
+        if: steps.pick.outputs.found == 'true' && env.DRY != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IDENTIFIERS: ${{ steps.pick.outputs.identifiers }}
+        run: |
+          for id in $IDENTIFIERS; do
+            gh workflow run worker.yml --repo "$GITHUB_REPOSITORY" --ref main -f identifier="$id"
+          done
 
   linear-done:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Eigene Gruppe je PR: darf nie hinter einem langen Dispatcher-Lauf warten oder verworfen werden.
+    concurrency:
+      group: dispatch-done-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
@@ -78,6 +89,9 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'needs-human' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    concurrency:
+      group: dispatch-blocker-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4

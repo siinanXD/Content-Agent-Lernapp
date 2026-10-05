@@ -1,8 +1,11 @@
-# Vorlage (SIN-223) → nach .github/workflows/planner.yml kopieren (der Agent darf dort nicht schreiben).
-# Planer: sonntags Definition fertig (PRODUCT.md), offene Linear-Issues und Kennzahlen lesen,
-# Claude schreibt plan.json, das Skript legt höchstens 5 Issues als Todo an. Ersetzt den Frontend-Agent.
+# Vorlage (SIN-227) → nach .github/workflows/planner.yml kopieren (der Agent-Token darf dort nicht schreiben).
+# Planer: sonntags Definition fertig und Produktreife (PRODUCT.md), offene Linear-Issues und Kennzahlen lesen,
+# Claude schreibt plan.json (drei Spuren, je höchstens 3 Issues, dazu höchstens 1 Design-Paket), das Skript legt
+# die Issues als Todo an und die Produktreife-Tabelle in den Bericht. Ist alles grün: Abnahme-Issue für Sinan
+# und Pflege-Modus (nur Fehler + Content). Ersetzt den Frontend-Agent.
 # Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN; optional SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-# SENTRY_AUTH_TOKEN/SENTRY_ORG/SENTRY_PROJECT, POSTHOG_PERSONAL_API_KEY/POSTHOG_PROJECT_ID.
+# SENTRY_AUTH_TOKEN/SENTRY_ORG/SENTRY_PROJECT, POSTHOG_PERSONAL_API_KEY/POSTHOG_PROJECT_ID,
+# FIGMA_ACCESS_TOKEN (nur lesen; fehlt er, steht „nicht verfügbar“ im Bericht).
 name: planner
 
 on:
@@ -13,11 +16,16 @@ on:
       dry_run:
         description: "Nur anzeigen, nichts in Linear anlegen"
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: read
   id-token: write
+
+# Nie zwei Planer-Läufe gleichzeitig.
+concurrency:
+  group: planner
+  cancel-in-progress: false
 
 jobs:
   plan:
@@ -32,15 +40,22 @@ jobs:
       SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
       POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
       POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
+      FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
       DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+      AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Kontext sammeln
+      - name: Pause prüfen (Claude-Limit)
+        id: pause
+        run: node scripts/autonomy/dispatch.mjs --check-pause
+      - name: Kontext sammeln (inkl. Produktreife-Tabelle)
+        if: steps.pause.outputs.paused != 'true'
         run: node scripts/autonomy/planner.mjs --context --out /tmp/planner-prompt.md
       - name: Claude schreibt den Plan
+        if: steps.pause.outputs.paused != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -49,7 +64,8 @@ jobs:
             --model claude-sonnet-5-5
             --max-turns 15
             --allowedTools "Read,Write,Glob,Grep"
-      - name: Issues anlegen (max. 5)
+      - name: Issues anlegen (je Spur max. 3, 1 Design-Paket)
+        if: steps.pause.outputs.paused != 'true'
         run: |
-          if [ "$DRY" = "true" ]; then node scripts/autonomy/planner.mjs --create plan.json --dry-run
-          else node scripts/autonomy/planner.mjs --create plan.json; fi
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/planner.mjs --create plan.json --dry-run | tee -a "$GITHUB_STEP_SUMMARY"
+          else node scripts/autonomy/planner.mjs --create plan.json | tee -a "$GITHUB_STEP_SUMMARY"; fi

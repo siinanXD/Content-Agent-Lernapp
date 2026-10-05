@@ -242,6 +242,21 @@ Die App gilt als fertig, wenn alle vier Punkte erfüllt sind. Der Planer misst d
 - **Skalierbar:** Neue Berufe entstehen nur über die Curriculum-Map. Die Content-Fabrik läuft wöchentlich.
 - **Frontend:** Die Screens entsprechen Figma (Tokens aus Figma), WCAG 2.2 AA.
 
+## Produktreife
+
+Ziel (Vorgabe Sinan, 2026-10-05): ein **fertiges Produkt mit einem Modul**, kein MVP. MAF Metall komplett, so gut, dass man es Bildungsträgern zeigen und verkaufen kann. Das Projekt läuft im Dauer-Loop auf drei Spuren (Frontend, Content, Backend), bis die Checkliste grün ist. Der Planer prüft sie jede Woche und zeigt sie als Tabelle im Bericht (Schlüssel und Messung: `scripts/autonomy/readiness.mjs`, Bestätigungen: `docs/product-readiness.json`).
+
+- **Content:** alle Module von MAF Metall veröffentlicht; Bestehensquote ≥ Goldset-Zielwert; Sicherheits-Stichproben erledigt
+- **Lernen:** Start → Lernpfad → Einheit → Ergebnis → Wiederholung (1/3/7 Tage) → Prüfungsmodus komplett, E2E grün
+- **Design:** alle Screens aus Figma; keine offenen `design`-Issues; Figma-Abgleich ohne Abweichung
+- **Qualität:** Lighthouse ≥ 90 in allen Kategorien; axe ohne Fehler; WCAG 2.2 AA; offline nutzbar
+- **Betrieb:** Sentry ohne offene kritische Fehler seit 7 Tagen; Kosten pro Kurslauf gemessen und unter Deckel; Content-Fabrik läuft
+- **Recht/Vertrieb:** KI-Kennzeichnung; Impressum; Datenschutzerklärung; Einwilligung für Nutzungsdaten; Demo-Zugang für Bildungsträger
+
+Wenn alles grün ist, legt der Planer **ein** Issue „Produkt-Abnahme MAF Metall“ für Sinan an (`risk:high`, Grundsatz-Entscheidung) und schaltet auf **Pflege-Modus**: nur Fehler und Content, bis Sinan antwortet.
+
+**Spuren und Design:** Der Planer plant je Spur (Label `frontend`, `content`, `backend`) höchstens 3 Issues pro Woche. Jedes Frontend-Issue mit neuer oder geänderter Oberfläche wartet auf ein Design-Issue (Label `design`, höchstens 1 Paket pro Woche), das in einer Claude-Sitzung mit Figma-Connector erledigt wird. Der Dispatcher überspringt `design`-Issues und wechselt die Spuren ab. Code-Issues bauen nur nach freigegebenem Figma-Frame.
+
 ## Nächster Schritt
 
 - [ ] Neues Repo anlegen und dieses Dokument als docs/PRODUCT.md ablegen

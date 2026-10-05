@@ -1,26 +1,50 @@
 #!/usr/bin/env node
 /**
- * Planer (SIN-223), wöchentlich. Ersetzt den Frontend-Agent aus PRODUCT.md.
+ * Planer (SIN-223, SIN-227), wöchentlich. Ersetzt den Frontend-Agent aus PRODUCT.md.
  *
  *   node scripts/autonomy/planner.mjs --context [--dry-run] [--out prompt.md]
- *       sammelt Definition fertig, offene Linear-Issues und Kennzahlen, schreibt den Prompt
+ *       sammelt Definition fertig, offene Linear-Issues, Kennzahlen und die Produktreife-Tabelle, schreibt den Prompt
  *   node scripts/autonomy/planner.mjs --create plan.json [--dry-run]
- *       prüft den Plan (max. 5, Akzeptanzkriterien, Priorität) und legt Linear-Issues als Todo an
+ *       prüft den Plan (je Spur max. 3, 1 Design-Paket, Akzeptanzkriterien, Priorität), legt Linear-Issues als
+ *       Todo an (Label je Spur, Design blockiert das Frontend-Issue). Ist die Produktreife grün, legt er
+ *       das Issue „Produkt-Abnahme MAF Metall“ für Sinan an und plant bis zur Antwort nur Fehler und Content.
  *
- * Kennzahlen ohne Zugang (Supabase, PostHog, Sentry, Kosten) stehen als „nicht verfügbar“ im Prompt.
+ * Kennzahlen ohne Zugang (Supabase, PostHog, Sentry, Kosten, Figma) stehen als „nicht verfügbar“ im Prompt.
  * Dry-Run: nur lesen, nichts in Linear anlegen.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import {
+  ABNAHME_TITLE,
+  DEFAULT_GOLDSET_TARGET,
+  abnahmeIssue,
+  evaluateReadiness,
+  expectedFrames,
+  fetchFigmaFrames,
+  figmaFileKey,
+  inMaintenanceMode,
+  renderReadiness,
+} from "./readiness.mjs";
 
-export const MAX_ISSUES_PER_WEEK = 5;
+export const MAX_PER_LANE = 3;
+export const MAX_DESIGN_PER_WEEK = 1;
+/** Höchstens 3 je Spur (zusammen 9); dazu höchstens 1 Design-Paket. */
+export const MAX_ISSUES_PER_WEEK = MAX_PER_LANE * LANES.length;
+export const PLAN_LANES = [...LANES, "design"];
+/** Pflege-Modus: nur Fehler (Backend) und Content. */
+export const MAINTENANCE_LANES = ["backend", "content"];
+export const READINESS_FILE = "docs/product-readiness.json";
 
-/** Abschnitt „Definition fertig“ aus PRODUCT.md. */
-export function extractDefinition(markdown) {
-  const m = markdown.match(/^## Definition fertig\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m);
+/** Abschnitt `## <Überschrift>` aus einem Markdown-Dokument (ohne die Überschrift). */
+export function extractSection(markdown, heading) {
+  const esc = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = markdown.match(new RegExp(`^## ${esc}\\s*$([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m"));
   return m ? m[1].trim() : "";
 }
+
+/** Abschnitt „Definition fertig“ aus PRODUCT.md. */
+export const extractDefinition = (markdown) => extractSection(markdown, "Definition fertig");
 
 async function supabaseCount(path, headers, base) {
   const res = await fetch(`${base}/rest/v1/${path}`, { headers: { ...headers, Prefer: "count=exact", Range: "0-0" } });
@@ -33,9 +57,11 @@ export async function collectMetrics(env = process.env) {
     einheiten: "nicht verfügbar",
     fragen_bewertet: "nicht verfügbar",
     bestehensquote: "nicht verfügbar",
+    bestehensquote_pct: "nicht verfügbar",
     kosten_pro_lauf: "nicht verfügbar (Ledger/Langfuse nicht angebunden)",
     posthog: "nicht verfügbar",
     sentry: "nicht verfügbar",
+    sentry_kritisch: "nicht verfügbar",
   };
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const h = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
@@ -45,17 +71,22 @@ export async function collectMetrics(env = process.env) {
       const passed = await supabaseCount("question_quality_latest?select=question_id&passed=eq.true", h, env.SUPABASE_URL);
       m.fragen_bewertet = total;
       m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";
+      if (total) m.bestehensquote_pct = Math.round((passed / total) * 100);
     } catch (e) {
       m.einheiten = `Fehler: ${e.message}`;
     }
   }
   if (env.SENTRY_AUTH_TOKEN && env.SENTRY_ORG && env.SENTRY_PROJECT) {
+    const sentry = async (query) => {
+      const url = `https://de.sentry.io/api/0/projects/${env.SENTRY_ORG}/${env.SENTRY_PROJECT}/issues/?query=${encodeURIComponent(query)}&statsPeriod=7d&limit=25`;
+      return fetch(url, { headers: { Authorization: `Bearer ${env.SENTRY_AUTH_TOKEN}` } });
+    };
     try {
-      const res = await fetch(
-        `https://de.sentry.io/api/0/projects/${env.SENTRY_ORG}/${env.SENTRY_PROJECT}/issues/?query=is:unresolved&statsPeriod=7d&limit=25`,
-        { headers: { Authorization: `Bearer ${env.SENTRY_AUTH_TOKEN}` } },
-      );
+      const res = await sentry("is:unresolved");
       m.sentry = res.ok ? `${(await res.json()).length} ungelöste Fehler (7 Tage)` : `Fehler: HTTP ${res.status}`;
+      // Kritisch = Level error oder fatal (Suchsyntax nicht live geprüft, siehe D-42).
+      const crit = await sentry("is:unresolved level:[error,fatal]");
+      if (crit.ok) m.sentry_kritisch = (await crit.json()).length;
     } catch (e) {
       m.sentry = `Fehler: ${e.message}`;
     }
@@ -80,14 +111,46 @@ export async function collectMetrics(env = process.env) {
   return m;
 }
 
-export function buildPlannerPrompt({ definition, issues, metrics }) {
+/** Produktreife-Zeilen aus Kennzahlen, offenen Issues, Bestätigungsdatei und (mit Token) Figma. */
+export async function assessReadiness({ metrics, issues, env = process.env, read = readFileSync }) {
+  const file = existsSync(READINESS_FILE) ? JSON.parse(read(READINESS_FILE, "utf8")) : {};
+  const figmaMd = existsSync("docs/design/FIGMA.md") ? read("docs/design/FIGMA.md", "utf8") : "";
+  const rows = evaluateReadiness({
+    metrics,
+    issues,
+    confirmations: file.bestaetigt ?? {},
+    goldsetTarget: file.goldsetTarget ?? DEFAULT_GOLDSET_TARGET,
+    figma: await fetchFigmaFrames(figmaFileKey(figmaMd), env),
+    expected: expectedFrames(figmaMd),
+  });
+  return { rows, abnahme: file.abnahme ?? null };
+}
+
+export function buildPlannerPrompt({ definition, issues, metrics, readiness = "", maintenance = false }) {
   return [
     "Du bist der Planer für die Content-Agent-Lernapp (Regeln: AGENTS.md).",
-    `Vergleiche den Ist-Stand mit der Definition fertig und schlage höchstens ${MAX_ISSUES_PER_WEEK} neue Linear-Issues vor.`,
+    "Ziel: ein fertiges Produkt mit einem Modul (MAF Metall komplett), kein MVP. Vergleiche den Ist-Stand mit der Definition fertig und der Produktreife-Tabelle.",
+    `Plane getrennt nach drei Spuren, je Spur höchstens ${MAX_PER_LANE} neue Linear-Issues (zusammen höchstens ${MAX_ISSUES_PER_WEEK}):`,
+    "- frontend: Lern-Erlebnis, Screens, Motivation (Serie, Tagesziel, Wiederholung), Barrierefreiheit, Offline. Kennzahlen: Lighthouse, axe, PostHog-Abbrüche, Figma-Abgleich.",
+    "- content: Abdeckung, Qualität, neue Berufe (nur mit amtlicher Quelle).",
+    "- backend: Pipeline, Datenmodell, Kosten, Stabilität, Sentry-Fehler, Skalierung.",
     "Keine Duplikate zu offenen Issues. Pro Issue: ein Arbeitspaket, ein PR. Kein Inhalt ohne amtliche Quelle, keine Personendaten.",
+    "",
+    "Figma zuerst: Braucht ein Frontend-Issue neue oder geänderte Oberfläche, setze `needsDesign: true` und `blockedBy` auf den Titel eines Design-Eintrags im Plan",
+    `(oder auf eine offene Kennung wie SIN-123). Design-Einträge haben \`lane: "design"\`, höchstens ${MAX_DESIGN_PER_WEEK} pro Woche (ein gebündeltes Paket), und werden in einer Sitzung mit Figma-Connector erledigt, nicht vom Dispatcher.`,
+    "Code-Issues bauen nur nach freigegebenem Figma-Frame; Design-Tokens kommen aus Figma (docs/design/).",
+    ...(maintenance
+      ? [
+          "",
+          "**Pflege-Modus:** Die Produktreife ist grün, die Abnahme durch Sinan steht aus. Plane NUR Fehler (backend) und Content. Keine frontend- oder design-Einträge.",
+        ]
+      : []),
     "",
     "## Definition fertig (docs/PRODUCT.md)",
     definition || "(Abschnitt fehlt)",
+    "",
+    "## Produktreife MAF Metall (docs/PRODUCT.md)",
+    readiness || "(nicht geprüft)",
     "",
     "## Offene Linear-Issues",
     ...(issues.length ? issues.map((i) => `- ${i.identifier} [${i.state.name}, Prio ${i.priority}] ${i.title}`) : ["(keine)"]),
@@ -96,50 +159,106 @@ export function buildPlannerPrompt({ definition, issues, metrics }) {
     ...Object.entries(metrics).map(([k, v]) => `- ${k}: ${v}`),
     "",
     "## Ausgabe",
-    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4}].',
-    "Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
+    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "needsDesign": false, "blockedBy": "Titel oder SIN-123"}].',
+    "`needsDesign` und `blockedBy` nur bei Frontend-Issues mit neuer Oberfläche. Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
   ].join("\n");
 }
 
-/** Prüft den Plan des Modells. Wirft bei ungültigen Einträgen, kürzt auf das Wochenlimit. */
-export function validatePlan(plan, existingTitles = []) {
+/**
+ * Prüft den Plan des Modells. Wirft bei ungültigen Einträgen, kürzt je Spur auf MAX_PER_LANE
+ * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
+ * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], blockedBy?: string }[]}
+ */
+export function validatePlan(plan, existingTitles = [], { maintenance = false } = {}) {
   if (!Array.isArray(plan)) throw new Error("Plan muss eine Liste sein");
   const taken = new Set(existingTitles.map((t) => t.trim().toLowerCase()));
+  const planTitles = new Set(plan.map((p) => String(p?.title ?? "").trim().toLowerCase()));
+  const count = {};
   const out = [];
   for (const [i, p] of plan.entries()) {
     if (!p?.title || typeof p.title !== "string") throw new Error(`Eintrag ${i}: title fehlt`);
+    if (!PLAN_LANES.includes(p.lane)) throw new Error(`Eintrag ${i}: lane muss ${PLAN_LANES.join(", ")} sein`);
     if (!Array.isArray(p.acceptance) || p.acceptance.length === 0) throw new Error(`Eintrag ${i}: Akzeptanzkriterien fehlen`);
     if (![1, 2, 3, 4].includes(p.priority)) throw new Error(`Eintrag ${i}: priority muss 1 bis 4 sein`);
+    const blockedBy = typeof p.blockedBy === "string" ? p.blockedBy.trim() : "";
+    if (p.needsDesign) {
+      if (p.lane !== "frontend") throw new Error(`Eintrag ${i}: needsDesign nur für frontend`);
+      const known = /^SIN-\d+$/.test(blockedBy) || planTitles.has(blockedBy.toLowerCase());
+      if (!known) throw new Error(`Eintrag ${i}: needsDesign braucht blockedBy (Design-Eintrag im Plan oder SIN-Kennung)`);
+    }
     if (taken.has(p.title.trim().toLowerCase())) continue;
+    if (maintenance && !MAINTENANCE_LANES.includes(p.lane)) continue;
+    const cap = p.lane === "design" ? MAX_DESIGN_PER_WEEK : MAX_PER_LANE;
+    if ((count[p.lane] = (count[p.lane] ?? 0) + 1) > cap) continue;
     out.push({
+      lane: p.lane,
       title: p.title.trim(),
       priority: p.priority,
-      description: `${p.description ?? ""}\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`.trim(),
+      labels: p.lane === "design" ? ["design", "frontend"] : [p.lane],
+      ...(p.needsDesign ? { blockedBy } : {}),
+      description: `${p.description ?? ""}${
+        p.lane === "design" ? "\n\nWird in einer Claude-Sitzung mit Figma-Connector erledigt (nicht vom Dispatcher). Danach Frame zur Freigabe in docs/design/." : ""
+      }\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`.trim(),
     });
   }
-  return out.slice(0, MAX_ISSUES_PER_WEEK);
+  // Design zuerst, damit es beim Anlegen schon existiert, wenn das Frontend-Issue darauf wartet.
+  return out.sort((a, b) => Number(b.lane === "design") - Number(a.lane === "design"));
 }
 
-async function createIssues(items, call = linear) {
+async function labelId(teamId, name, cache, call) {
+  if (cache.has(name)) return cache.get(name);
+  const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: teamId, n: name });
+  let id = found.issueLabels.nodes[0]?.id;
+  if (!id) {
+    const made = await call(`mutation($i: IssueLabelCreateInput!) { issueLabelCreate(input: $i) { issueLabel { id } } }`, { i: { teamId, name } });
+    id = made.issueLabelCreate.issueLabel.id;
+  }
+  cache.set(name, id);
+  return id;
+}
+
+/** Legt die Issues an; `blockedBy` (Titel aus dem Plan oder SIN-Kennung) wird als „blockiert durch“ verknüpft. */
+export async function createIssues(items, existing = [], call = linear) {
   const { teamId, projectId } = await linearTeamAndProject(call);
   const stateId = await stateIdByName(teamId, "Todo", call);
+  const labels = new Map();
+  const created = new Map(); // Titel (klein) → Issue-ID
   for (const it of items) {
+    const labelIds = await Promise.all((it.labels ?? []).map((n) => labelId(teamId, n, labels, call)));
     const data = await call(
-      `mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { identifier url } } }`,
-      { i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority } },
+      `mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { id identifier url } } }`,
+      { i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds } },
     );
-    console.log(`Angelegt: ${data.issueCreate.issue.identifier} ${data.issueCreate.issue.url}`);
+    const issue = data.issueCreate.issue;
+    created.set(it.title.toLowerCase(), issue.id);
+    console.log(`Angelegt: ${issue.identifier} ${issue.url}`);
+    if (it.blockedBy) {
+      const blockerId = created.get(it.blockedBy.toLowerCase()) ?? existing.find((e) => e.identifier === it.blockedBy)?.id;
+      if (!blockerId) throw new Error(`${issue.identifier}: Blocker „${it.blockedBy}“ nicht gefunden`);
+      await call(
+        `mutation($i: IssueRelationCreateInput!) { issueRelationCreate(input: $i) { success } }`,
+        { i: { issueId: blockerId, relatedIssueId: issue.id, type: "blocks" } },
+      );
+    }
   }
 }
 
 export async function main(argv) {
   const dry = argv.includes("--dry-run");
   const arg = (name) => argv[argv.indexOf(name) + 1];
+  const issues = process.env.LINEAR_API_KEY ? await fetchProjectIssues(linear) : null;
 
   if (argv.includes("--context")) {
-    const definition = extractDefinition(readFileSync("docs/PRODUCT.md", "utf8"));
-    const issues = process.env.LINEAR_API_KEY ? await fetchProjectIssues(linear) : [];
-    const prompt = buildPlannerPrompt({ definition, issues, metrics: await collectMetrics() });
+    const metrics = await collectMetrics();
+    const { rows, abnahme } = await assessReadiness({ metrics, issues });
+    const definition = extractSection(readFileSync("docs/PRODUCT.md", "utf8"), "Definition fertig");
+    const prompt = buildPlannerPrompt({
+      definition,
+      issues: issues ?? [],
+      metrics,
+      readiness: renderReadiness(rows),
+      maintenance: inMaintenanceMode(rows, abnahme),
+    });
     if (argv.includes("--out")) writeFileSync(arg("--out"), prompt);
     else console.log(prompt);
     return;
@@ -147,13 +266,17 @@ export async function main(argv) {
 
   if (argv.includes("--create")) {
     const plan = JSON.parse(readFileSync(arg("--create"), "utf8"));
-    const existing = process.env.LINEAR_API_KEY ? (await fetchProjectIssues(linear)).map((i) => i.title) : [];
-    const items = validatePlan(plan, existing);
+    const existingTitles = (issues ?? []).map((i) => i.title);
+    const { rows, abnahme } = await assessReadiness({ metrics: await collectMetrics(), issues });
+    const maintenance = inMaintenanceMode(rows, abnahme);
+    const items = validatePlan(plan, existingTitles, { maintenance });
+    if (maintenance && !existingTitles.includes(ABNAHME_TITLE)) items.push({ ...abnahmeIssue(rows), lane: "abnahme" });
+    console.log(`Produktreife\n\n${renderReadiness(rows)}\n\n${maintenance ? "Pflege-Modus: nur Fehler und Content.\n" : ""}`);
     if (dry) {
-      for (const it of items) console.log(`[dry-run] P${it.priority} ${it.title}`);
+      for (const it of items) console.log(`[dry-run] ${it.lane} P${it.priority} ${it.title}${it.blockedBy ? ` (blockiert durch: ${it.blockedBy})` : ""}`);
       return;
     }
-    await createIssues(items);
+    await createIssues(items, issues ?? []);
     return;
   }
   throw new Error("Aufruf: --context oder --create plan.json");

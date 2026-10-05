@@ -1,8 +1,32 @@
 [
   {
-    "title": "Beispiel: Abbruchquote der Einheit senken",
-    "description": "Beispielplan für den Dry-Run.",
-    "acceptance": ["Abbruchquote sinkt messbar", "axe-core ohne Fehler"],
+    "lane": "design",
+    "title": "Beispiel: Figma-Frame Wiederholungs-Screen",
+    "description": "Beispielplan für den Dry-Run (Design-Paket).",
+    "acceptance": ["Frame in Figma, Tokens aus docs/design/", "Freigabe durch Sinan"],
     "priority": 2
+  },
+  {
+    "lane": "frontend",
+    "title": "Beispiel: Wiederholungs-Screen bauen",
+    "description": "Beispielplan für den Dry-Run (Frontend, wartet auf Design).",
+    "acceptance": ["Abbruchquote sinkt messbar", "axe-core ohne Fehler"],
+    "priority": 2,
+    "needsDesign": true,
+    "blockedBy": "Beispiel: Figma-Frame Wiederholungs-Screen"
+  },
+  {
+    "lane": "content",
+    "title": "Beispiel: Modul ZP veröffentlichen",
+    "description": "Beispielplan für den Dry-Run (Content).",
+    "acceptance": ["Bestehensquote ≥ Zielwert", "Quelle und Abrufdatum je Einheit"],
+    "priority": 3
+  },
+  {
+    "lane": "backend",
+    "title": "Beispiel: Sentry-Fehler im Generate-Endpunkt beheben",
+    "description": "Beispielplan für den Dry-Run (Backend).",
+    "acceptance": ["Keine neuen Fehler in 7 Tagen"],
+    "priority": 3
   }
 ]

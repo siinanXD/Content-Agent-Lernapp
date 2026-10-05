@@ -21,14 +21,38 @@ export function isPaused(value, now = new Date()) {
   return Boolean(until && until.getTime() > now.getTime());
 }
 
+/** Echte Usage-/Rate-Limit-Meldung (nicht: max-turns, Build-Fehler, das Wort „limit“ irgendwo im Log). */
+const REAL_LIMIT = /usage limit reached|hit your (?:usage )?limit|limit reached|rate[_ -]?limit|"status":\s*429|too many requests/i;
+
 /**
- * Reset-Zeit aus der Limit-Meldung von Claude lesen.
- * Formate: "usage limit reached|1760000000" (Epoch) oder "resets 3pm (UTC)" / "resets 15:30".
- * Unbekanntes Format: jetzt + FALLBACK_PAUSE_MS. Gibt eine ISO-Zeit zurück, oder null ohne Limit-Hinweis.
+ * Text, der über ein Limit entscheidet. Die Execution-Datei der Action ist ein JSON-Array der ganzen
+ * Sitzung; nur der letzte `result`-Eintrag zählt (Tool-Ausgaben nennen „limit“ oft nebenbei).
+ * Erfolg und `error_max_turns` ergeben "" (kein Limit). Kein JSON: der Text selbst.
  */
-export function pauseUntilFromLog(text, now = new Date()) {
-  const s = String(text ?? "");
-  if (!/limit/i.test(s)) return null;
+function limitText(raw) {
+  const s = String(raw ?? "");
+  let parsed;
+  try {
+    parsed = JSON.parse(s);
+  } catch {
+    return s;
+  }
+  const entries = Array.isArray(parsed) ? parsed : [parsed];
+  const result = entries.filter((e) => e?.type === "result").pop();
+  if (!result) return "";
+  if (result.subtype === "error_max_turns" || result.is_error === false) return "";
+  return typeof result.result === "string" ? result.result : JSON.stringify(result);
+}
+
+/**
+ * Reset-Zeit aus der Limit-Meldung von Claude lesen (SIN-227: nur bei echtem Limit).
+ * Formate: "usage limit reached|1760000000" (Epoch) oder "resets 3pm (UTC)" / "resets 15:30".
+ * Unbekanntes Format: jetzt + FALLBACK_PAUSE_MS. Gibt eine ISO-Zeit zurück, oder null ohne Limit-Hinweis
+ * (auch bei max-turns und anderen Fehlern).
+ */
+export function pauseUntilFromLog(raw, now = new Date()) {
+  const s = limitText(raw);
+  if (!REAL_LIMIT.test(s)) return null;
   const epoch = s.match(/limit reached\|(\d{10})/i);
   if (epoch) return new Date(Number(epoch[1]) * 1000).toISOString();
   const clock = s.match(/resets?\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
