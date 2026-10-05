@@ -1,0 +1,8 @@
+[
+  {
+    "title": "Beispiel: Abbruchquote der Einheit senken",
+    "description": "Beispielplan für den Dry-Run.",
+    "acceptance": ["Abbruchquote sinkt messbar", "axe-core ohne Fehler"],
+    "priority": 2
+  }
+]
