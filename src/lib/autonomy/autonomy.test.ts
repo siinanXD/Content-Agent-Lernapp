@@ -19,9 +19,8 @@ const patch = (...lines: string[]) => lines.map((l) => (/^[+-]/.test(l) ? l : ` 
 const file = (filename: string, p = "", status = "modified") => ({ filename, patch: p, status });
 const risk = (files: ReturnType<typeof file>[], extra = {}) => classifyRisk({ files, ...extra });
 
-test("Gate: Standard ist risk:medium, auch für Workflows, Storage, Config", () => {
+test("Gate: Standard ist risk:medium, auch für Storage, Config", () => {
   for (const f of [
-    ".github/workflows/ci.yml",
     "src/lib/storage/store.ts",
     "next.config.ts",
     "vercel.json",
@@ -35,6 +34,18 @@ test("Gate: Standard ist risk:medium, auch für Workflows, Storage, Config", () 
     risk([file("supabase/migrations/1_a.sql", patch("+create table if not exists t (id int);"), "added")]).risk,
     "risk:medium",
   );
+});
+
+test("Gate: jede Workflow-Änderung ist high (SIN-234)", () => {
+  for (const f of [".github/workflows/ci.yml", ".github/workflows/x.yaml"]) {
+    const r = risk([file(f, patch("+foo: bar"))]);
+    assert.equal(r.risk, "risk:high", f);
+    assert.ok(r.reasons.some((x) => x.category === "workflow"), f);
+  }
+  assert.equal(risk([file(".github/workflows/x.yml", patch("-  contents: write", "+  contents: read"))]).risk, "risk:high");
+  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:high");
+  assert.equal(risk([file(".github/dependabot.yml", patch("+a: b"))]).risk, "risk:medium");
+  assert.equal(risk([file("docs/autonomy/worker.yml", patch("+a: b"))]).risk, "risk:medium");
 });
 
 test("Gate: Secret-Leak ist high", () => {
@@ -60,7 +71,6 @@ test("Gate: geschwächte Sicherheit ist high", () => {
     risk([file(".github/workflows/x.yml", patch("+  contents: write", "-  contents: read"))]).risk,
     "risk:high",
   );
-  assert.equal(risk([file(".github/workflows/x.yml", patch("-  contents: write", "+  contents: read"))]).risk, "risk:medium");
   assert.equal(risk([file("src/proxy.ts", patch("+x"))]).risk, "risk:high");
 });
 

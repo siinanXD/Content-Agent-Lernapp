@@ -6,9 +6,22 @@
 
 ---
 
+## SIN-234: Agenten-Token mit Workflow-Recht (letzte manuelle Kopie)
+
+**Einmalig von Sinan** (ca. 5 Min):
+
+1. GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Name `agent-workflows`, Ablauf 1 Jahr, nur Repo `Content-Agent-Lernapp`. Rechte: Contents RW, Pull requests RW, Issues RW, **Workflows RW**, Metadata R.
+2. In Infisical `/content-agent-lernapp` → Development als `AGENT_WORKFLOW_TOKEN` speichern, dann GitHub-Sync „Trigger Sync“.
+3. **Letzte Kopie:** `dispatch.yml`, `claude.yml`, `repair.yml`, `worker.yml` aus diesem Ordner nach `.github/workflows/` kopieren (überschreiben). Den ersten Kommentarblock „Vorlage (SIN-234) …“ kannst du löschen.
+4. Prüfen: Test-PR, der eine Workflow-Datei ändert. Er muss Label `risk:high` bekommen und auf `freigegeben` warten.
+
+Ohne das Secret laufen die Workflows wie bisher (Rückfall auf Claude-GitHub-App bzw. `github.token`). Ab Schritt 3 ist `risk.mjs` schon aktiv: jede Änderung unter `.github/workflows/` ist `risk:high` (Grund „workflow“). Danach entfällt die Kopier-Pflicht; diese Vorlagen und die Abschnitte „Einmalig von Sinan“ unten sind dann nur noch Historie und werden entfernt, sobald die Workflows live sind.
+
+---
+
 ## SIN-227: drei Spuren, Figma zuerst, Produktreife, Worker
 
-**Einmalig von Sinan** (der Agent-Token darf `.github/workflows/` nicht ändern; Entscheidung D-42):
+**Einmalig von Sinan** (bis SIN-234 aktiv ist, darf der Agent-Token `.github/workflows/` nicht ändern; Entscheidung D-42):
 
 1. `dispatch.yml` und `planner.yml` aus diesem Ordner nach `.github/workflows/` kopieren (überschreiben), **neu:** `worker.yml` dorthin kopieren. Der Dispatcher wählt nur noch und startet je Issue einen Worker-Lauf; `dry_run` ist jetzt standardmäßig `false`.
 2. Optional Secret `FIGMA_ACCESS_TOKEN` (nur lesen) für den Abgleich Code ↔ Figma im Planer.

@@ -1,6 +1,7 @@
 /**
  * Risiko-Gate (SIN-223): Standard ist `risk:medium`. `risk:high` gibt es nur bei
- * Secret-Leak, Datenverlust, geschwächter Sicherheit, Zahlungen und Grundsatz-Entscheidungen.
+ * Secret-Leak, Datenverlust, geschwächter Sicherheit, Zahlungen, Grundsatz-Entscheidungen und
+ * jeder Änderung unter `.github/workflows/` (SIN-234).
  * Reine Funktionen ohne Netz, damit pr-gate sie testbar aus main laden kann.
  */
 
@@ -92,6 +93,10 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
         if (SECURITY_SQL.some((r) => r.test(l))) add("sicherheit", `${f.filename}: ${l.slice(0, 80)}`);
       }
     }
+
+    // SIN-234: Agenten dürfen Workflows pushen, jede Änderung braucht aber Sinans Freigabe.
+    const workflowPath = paths.find((p) => WORKFLOW.test(p));
+    if (workflowPath) add("workflow", workflowPath);
 
     if (WORKFLOW.test(f.filename)) {
       const before = new Set(removed.map((l) => l.trim()));
