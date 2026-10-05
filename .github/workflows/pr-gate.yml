@@ -268,24 +268,51 @@ jobs:
             const allowAutoMerge = !pr.draft && !labels.includes(NO_AUTOMERGE)
               && (risk !== "risk:high" || approved);
 
-            // Hinweis-Kommentar nur bei risk:high (ein Kommentar, wird aktualisiert).
-            if (risk === "risk:high") {
-              const body = [
-                MARKER,
-                ...(approved ? [`<!-- pr-gate approved-keys: ${JSON.stringify(approvedKeys)} -->`] : []),
-                approved
-                  ? "**risk:high – freigegeben.** Merged automatisch, sobald alle Checks grün sind. Die Freigabe bleibt bei Folge-Commits, außer ein neuer High-Grund kommt dazu."
-                  : "**risk:high – wartet auf Freigabe von @siinanXD.** Zum Freigeben das Label `freigegeben` setzen.",
-                ...(note ? ["", note] : []),
-                "",
-                "Gründe:",
-                ...reasons.slice(0, 15).map((r) => `- ${r.text}`),
-              ].join("\n");
-              if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
-              else await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
-            } else if (mine) {
-              await github.rest.issues.deleteComment({ owner, repo, comment_id: mine.id });
+            // Steckbrief (SIN-248): ein Kommentar für jeden PR, wird aktualisiert statt neu gepostet.
+            // Die Erwähnung steht nur bei 🟠/🔴 im Text und verschwindet beim Aktualisieren, wenn nichts mehr zu tun ist.
+            const stateOf = (run) => !run ? "none" : run.status !== "completed" ? "run"
+              : ["success", "skipped", "neutral"].includes(run.conclusion) ? "ok" : "fail";
+            const checks = { build: "none", tests: "none", a11y: "none", prTitle: "none" };
+            let previewUrl = null;
+            try {
+              const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+                owner, repo, head_sha: pr.head.sha, per_page: 30,
+              });
+              const latestOf = (name) => runs.workflow_runs.filter((r) => r.name === name).sort((a, b) => b.run_number - a.run_number)[0];
+              const jobsOf = async (run) => run
+                ? (await github.rest.actions.listJobsForWorkflowRun({ owner, repo, run_id: run.id })).data.jobs : [];
+              const build = (await jobsOf(latestOf("ci"))).find((j) => j.name === "build");
+              checks.build = stateOf(build);
+              const step = (re) => stateOf(build?.steps?.find((s) => re.test(s.name)));
+              checks.tests = step(/^Unit tests/);
+              checks.a11y = step(/accessibility/i);
+              checks.prTitle = stateOf((await jobsOf(latestOf("pr-gate"))).find((j) => j.name === "pr-title"));
+              const { data: deployments } = await github.rest.repos.listDeployments({ owner, repo, sha: pr.head.sha, per_page: 10 });
+              for (const d of deployments) {
+                const { data: sts } = await github.rest.repos.listDeploymentStatuses({ owner, repo, deployment_id: d.id, per_page: 1 });
+                if (sts[0]?.state === "success" && sts[0].environment_url) { previewUrl = sts[0].environment_url; break; }
+              }
+            } catch (e) {
+              core.warning(`Checks/Vorschau nicht lesbar: ${e.message}`);
             }
+            // Aus der Basis geladen: im PR, der das Modul einführt, fehlt es dort noch (dann kein Kommentar).
+            const steck = await import(`${process.env.GITHUB_WORKSPACE}/scripts/autonomy/steckbrief.mjs`)
+              .catch((e) => { core.warning(`steckbrief.mjs fehlt in der Basis: ${e.message}`); return null; });
+            const brief = steck?.buildSteckbrief({
+              title: pr.title, branch: pr.head.ref, body: pr.body ?? "", labels,
+              files: files.map((f) => ({ filename: f.filename, status: f.status })),
+              risk, reasons, approved, approvedKeys, checks, previewUrl, owner, note,
+            });
+            // Ohne Modul in der Basis: einfacher Kommentar, damit die Freigabe-Schlüssel erhalten bleiben.
+            const commentBody = brief?.body ?? [
+              MARKER,
+              ...(approved ? [`<!-- pr-gate approved-keys: ${JSON.stringify(approvedKeys)} -->`] : []),
+              `**${risk}${approved ? " – freigegeben" : risk === "risk:high" ? " – wartet auf Freigabe" : ""}.**`,
+              "",
+              ...reasons.slice(0, 15).map((r) => `- ${r.text}`),
+            ].join("\n");
+            if (!mine) await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: commentBody });
+            else if (mine.body !== commentBody) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body: commentBody });
 
             // Auto-Merge an- oder ausschalten (GraphQL, Squash) mit dem Agenten-Token (SIN-237): Merges mit
             // github.token lösen keine Workflows aus (linear-done, post-merge).
