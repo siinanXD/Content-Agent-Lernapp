@@ -18,3 +18,4 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-236 | SIN-236 — package-lock.json normal committen | [SIN-236-package-lock-committen.md](decisions/SIN-236-package-lock-committen.md) |
 | SIN-230 | SIN-230 — Design-Paket 1: Schwerpunkt-Auswahl, Einwilligung, Karte, Feedback | [SIN-230-design-paket-1.md](decisions/SIN-230-design-paket-1.md) |
 | SIN-226 | SIN-226 — Planer plant auch Content | [SIN-226-planer-content.md](decisions/SIN-226-planer-content.md) |
+| SIN-225 | SIN-225 — Free-Tier-Wächter im Planer | [SIN-225-free-tier-waechter.md](decisions/SIN-225-free-tier-waechter.md) |
