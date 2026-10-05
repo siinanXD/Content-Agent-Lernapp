@@ -6,6 +6,8 @@
 # Meldung (Ergebnis-Eintrag des Logs, nicht max-turns) wird AGENT_PAUSED_UNTIL gesetzt.
 # Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN; optional AGENT_VARIABLES_TOKEN (PAT, nur „Variables: write“).
 name: worker
+# Die Kennung steht im Lauf-Titel: der Loop-Status (status.yml, SIN-238) ordnet Läufe damit Issues zu.
+run-name: worker ${{ inputs.identifier }}
 
 on:
   workflow_dispatch:
@@ -14,6 +16,10 @@ on:
         description: "Linear-Kennung, z. B. SIN-123"
         type: string
         required: true
+      fail_test:
+        description: "Test des Wächters: Lauf scheitert sofort, ohne Claude und ohne Linear (SIN-238)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,6 +42,13 @@ jobs:
       # Nur lesen (Infisical /content-agent-lernapp → Development). Fehlt er: „nicht verfügbar“ (SIN-239).
       FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
     steps:
+      # Absichtlich fehlschlagender Dry-Run: `gh workflow run worker.yml -f identifier=SIN-0 -f fail_test=true`.
+      # Danach muss im Issue „Loop-Status“ ein Kommentar mit @siinanXD und dieser Fehlerzeile stehen.
+      - name: Test-Fehler
+        if: inputs.fail_test
+        run: |
+          echo "::error::Absichtlicher Test-Fehler (SIN-238 fail_test)"
+          exit 1
       - uses: actions/checkout@v6
         with:
           token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}

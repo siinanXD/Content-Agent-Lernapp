@@ -1,0 +1,14 @@
+{
+  "_hinweis": "Free-Tier-Limits für den Loop-Status (SIN-238). SIN-225 liefert die Datei später offiziell; bis dahin gilt diese. `geprueft` = Datum, an dem der Wert in den offiziellen Docs stand; null = aus dem Gedächtnis angenommen, vor Verlass prüfen.",
+  "warnschwelle_prozent": 80,
+  "limits": {
+    "github_actions_minuten": { "limit": null, "einheit": "min/Monat", "hinweis": "Repo öffentlich: Standard-Runner frei", "quelle": "https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions", "geprueft": null },
+    "vercel_deployments_tag": { "limit": 100, "einheit": "Deployments/Tag", "quelle": "https://vercel.com/docs/limits", "geprueft": "2026-10-05" },
+    "supabase_db_mb": { "limit": 500, "einheit": "MB", "quelle": "https://supabase.com/pricing", "geprueft": null },
+    "supabase_projekte": { "limit": 2, "einheit": "aktive Projekte", "quelle": "https://supabase.com/pricing", "geprueft": null },
+    "sentry_events_monat": { "limit": 5000, "einheit": "Fehler/Monat", "quelle": "https://sentry.io/pricing/", "geprueft": null },
+    "posthog_events_monat": { "limit": 1000000, "einheit": "Events/Monat", "quelle": "https://posthog.com/pricing", "geprueft": null },
+    "langfuse_units_monat": { "limit": 50000, "einheit": "Units/Monat", "quelle": "https://langfuse.com/pricing", "geprueft": null },
+    "api_kosten_eur": { "limit": 20, "einheit": "EUR/Kurslauf", "quelle": "AGENTS.md (Stopp-Regel)", "geprueft": "2026-10-05" }
+  }
+}

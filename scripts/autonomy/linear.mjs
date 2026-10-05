@@ -70,22 +70,32 @@ export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true) {
   const free = Math.max(0, MAX_PARALLEL - started.length);
   const want = Math.min(slots, free);
   if (want === 0) return { issues: [], reason: `${started.length} Issues laufen schon (max. ${MAX_PARALLEL})` };
+  const picked = startOrder(issues, mayTake).slice(0, want);
+  return picked.length
+    ? { issues: picked, reason: "ok" }
+    : { issues: [], reason: "kein freies Todo (Blocker, Design/Mensch, oder Cursor hat noch Vorrang)" };
+}
+
+/**
+ * Alle startbaren Todo-Issues in der Reihenfolge, in der der Dispatcher sie wählt (Spuren reihum, je Spur
+ * Priorität, dann Nummer), unabhängig von freien Slots. Der Loop-Status (SIN-238) zeigt damit die Schlange.
+ */
+export function startOrder(issues, mayTake = () => true) {
+  const started = issues.filter((i) => i.state.type === "started");
   const queues = Object.fromEntries(LANES.map((l) => [l, []]));
   issues
     .filter((i) => i.state.name === "Todo" && !isHumanIssue(i) && !hasOpenBlockers(i) && mayTake(i))
     .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b))
     .forEach((i) => queues[laneOf(i)].push(i));
-  const last = started.sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))[0];
+  const last = [...started].sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))[0];
   let lane = last ? (LANES.indexOf(laneOf(last)) + 1) % LANES.length : 0;
-  const picked = [];
-  while (picked.length < want && LANES.some((l) => queues[l].length)) {
+  const ordered = [];
+  while (LANES.some((l) => queues[l].length)) {
     const next = queues[LANES[lane]].shift();
-    if (next) picked.push(next);
+    if (next) ordered.push(next);
     lane = (lane + 1) % LANES.length;
   }
-  return picked.length
-    ? { issues: picked, reason: "ok" }
-    : { issues: [], reason: "kein freies Todo (Blocker, Design/Mensch, oder Cursor hat noch Vorrang)" };
+  return ordered;
 }
 
 /** Das nächste einzelne Issue (wie `pickMany` mit einem Slot). @returns {{ issue: any, reason: string }} */
