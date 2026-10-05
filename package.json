@@ -30,6 +30,9 @@
     "pretest": "node scripts/materialize-goldset.mjs",
     "goldset:materialize": "node scripts/materialize-goldset.mjs",
     "ap15:regen-dropped": "node --import tsx scripts/ap15-regen-dropped.ts",
+    "content:check-sources": "node --import tsx scripts/content-check-sources.mjs",
+    "content:grow":"node --import tsx scripts/content-grow.ts",
+    "content:grow:dry": "node --import tsx scripts/content-grow.ts --dry-run",
     "ap15:regen-dropped:dry": "node --import tsx scripts/ap15-regen-dropped.ts --dry-run"
   },
   "dependencies": {
