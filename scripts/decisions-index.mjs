@@ -6,7 +6,8 @@
  *   node scripts/decisions-index.mjs --check   Exit 1, wenn die Datei nicht dem Index entspricht
  *
  * Eine Datei je Entscheidung, keine laufenden Nummern: parallele PRs fassen nie dieselbe Datei an.
- * docs/DECISIONS.md wird nie von Hand oder von Agenten bearbeitet; der Workflow decisions-index.yml pflegt sie.
+ * docs/DECISIONS.md wird nie von Hand bearbeitet: `npm run decisions:index` vor dem Push, im selben PR (SIN-251).
+ * Der CI-Schritt „Entscheidungs-Index aktuell“ prüft mit --check.
  * Die alten Einträge D-01 bis D-47 stehen unverändert in docs/decisions/ARCHIV-D-01-D-47.md.
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -38,7 +39,7 @@ export function buildIndex(files) {
     "",
     "Jede Entscheidung ist eine eigene Datei `docs/decisions/<ISSUE-ID>-<kurz>.md` (Links, Entscheidung, Annahmen, Warum).",
     "Keine laufenden Nummern, damit parallele PRs nicht an derselben Datei konfligieren. Diesen Index nie bearbeiten:",
-    "ihn aktualisiert der Workflow `decisions-index.yml` nach jedem Merge.",
+    "`npm run decisions:index` erzeugt ihn, der Agent committet ihn im selben PR (CI prüft ihn).",
     "",
     `Ältere Entscheidungen D-01 bis D-47 (inklusive Blocker-Tabelle) stehen unverändert in [${ARCHIVE}](decisions/${ARCHIVE}).`,
     "Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.",
