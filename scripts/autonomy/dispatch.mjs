@@ -4,13 +4,17 @@
  *
  *   node scripts/autonomy/dispatch.mjs [--dry-run]     wählen (+ In Progress, außer Dry-Run)
  *   node scripts/autonomy/dispatch.mjs --done SIN-123   Linear auf Done (nach Merge)
+ *   node scripts/autonomy/dispatch.mjs --todo SIN-123   Linear zurück auf Todo (nach Claude-Limit)
  *   node scripts/autonomy/dispatch.mjs --blocker SIN-123 "Text"   Blocker-Kommentar
+ *   node scripts/autonomy/dispatch.mjs --pause-until [ISO]   Pause-Zeitpunkt nach einem Claude-Limit ausgeben
  *
+ * Pause: Repo-Variable AGENT_PAUSED_UNTIL (ISO-Zeitpunkt). Solange sie in der Zukunft liegt, startet nichts.
  * Ausgabe für GitHub Actions: GITHUB_OUTPUT (found, identifier, prompt).
  * Dry-Run: nur lesen, nichts in Linear ändern. Ohne LINEAR_API_KEY: `--fixture datei.json`.
  */
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { isPaused, nextPauseUntil, pausedUntil } from "./budget.mjs";
 import { MAX_REPAIR_ROUNDS, buildPrompt, comment, fetchProjectIssues, linear, pickNext, setState } from "./linear.mjs";
 
 async function findByIdentifier(identifier) {
@@ -39,13 +43,30 @@ export async function main(argv) {
     return console.log(`${issue.identifier} → Done`);
   }
 
-  const blockerAt = argv.indexOf("--blocker");
+  const todoAt = argv.indexOf("--todo");
+  if (todoAt >= 0) {
+    const issue = await findByIdentifier(argv[todoAt + 1]);
+    if (dry) return console.log(`[dry-run] ${issue.identifier} → Todo`);
+    await setState(issue, "Todo");
+    return console.log(`${issue.identifier} → Todo (zurück in die Warteschlange)`);
+  }
+
+  const blockerAt =argv.indexOf("--blocker");
   if (blockerAt >= 0) {
     const issue = await findByIdentifier(argv[blockerAt + 1]);
     const text = `Blocker nach ${MAX_REPAIR_ROUNDS} Reparatur-Runden: ${argv[blockerAt + 2] ?? "siehe PR"}`;
     if (dry) return console.log(`[dry-run] Kommentar an ${issue.identifier}: ${text}`);
     await comment(issue.id, text);
     return console.log(`Blocker-Kommentar an ${issue.identifier}`);
+  }
+
+  const pauseAt = argv.indexOf("--pause-until");
+  if (pauseAt >= 0) return console.log(nextPauseUntil(argv[pauseAt + 1]).toISOString());
+
+  if (isPaused(process.env.AGENT_PAUSED_UNTIL)) {
+    console.log(`Pausiert bis ${pausedUntil(process.env.AGENT_PAUSED_UNTIL).toISOString()} (AGENT_PAUSED_UNTIL).`);
+    output("found", "false");
+    return;
   }
 
   const issues =

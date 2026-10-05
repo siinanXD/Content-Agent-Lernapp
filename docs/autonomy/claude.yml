@@ -1,0 +1,71 @@
+# Vorlage (SIN-223, 3b) → nach .github/workflows/claude.yml kopieren (der Agent darf dort nicht schreiben).
+# Einzige Änderung zur bisherigen Datei: git fetch und git merge in --allowedTools, damit Claude
+# Konflikte mit main selbst lösen kann (Ablauf: git fetch origin main, git merge origin/main, Konflikte beheben, pushen).
+# Bei fetch-depth: 1 kennt der Checkout main nicht; git fetch origin main holt ihn.
+
+# Claude als Ersatz-Agent (SIN-205): Cursor zuerst, Claude wenn Cursor kein Guthaben hat.
+# Auslöser: @claude in Issue-/PR-Kommentaren und Reviews, oder Label "claude" auf einem Issue.
+# Es läuft nur für Nutzer mit Schreibrechten (Standard der Action).
+# Kein github_token: die Action nutzt die Claude-GitHub-App, damit CI auf Claudes Commits läuft.
+# Bei Aufträgen aus einem Issue öffnet Claude den PR selbst (gh pr create mit dem App-Token).
+# Danach entscheidet pr-gate: risk:low/medium mergt automatisch, risk:high wartet auf `freigegeben`.
+# Vor dem Push prüft Claude selbst (SIN-215): venv unter /tmp/venv, pip, pytest, ruff, npm ci,
+# npm run … Kein Docker, kein Playwright, keine Datenbank. Workflow-Dateien kann Claude nicht
+# pushen (Token ohne workflows-Recht), Änderungen an .github/ laufen über die lokale Sitzung.
+
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude'))
+      || (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+      || (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+      || (github.event_name == 'issues' && github.event.label.name == 'claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      # Prüfungen vor dem Push (SIN-215): beide Python-Versionen aus den CI-Workflows
+      # bereitstellen. Die zuletzt genannte ist Standard (python3), python3.12 bleibt aufrufbar.
+      - name: Python für Prüfungen bereitstellen
+        uses: actions/setup-python@v7
+        with:
+          python-version: |
+            3.12
+            3.11
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          label_trigger: claude
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 60
+            --allowedTools "Bash(git fetch:*),Bash(git merge:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(cd:*),Bash(python -m venv:*),Bash(python3 -m venv:*),Bash(python3.11 -m venv:*),Bash(python3.12 -m venv:*),Bash(/tmp/venv/bin/pip install:*),Bash(/tmp/venv/bin/python -m pytest:*),Bash(/tmp/venv/bin/python -m ruff:*),Bash(/tmp/venv/bin/python -m compileall:*),Bash(/tmp/venv/bin/python scripts/check_max_file_lines.py:*),Bash(/tmp/venv/bin/pytest:*),Bash(/tmp/venv/bin/ruff:*),Bash(/tmp/venv/bin/black:*),Bash(/tmp/venv/bin/mypy:*),Bash(/tmp/venv/bin/bandit:*),Bash(/tmp/venv/bin/pip-audit:*),Bash(npm ci:*),Bash(npm install:*),Bash(npm run:*),Bash(npm test:*),Bash(npm audit:*),Bash(npm --prefix:*),Bash(npx tsc:*),Bash(npx vitest:*),Bash(npx eslint:*),Bash(npx next typegen:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+            --append-system-prompt "PR-Regel (SIN-205): Wurdest du auf einem Issue ausgelöst und hast Commits auf deinen eigenen Branch gepusht, öffne den Pull Request selbst mit: gh pr create --head <dein Branch> --base <Default-Branch> --title <Titel> --body <Text>. Kein Draft. Titel als Conventional Commit mit Linear-ID, z. B. docs(readme): Hinweis ergänzen (SIN-123). Body beginnt mit 'Closes #<Issue-Nummer>' und sagt in zwei Sätzen, was geändert wurde. Prüfe vorher mit gh pr list --head <dein Branch>, ob es schon einen PR gibt. Schreib danach den Link zum PR in deinen Kommentar statt des Create-PR-Links. Nie mergen, nie Labels setzen oder entfernen. Wurdest du auf einem PR ausgelöst, öffne keinen neuen PR. Prüfen vor dem Push (SIN-215): Führe die Prüfungen aus .github/workflows/ci.yml aus, die ohne Secrets, Datenbank, Docker und Browser laufen. Python nur in einer venv unter /tmp/venv, mit der Version aus ci.yml: python3.11 -m venv /tmp/venv oder python3.12 -m venv /tmp/venv, dann /tmp/venv/bin/pip install … und /tmp/venv/bin/pytest, /tmp/venv/bin/ruff usw. Node: npm ci, dann die npm-Skripte aus ci.yml. Kein Playwright, kein Docker, keine Migrationen. Committe nie /tmp/venv, node_modules oder Build-Ausgaben. Schreib in deinen Kommentar, welche Prüfungen grün waren und welche du nicht ausführen konntest."

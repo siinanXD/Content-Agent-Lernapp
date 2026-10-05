@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "ignoreCommand": "node scripts/autonomy/vercel-ignore.mjs",
   "git": {
     "deploymentEnabled": {
       "cursor/*": false

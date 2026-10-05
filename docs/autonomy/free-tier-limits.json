@@ -1,0 +1,4 @@
+[
+  { "name": "vercel-deployments-per-day", "limit": 100, "unit": "Deploys/24 h", "source": "https://vercel.com/docs/limits" },
+  { "name": "vercel-builds-per-hour", "limit": 100, "unit": "Builds/h", "source": "https://vercel.com/docs/limits" }
+]

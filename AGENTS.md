@@ -53,7 +53,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 ## Pull Requests und Merge (SIN-207)
 
 - Ein PR pro Arbeitspaket (1 Linear-Issue = 1 PR). Reparaturen kommen in denselben PR, kein Folge-PR.
-- Der Dispatcher (`dispatch.yml`, alle 2 h) startet das nächste Todo-Issue ohne offene Blocker, höchstens 2 parallel. Der Planer (`planner.yml`, sonntags) legt höchstens 5 Issues pro Woche an. Beide laufen mit `--dry-run` ohne Änderungen.
+- Der Dispatcher (`dispatch.yml`, alle 30 Min) startet das nächste Todo-Issue ohne offene Blocker, höchstens 2 parallel, solange Budget da ist. Cursor zuerst, sonst Claude. Bei Claude-Limit pausiert er bis zum Reset (Repo-Variable `AGENT_PAUSED_UNTIL`). Vercel Hobby (100 Deploys/Tag): Preview nur für den letzten Commit, keine Deploys für Doku-PRs. Free-Tier-Limits: D-39, Issue bei 80 %. Der Planer (`planner.yml`, sonntags) legt höchstens 5 Issues pro Woche an. Beide laufen mit `--dry-run` ohne Änderungen.
 - PR-Titel = Commit auf `main` (Squash-Merge): Conventional Commit mit Linear-ID, z. B. `feat(lernpfad): Fortschrittsbalken (SIN-123)`. Der Check `pr-title` prüft das.
 - Das Risiko setzt der Workflow `pr-gate` automatisch als Label `risk:medium` (Standard) oder `risk:high`. Nie selbst setzen oder entfernen. Die Regeln stehen in `scripts/autonomy/risk.mjs` (SIN-223).
   - `risk:medium`: Auto-Merge (Squash), sobald `build`, `pr-title` und `merge-gate` grün sind. Gilt auch für `.github/`, Migrationen (nur hinzufügen), `src/lib/storage/`, `.env.example`, `next.config.*`, `vercel.json`. Nicht selbst mergen.

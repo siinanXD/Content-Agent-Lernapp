@@ -1,12 +1,16 @@
 # Vorlage (SIN-223) → nach .github/workflows/dispatch.yml kopieren (der Agent darf dort nicht schreiben).
-# Dispatcher: alle 2 h das nächste Linear-Issue (Todo, keine offenen Blocker, höchste Priorität)
-# an Claude geben. Max. 2 Issues parallel, Reparaturen max. 3 Runden (repair.yml), danach Blocker-Kommentar.
-# Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN. Dry-Run: Eingabe `dry_run` = true, ändert nichts.
+# Dispatcher: alle 30 Min das nächste Linear-Issue (Todo, keine offenen Blocker, höchste Priorität)
+# an Claude geben, solange Budget da ist. Cursor zuerst: ein Todo, das unter 30 Min alt ist, bleibt liegen.
+# Max. 2 Issues parallel, Reparaturen max. 3 Runden (repair.yml), danach Blocker-Kommentar.
+# Claude-Limit erreicht: Repo-Variable AGENT_PAUSED_UNTIL setzen, bis dahin startet nichts.
+# Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN, VARIABLES_TOKEN (PAT mit Recht „Variables: write“,
+# GITHUB_TOKEN darf keine Repo-Variablen schreiben), optional VERCEL_TOKEN + Variable VERCEL_PROJECT_ID.
+# Dry-Run: Eingabe `dry_run` = true, ändert nichts.
 name: dispatch
 
 on:
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -38,16 +42,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Free-Tier-Limits prüfen (Issue bei 80 %)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/limits.mjs --dry-run
+          else node scripts/autonomy/limits.mjs; fi
       - name: Nächstes Issue wählen
         id: pick
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
           DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
           if [ "$DRY" = "true" ]; then node scripts/autonomy/dispatch.mjs --dry-run
           else node scripts/autonomy/dispatch.mjs; fi
       - name: Claude im Automationsmodus
+        id: claude
         if: steps.pick.outputs.found == 'true'
+        continue-on-error: true
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -55,7 +73,26 @@ jobs:
           claude_args: |
             --model claude-sonnet-5-5
             --max-turns 60
-            --allowedTools "Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+            --allowedTools "Bash(git fetch:*),Bash(git merge:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+
+      # Limit erreicht: Pause bis zum Reset. Der Reset-Zeitpunkt steht nicht verlässlich im Log,
+      # daher gilt jetzt + 5 h (D-39). Das Issue geht zurück auf Todo und wird nach der Pause neu gewählt.
+      - name: Bei Claude-Limit pausieren
+        if: steps.claude.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.VARIABLES_TOKEN }}
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          ISSUE: ${{ steps.pick.outputs.identifier }}
+        run: |
+          if [ -n "$EXEC_FILE" ] && grep -qiE "usage limit|rate limit|limit reached|limit will reset" "$EXEC_FILE"; then
+            until=$(node scripts/autonomy/dispatch.mjs --pause-until)
+            gh variable set AGENT_PAUSED_UNTIL --repo "$GITHUB_REPOSITORY" --body "$until"
+            node scripts/autonomy/dispatch.mjs --todo "$ISSUE"
+            echo "Claude-Limit: Pause bis $until"
+          else
+            echo "Claude-Lauf fehlgeschlagen ohne Limit-Hinweis."; exit 1
+          fi
 
   linear-done:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository

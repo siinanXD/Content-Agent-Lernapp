@@ -3,6 +3,8 @@ import { test } from "node:test";
 import { approvalStillValid, classifyRisk } from "../../../scripts/autonomy/risk.mjs";
 import { hasOpenBlockers, pickNext } from "../../../scripts/autonomy/linear.mjs";
 import { extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
+import { cursorHadItsChance, isDocsOnly, isPaused, nextPauseUntil, usageAlerts } from "../../../scripts/autonomy/budget.mjs";
+import { decide } from "../../../scripts/autonomy/vercel-ignore.mjs";
 
 const patch = (...lines: string[]) => lines.map((l) => (/^[+-]/.test(l) ? l : ` ${l}`)).join("\n");
 const file = (filename: string, p = "", status = "modified") => ({ filename, patch: p, status });
@@ -120,4 +122,63 @@ test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
   assert.throws(() => validatePlan([{ title: "x", acceptance: [], priority: 1 }]));
   assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 9 }]));
   assert.match(validatePlan([mk(1)])[0].description, /- \[ \] ok/);
+});
+
+test("Budget: Pause über AGENT_PAUSED_UNTIL", () => {
+  const now = new Date("2026-10-05T12:00:00Z");
+  assert.equal(isPaused("", now), false);
+  assert.equal(isPaused("kaputt", now), false);
+  assert.equal(isPaused("2026-10-05T11:59:00Z", now), false);
+  assert.equal(isPaused("2026-10-05T17:00:00Z", now), true);
+  assert.equal(nextPauseUntil("2026-10-05T15:00:00Z", now).toISOString(), "2026-10-05T15:00:00.000Z");
+  assert.equal(nextPauseUntil("", now).toISOString(), "2026-10-05T17:00:00.000Z");
+  assert.equal(nextPauseUntil("2026-10-05T09:00:00Z", now).toISOString(), "2026-10-05T17:00:00.000Z");
+});
+
+test("Cursor zuerst: Todo muss 30 Min unberührt sein", () => {
+  const now = new Date("2026-10-05T12:00:00Z");
+  const todo = (updatedAt?: string) => ({
+    identifier: "SIN-7",
+    priority: 2,
+    updatedAt,
+    state: { name: "Todo", type: "unstarted" },
+    inverseRelations: { nodes: [] },
+  });
+  assert.equal(cursorHadItsChance(todo("2026-10-05T11:45:00Z"), now), false);
+  assert.equal(cursorHadItsChance(todo("2026-10-05T11:30:00Z"), now), true);
+  assert.equal(cursorHadItsChance(todo(), now), true);
+  assert.equal(pickNext([todo("2026-10-05T11:50:00Z")], 2, now).issue, null);
+  assert.equal(pickNext([todo("2026-10-05T10:00:00Z")], 2, now).issue.identifier, "SIN-7");
+});
+
+test("Doku-only und Free-Tier-Warnung bei 80 %", () => {
+  assert.equal(isDocsOnly(["docs/PRODUCT.md", "README.md", ".github/workflows/ci.yml"]), true);
+  assert.equal(isDocsOnly(["docs/a.md", "src/app/page.tsx"]), false);
+  assert.equal(isDocsOnly([]), false);
+  const limits = [
+    { name: "deploys", limit: 100 },
+    { name: "builds", limit: 100 },
+  ];
+  assert.deepEqual(
+    usageAlerts(limits, { deploys: 79, builds: 80 }).map((a) => a.name),
+    ["builds"],
+  );
+  assert.deepEqual(usageAlerts(limits, {}), []);
+});
+
+test("Vercel-Ignore: nur letzter Commit, keine Doku-PRs, sonst bauen", async () => {
+  const env = {
+    VERCEL_GIT_COMMIT_REF: "claude/x",
+    VERCEL_GIT_COMMIT_SHA: "aaa",
+    VERCEL_GIT_REPO_OWNER: "o",
+    VERCEL_GIT_REPO_SLUG: "r",
+  };
+  const api = (head: string, files: string[]) => async (url: string) => ({
+    ok: true,
+    json: async () => (url.includes("/git/ref/") ? { object: { sha: head } } : { files: files.map((filename) => ({ filename })) }),
+  });
+  assert.equal((await decide(env as never, api("bbb", ["src/a.ts"]) as never)).skip, true);
+  assert.equal((await decide(env as never, api("aaa", ["docs/a.md"]) as never)).skip, true);
+  assert.equal((await decide(env as never, api("aaa", ["docs/a.md", "src/a.ts"]) as never)).skip, false);
+  assert.equal((await decide({} as never, api("aaa", []) as never)).skip, false);
 });

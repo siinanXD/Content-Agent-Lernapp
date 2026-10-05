@@ -2,6 +2,7 @@
  * Linear-Zugriff und Auswahl für Dispatcher und Planer (SIN-223).
  * Auswahl und Prompt sind reine Funktionen; nur `linear()` spricht mit dem Netz.
  */
+import { cursorHadItsChance } from "./budget.mjs";
 
 export const PROJECT_NAME = "Content-Agent-Lernapp";
 export const MAX_PARALLEL = 2;
@@ -22,7 +23,7 @@ export async function linear(query, variables = {}, { key = process.env.LINEAR_A
 }
 
 const ISSUE_FIELDS = `
-  id identifier title description priority url
+  id identifier title description priority url updatedAt
   state { id name type }
   team { id }
   inverseRelations { nodes { type issue { identifier state { type } } } }`;
@@ -51,15 +52,16 @@ const rank = (p) => (p === 0 || p == null ? 5 : p);
 
 /**
  * Nächstes Issue: Status Todo, keine offenen Blocker, höchste Priorität (dann ältere Nummer zuerst).
+ * Cursor zuerst: ein Todo muss 30 Min unberührt sein, sonst hat Cursor es vielleicht gerade übernommen.
  * @returns {{ issue: any, reason: string }}
  */
-export function pickNext(issues, maxParallel = MAX_PARALLEL) {
+export function pickNext(issues, maxParallel = MAX_PARALLEL, now = new Date()) {
   const running = issues.filter((i) => i.state.type === "started").length;
   if (running >= maxParallel) return { issue: null, reason: `${running} Issues laufen schon (max. ${maxParallel})` };
   const todo = issues
-    .filter((i) => i.state.name === "Todo" && !hasOpenBlockers(i))
+    .filter((i) => i.state.name === "Todo" && !hasOpenBlockers(i) && cursorHadItsChance(i, now))
     .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b));
-  return todo.length ? { issue: todo[0], reason: "ok" } : { issue: null, reason: "kein Todo ohne offene Blocker" };
+  return todo.length ? { issue: todo[0], reason: "ok" } : { issue: null, reason: "kein Todo ohne offene Blocker (oder Cursor hat noch Vorrang)" };
 }
 
 const numberOf = (i) => Number(String(i.identifier).split("-")[1] ?? 0);
