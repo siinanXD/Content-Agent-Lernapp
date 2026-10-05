@@ -1,4 +1,3 @@
-# Vorlage (SIN-227) → nach .github/workflows/dispatch.yml kopieren (der Agent-Token darf dort nicht schreiben).
 # Dispatcher: alle 30 Min wählt er bis zu 2 Linear-Issues (Todo, keine offenen Blocker, kein Label design/abnahme/
 # needs-human, Spuren frontend/content/backend abwechselnd) und startet je Issue einen eigenen Lauf von worker.yml.
 # Er hält keine Claude-Sitzung fest: die Gruppe `dispatch` ist nach Sekunden frei, die Worker laufen parallel,
@@ -43,6 +42,8 @@ jobs:
       DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -84,6 +85,11 @@ jobs:
         run: |
           id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
           [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --done "$id" || echo "Keine Linear-ID im Titel."
+      # Frei gewordene Slots sofort füllen (SIN-237), nicht erst beim nächsten 30-Min-Lauf.
+      - name: Dispatcher neu anstoßen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main
 
   linear-blocker:
     if: github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'needs-human' && github.event.pull_request.head.repo.full_name == github.repository

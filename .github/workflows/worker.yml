@@ -1,4 +1,3 @@
-# Vorlage (SIN-227) → nach .github/workflows/worker.yml kopieren (der Agent-Token darf dort nicht schreiben).
 # Worker: bearbeitet genau ein Linear-Issue mit Claude. Wird vom Dispatcher je Issue gestartet; die
 # concurrency-Gruppe gilt je Issue, nicht global. So laufen bis zu 2 Issues wirklich parallel und ein
 # langer Claude-Lauf blockiert weder den Dispatcher noch ein anderes Issue.
@@ -36,6 +35,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -49,6 +50,8 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Leer, wenn das Secret fehlt: dann nutzt die Action die Claude-GitHub-App wie bisher.
+          github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           allowed_bots: "github-actions,github-actions[bot]"
           prompt: ${{ steps.pick.outputs.prompt }}
           claude_args: |

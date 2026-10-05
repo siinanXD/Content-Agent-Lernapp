@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { approvalStillValid, classifyRisk } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
-import { hasOpenBlockers, laneOf, pickMany, pickNext } from "../../../scripts/autonomy/linear.mjs";
+import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { MAX_ISSUES_PER_WEEK, extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
 import {
   CHECKS,
@@ -19,9 +19,8 @@ const patch = (...lines: string[]) => lines.map((l) => (/^[+-]/.test(l) ? l : ` 
 const file = (filename: string, p = "", status = "modified") => ({ filename, patch: p, status });
 const risk = (files: ReturnType<typeof file>[], extra = {}) => classifyRisk({ files, ...extra });
 
-test("Gate: Standard ist risk:medium, auch für Workflows, Storage, Config", () => {
+test("Gate: Standard ist risk:medium, auch für Storage, Config", () => {
   for (const f of [
-    ".github/workflows/ci.yml",
     "src/lib/storage/store.ts",
     "next.config.ts",
     "vercel.json",
@@ -35,6 +34,18 @@ test("Gate: Standard ist risk:medium, auch für Workflows, Storage, Config", () 
     risk([file("supabase/migrations/1_a.sql", patch("+create table if not exists t (id int);"), "added")]).risk,
     "risk:medium",
   );
+});
+
+test("Gate: jede Workflow-Änderung ist high (SIN-234)", () => {
+  for (const f of [".github/workflows/ci.yml", ".github/workflows/x.yaml"]) {
+    const r = risk([file(f, patch("+foo: bar"))]);
+    assert.equal(r.risk, "risk:high", f);
+    assert.ok(r.reasons.some((x) => x.category === "workflow"), f);
+  }
+  assert.equal(risk([file(".github/workflows/x.yml", patch("-  contents: write", "+  contents: read"))]).risk, "risk:high");
+  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:high");
+  assert.equal(risk([file(".github/dependabot.yml", patch("+a: b"))]).risk, "risk:medium");
+  assert.equal(risk([file("docs/autonomy/worker.yml", patch("+a: b"))]).risk, "risk:medium");
 });
 
 test("Gate: Secret-Leak ist high", () => {
@@ -60,7 +71,6 @@ test("Gate: geschwächte Sicherheit ist high", () => {
     risk([file(".github/workflows/x.yml", patch("+  contents: write", "-  contents: read"))]).risk,
     "risk:high",
   );
-  assert.equal(risk([file(".github/workflows/x.yml", patch("-  contents: write", "+  contents: read"))]).risk, "risk:medium");
   assert.equal(risk([file("src/proxy.ts", patch("+x"))]).risk, "risk:high");
 });
 
@@ -264,4 +274,20 @@ test("Cursor zuerst: Claude nimmt nur Label, alte Todos ohne PR", () => {
   const old = { ...base, updatedAt: "2026-10-05T08:00:00Z" };
   assert.equal(claudeMayTake(old, { now, openPrs: [{ title: "feat: x (SIN-7)", head: "cursor/x-85a9" }] }), false);
   assert.equal(claudeMayTake(old, { now, openPrs: [{ title: "feat: y (SIN-70)", head: "b" }] }), true); // SIN-70 ist ein anderes Issue
+});
+
+test("Abgleich: gemergter PR → Done, ohne Merge geschlossen → Todo, sonst unverändert (SIN-237)", () => {
+  const mk = (identifier: string, name = "In Progress") => ({ identifier, state: { name } });
+  const issues = [mk("SIN-7"), mk("SIN-8"), mk("SIN-9"), mk("SIN-10"), mk("SIN-12", "Todo")];
+  const prs = [
+    { title: "feat(x): a (SIN-7)", head: "claude/a", state: "closed", merged: true },
+    { title: "wip", head: "cursor/sin-8-foo-85a9", state: "closed", merged: false },
+    { title: "feat: c (SIN-9)", head: "b", state: "open", merged: false },
+    { title: "fix: d (SIN-9)", head: "c", state: "closed", merged: false }, // offener PR hält das Issue
+    { title: "feat: e (SIN-100)", head: "claude/sin-100", state: "closed", merged: true }, // nicht SIN-10
+    { title: "feat: f (SIN-12)", head: "d", state: "closed", merged: true }, // Todo bleibt unberührt
+  ];
+  assert.deepEqual(reconcile(issues, prs).map((a) => `${a.issue.identifier}:${a.to}`), ["SIN-7:Done", "SIN-8:Todo"]);
+  assert.equal(prMentions({ title: "", head: "claude/sin-237" }, "SIN-237"), true);
+  assert.equal(prMentions({ title: "x (SIN-2370)", head: "" }, "SIN-237"), false);
 });

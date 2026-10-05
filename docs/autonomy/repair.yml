@@ -1,3 +1,6 @@
+# Vorlage (SIN-234) → nach .github/workflows/repair.yml kopieren (letzte manuelle Kopie).
+# Neu: Checkout und claude-code-action mit AGENT_WORKFLOW_TOKEN (Rückfall: Claude-GitHub-App).
+#
 # Reparatur-Schleife (SIN-207): Wenn `ci` auf einem PR-Branch rot wird, versucht
 # Claude, die Ursache zu beheben. Höchstens 3 Runden pro PR (Labels repair:1..3),
 # danach Label `needs-human` und ein Kommentar für Sinan (Stopp-Regel aus AGENTS.md).

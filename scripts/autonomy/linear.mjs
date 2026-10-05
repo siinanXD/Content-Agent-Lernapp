@@ -111,6 +111,27 @@ export function buildPrompt(issue) {
   ].join("\n");
 }
 
+/** Trifft Titel oder Branch eines PRs die Issue-ID (SIN-7, nicht SIN-70)? Branch klein geschrieben (claude/sin-7). */
+export function prMentions(pr, identifier) {
+  const re = new RegExp(`(^|[^a-z0-9])${identifier}($|[^0-9])`, "i");
+  return re.test(pr.title ?? "") || re.test(pr.head ?? "");
+}
+
+/**
+ * Abgleich vor der Auswahl (SIN-237): Issues in „In Progress“ mit gemergtem PR → Done, nur geschlossene
+ * PRs ohne offenen → Todo. Ohne PR bleibt das Issue (der Worker läuft evtl. noch). PRs: { title, head, state, merged }.
+ */
+export function reconcile(issues, prs) {
+  const actions = [];
+  for (const issue of issues) {
+    if (issue.state?.name !== "In Progress") continue;
+    const mine = prs.filter((p) => prMentions(p, issue.identifier));
+    if (mine.some((p) => p.merged)) actions.push({ issue, to: "Done" });
+    else if (mine.length && !mine.some((p) => p.state === "open")) actions.push({ issue, to: "Todo" });
+  }
+  return actions;
+}
+
 export async function stateIdByName(teamId, name, call = linear) {
   const data = await call(
     `query($id: String!) { team(id: $id) { states { nodes { id name } } } }`,

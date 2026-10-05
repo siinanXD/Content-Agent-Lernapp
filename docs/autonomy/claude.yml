@@ -1,3 +1,6 @@
+# Vorlage (SIN-234) → nach .github/workflows/claude.yml kopieren (letzte manuelle Kopie).
+# Neu: Checkout und claude-code-action mit AGENT_WORKFLOW_TOKEN (Rückfall: Claude-GitHub-App).
+#
 # Claude als Ersatz-Agent (SIN-205): Cursor zuerst, Claude wenn Cursor kein Guthaben hat.
 # Auslöser: @claude in Issue-/PR-Kommentaren und Reviews, oder Label "claude" auf einem Issue.
 # Es läuft nur für Nutzer mit Schreibrechten (Standard der Action).
