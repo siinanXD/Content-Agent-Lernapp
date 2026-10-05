@@ -24,7 +24,9 @@
     "prebuild": "node scripts/mermaid-to-svg.mjs",
     "pretest": "node scripts/materialize-goldset.mjs",
     "goldset:materialize": "node scripts/materialize-goldset.mjs",
-    "ap15:regen-dropped": "node --import tsx scripts/ap15-regen-dropped.ts",
+    "ap22:model-ab": "node --import tsx scripts/ap22-model-ab.ts",
+    "ap22:model-ab:dry": "node --import tsx scripts/ap22-model-ab.ts --dry-run",
+    "ap15:regen-dropped":"node --import tsx scripts/ap15-regen-dropped.ts",
     "ap15:regen-dropped:dry": "node --import tsx scripts/ap15-regen-dropped.ts --dry-run"
   },
   "dependencies": {

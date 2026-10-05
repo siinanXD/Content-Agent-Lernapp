@@ -12,8 +12,8 @@ import {
   type CurriculumModule,
 } from "@/lib/content/curriculum";
 import { variantFromBlock } from "@/lib/content/didaktik";
-import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
-import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
+import { anthropicFetch, generatorModel } from "@/lib/anthropic/client";
+import { buildDidaktikBlockPrompt, cachedSystemBlocks } from "./didaktik-prompts";
 import type { GeneratedLernfeld, GeneratedUnit } from "./maf-lernfeld-seed";
 import { addClaudeUsage, type CostLedger, emptyLedger } from "@/lib/quality/cost-guard";
 
@@ -87,10 +87,23 @@ Unit-IDs: "${block.id}-u${unitOffset + 1}" … "${block.id}-u${unitOffset + unit
 Keine anderen Einheiten. (Kurs-Stichwort: ${keyword})`;
 }
 
+/** Batch request params: cached fixed block (Didaktik + Curriculum-Map) + per-chunk user turn (AP-22). */
+export function batchRequestParams(c: Curriculum, model: string, userContent: string) {
+  return {
+    model,
+    max_tokens: MAX_OUTPUT_TOKENS,
+    system: cachedSystemBlocks(c),
+    messages: [{ role: "user" as const, content: userContent }],
+  };
+}
+
 export async function submitChunkTargets(opts: {
   keyword: string;
   targets: BatchChunkTarget[];
+  /** Defaults to env GENERATOR_MODEL (AP-22). */
+  model?: string;
 }): Promise<BatchSubmitResult> {
+  const model = opts.model ?? generatorModel();
   const c = loadMafCurriculum();
   if (opts.targets.length === 0) throw new Error("No chunks to submit");
   const unitTarget = opts.targets.reduce((s, t) => s + t.unitCount, 0);
@@ -100,23 +113,11 @@ export async function submitChunkTargets(opts: {
     body: JSON.stringify({
       requests: opts.targets.map((t) => ({
         custom_id: t.customId,
-        params: {
-          model: GENERATOR_MODEL,
-          max_tokens: MAX_OUTPUT_TOKENS,
-          messages: [
-            {
-              role: "user",
-              content: chunkPrompt(
-                c,
-                t.module,
-                t.block,
-                t.unitOffset,
-                t.unitCount,
-                opts.keyword,
-              ),
-            },
-          ],
-        },
+        params: batchRequestParams(
+          c,
+          model,
+          chunkPrompt(c, t.module, t.block, t.unitOffset, t.unitCount, opts.keyword),
+        ),
       })),
     }),
   });
@@ -174,17 +175,12 @@ export async function submitRegenBatch(opts: {
     const unitOffset = offsetMatch ? Math.max(0, Number(offsetMatch[1]) - 1) : 0;
     requests.push({
       custom_id: `regen-${spec.unitId}`,
-      params: {
-        model: GENERATOR_MODEL,
-        max_tokens: MAX_OUTPUT_TOKENS,
-        messages: [
-          {
-            role: "user",
-            content: `${chunkPrompt(c, mod, block, unitOffset, 1, opts.keyword)}
+      params: batchRequestParams(
+        c,
+        generatorModel(),
+        `${chunkPrompt(c, mod, block, unitOffset, 1, opts.keyword)}
 Nachbesserung: vorherige Version fiel durch die Qualitäts-Schranke. Eine korrekte Quelle, eine richtige Antwort, Niveau ${mod.niveau}. Titel-Hinweis: ${spec.titleHint ?? spec.unitId}.`,
-          },
-        ],
-      },
+      ),
     });
   }
   if (requests.length === 0) throw new Error("No regen targets");
@@ -239,7 +235,11 @@ export async function pollBatchUntilDone(
   throw new Error(`Batch ${batchId} timed out after ${timeout}ms`);
 }
 
-export async function collectBatchUnits(batchId: string): Promise<BatchPollResult> {
+/** `model` prices the ledger; pass the model the batch was submitted with (default env GENERATOR_MODEL). */
+export async function collectBatchUnits(
+  batchId: string,
+  model: string = generatorModel(),
+): Promise<BatchPollResult> {
   const status = await getBatchStatus(batchId);
   if (status.processing_status !== "ended") {
     throw new Error(`Batch not ended: ${status.processing_status}`);
@@ -268,7 +268,12 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
         type?: string;
         message?: {
           content?: Array<{ type: string; text?: string }>;
-          usage?: { input_tokens?: number; output_tokens?: number };
+          usage?: {
+            input_tokens?: number;
+            output_tokens?: number;
+            cache_creation_input_tokens?: number;
+            cache_read_input_tokens?: number;
+          };
         };
         error?: { message?: string };
       };
@@ -285,6 +290,11 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
         ledger,
         usage.input_tokens ?? 0,
         usage.output_tokens ?? 0,
+        {
+          model,
+          cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
+          cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+        },
       );
     }
     if (row.result?.type !== "succeeded" || !row.result.message) {

@@ -1,3 +1,4 @@
+import { generatorModel } from "@/lib/anthropic/client";
 import { anthropicHeaders } from "@/lib/anthropic/headers";
 import { loadMafCurriculum } from "@/lib/content/curriculum";
 import {
@@ -12,8 +13,6 @@ export type PlanAgentResult = {
   modelId?: string;
   warning?: string;
 };
-
-const GENERATOR_MODEL = "claude-sonnet-5-5";
 
 /**
  * Build day plans for 2 learning variants (5–10 min units, ~2–3 h/day).
@@ -40,7 +39,7 @@ export async function runPlanAgent(keyword: string): Promise<PlanAgentResult> {
     return {
       variants: mafSeedPlanVariants(),
       mode: "seed",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: live.warning ?? "Live plan incomplete; curriculum seed fallback.",
     };
   } catch (err) {
@@ -48,7 +47,7 @@ export async function runPlanAgent(keyword: string): Promise<PlanAgentResult> {
     return {
       variants: mafSeedPlanVariants(),
       mode: "seed",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: `Live plan failed: ${msg.slice(0, 200)}. Curriculum seed fallback.`,
     };
   }
@@ -69,7 +68,7 @@ async function runLivePlan(key: string, keyword: string): Promise<PlanAgentResul
     method: "POST",
     headers: anthropicHeaders({ apiKey: key }),
     body: JSON.stringify({
-      model: GENERATOR_MODEL,
+      model: generatorModel(),
       max_tokens: 8192,
       messages: [
         {
@@ -93,7 +92,7 @@ Antworte nur mit dem JSON-Array.`,
     return {
       variants: [],
       mode: "live",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: `Claude API ${res.status}: ${text.slice(0, 200)}`,
     };
   }
@@ -104,7 +103,7 @@ Antworte nur mit dem JSON-Array.`,
   const text =
     data.content?.filter((b) => b.type === "text").map((b) => b.text).join("\n") ?? "";
   const variants = parseVariantsJson(text);
-  return { variants, mode: "live", modelId: GENERATOR_MODEL };
+  return { variants, mode: "live", modelId: generatorModel() };
 }
 
 function parseVariantsJson(text: string): PlanVariant[] {

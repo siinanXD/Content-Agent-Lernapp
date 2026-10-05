@@ -5,7 +5,7 @@ import {
   type CurriculumModule,
 } from "@/lib/content/curriculum";
 import { variantFromBlock } from "@/lib/content/didaktik";
-import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
+import { anthropicFetch, generatorModel } from "@/lib/anthropic/client";
 import {
   buildDidaktikBlockPrompt,
   buildDidaktikKeywordPrompt,
@@ -62,7 +62,7 @@ export async function runGenerateAgent(opts: {
       return {
         lernfeld: mafSeedLernfeldSicherheit(),
         mode: "seed",
-        modelId: GENERATOR_MODEL,
+        modelId: generatorModel(),
         warning: `Batch submit failed: ${msg.slice(0, 200)}. Seed fallback.`,
       };
     }
@@ -74,7 +74,7 @@ export async function runGenerateAgent(opts: {
     return {
       lernfeld: mafSeedLernfeldSicherheit(),
       mode: "seed",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: live.warning ?? "Live generate incomplete; seed fallback.",
     };
   } catch (err) {
@@ -82,7 +82,7 @@ export async function runGenerateAgent(opts: {
     return {
       lernfeld: mafSeedLernfeldSicherheit(),
       mode: "seed",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: `Live generate failed: ${msg.slice(0, 200)}. Seed fallback.`,
     };
   }
@@ -125,7 +125,7 @@ async function runLiveGenerate(
   const res = await anthropicFetch("/v1/messages", {
     method: "POST",
     body: JSON.stringify({
-      model: GENERATOR_MODEL,
+      model: generatorModel(),
       max_tokens: 8192,
       messages: [{ role: "user", content: `${prompt}\n(Kurs-Stichwort: ${keyword})` }],
     }),
@@ -135,7 +135,7 @@ async function runLiveGenerate(
     return {
       lernfeld: mafSeedLernfeldSicherheit(),
       mode: "live",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: `Claude API ${res.status}: ${text.slice(0, 200)}`,
     };
   }
@@ -158,7 +158,7 @@ async function runLiveGenerate(
         })
       : "sicherheit",
   );
-  return { lernfeld, mode: "live", modelId: GENERATOR_MODEL };
+  return { lernfeld, mode: "live", modelId: generatorModel() };
 }
 
 /** Submit Message Batch — chunked Didaktik requests for a phase (AP-15). */
@@ -180,7 +180,7 @@ async function submitBatchGenerate(
   return {
     lernfeld: mafSeedLernfeldSicherheit(),
     mode: "batch-pending",
-    modelId: GENERATOR_MODEL,
+    modelId: generatorModel(),
     batchId: submitted.batchId,
     batchBlockIds: submitted.customIds,
     chunkCount: submitted.chunkCount,

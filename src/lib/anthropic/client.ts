@@ -4,7 +4,29 @@
  */
 
 export const ANTHROPIC_API_BASE = "https://api.anthropic.com";
-export const GENERATOR_MODEL = "claude-sonnet-5-5";
+
+/** Default generator (D-06). Override with env GENERATOR_MODEL (AP-22 A/B, D-37). */
+export const DEFAULT_GENERATOR_MODEL = "claude-sonnet-5-5";
+/** Haiku candidate for AP-22 — allowed only if the quality threshold holds (D-06). */
+export const HAIKU_GENERATOR_MODEL = "claude-haiku-4-5";
+export const ALLOWED_GENERATOR_MODELS = [
+  DEFAULT_GENERATOR_MODEL,
+  HAIKU_GENERATOR_MODEL,
+] as const;
+export type GeneratorModel = (typeof ALLOWED_GENERATOR_MODELS)[number];
+
+/** Pure model choice: unknown or empty values fall back to the default. */
+export function resolveGeneratorModel(raw: string | undefined | null): GeneratorModel {
+  const v = raw?.trim();
+  return (ALLOWED_GENERATOR_MODELS as readonly string[]).includes(v ?? "")
+    ? (v as GeneratorModel)
+    : DEFAULT_GENERATOR_MODEL;
+}
+
+/** Generator model from env, read at call time so scripts/tests can switch it. */
+export function generatorModel(): GeneratorModel {
+  return resolveGeneratorModel(process.env.GENERATOR_MODEL);
+}
 
 export function anthropicConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim());

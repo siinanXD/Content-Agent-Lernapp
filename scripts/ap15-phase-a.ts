@@ -24,7 +24,7 @@ import {
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { loadMafCurriculum, modulesForPhase } from "../src/lib/content/curriculum";
 import {
-  addClaudeUsage,
+  mergeClaudeLedger,
   addOpenAIUsage,
   BUDGET_EUR,
   emptyLedger,
@@ -231,11 +231,7 @@ async function main() {
   });
 
   const collected = await collectBatchUnits(batchId);
-  ledger = addClaudeUsage(
-    ledger,
-    collected.ledger.claudeInputTokens,
-    collected.ledger.claudeOutputTokens,
-  );
+  ledger = mergeClaudeLedger(ledger, collected.ledger);
   unitsAccum = mergePhaseLernfeld([...unitsAccum, ...collected.units]).units;
   console.log(
     `collected units=${collected.units.length} total=${unitsAccum.length} failedChunks=${collected.failedCustomIds.length} cost~€${ledger.eurEstimate}`,
@@ -258,11 +254,7 @@ async function main() {
         onTick: (s) => console.log("retry", s.processing_status, s.request_counts),
       });
       const retryCollected = await collectBatchUnits(retry.batchId);
-      ledger = addClaudeUsage(
-        ledger,
-        retryCollected.ledger.claudeInputTokens,
-        retryCollected.ledger.claudeOutputTokens,
-      );
+      ledger = mergeClaudeLedger(ledger, retryCollected.ledger);
       unitsAccum = mergePhaseLernfeld([
         ...unitsAccum,
         ...retryCollected.units,
@@ -315,11 +307,7 @@ async function main() {
         onTick: (s) => console.log("regen", s.processing_status, s.request_counts),
       });
       const regenCollected = await collectBatchUnits(regen.batchId);
-      ledger = addClaudeUsage(
-        ledger,
-        regenCollected.ledger.claudeInputTokens,
-        regenCollected.ledger.claudeOutputTokens,
-      );
+      ledger = mergeClaudeLedger(ledger, regenCollected.ledger);
       const replaced = new Map(lernfeld.units.map((u) => [u.id, u]));
       for (const u of regenCollected.units) replaced.set(u.id, u);
       lernfeld = mergePhaseLernfeld([...replaced.values()]);

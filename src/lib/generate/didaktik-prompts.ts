@@ -71,6 +71,48 @@ ${didaktikSchemaHint()}
 Antworte nur mit JSON: {"id","title","focus","moduleId","blockId","units":[...]}`;
 }
 
+/**
+ * Fixed prefix for Batch requests (AP-22): identical for every request of a course, so it is
+ * cached via cache_control. Holds Didaktik rules (all four variants, schema) and the
+ * curriculum map; per-chunk text (block, topics, sources, unit range) stays in the user turn.
+ */
+export function buildDidaktikFixedBlock(c: Curriculum): string {
+  const map = [...c.modules]
+    .sort((a, b) => a.order - b.order)
+    .map(
+      (m) =>
+        `- ${m.id} (Jahr ${m.year}, ${m.niveau}, ${m.unitsTarget} Einheiten): ${m.title}; Blöcke: ${m.blocks
+          .map((b) => `${b.id} "${b.title}" (${b.units})`)
+          .join(", ")}`,
+    )
+    .join("\n");
+  const rules = (Object.values(VARIANT_RULES) as string[]).join("\n");
+  return `Du erzeugst Lerneinheiten für die Ausbildung ${c.keyword}${c.variantLabel ? `, ${c.variantLabel}` : ""}.
+Curriculum-Map (Module und Blöcke):
+${map}
+
+Didaktik-Varianten:
+${rules}
+Verboten: IHK-Prüfungsaufgaben oder Umformulierung, Personendaten, Inhalte ohne Quelle, KI-Bewertung von Lernenden.
+${didaktikSchemaHint()}
+Antworte nur mit JSON: {"id","title","focus","moduleId","blockId","units":[...]}`;
+}
+
+/** system content for Batch params: fixed block with 1h cache breakpoint (batches can exceed 5 min). */
+export function cachedSystemBlocks(c: Curriculum): Array<{
+  type: "text";
+  text: string;
+  cache_control: { type: "ephemeral"; ttl: "1h" };
+}> {
+  return [
+    {
+      type: "text",
+      text: buildDidaktikFixedBlock(c),
+      cache_control: { type: "ephemeral", ttl: "1h" },
+    },
+  ];
+}
+
 /** Lightweight keyword prompt (seed/live without map block) — still enforces 4 variants. */
 export function buildDidaktikKeywordPrompt(keyword: string, variant: UnitVariant = "sicherheit"): string {
   return `Erzeuge EIN vollständiges Lernfeld als JSON für "${keyword}", Fokus Sicherheit und Gesundheitsschutz.

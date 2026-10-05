@@ -1,3 +1,4 @@
+import { generatorModel } from "@/lib/anthropic/client";
 import { anthropicHeaders } from "@/lib/anthropic/headers";
 import {
   mafSeedSources,
@@ -12,7 +13,6 @@ export type ResearchAgentResult = {
   warning?: string;
 };
 
-const GENERATOR_MODEL = "claude-sonnet-5-5";
 const MAX_TOOL_ROUNDS = 6;
 
 type AnthropicContentBlock =
@@ -49,7 +49,7 @@ export async function runResearchAgent(keyword: string): Promise<ResearchAgentRe
     return {
       sources: mafSeedSources(),
       mode: "seed",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: live.warning ?? "Live response had no parseable sources; seed fallback.",
     };
   } catch (err) {
@@ -57,7 +57,7 @@ export async function runResearchAgent(keyword: string): Promise<ResearchAgentRe
     return {
       sources: mafSeedSources(),
       mode: "seed",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: `Live research failed: ${msg.slice(0, 200)}. Fell back to seed.`,
     };
   }
@@ -100,7 +100,7 @@ Nutze web_search und web_fetch. Antworte am Ende als JSON-Array von Objekten {ti
         extra: { "anthropic-beta": "web-fetch-2025-09-10" },
       }),
       body: JSON.stringify({
-        model: GENERATOR_MODEL,
+        model: generatorModel(),
         max_tokens: 4096,
         tools,
         messages,
@@ -112,7 +112,7 @@ Nutze web_search und web_fetch. Antworte am Ende als JSON-Array von Objekten {ti
       return {
         sources: [],
         mode: "live",
-        modelId: GENERATOR_MODEL,
+        modelId: generatorModel(),
         warning: `Claude API ${res.status}: ${text.slice(0, 200)}`,
       };
     }
@@ -153,13 +153,13 @@ Nutze web_search und web_fetch. Antworte am Ende als JSON-Array von Objekten {ti
     return {
       sources: [],
       mode: "live",
-      modelId: GENERATOR_MODEL,
+      modelId: generatorModel(),
       warning: "Live response had no parseable sources.",
     };
   }
 
   const merged = mergeWithSeedIfNeeded(sources, keyword);
-  return { sources: merged, mode: "live", modelId: GENERATOR_MODEL };
+  return { sources: merged, mode: "live", modelId: generatorModel() };
 }
 
 function mergeWithSeedIfNeeded(sources: ResearchSource[], keyword: string): ResearchSource[] {
