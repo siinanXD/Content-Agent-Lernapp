@@ -93,5 +93,20 @@ console.log(
     : "anthropic_workspace: set",
 );
 
+// `--require=A,B`: genau diese Namen prüfen (z. B. content-grow.yml, SIN-220), statt der Standardliste.
+const requireArg = process.argv.find((a) => a.startsWith("--require="));
+if (requireArg) {
+  const names = requireArg.slice("--require=".length).split(",").map((n) => n.trim()).filter(Boolean);
+  const missingRequired = names.map(status).filter((r) => r.state !== "SET");
+  if (missingRequired.length) {
+    console.error(
+      `::error::Secrets fehlen: ${missingRequired.map((r) => r.name).join(", ")} (Quelle: Infisical /content-agent-lernapp, GitHub-Sync)`,
+    );
+    process.exit(1);
+  }
+  console.log(`required: ${names.length} Secrets gesetzt`);
+  process.exit(0);
+}
+
 const ok = missingLive.length === 0;
 process.exit(ok ? 0 : 1);

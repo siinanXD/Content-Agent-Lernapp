@@ -1,0 +1,107 @@
+# AP-23 Content-Fabrik (SIN-220): Content wächst ohne manuellen Start.
+# Montag 05:47 UTC, 30 Min nach dem Quellen-Monitor (source-check.yml, 05:17). Annahme in D-46: 1 Lauf pro Woche.
+# Ablauf und Deckel (20 € je Lauf, Stopp bei 19 €): scripts/content-grow.ts, src/lib/generate/content-grow.ts.
+# Secrets kommen aus Infisical (/content-agent-lernapp) per GitHub-Sync; nie von Hand anlegen.
+# Fehlende Secrets: Job rot, bevor irgendetwas erzeugt oder veröffentlicht wird.
+# Optional: LINEAR_API_KEY (Kommentar), AGENT_WORKFLOW_TOKEN (PR löst CI aus, D-43), Variable GENERATOR_MODEL.
+name: Content-Fabrik (AP-23)
+
+on:
+  schedule:
+    - cron: "47 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Nur planen: kein Batch, nichts veröffentlicht, kein PR"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: content-grow
+  cancel-in-progress: false
+
+jobs:
+  grow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      COURSE_STORAGE: supabase
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GENERATOR_MODEL: ${{ vars.GENERATOR_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Secrets prüfen
+        run: node scripts/check-env.mjs --require=ANTHROPIC_API_KEY,ANTHROPIC_WORKSPACE_ID,OPENAI_API_KEY,LANGFUSE_PUBLIC_KEY,LANGFUSE_SECRET_KEY,LANGFUSE_BASE_URL,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY
+      - name: Abhängigkeiten installieren
+        run: npm install --no-audit --no-fund
+      - name: Quellen-Monitor
+        id: sources
+        shell: bash
+        run: |
+          set +e
+          npm run -s content:check-sources > source-report.json 2> source-check.log
+          code=$?
+          set -e
+          cat source-check.log || true
+          echo "exit code: $code"
+          # 0 = unverändert, 2 = Änderung (steuert Stufe b), alles andere ist ein Fehler.
+          if [ "$code" != "0" ] && [ "$code" != "2" ]; then
+            echo "::error::Quellen-Monitor Exit $code (3 = Lock unvollständig)"
+            exit 1
+          fi
+      - name: Content-Lauf
+        shell: bash
+        run: |
+          flags="--source-report=source-report.json"
+          if [ "$DRY_RUN" = "true" ]; then flags="$flags --dry-run"; fi
+          npm run -s content:grow -- $flags
+      - name: Bericht sichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-run
+          path: |
+            docs/ops/content-runs/
+            content-run-summary.md
+            source-report.json
+          if-no-files-found: ignore
+      - name: Linear-Kommentar
+        if: env.DRY_RUN != 'true' && hashFiles('content-run-summary.md') != ''
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        run: node scripts/content-grow-linear.mjs content-run-summary.md
+      - name: Bericht per PR einreichen
+        if: env.DRY_RUN != 'true' && hashFiles('content-run-summary.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+        run: |
+          # Nur der Bericht kommt in den PR; geänderte Dateien der Reparatur-Skripte bleiben draußen.
+          git add docs/ops/content-runs
+          if git diff --cached --quiet; then echo "kein Bericht"; exit 0; fi
+          run_id="$(date -u +%Y%m%d-%H%M)"
+          branch="content-run/$run_id"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git commit -m "chore(content): Content-Lauf $run_id (SIN-220)" -m "Part of SIN-220"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "chore(content): Content-Lauf $run_id (SIN-220)" \
+            --body "$(printf 'Part of SIN-220\n\n%s\n\nNur Bericht (JSON unter `docs/ops/content-runs/`). Das Risiko-Label setzt `pr-gate`.' "$(cat content-run-summary.md)")"
