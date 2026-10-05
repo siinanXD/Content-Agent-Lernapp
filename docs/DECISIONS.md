@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-249 | SIN-249: Einheit öffnen robust, „Referenzberuf“ wird „Dein Betrieb“ | [SIN-249-einheit-oeffnen-betrieb.md](decisions/SIN-249-einheit-oeffnen-betrieb.md) |
+| SIN-246 | SIN-246 — Tages-Update um 10:00 und 20:00 | [SIN-246-tages-update.md](decisions/SIN-246-tages-update.md) |
 | SIN-245 | SIN-245 — Stil E (Orange/Weiß/Schwarz) aus Figma übernehmen | [SIN-245-stil-e.md](decisions/SIN-245-stil-e.md) |
 | SIN-240 | SIN-240 — Loop-Härtung: Agenten-Token überall, Abgleich, eine Datei je Entscheidung, Gate nach CI | [SIN-240-loop-haertung.md](decisions/SIN-240-loop-haertung.md) |
 | SIN-236 | SIN-236 — package-lock.json normal committen | [SIN-236-package-lock-committen.md](decisions/SIN-236-package-lock-committen.md) |
