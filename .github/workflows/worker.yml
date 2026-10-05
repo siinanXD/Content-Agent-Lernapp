@@ -33,6 +33,8 @@ jobs:
       IDENTIFIER: ${{ inputs.identifier }}
       LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
       GH_TOKEN: ${{ github.token }}
+      # Nur lesen (Infisical /content-agent-lernapp → Development). Fehlt er: „nicht verfügbar“ (SIN-239).
+      FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -57,7 +59,7 @@ jobs:
           claude_args: |
             --model claude-sonnet-5-5
             --max-turns 150
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/assemble-package-lock.mjs:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/assemble-package-lock.mjs:*)"
 
       - name: PR vorhanden?
         id: pr

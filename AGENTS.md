@@ -71,6 +71,14 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - API-Vertrag: OpenAPI im Repo, Postman-Collection daraus
 - Design: Figma ist die einzige Quelle für Farben, Abstände und Komponenten
 
+## Design: Figma zuerst (SIN-239)
+
+- **Ohne Design-Issue erlaubt:** Änderungen, die nur vorhandene Figma-Komponenten und Tokens nutzen (Zustände, Texte, Abstände, Varianten bestehender Screens, Fehler-/Leer-/Ladezustände nach Screen 17).
+- **Design-Issue nötig:** neue Screens, neue Komponenten, neue Farben/Tokens, geänderte Navigation.
+- Der Planer bündelt alle Design-Issues zu höchstens einem Design-Paket pro Woche (Label `design`, Backlog bis Sinan die Sitzung macht).
+- Agenten erfinden keine neuen Komponenten im Code. Fehlt etwas, legen sie ein Design-Issue an, statt zu improvisieren.
+- Werte (Farben, Abstände, Texte) für Frontend-Issues aus Figma lesen, nicht schätzen: `node scripts/autonomy/figma.mjs --node <ID>` (Datei `0SWGDO2ioBD3MyXiAnrbRz`, Token `FIGMA_ACCESS_TOKEN` nur lesend). Fehlt der Token, im Bericht „nicht verfügbar“ schreiben.
+
 ## Qualität
 
 - Jeder Pull Request: Tests grün, axe-core und Lighthouse ohne Fehler.
