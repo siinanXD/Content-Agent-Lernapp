@@ -8,6 +8,7 @@
  *       prüft den Plan (je Spur max. 3, 1 Design-Paket, Akzeptanzkriterien, Priorität), legt Linear-Issues als
  *       Todo an (Label je Spur, Design blockiert das Frontend-Issue). Ist die Produktreife grün, legt er
  *       das Issue „Produkt-Abnahme MAF Metall“ für Sinan an und plant bis zur Antwort nur Fehler und Content.
+ *       Davor: Free-Tier-Prüfung (ab 80 % ein Linear-Issue, SIN-225) und Wochenbericht (limits.mjs).
  *
  * Kennzahlen ohne Zugang (Supabase, PostHog, Sentry, Kosten, Figma) stehen als „nicht verfügbar“ im Prompt.
  * Dry-Run: nur lesen, nichts in Linear anlegen.
@@ -15,6 +16,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import { runLimitCheck } from "./limits.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
 import {
   ABNAHME_TITLE,
@@ -284,6 +286,7 @@ export async function main(argv) {
   if (argv.includes("--create")) {
     const plan = JSON.parse(readFileSync(arg("--create"), "utf8"));
     const existingTitles = (issues ?? []).map((i) => i.title);
+    console.log(`${await runLimitCheck({ dry, existingTitles })}\n`);
     const { rows, abnahme } = await assessReadiness({ metrics: await collectMetrics(), issues });
     const maintenance = inMaintenanceMode(rows, abnahme);
     const items = validatePlan(plan, existingTitles, { maintenance });

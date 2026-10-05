@@ -265,7 +265,7 @@ export function parseState(body) {
 
 const GH = "https://api.github.com";
 
-async function gh(path, { method = "GET", body, token = process.env.GITHUB_TOKEN, fetchImpl = fetch } = {}) {
+export async function gh(path, { method = "GET", body, token = process.env.GITHUB_TOKEN, fetchImpl = fetch } = {}) {
   const res = await fetchImpl(path.startsWith("http") ? path : `${GH}${path}`, {
     method,
     headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
