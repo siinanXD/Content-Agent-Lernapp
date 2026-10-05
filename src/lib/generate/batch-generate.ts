@@ -15,7 +15,13 @@ import { variantFromBlock } from "@/lib/content/didaktik";
 import { modulesToGenerate } from "@/lib/content/shared-modules";
 import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
 import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
-import type { GeneratedLernfeld, GeneratedUnit } from "./maf-lernfeld-seed";
+import type { GeneratedLernfeld, GeneratedQuestion, GeneratedUnit } from "./maf-lernfeld-seed";
+import {
+  annotateRepairQuestions,
+  buildRepairPrompt,
+  parseRepairQuestions,
+  type RepairPlan,
+} from "./repair-questions";
 import {
   addClaudeMeasuredUsage,
   type ClaudeUsage,
@@ -256,7 +262,21 @@ export async function pollBatchUntilDone(
   throw new Error(`Batch ${batchId} timed out after ${timeout}ms`);
 }
 
-export async function collectBatchUnits(batchId: string): Promise<BatchPollResult> {
+type BatchResultRow = {
+  custom_id?: string;
+  result?: {
+    type?: string;
+    message?: {
+      content?: Array<{ type: string; text?: string }>;
+      usage?: ClaudeUsage;
+    };
+    error?: { message?: string };
+  };
+};
+
+async function fetchBatchRows(
+  batchId: string,
+): Promise<{ status: string; rows: BatchResultRow[] }> {
   const status = await getBatchStatus(batchId);
   if (status.processing_status !== "ended") {
     throw new Error(`Batch not ended: ${status.processing_status}`);
@@ -271,30 +291,96 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
     const text = await res.text();
     throw new Error(`Results fetch ${res.status}: ${text.slice(0, 200)}`);
   }
-  const text = await res.text();
-  const lines = text.split("\n").filter((l) => l.trim());
+  const rows: BatchResultRow[] = [];
+  for (const line of (await res.text()).split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      rows.push(JSON.parse(line) as BatchResultRow);
+    } catch {
+      continue;
+    }
+  }
+  return { status: status.processing_status, rows };
+}
+
+const rowText = (row: BatchResultRow): string =>
+  row.result?.message?.content
+    ?.filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("\n") ?? "";
+
+/** AP-21: Batch nur für Ersatzfragen. Je Einheit ein Request: Einheit + durchgefallene Fragen + Grund. */
+export async function submitQuestionRepairBatch(opts: {
+  items: Array<{ unit: GeneratedUnit; plan: RepairPlan }>;
+}): Promise<BatchSubmitResult> {
+  const requests = opts.items
+    .filter((i) => i.plan.replacements > 0)
+    .map(({ unit, plan }) => ({
+      custom_id: `repair-${unit.id}`,
+      params: {
+        model: GENERATOR_MODEL,
+        max_tokens: MAX_OUTPUT_TOKENS,
+        messages: [{ role: "user", content: buildRepairPrompt(unit, plan) }],
+      },
+    }));
+  if (requests.length === 0) throw new Error("No repair targets");
+  const res = await anthropicFetch("/v1/messages/batches", {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Repair batch ${res.status}: ${text.slice(0, 400)}`);
+  }
+  const data = (await res.json()) as { id?: string };
+  if (!data.id) throw new Error("Repair batch missing id");
+  return {
+    batchId: data.id,
+    customIds: requests.map((r) => r.custom_id),
+    chunkCount: requests.length,
+    unitTarget: requests.length,
+  };
+}
+
+export type RepairCollectResult = {
+  /** Ersatzfragen je Einheit-Id (neue Frage-Ids `r<runde>-n`). */
+  questions: Map<string, GeneratedQuestion[]>;
+  failedCustomIds: string[];
+  ledger: CostLedger;
+};
+
+export async function collectRepairQuestions(
+  batchId: string,
+  units: Map<string, GeneratedUnit>,
+  round = 1,
+): Promise<RepairCollectResult> {
+  const { rows } = await fetchBatchRows(batchId);
+  const questions = new Map<string, GeneratedQuestion[]>();
+  const failedCustomIds: string[] = [];
+  let ledger = emptyLedger();
+  for (const row of rows) {
+    const customId = row.custom_id ?? "";
+    const usage = row.result?.message?.usage;
+    if (usage) ledger = addClaudeMeasuredUsage(ledger, usage);
+    const unit = units.get(customId.replace(/^repair-/, ""));
+    const parsed = row.result?.type === "succeeded" ? parseRepairQuestions(rowText(row)) : null;
+    if (!unit || !parsed) {
+      failedCustomIds.push(customId);
+      continue;
+    }
+    questions.set(unit.id, annotateRepairQuestions(unit, parsed, round));
+  }
+  return { questions, failedCustomIds, ledger };
+}
+
+export async function collectBatchUnits(batchId: string): Promise<BatchPollResult> {
+  const { status, rows } = await fetchBatchRows(batchId);
   const c = loadMafCurriculum();
   const units: GeneratedUnit[] = [];
   const failedCustomIds: string[] = [];
   let ledger = emptyLedger();
 
-  for (const line of lines) {
-    let row: {
-      custom_id?: string;
-      result?: {
-        type?: string;
-        message?: {
-          content?: Array<{ type: string; text?: string }>;
-          usage?: ClaudeUsage;
-        };
-        error?: { message?: string };
-      };
-    };
-    try {
-      row = JSON.parse(line);
-    } catch {
-      continue;
-    }
+  for (const row of rows) {
     const customId = row.custom_id ?? "";
     const usage = row.result?.message?.usage;
     if (usage) {
@@ -304,12 +390,7 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
       failedCustomIds.push(customId);
       continue;
     }
-    const body =
-      row.result.message.content
-        ?.filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("\n") ?? "";
-    const parsed = parseLernfeldJson(body);
+    const parsed = parseLernfeldJson(rowText(row));
     if (!parsed?.units?.length) {
       failedCustomIds.push(customId);
       continue;
@@ -322,7 +403,7 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
 
   return {
     batchId,
-    status: status.processing_status,
+    status,
     units,
     failedCustomIds,
     ledger,
