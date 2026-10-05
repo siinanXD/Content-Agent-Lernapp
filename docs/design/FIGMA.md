@@ -70,36 +70,51 @@ Spiegel im Repo: [`tokens.json`](./tokens.json) → CSS-Variablen in `src/app/gl
 
 | Token | Hex | Kontrast-Notiz |
 | --- | --- | --- |
-| `--color-bg-canvas` | `#EAF0F4` | Atmosphäre (kühles Mist) |
-| `--color-bg-surface` | `#F7FAFC` | Flächen |
-| `--color-bg-hero` | `#0A3D4A` | Hero / Markenfläche |
-| `--color-text-primary` | `#12202A` | auf Canvas/Surface ≥ 12:1 |
-| `--color-text-secondary` | `#3D5260` | auf Canvas ≥ 4.7:1 |
-| `--color-text-on-brand` | `#F4F8FA` | auf Hero/Primary ≥ 8:1 |
-| `--color-brand-primary` | `#0B5F6E` | CTA, Fokus |
-| `--color-brand-accent` | `#A67C00` | Hervorhebung (Messing, nicht Terracotta) |
-| `--color-border-subtle` | `#C5D2DA` | Rahmen |
-| `--color-feedback-success` | `#1A6B45` | Erfolg |
-| `--color-feedback-danger` | `#A33B2A` | Fehler |
-| `--color-focus-ring` | `#0B5F6E` | Fokusring |
+| `--color-bg-canvas` | `#FAFAF9` | Seitenhintergrund |
+| `--color-bg-surface` | `#FFFFFF` | Flächen, Pillen |
+| `--color-bg-hero` | `#1C1917` | Hero, NextUpCard, Knoten „Heute“ |
+| `--color-text-primary` | `#1C1917` | auf Canvas/Surface ≈ 17:1 |
+| `--color-text-secondary` | `#57534E` | auf Canvas ≈ 7:1 |
+| `--color-text-on-brand` | `#FAFAF9` | auf Hero ≈ 17:1, auf Primary ≈ 5,2:1 |
+| `--color-brand-primary` | `#C2410C` | CTA, Fortschritt, Fokus; weißer Text erlaubt |
+| `--color-brand-accent` | `#EA580C` | Ring um „Heute“, Icons; **kein weißer Text** (3,6:1) |
+| `--color-border-subtle` | `#E7E5E4` | Rahmen, Ring-Track |
+| `--color-feedback-success` | `#15803D` | Erfolg |
+| `--color-feedback-danger` | `#B91C1C` | Fehler |
+| `--color-focus-ring` | `#C2410C` | Fokusring |
 
-WCAG 2.2 AA: Fließtext und UI-Labels ≥ **4,5:1**. Geprüft gegen Primary-Text auf Canvas und On-Brand auf Hero.
+WCAG 2.2 AA: Fließtext und UI-Labels ≥ **4,5:1**. Weißer Text nur auf `brand/primary`, auf `brand/accent` dunkler Text.
+Quelle Stil E: Figma-Collection „Color“. Die Variablen-API war im Agent-Lauf nicht lesbar (403); die Werte sind gegen die Füllungen der Knoten 19:287, 19:265 und 20:312 abgeglichen (SIN-245).
 
 ### Typografie
 
 | Rolle | Familie | Hinweis |
 | --- | --- | --- |
-| Display / UI-Headings | **Space Grotesk** | Expressiv, nicht Inter/Roboto/Arial |
-| Body / Labels | **IBM Plex Sans** | Lesbarkeit für Lerntext |
+| Text, Überschriften, Labels | **Geist** | `next/font/google`, `--font-display` = `--font-body` |
+| Kennungen, Zahlen („M0 · 03“, „2/4“, „1.840“) | **Geist Mono** | `--font-mono` |
+
+Keine weitere Schriftart.
 
 ### Spacing / Radius
 
-`--space-4` … `--space-64` (4–64 px). Radius: `--radius-sm` 6, `--radius-md` 10, `--radius-lg` 14 (keine `rounded-full` Pills).
+`--space-4` … `--space-64` (4–64 px). Radius: `--radius-sm` 6, `--radius-md` 10, `--radius-lg` 16. Pillen (`StatChip`) und Knoten sind rund (`rounded-full`).
+
+### Stil-E-Komponenten (SIN-245)
+
+| Komponente | Code | Beschreibung |
+| --- | --- | --- |
+| `ProgressRing` | `src/components/ui/progress-ring.tsx` | 76 px, Track `border/subtle`, Fortschritt `brand/primary`, Wert „2/4“ in Geist Mono |
+| `NextUpCard` | `src/components/ui/next-up-card.tsx` | Dunkle Karte `hero`, Radius 16: „Als Nächstes · M0 · 03“, Titel, Frage-Vorschau, Knopf „Einheit starten“ |
+| `StatChip` | `src/components/ui/stat-chip.tsx` | Pille (weiß, Rahmen), Icon + Wert in Geist Mono |
+| `PathNode` | `src/components/ui/path-node.tsx` | 64 px; „Heute“ schwarz mit orangem Ring, „Erledigt“ grün, „Offen“/„Gesperrt“ weiß |
+| Screen `02b Lernpfad · Karte` | `src/app/lernpfad/page.tsx` | Kopfzeile mit Ring, darunter Pillen und NextUpCard |
+
+`DailyGoal` entfällt (Ring + NextUpCard ersetzen es).
 
 ## Design-Entscheidungen
 
 1. **Marke zuerst:** Start-Hero trägt „Content-Agent-Lernapp“ als Hero-Signal, nicht nur Nav.
-2. **Visuelle Richtung:** tiefes Teal + Messing-Akzent + kühles Mist — bewusst ohne Lila-auf-Weiß, Cream/Terracotta, Broadsheet, Dark-Mode-Default, Glow, Multi-Layer-Shadows, Emojis.
+2. **Visuelle Richtung (Stil E, Sinan 05.10.):** Orange / Weiß / Schwarz mit Geist — bewusst ohne Lila-auf-Weiß, Teal/Messing-Altfarben, Dark-Mode-Default, Glow, Multi-Layer-Shadows, Emojis. Anti-Slop-Regeln: `AGENTS.md`.
 3. **Eine Hero-Komposition** auf Start; keine Cards im Hero.
 4. **Auto Layout** überall; Komponenten vor Screens.
 5. **Code-Spiegel** hält Tokens für AP-08 bereit, bevor Figma freigegeben ist — Implementierung wartet auf Sinan.

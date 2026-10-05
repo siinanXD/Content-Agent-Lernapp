@@ -11,7 +11,7 @@ import type { TrafficLight } from "@/lib/content/didaktik";
 
 const lightClass: Record<TrafficLight, string> = {
   green: "bg-[var(--color-feedback-success)] text-white",
-  yellow: "bg-[#c4922a] text-white",
+  yellow: "bg-[var(--color-brand-accent)] text-[var(--color-text-primary)]",
   red: "bg-[var(--color-feedback-danger)] text-white",
 };
 
@@ -36,7 +36,7 @@ export default function ErgebnisPage() {
   return (
     <MobileShell>
       <section className="bg-gradient-to-br from-[var(--color-bg-hero)] to-[var(--color-brand-primary)] px-7 pb-8 pt-14">
-        <p className="text-sm text-[#d9e8ed]">Ergebnis</p>
+        <p className="text-sm text-[#d6d4d1]">Ergebnis</p>
         <h1
           className="mt-2 text-[30px] font-bold leading-9 text-[var(--color-text-on-brand)]"
           style={{ fontFamily: "var(--font-display)" }}
@@ -50,10 +50,15 @@ export default function ErgebnisPage() {
       </section>
 
       <section
-        className="flex gap-3 px-6 py-6"
+        className="flex flex-wrap gap-2 px-6 py-6"
         aria-label="Deine Werte"
       >
-        <StatChip kind="punkte" value={`+${points}`} label="Punkte heute" />
+        <StatChip
+          kind="punkte"
+          value={`+${points}`}
+          label="Punkte heute"
+          showLabel
+        />
         <StatChip
           kind="serie"
           value={`${session?.streakDays ?? 7} Tage`}
@@ -63,6 +68,7 @@ export default function ErgebnisPage() {
           kind="wiederholung"
           value={`${correct}/${total}`}
           label="richtig"
+          showLabel
         />
       </section>
 

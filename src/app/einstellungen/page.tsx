@@ -115,7 +115,7 @@ export default function EinstellungenPage() {
         <Section title="Daten">
           <ToggleRow
             id="consent"
-            label="Nutzungsdaten speichern"
+            label="Nutzungsdaten teilen"
             checked={shownConsent}
             onChange={(c) => {
               setConsent(c);

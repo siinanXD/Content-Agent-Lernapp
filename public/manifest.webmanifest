@@ -4,8 +4,8 @@
   "description": "MAF-Lernpfad aus amtlichen Quellen",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#EAF0F4",
-  "theme_color": "#0B5F6E",
+  "background_color": "#FAFAF9",
+  "theme_color": "#C2410C",
   "lang": "de",
   "icons": [
     {

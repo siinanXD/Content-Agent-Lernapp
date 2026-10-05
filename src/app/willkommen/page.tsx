@@ -19,7 +19,7 @@ export default function WillkommenPage() {
           >
             Lernen für den Maschinen- und Anlagenführer, in kurzen Einheiten.
           </p>
-          <p className="text-[15px] leading-[22px] text-[#d9e8ed]">
+          <p className="text-[15px] leading-[22px] text-[#d6d4d1]">
             Alle Inhalte stammen aus amtlichen Quellen. Die App erzeugt Inhalte
             mit KI. Wer bewertet und zur Prüfung zulässt, ist immer ein Mensch.
           </p>

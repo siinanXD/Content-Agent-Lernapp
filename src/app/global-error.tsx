@@ -20,15 +20,15 @@ export default function GlobalError({
 
   return (
     <html lang="de">
-      <body className="flex min-h-full flex-col items-center justify-center gap-4 bg-[var(--color-bg-canvas,#f7f5f0)] px-6 py-16 text-[var(--color-text-primary,#1a1a1a)]">
+      <body className="flex min-h-full flex-col items-center justify-center gap-4 bg-[var(--color-bg-canvas,#fafaf9)] px-6 py-16 text-[var(--color-text-primary,#1c1917)]">
         <h1 className="text-2xl font-bold">Etwas ist schiefgelaufen</h1>
-        <p className="max-w-md text-center text-[15px] text-[var(--color-text-secondary,#5c5c5c)]">
+        <p className="max-w-md text-center text-[15px] text-[var(--color-text-secondary,#57534e)]">
           Die Seite konnte nicht geladen werden. Du kannst es erneut versuchen.
         </p>
         <button
           type="button"
           onClick={() => reset()}
-          className="min-h-11 rounded-md bg-[var(--color-brand-primary,#0B5F6E)] px-4 text-sm font-medium text-white"
+          className="min-h-11 rounded-md bg-[var(--color-brand-primary,#C2410C)] px-4 text-sm font-medium text-white"
         >
           Erneut versuchen
         </button>
