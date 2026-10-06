@@ -1,5 +1,5 @@
 {
-  "runs": 3,
+  "runs": 5,
   "routes": {
     "/": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },
     "/start": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },

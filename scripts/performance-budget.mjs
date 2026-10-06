@@ -5,7 +5,7 @@
  * Messgrößen: LCP, CLS, TBT und Größe der übertragenen JavaScript-Dateien der Route (resource-summary).
  *
  * Usage: node scripts/performance-budget.mjs [--base http://127.0.0.1:43123] [--out messung.json] [--runs 3] [--serve] [--details]
- * --details zeigt je Route das LCP-Element und die LCP-Phasen (Ursachenanalyse, SIN-311).
+ * --details zeigt je Route das LCP-Element und die LCP-Phasen (Ursachenanalyse, SIN-311); bei Überschreitung immer.
  * Braucht einen laufenden Server (`npm run build && npm start -- --port 43123`) oder --serve: startet `next start` selbst.
  */
 import { spawn } from "node:child_process";
@@ -91,7 +91,7 @@ async function main(argv) {
       rows.push({ route, measured, limit, over });
       console.log(`${over.length ? "✗" : "✓"} ${route.padEnd(18)} LCP ${measured.lcpMs} ms, CLS ${measured.cls}, TBT ${measured.tbtMs} ms, JS ${measured.jsKb} KB`);
       for (const line of over) console.error(`  - ${line}`);
-      if (details && lhrs[0]) {
+      if ((details || over.length) && lhrs[0]) {
         const a = lhrs[0].audits ?? {};
         const el = a["largest-contentful-paint-element"]?.details?.items?.[0]?.items?.[0]?.node;
         console.log(`    LCP-Element: ${el?.selector ?? "?"} ${(el?.snippet ?? "").slice(0, 120)}`);
