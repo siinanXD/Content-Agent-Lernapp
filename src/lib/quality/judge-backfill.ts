@@ -82,6 +82,12 @@ export function planBackfill(
   return { pending, skipped: items.length - pending.length };
 }
 
+/** Meldung an Langfuse (best effort, von außen eingehängt; Tests nutzen eine Attrappe). */
+export type BackfillReporter = {
+  question?: (q: QuestionEval, ctx: { courseId: string; runId: string }) => Promise<void>;
+  run?: (summary: BackfillSummary) => Promise<void>;
+};
+
 export type BackfillSummary = {
   runId: string;
   total: number;
@@ -108,6 +114,7 @@ export async function runJudgeBackfill(opts: {
   runId?: string;
   stopEur?: number;
   chunk?: number;
+  report?: BackfillReporter;
 }): Promise<BackfillSummary> {
   const { storage, courseId, items, judge } = opts;
   const runId = opts.runId ?? `backfill-${new Date().toISOString().replace(/[:.]/g, "-")}`;
@@ -147,6 +154,9 @@ export async function runJudgeBackfill(opts: {
     await storage.appendQuestionEvaluations(
       toQuestionEvaluationRecords(result, new Date().toISOString(), hashes),
     );
+    for (const q of res.questions) {
+      await opts.report?.question?.(q, { courseId, runId }).catch(() => {});
+    }
     judged += res.questions.length;
     passed += res.questions.filter((q) => q.passed).length;
   }
@@ -168,7 +178,7 @@ export async function runJudgeBackfill(opts: {
     });
   }
 
-  return {
+  const summary: BackfillSummary = {
     runId,
     total: items.length,
     skipped,
@@ -178,4 +188,6 @@ export async function runJudgeBackfill(opts: {
     remaining: pending.length - judged,
     ledger,
   };
+  if (judged > 0 || ledger.stopped) await opts.report?.run?.(summary).catch(() => {});
+  return summary;
 }

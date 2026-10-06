@@ -83,4 +83,65 @@ describe("Bewertungslauf bestehender Fragen (SIN-260)", () => {
     assert.equal(run.stopped, true);
     assert.match(run.stopReason ?? "", /Kostendeckel|Budget/);
   });
+
+  it("meldet Bewertung je Frage und Kosten je Lauf an Langfuse (Attrappe)", async () => {
+    const { judge } = countingJudge(100_000);
+    const qs: string[] = [];
+    const runs: Array<{ eur: number; judged: number }> = [];
+    await runJudgeBackfill({
+      storage: mockStorage,
+      courseId,
+      items: [1, 2, 3].map((n) => item(n)),
+      judge,
+      report: {
+        question: async (q) => {
+          qs.push(q.questionId);
+        },
+        run: async (s) => {
+          runs.push({ eur: s.ledger.eurEstimate, judged: s.judged });
+        },
+      },
+    });
+    assert.deepEqual(qs.sort(), ["u1-q1", "u1-q2", "u1-q3"]);
+    assert.equal(runs.length, 1);
+    assert.equal(runs[0]!.judged, 3);
+    assert.ok(runs[0]!.eur > 0);
+  });
+
+  it("ein Fehler beim Melden bricht den Lauf nicht ab", async () => {
+    const { judge } = countingJudge();
+    const r = await runJudgeBackfill({
+      storage: mockStorage,
+      courseId,
+      items: [item(1)],
+      judge,
+      report: {
+        question: async () => {
+          throw new Error("langfuse down");
+        },
+      },
+    });
+    assert.equal(r.judged, 1);
+  });
+
+  it("harter Deckel: ein größerer stopEur wird auf 20 € begrenzt", async () => {
+    // ≈ $0,75 je Frage; 20 € ≈ $21,5 → Stopp nach ~29 Fragen, nicht erst bei 30 €.
+    const { judge } = countingJudge(1_000_000);
+    const items = Array.from({ length: 40 }, (_, i) => item(i + 1));
+    const r = await runJudgeBackfill({ storage: mockStorage, courseId, items, judge, chunk: 1, stopEur: 30 });
+    assert.equal(r.ledger.stopped, true);
+    assert.ok(r.ledger.eurEstimate < 21, `Kosten ${r.ledger.eurEstimate}`);
+    assert.ok(r.remaining > 0);
+  });
+
+  it("verworfene Fragen werden als nicht bestanden gespeichert", async () => {
+    const bad: JudgeFn = async (items) => ({
+      questions: fixtureJudge(items).map((q) => ({ ...q, passed: false })),
+      usage: { prompt_tokens: 100, completion_tokens: 10 },
+    });
+    const r = await runJudgeBackfill({ storage: mockStorage, courseId, items: [item(1)], judge: bad });
+    assert.equal(r.failed, 1);
+    const rows = await mockStorage.listQuestionEvaluations(courseId);
+    assert.equal(rows[0]!.passed, false);
+  });
 });

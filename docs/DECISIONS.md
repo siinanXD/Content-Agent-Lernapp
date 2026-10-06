@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-270 | SIN-270 — Bewertungslauf aller Fragen mit Langfuse-Meldung | [SIN-270-bewertungslauf-langfuse.md](decisions/SIN-270-bewertungslauf-langfuse.md) |
 | SIN-269 | SIN-269: E2E-Gesamtweg je veröffentlichtem Kurs | [SIN-269-e2e-je-kurs.md](decisions/SIN-269-e2e-je-kurs.md) |
 | SIN-268 | SIN-268 — Kostenmessung pro Kurslauf reparieren | [SIN-268-kostenmessung.md](decisions/SIN-268-kostenmessung.md) |
 | SIN-267 | SIN-267 — Tages-Update: Wiederholungsschutz nach Zeit statt nach Tag | [SIN-267-digest-wiederholungsschutz.md](decisions/SIN-267-digest-wiederholungsschutz.md) |
