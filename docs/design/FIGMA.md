@@ -2,6 +2,8 @@
 
 **Freigegeben durch Sinan (2026-10-02, „passt erstmal“).** Verbindliche Quelle für AP-08+.
 
+> Seit 2026-10-06 gelten zusätzlich die [Design-Regeln 2026](regeln-2026.md) (SIN-314) für alle Apps.
+
 ## Datei
 
 | Feld | Wert |
