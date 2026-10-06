@@ -1,0 +1,76 @@
+# Bildvergleich (SIN-300): fotografiert alle Hauptseiten (Handy 390 px + Desktop) und vergleicht den PR mit dem
+# letzten Stand auf main. Hinweis, kein Gate: Abweichungen stehen mit Vorher/Nachher/Unterschied im Lauf-Bericht
+# (Step Summary) und im Artefakt `bildvergleich`. Gewollte Änderungen brauchen nichts: die Referenz wird bei jedem
+# Lauf neu aus main gebaut (kein Bild im Repo, keine Pflege).
+name: visual
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bildvergleich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COURSE_STORAGE: mock
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-stand
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Pakete (PR und main)
+        run: |
+          npm ci
+          (cd main-stand && npm ci)
+
+      - name: Bauen (PR und main)
+        run: |
+          npm run build
+          (cd main-stand && npm run build)
+
+      - name: Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Referenz: main läuft auf :43125, die Bilder werden mit dem Test des PRs aufgenommen.
+      - name: Referenz von main fotografieren
+        run: |
+          (cd main-stand && npx next start --hostname 127.0.0.1 --port 43125 &)
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:43125 >/dev/null && break; sleep 1; done
+          PLAYWRIGHT_BASE_URL=http://127.0.0.1:43125 npx playwright test --config playwright.visual.config.ts --update-snapshots --reporter=dot
+          pkill -f "next start" || true
+
+      - name: PR gegen die Referenz vergleichen
+        id: vergleich
+        continue-on-error: true
+        run: npx playwright test --config playwright.visual.config.ts
+
+      - name: Bericht
+        if: always()
+        run: |
+          if [ -f visual-ergebnis/ergebnis.json ]; then
+            node scripts/autonomy/visual-report.mjs visual-ergebnis/ergebnis.json | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Bilder als Artefakt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bildvergleich
+          path: visual-ergebnis/
+          if-no-files-found: ignore
+          retention-days: 7

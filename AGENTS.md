@@ -96,6 +96,9 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 - Jeder Pull Request: Tests grün, axe-core und Lighthouse ohne Fehler.
 - Barrierefreiheit: WCAG 2.2 Stufe AA, Kontrast mindestens 4,5 zu 1, komplett per Tastatur bedienbar.
+- Leistungsbudget (SIN-300): `performance-budget.json` legt je Route LCP, CLS, TBT und JS-Größe fest; CI (`npm run perf:budget`) blockiert bei Überschreitung. Grenzen nie anheben, um einen Merge durchzubekommen.
+- Bildvergleich (SIN-300): `visual.yml` vergleicht Handy- und Desktop-Bilder aller Seiten mit main (Hinweis im Lauf-Bericht, Artefakt `bildvergleich`). Gewollte Änderungen brauchen nichts.
+- README und Changelog (SIN-300): Ändern sich Funktion, Einrichtung, Befehle oder Umgebungsvariablen, wird `README.md` im selben PR angepasst (CI warnt sonst). `CHANGELOG.md` ist erzeugt (`npm run changelog`), nie von Hand bearbeiten. Der Aufräum-Agent (`aufraeumen.yml`, montags) macht höchstens einen PR pro Woche.
 - Jede Lerneinheit speichert Quelle und Abrufdatum.
 - Zugangsdaten nie ins Repo (öffentlich).
 

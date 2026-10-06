@@ -45,4 +45,7 @@ yarn-error.log*
 next-env.d.ts
 agent-tools/
 test-results/
+# Bildvergleich (SIN-300): Referenz und Ergebnis nur im CI-Lauf
+visual-referenz/
+visual-ergebnis/
 playwright-report/
