@@ -21,7 +21,7 @@
  */
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { LANES, countIssues, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import { LANES, commentOnIssue, countIssues, fetchProjectIssues, fetchRecentlyDone, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
 import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
@@ -30,6 +30,7 @@ import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
+import { RUN_LABEL, duplicateComment, isRunnable, rowFor, splitDuplicates, toRunOrder } from "./duplicates.mjs";
 import {
   ABNAHME_TITLE,
   DEFAULT_GOLDSET_TARGET,
@@ -137,16 +138,18 @@ export async function assessReadiness({ metrics, issues, env = process.env, read
     metrics,
     issues,
     confirmations: file.bestaetigt ?? {},
+    built: file.gebaut ?? {},
+    ran: file.gelaufen ?? {},
     goldsetTarget: file.goldsetTarget ?? DEFAULT_GOLDSET_TARGET,
     figma: await fetchFigmaFrames(figmaFileKey(figmaMd), env),
     expected: expectedFrames(figmaMd),
   });
-  return { rows, abnahme: file.abnahme ?? null };
+  return { rows, abnahme: file.abnahme ?? null, built: file.gebaut ?? {} };
 }
 
 export function buildPlannerPrompt(
   /** @type {{ definition: string, issues: unknown[], metrics: object, readiness?: string, content?: string, maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null }} */
-  { definition, issues, metrics, readiness = "", content = "", maintenance = false, phase = null, maxIssues = null, bugsOnly = false },
+  { definition, issues, recentDone = [], metrics, readiness = "", content = "", maintenance = false, phase = null, maxIssues = null, bugsOnly = false },
 ) {
   const betrieb = phase?.phase === "betrieb";
   return [
@@ -166,7 +169,13 @@ export function buildPlannerPrompt(
     "- Lern-Schleife (AP-12): ab 50 aktiven Lernenden je Kurs die 5 schwächsten Einheiten als Issue.",
     "- Nutze die Vorschläge im Abschnitt „Content“; ohne Vorschlag kein Content-Issue.",
     "",
-    "Keine Duplikate zu offenen Issues. Pro Issue: ein Arbeitspaket, ein PR. Kein Inhalt ohne amtliche Quelle, keine Personendaten.",
+    "Keine Duplikate zu offenen Issues und zu den in den letzten 14 Tagen erledigten (Abschnitt unten). Ein Treffer wird nicht neu angelegt, sondern als Kommentar am alten Issue vermerkt. Pro Issue: ein Arbeitspaket, ein PR. Kein Inhalt ohne amtliche Quelle, keine Personendaten.",
+    "",
+    "Gebaut ist nicht gelaufen (SIN-292): Die Produktreife-Tabelle hat die Spalte Stufe (fehlt, gebaut nicht gelaufen, gelaufen unter Ziel, erfüllt).",
+    "- fehlt: Bau-Issue ist richtig.",
+    "- gebaut, nicht gelaufen: KEIN Bau-Issue. Plane einen Lauf-Auftrag (Workflow mit echten Secrets starten, Ergebnis mit Beleg in docs/product-readiness.json eintragen). Setze `check` auf die Kennung des Punkts.",
+    "- gelaufen, Ergebnis unter Ziel: Verbesserung des Ergebnisses planen, nicht das Werkzeug neu bauen.",
+    "- erfüllt: nichts planen.",
     "",
     "Figma zuerst (SIN-239):",
     "- Ohne Design-Issue: Änderungen, die nur vorhandene Figma-Komponenten und Tokens nutzen (Zustände, Texte, Abstände, Varianten bestehender Screens, Fehler-/Leer-/Ladezustände nach Screen 17). Dann `needsDesign: false`.",
@@ -191,6 +200,9 @@ export function buildPlannerPrompt(
     "## Produktreife MAF Metall (docs/PRODUCT.md)",
     readiness || "(nicht geprüft)",
     "",
+    "## In den letzten 14 Tagen erledigt (nicht neu planen)",
+    ...(recentDone.length ? recentDone.map((i) => `- ${i.identifier} ${i.title}`) : ["(keine)"]),
+    "",
     "## Content (Abdeckung je Beruf/Modul)",
     content || "(nicht geprüft)",
     "",
@@ -201,7 +213,7 @@ export function buildPlannerPrompt(
     ...Object.entries(metrics).map(([k, v]) => `- ${k}: ${v}`),
     "",
     "## Ausgabe",
-    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "needsDesign": false, "blockedBy": "Titel oder SIN-123"}].',
+    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft"}].',
     "`needsDesign` und `blockedBy` nur bei Frontend-Issues, die ein Design-Paket brauchen (siehe oben). Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
   ].join("\n");
 }
@@ -226,7 +238,7 @@ function betriebPrompt(phase) {
  * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
  * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string }[]}
  */
-export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly = false } = {}) {
+export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean, readiness?: any[], built?: Record<string, any> }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly = false, readiness = [], built = {} } = {}) {
   const betrieb = phase?.phase === "betrieb";
   // Betrieb: im Beobachtungsfenster nur Fehler und Content, am Fensterende der Wochenplan.
   const observing = betrieb && !phase.due;
@@ -236,7 +248,10 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
   const planTitles = new Set(plan.map((p) => String(p?.title ?? "").trim().toLowerCase()));
   const count = {};
   const out = [];
-  for (const [i, p] of plan.entries()) {
+  for (const [i, entry] of plan.entries()) {
+    // Gebaut, nie gelaufen: Lauf-Auftrag statt Bau-Issue (SIN-292).
+    const row = rowFor(entry, readiness);
+    const p = isRunnable(row) ? toRunOrder(entry, row, built) : entry;
     if (!p?.title || typeof p.title !== "string") throw new Error(`Eintrag ${i}: title fehlt`);
     if (!PLAN_LANES.includes(p.lane)) throw new Error(`Eintrag ${i}: lane muss ${PLAN_LANES.join(", ")} sein`);
     if (!Array.isArray(p.acceptance) || p.acceptance.length === 0) throw new Error(`Eintrag ${i}: Akzeptanzkriterien fehlen`);
@@ -260,6 +275,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
         ...(p.lane === "design" ? ["design", "frontend"] : [p.lane, "claude"]),
         ...((observing || bugsOnly) && p.lane === "backend" ? ["bug"] : []),
         ...(planning ? [PLAN_LABEL] : []),
+        ...(p.runOrder ? [RUN_LABEL] : []),
       ],
       ...(p.lane === "frontend" ? { needsDesign: Boolean(p.needsDesign) } : {}),
       ...(p.needsDesign ? { blockedBy } : {}),
@@ -372,8 +388,10 @@ export async function main(argv) {
     const content = renderContentSection(await collectContentMetrics(), { sourceIssues });
     const definition = extractSection(readFileSync("docs/PRODUCT.md", "utf8"), "Definition fertig");
     const phase = await resolvePhase(argv, issues);
+    const recentDone = issues ? await fetchRecentlyDone(linear).catch(() => []) : [];
     const prompt = buildPlannerPrompt({
       phase,
+      recentDone,
       ...refillLimits(process.env),
       definition,
       issues: issues ?? [],
@@ -391,11 +409,18 @@ export async function main(argv) {
     const plan = JSON.parse(readFileSync(arg("--create"), "utf8"));
     const existingTitles = (issues ?? []).map((i) => i.title);
     console.log(`${await runLimitCheck({ dry, existingTitles })}\n`);
-    const { rows, abnahme } = await assessReadiness({ metrics: await collectMetrics(), issues });
+    const { rows, abnahme, built } = await assessReadiness({ metrics: await collectMetrics(), issues });
     const maintenance = inMaintenanceMode(rows, abnahme);
     const phase = await resolvePhase(argv, issues);
     console.log(`${renderPhase(phase)}\n`);
-    const items = validatePlan(plan, existingTitles, { maintenance, phase, ...refillLimits(process.env) });
+    // Duplikat-Schutz (SIN-292): offene und in 14 Tagen erledigte Issues; Treffer werden Kommentare statt Issues.
+    const recentDone = issues ? await fetchRecentlyDone(linear).catch(() => []) : [];
+    const { fresh, duplicates } = splitDuplicates(plan, [...(issues ?? []), ...recentDone], { built, readiness: rows });
+    for (const d of duplicates) {
+      console.log(`${dry ? "[dry-run] " : ""}Duplikat: „${d.entry.title}“ → Kommentar an ${d.issue.identifier} (${d.grund})`);
+      if (!dry) await commentOnIssue(d.issue.id, duplicateComment(d.entry, d.grund));
+    }
+    const items = validatePlan(fresh, [...existingTitles, ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ...refillLimits(process.env) });
     if (maintenance && !existingTitles.includes(ABNAHME_TITLE)) items.push({ ...abnahmeIssue(rows), lane: "abnahme" });
     console.log(`Produktreife\n\n${renderReadiness(rows)}\n\n${maintenance ? "Pflege-Modus: nur Fehler und Content.\n" : ""}`);
     if (dry) {

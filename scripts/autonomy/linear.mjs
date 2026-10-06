@@ -42,6 +42,25 @@ export async function fetchProjectIssues(call = linear, project = PROJECT_NAME) 
   return data.issues.nodes;
 }
 
+/** In den letzten `days` Tagen erledigte Issues des Projekts (Duplikat-Schutz des Planers, SIN-292). */
+export async function fetchRecentlyDone(call = linear, { project = PROJECT_NAME, days = 14, now = new Date() } = {}) {
+  const since = new Date(now.getTime() - days * 24 * 3600 * 1000).toISOString();
+  const data = await call(
+    `query($project: String!, $since: DateTimeOrDuration!) {
+       issues(first: 100, filter: { project: { name: { eq: $project } }, completedAt: { gte: $since } }) {
+         nodes { id identifier title description completedAt state { type } }
+       }
+     }`,
+    { project, since },
+  );
+  return data.issues.nodes;
+}
+
+/** Kommentar an ein bestehendes Issue. */
+export async function commentOnIssue(issueId, body, call = linear) {
+  await call(`mutation($i: CommentCreateInput!) { commentCreate(input: $i) { success } }`, { i: { issueId, body } });
+}
+
 /** Offener Blocker: eine „blocks“-Relation, deren Quelle noch nicht abgeschlossen ist. */
 export function hasOpenBlockers(issue) {
   return (issue.inverseRelations?.nodes ?? []).some(
