@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { NextUpCard } from "@/components/ui/next-up-card";
 import { PathNode, type PathNodeState } from "@/components/ui/path-node";
@@ -29,6 +29,7 @@ import {
 } from "@/lib/learner/leitner";
 import { listExamParts } from "@/lib/learner/exam";
 import { useAfterMount } from "@/lib/use-after-mount";
+import { useOnline } from "@/lib/use-online";
 
 const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
   done: "erledigt",
@@ -39,15 +40,6 @@ const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
 /** Seitlicher Versatz der Knoten (px) für den Zickzack. */
 const ZIGZAG = [0, 64, 128, 64];
 
-const subscribeOnline = (cb: () => void) => {
-  window.addEventListener("online", cb);
-  window.addEventListener("offline", cb);
-  return () => {
-    window.removeEventListener("online", cb);
-    window.removeEventListener("offline", cb);
-  };
-};
-
 export default function LernpfadPage() {
   const session = useAfterMount(loadSession, null);
   const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
@@ -56,11 +48,7 @@ export default function LernpfadPage() {
   const [pathUnits, setPathUnits] = useState<PathUnit[]>(() => activePathUnits());
   const groups = groupUnitsByModule(pathUnits);
   const examParts = listExamParts().filter((p) => p.simulated);
-  const online = useSyncExternalStore(
-    subscribeOnline,
-    () => navigator.onLine,
-    () => true,
-  );
+  const online = useOnline();
   const phaseA = usingPhaseASnapshot() && pathUnits.length > 6;
 
   useEffect(() => {

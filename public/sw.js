@@ -1,5 +1,5 @@
 /* AP-09 offline shell. SIN-250: Cache-Name an den Build gekoppelt (sw.js?v=<buildId>),
-   HTML network-first, /_next/static cache-first, alte Caches (auch cal-shell-v1) werden geräumt. */
+   HTML und /api/learner/phase-a network-first (SIN-256), /_next/static cache-first, alte Caches (auch cal-shell-v1) werden geräumt. */
 const VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
 const PREFIX = "cal-shell-";
 const CACHE = PREFIX + VERSION;
@@ -36,7 +36,9 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/api/") || url.pathname === "/sw.js") return;
+  // SIN-256: nur der Kurs-Snapshot (geladene Einheiten) wird offline aus dem Cache bedient.
+  if (url.pathname === "/sw.js") return;
+  if (url.pathname.startsWith("/api/") && url.pathname !== "/api/learner/phase-a") return;
 
   // Versionierte Build-Dateien: cache-first.
   if (url.pathname.startsWith("/_next/static/")) {

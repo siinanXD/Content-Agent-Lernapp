@@ -27,6 +27,11 @@ import {
   saveStack,
 } from "@/lib/learner/leitner";
 import {
+  enqueueProgress,
+  flushProgress,
+} from "@/lib/learner/progress-outbox";
+import { useOnline } from "@/lib/use-online";
+import {
   trackQuestionAnswered,
   trackUnitCompleted,
   trackUnitStarted,
@@ -46,6 +51,7 @@ export default function EinheitPage() {
   const params = { unitId: safeDecode(rawParams.unitId) };
   const router = useRouter();
   const { prefs } = useA11y();
+  const online = useOnline();
   // The unit is resolved once per id: from seed/cache on the first render, or
   // after the Phase A fetch below. It stays fixed while the lesson runs.
   const [resolved, setResolved] = useState(() => ({
@@ -131,6 +137,8 @@ export default function EinheitPage() {
       ? markCorrect(stack, qid, { anwenden })
       : markWrong(stack, qid);
     saveStack(stack);
+    enqueueProgress({ unitId: unit?.id, questionId: qid, correct });
+    void flushProgress();
   }
 
   function onChecked(result: AnswerResult) {
@@ -227,6 +235,12 @@ export default function EinheitPage() {
           {unit.moduleTitle} · {unit.blockTitle}
         </p>
       </header>
+
+      {online ? null : (
+        <section className="px-6">
+          <StateView kind="offline" text="Antworten werden gespeichert und später gesendet." />
+        </section>
+      )}
 
       <section className="px-6 py-2">
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
