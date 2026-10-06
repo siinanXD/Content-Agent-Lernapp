@@ -17,6 +17,8 @@ export type QuestionEvaluationRecord = {
   passed: boolean;
   reason?: string;
   langfuseTraceId?: string;
+  /** SIN-260: Hash des bewerteten Frageninhalts; fehlt bei Altzeilen. */
+  contentHash?: string;
   createdAt: string;
 };
 
@@ -24,6 +26,7 @@ export type QuestionEvaluationRecord = {
 export function toQuestionEvaluationRecords(
   result: EvaluateResult,
   now = new Date().toISOString(),
+  hashes?: ReadonlyMap<string, string>,
 ): QuestionEvaluationRecord[] {
   const runId = result.runId ?? crypto.randomUUID();
   return result.questions.map((q) => ({
@@ -42,6 +45,7 @@ export function toQuestionEvaluationRecords(
     passed: q.passed,
     reason: q.reasons.length ? q.reasons.join("; ") : undefined,
     langfuseTraceId: result.langfuseTraceId,
+    contentHash: hashes?.get(q.questionId),
     createdAt: now,
   }));
 }

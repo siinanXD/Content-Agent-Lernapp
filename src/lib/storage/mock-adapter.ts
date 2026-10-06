@@ -10,6 +10,7 @@ import {
 } from "@/lib/pipeline/mock-store";
 import type {
   CourseStorage,
+  JudgeRunRecord,
   LearningProgressEvent,
   QuestionEvaluationRecord,
   RecordProgressInput,
@@ -17,6 +18,7 @@ import type {
 
 const progress = new Map<string, LearningProgressEvent>();
 const questionEvaluations: QuestionEvaluationRecord[] = [];
+const judgeRuns: JudgeRunRecord[] = [];
 
 function toProgress(input: RecordProgressInput): LearningProgressEvent {
   const id = input.id ?? crypto.randomUUID();
@@ -77,6 +79,10 @@ export const mockStorage: CourseStorage = {
     return questionEvaluations.filter((r) => r.courseId === courseId);
   },
 
+  async appendJudgeRun(run) {
+    judgeRuns.push(run);
+  },
+
   async listSharedModuleLinks() {
     return [];
   },
@@ -99,4 +105,10 @@ export const mockStorage: CourseStorage = {
 export function clearMockProgress() {
   progress.clear();
   questionEvaluations.length = 0;
+  judgeRuns.length = 0;
+}
+
+/** Test helper (SIN-260) */
+export function listMockJudgeRuns(): JudgeRunRecord[] {
+  return [...judgeRuns];
 }

@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-261 | SIN-261: merge-gate wieder als echter Job | [SIN-261-merge-gate-job.md](decisions/SIN-261-merge-gate-job.md) |
+| SIN-260 | SIN-260 — Bewertungslauf über bestehende Fragen | [SIN-260-bewertungslauf.md](decisions/SIN-260-bewertungslauf.md) |
 | SIN-257 | SIN-257: Lighthouse und axe über alle Routen | [SIN-257-lighthouse-axe-alle-routen.md](decisions/SIN-257-lighthouse-axe-alle-routen.md) |
 | SIN-256 | SIN-256 — Offline: Einheiten und Wiederholung ohne Netz | [SIN-256-offline-einheiten.md](decisions/SIN-256-offline-einheiten.md) |
 | SIN-255 | SIN-255: E2E-Gesamtweg Start bis Prüfungsmodus | [SIN-255-e2e-gesamtweg.md](decisions/SIN-255-e2e-gesamtweg.md) |

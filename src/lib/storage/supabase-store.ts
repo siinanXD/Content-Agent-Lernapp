@@ -5,6 +5,7 @@ import type {
   CourseSource,
   CourseStatus,
   CourseStorage,
+  JudgeRunRecord,
   LearningProgressEvent,
   QuestionEvaluationRecord,
   RecordProgressInput,
@@ -388,6 +389,7 @@ export const supabaseStorage: CourseStorage = {
         passed: r.passed,
         reason: r.reason ?? null,
         langfuse_trace_id: r.langfuseTraceId ?? null,
+        content_hash: r.contentHash ?? null,
         created_at: r.createdAt,
       })),
     );
@@ -419,9 +421,29 @@ export const supabaseStorage: CourseStorage = {
         passed: Boolean(row.passed),
         reason: (row.reason as string | null) ?? undefined,
         langfuseTraceId: (row.langfuse_trace_id as string | null) ?? undefined,
+        contentHash: (row.content_hash as string | null) ?? undefined,
         createdAt: row.created_at as string,
       }),
     );
+  },
+
+  async appendJudgeRun(run: JudgeRunRecord) {
+    const sb = getServiceSupabase();
+    const { error } = await sb.from("judge_runs").insert({
+      run_id: run.runId,
+      judge_model: run.judgeModel,
+      prompt_version: run.promptVersion,
+      questions_total: run.questionsTotal,
+      questions_judged: run.questionsJudged,
+      questions_passed: run.questionsPassed,
+      openai_input_tokens: run.openaiInputTokens,
+      openai_output_tokens: run.openaiOutputTokens,
+      cost_usd: run.costUsd,
+      cost_eur: run.costEur,
+      stopped: run.stopped,
+      stop_reason: run.stopReason ?? null,
+    });
+    if (error) throw new Error(`judge_runs_insert: ${error.message}`);
   },
 
   async listSharedModuleLinks(courseId: string) {

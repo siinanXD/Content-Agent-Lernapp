@@ -195,6 +195,12 @@ async function fetchAll(base, table, query, headers) {
   }
 }
 
+async function countRows(base, table, headers) {
+  const res = await fetch(`${base}/rest/v1/${table}?select=id`, { headers: { ...headers, Prefer: "count=exact", Range: "0-0" } });
+  if (!res.ok) throw new Error(`${table}: HTTP ${res.status}`);
+  return Number(res.headers.get("content-range")?.split("/")[1]);
+}
+
 /** Liest Supabase und baut alle Content-Kennzahlen. Ohne Zugang: `{ verfuegbar: false }` (Abdeckung dann 0 %). */
 export async function collectContentMetrics(env = process.env, { maps = loadMaps(), runs = loadRunReports(), now = new Date() } = {}) {
   const weekSince = new Date(now.getTime() - 7 * 864e5).toISOString();
@@ -223,6 +229,7 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
     }
     // Geteilte Einheiten liegen im Quellkurs (Metall) und stehen dort schon in `published`.
     const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,passed", h);
+    const fragenGesamt = await countRows(env.SUPABASE_URL, "questions", h);
     const progressRows = await fetchAll(env.SUPABASE_URL, "learning_progress", "select=anonymous_id,course_id,unit_id,correct", h);
     const progress = {};
     for (const [mapId, courseId] of Object.entries(courseOfMap)) progress[mapId] = weakestUnits(progressRows, courseId);
@@ -231,6 +238,8 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
       coverage: computeCoverage(maps, published),
       passRates: passRateByModule(maps, evaluations, mapOfCourse),
       offeneVerworfene: evaluations.filter((e) => !e.passed).length,
+      fragenGesamt,
+      fragenBewertet: evaluations.length,
       runs: runSummary,
       progress,
     };
@@ -249,6 +258,7 @@ export function renderContentSection(m, { sourceIssues = [] } = {}) {
     renderWeeklyReport(m),
     "",
     `Bestehensquote je Modul (schwächste): ${lowest.length ? lowest.map((p) => `${p.mapId}/${p.moduleId} ${p.pct} % (${p.total})`).join(", ") : "nicht verfügbar"}`,
+    `Fragen bewertet: ${m.fragenBewertet ?? "nicht verfügbar"} von ${m.fragenGesamt ?? "nicht verfügbar"} (Bewertungslauf: npm run quality:judge-backfill)`,
     `Verworfene Fragen (letzte Bewertung nicht bestanden): ${m.offeneVerworfene}`,
     `Kosten der letzten Läufe: ${m.runs.kostenLetzteLaeufe.length ? m.runs.kostenLetzteLaeufe.map((r) => `${r.runId} ${Number(r.costEur ?? 0).toFixed(2)} € (${r.passed ?? 0} bestanden)`).join("; ") : "keine Berichte"}`,
     `Quellen-Monitor: ${sourceIssues.length ? sourceIssues.map((i) => `${i.identifier} ${i.title}`).join("; ") : "keine offene Meldung"}`,
