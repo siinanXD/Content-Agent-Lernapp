@@ -24,8 +24,8 @@ async function answerCurrentQuestion(page: Page) {
 }
 
 test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page }) => {
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/willkommen$/);
+  // App-Einstieg ist /willkommen; `/` ist die Startseite für Bildungsträger (SIN-277).
+  await page.goto("/willkommen");
   await page.getByRole("link", { name: "Los geht’s" }).click();
 
   await expect(page).toHaveURL(/\/einwilligung$/);

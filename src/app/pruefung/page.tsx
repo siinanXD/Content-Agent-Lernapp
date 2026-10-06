@@ -16,6 +16,8 @@ import {
   mafExamTimesSummary,
   scoreByArea,
 } from "@/lib/learner/exam";
+import { toWrongAnswer, type WrongAnswer } from "@/lib/learner/exam-result";
+import { loadStack, markWrong, saveStack } from "@/lib/learner/leitner";
 import { loadSession, saveSession } from "@/lib/learner/session";
 
 function PruefungInner() {
@@ -30,7 +32,12 @@ function PruefungInner() {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [answers, setAnswers] = useState<
-    Array<{ questionId: string; correct: boolean; examAreas: string[] }>
+    Array<{
+      questionId: string;
+      correct: boolean;
+      examAreas: string[];
+      wrong?: WrongAnswer;
+    }>
   >([]);
 
   const part = parts.find((p) => p.id === partId) ?? parts[0];
@@ -74,6 +81,7 @@ function PruefungInner() {
         questionId: question.id,
         correct: result.correct,
         examAreas: question.examAreas,
+        wrong: result.correct ? undefined : toWrongAnswer(question),
       },
     ]);
   }
@@ -82,6 +90,11 @@ function PruefungInner() {
     if (!part) return;
     const areaResults = scoreByArea(answers, part.gebiete);
     const correct = answers.filter((a) => a.correct).length;
+    const wrongAnswers = answers.flatMap((a) => (a.wrong ? [a.wrong] : []));
+    // Falsche Fragen kommen in die Wiederholung (Leitner: Stufe 1, nach 1, 3 und 7 Tagen).
+    saveStack(
+      wrongAnswers.reduce((stack, w) => markWrong(stack, w.id), loadStack()),
+    );
     const session = loadSession() ?? {
       keyword: "Maschinen- und Anlagenführer",
       variant: "pruefung" as const,
@@ -99,9 +112,10 @@ function PruefungInner() {
         kind: "exam",
         areaResults,
         partTitle: part.title,
+        wrongAnswers,
       },
     });
-    router.push("/ergebnis");
+    router.push("/pruefung/ergebnis");
   }
 
   function next() {
