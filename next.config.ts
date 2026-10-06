@@ -27,6 +27,8 @@ export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Release = Commit; Quellkarten und Fehler tragen dasselbe Tag (SIN-273).
+  release: { name: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA },
   silent: !process.env.CI,
   sourcemaps: {
     disable: !process.env.SENTRY_AUTH_TOKEN,

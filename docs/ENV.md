@@ -49,6 +49,9 @@ Injizierte Secret-Namen:
 | `SENTRY_BASE_URL` | optional | Default `https://de.sentry.io` (EU) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | **fehlt** (optional) | PostHog EU Project API Key; ohne = No-Op |
 | `NEXT_PUBLIC_POSTHOG_HOST` | optional | Default im Code `https://eu.i.posthog.com` |
+| `POSTHOG_PERSONAL_API_KEY` / `POSTHOG_PROJECT_ID` | **fehlt** (optional) | Planer-Kennzahl `posthog` (Leserecht, SIN-273); ohne = „nicht verfügbar“. In `planner.yml` schon verdrahtet |
+| `POSTHOG_API_BASE_URL` | optional | Default `https://eu.posthog.com` (EU) |
+| `SENTRY_RELEASE` | optional | Release-Tag; Default `VERCEL_GIT_COMMIT_SHA` (Fehler und Quellkarten, SIN-273) |
 
 Optional für AP-16 Hermes-Alerts (fehlen = Kanal überspringen, Package bleibt grün): `LINEAR_API_KEY`, `LINEAR_TEAM_ID`, `LINEAR_PROJECT_ID`.
 
