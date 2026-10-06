@@ -2,26 +2,46 @@
  * Planer-Nachfüllen (SIN-253): fällt die Zahl startbarer Todo-Issues unter 5, stößt der Wächter (status.mjs)
  * den Planer an, statt bis Sonntag zu warten. Reine Funktionen, kein Netz.
  */
-export const REFILL_MIN = 5;
-export const REFILL_MAX = 8;
+export const REFILL_MIN = 6;
+export const REFILL_MAX = 10;
 /** Höchstens ein Anstoß in diesem Abstand (Merker `lastRefill` im Status-Issue). */
-export const REFILL_COOLDOWN_H = 6;
+export const REFILL_COOLDOWN_H = 2;
 const HOUR_MS = 3600 * 1000;
+
+const positive = (v, fallback) => {
+  const n = Number(v);
+  return v !== undefined && v !== "" && Number.isFinite(n) && n > 0 ? n : fallback;
+};
+
+/** Werte der Bauphase (SIN-262); die Repo-Variablen REFILL_MIN, REFILL_MAX, REFILL_COOLDOWN_H überschreiben sie. */
+/** @param {Record<string, string | undefined>} [env] */
+export function refillConfig(env = process.env) {
+  const min = Math.floor(positive(env.REFILL_MIN, REFILL_MIN));
+  const max = Math.max(min, Math.floor(positive(env.REFILL_MAX, REFILL_MAX)));
+  return { min, max, cooldownH: positive(env.REFILL_COOLDOWN_H, REFILL_COOLDOWN_H) };
+}
+
+/** Frühester nächster Anstoß (Date) oder null, wenn es keinen Merker gibt. */
+export function nextRefillAt(lastRefill, cooldownH = REFILL_COOLDOWN_H) {
+  const last = lastRefill ? new Date(lastRefill).getTime() : NaN;
+  return Number.isFinite(last) ? new Date(last + cooldownH * HOUR_MS) : null;
+}
 
 /** Kontingent-Zeilen (buildQuotaRows) ab Warnschwelle → nur Bugs. */
 export const overQuota = (quotaRows = []) => quotaRows.some((r) => r.over);
 
 /**
  * Entscheidet, ob der Planer jetzt angestoßen wird.
- * @param {{ startable: number, phase: string, lastRefill?: string|null, quotaOver?: boolean, paused?: boolean, now?: Date }} input
+ * @param {{ startable: number, phase: string, lastRefill?: string|null, quotaOver?: boolean, paused?: boolean, now?: Date, env?: Record<string, string | undefined> }} input
  * @returns {{ trigger: boolean, reason: string, maxIssues: number, bugsOnly: boolean }}
  */
-export function decideRefill({ startable, phase, lastRefill = null, quotaOver = false, paused = false, now = new Date() }) {
+export function decideRefill({ startable, phase, lastRefill = null, quotaOver = false, paused = false, now = new Date(), env = process.env }) {
   const no = (reason) => ({ trigger: false, reason, maxIssues: 0, bugsOnly: false });
   if (phase === "betrieb") return no("Phase Betrieb: Planung nach dem Beobachtungsfenster");
-  if (startable >= REFILL_MIN) return no(`${startable} startbar, genug`);
+  const { min, max, cooldownH } = refillConfig(env);
+  if (startable >= min) return no(`${startable} startbar, genug`);
   if (paused) return no("Pause aktiv");
   const last = lastRefill ? new Date(lastRefill).getTime() : NaN;
-  if (Number.isFinite(last) && now.getTime() - last < REFILL_COOLDOWN_H * HOUR_MS) return no(`letzter Anstoß vor weniger als ${REFILL_COOLDOWN_H} h`);
-  return { trigger: true, reason: `nur ${startable} startbar`, maxIssues: REFILL_MAX - startable, bugsOnly: quotaOver };
+  if (Number.isFinite(last) && now.getTime() - last < cooldownH * HOUR_MS) return no(`letzter Anstoß vor weniger als ${cooldownH} h`);
+  return { trigger: true, reason: `nur ${startable} startbar`, maxIssues: max - startable, bugsOnly: quotaOver };
 }

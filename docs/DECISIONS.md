@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-262 | SIN-262: Planer in der Bauphase alle 2 h nachfüllen | [SIN-262-planer-nachfuellen-2h.md](decisions/SIN-262-planer-nachfuellen-2h.md) |
 | SIN-261 | SIN-261: merge-gate wieder als echter Job | [SIN-261-merge-gate-job.md](decisions/SIN-261-merge-gate-job.md) |
 | SIN-260 | SIN-260 — Bewertungslauf über bestehende Fragen | [SIN-260-bewertungslauf.md](decisions/SIN-260-bewertungslauf.md) |
 | SIN-257 | SIN-257: Lighthouse und axe über alle Routen | [SIN-257-lighthouse-axe-alle-routen.md](decisions/SIN-257-lighthouse-axe-alle-routen.md) |

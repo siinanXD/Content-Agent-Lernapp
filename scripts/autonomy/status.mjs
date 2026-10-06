@@ -14,7 +14,7 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
-import { decideRefill, overQuota } from "./refill.mjs";
+import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
@@ -203,8 +203,9 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   // Merker: nur aktive Vorfälle bleiben; eine Meldung je Schlüssel, bis er verschwindet und später wiederkommt.
   const reportedBefore = new Set(prev.reported ?? []);
   const fresh = incidents.filter((i) => !reportedBefore.has(i.key));
-  // Planer nachfüllen (SIN-253): unter 5 startbaren Todos, höchstens alle 6 h (Merker `lastRefill`).
+  // Planer nachfüllen (SIN-253): Bauphase: unter 6 startbaren Todos, höchstens alle 2 h (SIN-262, Repo-Variablen REFILL_*; Merker `lastRefill`).
   const refill = decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, now });
+  const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
   const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}) };
   if (refill.trigger) state.refilled = refill.maxIssues;
@@ -247,9 +248,12 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   out.push(
     state.lastRefill
-      ? `- Planer nachgefüllt: angestoßen ${state.lastRefill} (bis zu ${state.refilled ?? "?"} Issues, höchstens 1× alle 6 h)`
+      ? `- Planer nachgefüllt: angestoßen ${state.lastRefill} (bis zu ${state.refilled ?? "?"} Issues, höchstens 1× alle ${refillCfg.cooldownH} h)`
       : "- Planer nachgefüllt: noch nicht",
   );
+  const nextAt = nextRefillAt(state.lastRefill, refillCfg.cooldownH);
+  const earliest = !nextAt || nextAt <= now ? "jetzt möglich" : `${nextAt.toISOString().slice(11, 16)} UTC`;
+  out.push(phase.phase === "betrieb" ? `- Schlange: ${order.length} startbar, Betrieb: kein Nachfüllen (Wochenplan)` : `- Schlange: ${order.length} startbar, nächstes Nachfüllen frühestens ${earliest}`);
   out.push("", "## Letzte 24 h", "");
   out.push(`- Gemergt: ${mergedPrs.length ? mergedPrs.map((p) => `#${p.number}`).join(", ") : "keine"}`);
   out.push(`- Fehlgeschlagene Worker: ${failed.length ? "" : "keine"}`);
