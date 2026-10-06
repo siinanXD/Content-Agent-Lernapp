@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import phaseAIndex from "../src/lib/learner/phase-a-index.json";
 
 // SIN-255: Gesamtweg Start → Lernpfad → Einheit → Ergebnis → Wiederholung
 // (1/3/7 Tage) → Prüfungsmodus für den veröffentlichten Kurs (Phase A).
@@ -33,7 +34,11 @@ const units = Array.from({ length: 4 }, (_, i) => ({
   blockId: "M0-1",
 }));
 
-type StackItem = { stage: number; dueAt: string };
+// SIN-269: Der Test läuft je veröffentlichtem Kurs. Ein weiterer Kurs im Index
+// kommt hier dazu und läuft automatisch mit.
+const PUBLISHED_COURSES = [phaseAIndex].filter((c) => c.courseId && c.unitCount > 0);
+
+type StackItem ={ stage: number; dueAt: string };
 
 async function readStack(page: Page): Promise<StackItem[]> {
   return page.evaluate(
@@ -63,14 +68,19 @@ async function reviewAllCorrect(page: Page) {
   await expect(page.getByText(`${total} von ${total} richtig`)).toBeVisible();
 }
 
-test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage → Prüfungsmodus", async ({ page, context }) => {
+test("Es gibt mindestens einen veröffentlichten Kurs", () => {
+  expect(PUBLISHED_COURSES.length).toBeGreaterThan(0);
+});
+
+for (const course of PUBLISHED_COURSES) {
+test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0, 8)})`, async ({ page, context }) => {
   await page.clock.install({ time: START });
   // context.route greift auch für den Service Worker, der phase-a seit SIN-256 selbst lädt.
   await context.route("**/api/learner/phase-a", (route) =>
     route.fulfill({
       json: {
-        courseId: "e22073de",
-        keyword: "Maschinen- und Anlagenführer",
+        courseId: course.courseId,
+        keyword: course.keyword,
         phase: "A",
         unitCount: units.length,
         units,
@@ -135,7 +145,8 @@ test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage �
     await page.goto("/wiederholung");
     await expect(page.getByText(/keine fälligen Fragen/)).toBeVisible();
     await page.clock.fastForward(4 * MINUTE_MS);
-    await page.goto("/wiederholung");    await reviewAllCorrect(page);
+    await page.goto("/wiederholung");
+    await reviewAllCorrect(page);
     const stages = (await readStack(page)).map((i) => i.stage);
     expect(Math.min(...stages)).toBe(stage);
     await page.goto("/wiederholung");
@@ -171,3 +182,4 @@ test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage �
   await expect(page).toHaveURL(/\/ergebnis$/);
   await expect(page.getByRole("heading", { name: "Prüfung ausgewertet" })).toBeVisible();
 });
+}
