@@ -58,6 +58,11 @@ body {
   font-family: var(--font-body);
 }
 
+/* Einwilligungs-Banner steht im Server-HTML; wer schon entschieden hat, sieht ihn nie (Skript im Layout, SIN-311). */
+html[data-consent="decided"] [data-consent-banner] {
+  display: none;
+}
+
 /* Design-Paket 2 (SIN-277, Figma Screens 18–21): Töne für Hinweise, dunkle Flächen und Avatare. */
 :root {
   --color-bg-hint: #fff7ed;

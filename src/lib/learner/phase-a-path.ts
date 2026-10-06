@@ -108,6 +108,30 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
   });
 }
 
+/**
+ * Schlanke Fassung für die Lernpfad-Seite (SIN-311): nur Felder, die der Pfad zeigt, und die
+ * erste Frage als Vorschau. Hält das HTML klein, wenn der Server die Einheiten mitliefert.
+ */
+export function slimPathUnits(units: PathUnit[]): PathUnit[] {
+  return units.map((u) => ({
+    ...u,
+    explanation: "",
+    sections: undefined,
+    explanationSimple: undefined,
+    image: undefined,
+    questions: u.questions.slice(0, 1).map((q) => ({
+      id: q.id,
+      type: q.type,
+      level: q.level,
+      prompt: q.prompt,
+      correct: "",
+      explanation: "",
+      sourceUrl: "",
+      examAreas: q.examAreas,
+    })),
+  }));
+}
+
 /** Sync path for SSR/tests — seed until client hydrates Phase A from API. */
 export function phaseAPathUnits(): PathUnit[] {
   if (cachedUnits?.length) return cachedUnits;

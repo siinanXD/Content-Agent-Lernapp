@@ -156,6 +156,12 @@ export type LearningSummary = {
   goal: DailyGoalState;
 };
 
+/** Stand ohne Lernereignisse: Anzeige im Server-HTML, bis der lokale Speicher gelesen ist (SIN-311). */
+export const EMPTY_LEARNING_SUMMARY: LearningSummary = {
+  streak: { days: 0, learnedToday: false, previousDays: 0 },
+  goal: { done: 0, goal: DAILY_GOAL, reached: false, exceeded: false, remaining: DAILY_GOAL },
+};
+
 /** Serie und Tagesziel für jetzt, aus dem lokalen Speicher. `"fehler"`, wenn dieser nicht lesbar ist (Figma 24). */
 export function loadLearningSummary(): LearningSummary | "fehler" {
   try {
