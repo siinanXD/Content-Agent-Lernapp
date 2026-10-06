@@ -96,9 +96,15 @@ export function decisionLine(name, text) {
 }
 
 /** „Braucht dich“: offene Entscheidungen, risk:high-PRs ohne Freigabe, needs-human (PR/Issue), Design-Pakete und Abnahme (Linear). */
-/** @param {{ openPrs?: any[], issues?: any[], decisions?: { number: number, title: string, question: string }[] }} snap */
-export function needsYou({ openPrs = [], issues = [], decisions = [] }) {
+/** Offene Punkte (`- [ ]`) der internen Rechts-Checkliste (SIN-301). */
+export function openLegalItems(md) {
+  return [...String(md).matchAll(/^- \[ \] (.+)$/gm)].map((m) => m[1].trim());
+}
+
+/** @param {{ openPrs?: any[], issues?: any[], decisions?: { number: number, title: string, question: string }[], legalOpen?: string[] }} snap */
+export function needsYou({ openPrs = [], issues = [], decisions = [], legalOpen = [] }) {
   const out = [];
+  if (legalOpen.length) out.push(`Recht: ${legalOpen.length} ${legalOpen.length === 1 ? "Punkt" : "Punkte"} offen vor dem Demo-Zugang (docs/legal/checkliste-demo-zugang.md), z. B. ${trim(legalOpen[0], 50)}`);
   // SIN-291: Entscheidungen in schon gemergten PRs, bis Sinan im PR antwortet.
   for (const d of decisions) out.push(`Entscheidung PR #${d.number}: ${trim(d.question, 70)}`);
   for (const p of openPrs) {
@@ -209,8 +215,14 @@ async function collect(repo, slot, now, since, env) {
     console.log(`Entscheidungen nicht lesbar: ${e.message}`);
   }
   const decisionsOpen = await collectOpenDecisions(repo, prs.map((p) => ({ ...p, labels: p.labels.map((l) => l.name) })), now).catch(() => []);
+  let legalOpen = [];
+  try {
+    legalOpen = openLegalItems(readFileSync(new URL("../../docs/legal/checkliste-demo-zugang.md", import.meta.url), "utf8"));
+  } catch (e) {
+    console.log(`Rechts-Checkliste nicht lesbar: ${e.message}`);
+  }
   const backup = await collectBackup(repo, now, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, content, quotas, readiness, backup };
+  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, legalOpen, content, quotas, readiness, backup };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {
