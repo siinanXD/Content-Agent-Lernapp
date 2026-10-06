@@ -19,7 +19,7 @@ import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { collectBackup } from "./backup.mjs";
 import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
-import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh } from "./status.mjs";
+import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh, parseState } from "./status.mjs";
 
 export const SLOTS = ["morgen", "abend"];
 export const TZ = "Europe/Berlin";
@@ -155,6 +155,8 @@ export function buildDigest(snap) {
   lines.push(...(queue.length ? queue.map((i) => `- ${i.identifier} ${trim(i.title, 70)} (${laneOf(i)})`) : ["- nichts in der Schlange"]));
 
   const need = needsYou({ ...snap, decisions: snap.decisionsOpen, now });
+  // Production hängt (SIN-309): Merker aus dem Loop-Status.
+  if (snap.deployStuck) need.unshift(`Production hängt seit ${String(snap.deployStuck.since).slice(11, 16)} UTC (Hook-Deploy ${String(snap.deployStuck.sha).slice(0, 7)}: ${snap.deployStuck.state})`);
   lines.push("", "**Braucht dich**", ...(need.length ? [...need.slice(0, MAX_ITEMS).map((n) => `- ${n}`), ...more(need, MAX_ITEMS)] : ["Nichts zu tun."]));
 
   const c = snap.content;
@@ -268,7 +270,8 @@ export async function main(argv, env = process.env) {
     console.log(`Update ${slot} wurde vor weniger als 6 h schon gesendet, übersprungen.`);
     return null;
   }
-  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env)), force });
+  const deployStuck = parseState(found[0].body).deployStuck ?? null;
+  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env)), deployStuck, force });
   console.log(text);
   if (dry) return text;
   // Erst der Kommentar (trägt den Merker), dann Telegram: ein Fehler dort wiederholt das Update nicht.
