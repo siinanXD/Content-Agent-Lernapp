@@ -29,6 +29,22 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  /* Variante 2026 (SIN-314): Lern-App 16–24 px (lg bis xl), Leitstand/Werkzeuge 2 px */
+  --radius-xl: 24px;
+  --radius-tool: 2px;
+
+  /* Bento-Raster (SIN-314) */
+  --bento-gap: 12px;
+  --bento-gap-wide: 16px;
+  --bento-pad: 24px;
+  --bento-pad-tool: 16px;
+  --bento-line: 1px;
+
+  /* Mono-Label: Geist Mono, 12/16, 500, Laufweite 0.06em (Leitstand zusätzlich Großbuchstaben) */
+  --type-mono-label-size: 12px;
+  --type-mono-label-line: 16px;
+  --type-mono-label-weight: 500;
+  --type-mono-label-tracking: 0.06em;
 
   /* Geist für Text, Geist Mono für Kennungen und Zahlen (next/font in layout.tsx) */
   --font-display: var(--font-geist-sans), "Geist", ui-sans-serif, sans-serif;
