@@ -59,7 +59,7 @@ Seite `Components` hält die Master-Komponenten; Screens nutzen Instanzen.
 | 0 | `00 Onboarding · Willkommen` | 20:312 | `/willkommen` |
 | 0b | `00b Einwilligung mit KI-Hinweis` | 20:343 | `/einwilligung` |
 | 15 | `15 Schwerpunkt wählen` | 20:356 | `/schwerpunkt` |
-| 16 | `16 Einstellungen` | 21:331 | `/einstellungen` (+ `/impressum`, `/datenschutz`, `/ki-hinweis`, `/quellen` als Gerüst „Text folgt“) |
+| 16 | `16 Einstellungen` | 21:331 | `/einstellungen` (+ `/quellen` als Gerüst „Text folgt“; `/impressum`, `/datenschutz`, `/ki-hinweis` siehe Screens 27–29, SIN-301) |
 | 17 | `17 Zustände (Laden · Leer · Fehler · Offline)` | 21:409 | Komponente `StateView` |
 | 18 | `18 Startseite · Bildungsträger` | Seite „Screens“ | `/` (SIN-277; alter Screen 01 jetzt `/start`) |
 | 19 | `19 Gruppenübersicht · Ausbilder` | Seite „Screens“ | `/ausbilder` |
