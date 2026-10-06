@@ -40,12 +40,13 @@ test("Digest: Merker mit Tag und Slot verhindert Doppelmeldung, letzter Merker i
   const first = buildDigest({ ...fixture(), slot: "morgen" });
   const day = berlinDay(new Date(fixture().now));
   assert.equal(day, "2026-10-05");
-  const seen = lastDigest(["Hallo", first.text], day, "morgen");
+  const now = new Date(fixture().now);
+  const seen = lastDigest(["Hallo", first.text], now, "morgen");
   assert.equal(seen.already, true);
   assert.equal(seen.last?.at, fixture().now);
-  assert.equal(lastDigest([first.text], day, "abend").already, false);
-  assert.equal(lastDigest([first.text], "2026-10-06", "morgen").already, false);
-  assert.equal(lastDigest([], day, "morgen").last, null);
+  assert.equal(lastDigest([first.text], now, "abend").already, false);
+  assert.equal(lastDigest([first.text], new Date(now.getTime() + 7 * 3600_000), "morgen").already, false);
+  assert.equal(lastDigest([], now, "morgen").last, null);
   assert.ok(first.text.includes(markOf(day, "morgen", fixture().now)));
 });
 
@@ -83,4 +84,24 @@ test("Digest: Telegram nur mit Token und Chat, ohne Erwähnung und Merker", asyn
   }) as unknown as typeof fetch;
   assert.equal(await sendTelegram("@siinanXD **Update**\n<!-- digest: {} -->", { TELEGRAM_BOT_TOKEN: "t", TELEGRAM_CHAT_ID: "7" }, fetchImpl), true);
   assert.deepEqual(body, { chat_id: "7", text: "Update" });
+});
+
+const at = (iso: string, slot: string, force = false) => `x\n${markOf(berlinDay(new Date(iso)), slot, iso, force)}`;
+
+test("Digest SIN-267: Testläufe um 00:00 Berlin sperren 10:00 und 20:00 nicht", () => {
+  const tests = [at("2026-10-05T22:00:00Z", "morgen", true), at("2026-10-05T22:05:00Z", "abend", true)];
+  assert.equal(lastDigest(tests, new Date("2026-10-06T08:00:00Z"), "morgen").already, false);
+  assert.equal(lastDigest(tests, new Date("2026-10-06T18:00:00Z"), "abend").already, false);
+  assert.equal(lastDigest(tests, new Date("2026-10-06T08:00:00Z"), "morgen").last, null);
+});
+
+test("Digest SIN-267: auch ohne force sperrt ein Lauf von 00:00 den Slot um 10:00 nicht", () => {
+  const early = [at("2026-10-05T22:00:00Z", "morgen")];
+  assert.equal(lastDigest(early, new Date("2026-10-06T08:00:00Z"), "morgen").already, false);
+});
+
+test("Digest SIN-267: Doppel-Lauf 10:00 + 10:05 sendet nur einmal", () => {
+  const first = [at("2026-10-06T08:00:00Z", "morgen")];
+  assert.equal(lastDigest(first, new Date("2026-10-06T08:05:00Z"), "morgen").already, true);
+  assert.equal(lastDigest(first, new Date("2026-10-06T08:05:00Z"), "abend").already, false);
 });

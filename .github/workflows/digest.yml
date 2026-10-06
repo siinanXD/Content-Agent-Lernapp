@@ -1,7 +1,8 @@
 # Tages-Update (SIN-246): kurzer Kommentar mit @siinanXD im Issue „Loop-Status“ (Push über GitHub Mobile),
 # optional zusätzlich Telegram. Auslöser von außen per cron-job.org um 10:00 (slot=morgen) und 20:00
 # (slot=abend), Europe/Berlin, weil GitHubs schedule unzuverlässig feuert (siehe docs/autonomy/README.md).
-# Ein Lauf pro Tag + Slot: der Merker steht im Kommentar, eine Wiederholung sendet nichts doppelt.
+# Wiederholungsschutz: derselbe Slot wird nur gesendet, wenn der letzte Lauf > 6 h her ist (Merker im Kommentar).
+# Testläufe per Hand mit force=true überspringen den Schutz und verbrauchen keinen Slot (SIN-267).
 # Secrets: LINEAR_API_KEY. Optional: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID und die Kennzahl-Secrets aus status.yml.
 name: digest
 
@@ -13,6 +14,10 @@ on:
         type: choice
         options: [morgen, abend]
         default: morgen
+      force:
+        description: "Testlauf: Wiederholungsschutz überspringen, verbraucht keinen Slot"
+        type: boolean
+        default: false
       dry_run:
         description: "Nur ausgeben, nichts schreiben"
         type: boolean
@@ -49,6 +54,7 @@ jobs:
       LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
       SLOT: ${{ inputs.slot }}
       DRY: ${{ inputs.dry_run }}
+      FORCE: ${{ inputs.force }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -58,5 +64,7 @@ jobs:
           node-version: "22"
       - name: Update senden
         run: |
-          if [ "$DRY" = "true" ]; then node scripts/autonomy/digest.mjs --slot "$SLOT" --dry-run
-          else node scripts/autonomy/digest.mjs --slot "$SLOT"; fi
+          args=(--slot "$SLOT")
+          if [ "$DRY" = "true" ]; then args+=(--dry-run); fi
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          node scripts/autonomy/digest.mjs "${args[@]}"

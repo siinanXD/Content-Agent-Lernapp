@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-267 | SIN-267 — Tages-Update: Wiederholungsschutz nach Zeit statt nach Tag | [SIN-267-digest-wiederholungsschutz.md](decisions/SIN-267-digest-wiederholungsschutz.md) |
 | SIN-264 | SIN-264 — Vercel Hobby: Deployments-Limit bewusst akzeptiert | [SIN-264-vercel-deployments-limit.md](decisions/SIN-264-vercel-deployments-limit.md) |
 | SIN-263 | SIN-263: Gemeinsamer JSON-Abruf mit Wiederholung, optionale Quellen dürfen ausfallen | [SIN-263-fetchjson-wiederholung.md](decisions/SIN-263-fetchjson-wiederholung.md) |
 | SIN-262 | SIN-262: Planer in der Bauphase alle 2 h nachfüllen | [SIN-262-planer-nachfuellen-2h.md](decisions/SIN-262-planer-nachfuellen-2h.md) |
