@@ -2,7 +2,7 @@ import Link from "next/link";
 
 /**
  * NextUpCard (Figma, Stil E): dunkle Karte „Als Nächstes“ mit Frage-Vorschau
- * und Start-Knopf. Text auf Hero hell (#FAFAF9 / #D6D4D1 / #A8A39E, alle ≥ 4,5:1),
+ * und Start-Knopf. Text auf Hero hell (Token text-on-brand, ≥ 4,5:1),
  * Knopf weißer Text auf brand-primary.
  */
 export function NextUpCard({
@@ -23,7 +23,7 @@ export function NextUpCard({
       aria-label="Als Nächstes"
       className="flex flex-col gap-2.5 rounded-[var(--radius-lg)] bg-[var(--color-bg-hero)] p-[18px]"
     >
-      <div className="flex items-center justify-between gap-2 text-[#a8a39e]">
+      <div className="flex items-center justify-between gap-2 text-[var(--color-text-on-brand)]">
         <p
           className="text-[11px] font-medium uppercase tracking-wide"
           style={{ fontFamily: "var(--font-mono)" }}
@@ -36,7 +36,7 @@ export function NextUpCard({
         {title}
       </h2>
       {preview ? (
-        <p className="line-clamp-2 text-sm leading-[1.3] text-[#d6d4d1]">
+        <p className="line-clamp-2 text-sm leading-[1.3] text-[var(--color-text-on-brand)]">
           {preview}
         </p>
       ) : null}

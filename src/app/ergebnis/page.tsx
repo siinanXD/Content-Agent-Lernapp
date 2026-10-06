@@ -36,7 +36,7 @@ export default function ErgebnisPage() {
   return (
     <MobileShell>
       <section className="bg-gradient-to-br from-[var(--color-bg-hero)] to-[var(--color-brand-primary)] px-7 pb-8 pt-14">
-        <p className="text-sm text-[#d6d4d1]">Ergebnis</p>
+        <p className="text-sm text-[var(--color-text-on-brand)]">Ergebnis</p>
         <h1
           className="mt-2 text-[30px] font-bold leading-9 text-[var(--color-text-on-brand)]"
           style={{ fontFamily: "var(--font-display)" }}

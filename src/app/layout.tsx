@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { A11yProvider } from "@/components/a11y/a11y-provider";
 import { ServiceWorkerRegister } from "@/components/a11y/service-worker-register";
@@ -21,11 +21,15 @@ export const metadata: Metadata = {
   description:
     "Autonomer Kurs-Generator aus amtlichen Ausbildungsquellen — Pilot MAF.",
   manifest: "/manifest.webmanifest",
-  themeColor: "#C2410C",
   appleWebApp: {
     capable: true,
     title: "Lernapp",
   },
+};
+
+// Metadaten-Feld `themeColor` ist veraltet; Wert = brand-primary (Meta-Tag kann kein CSS-Token lesen).
+export const viewport: Viewport = {
+  themeColor: "#C2410C",
 };
 
 export default function RootLayout({
