@@ -74,11 +74,13 @@ jobs:
       - name: Pause prüfen (Claude-Limit)
         id: pause
         run: node scripts/autonomy/dispatch.mjs --check-pause
+      # Linear nicht erreichbar (SIN-263): Ausgabe linear_ok=false, die Folgeschritte entfallen, der Lauf bleibt grün.
       - name: Kontext sammeln (inkl. Produktreife-Tabelle)
+        id: ctx
         if: steps.pause.outputs.paused != 'true'
         run: node scripts/autonomy/planner.mjs --context --out /tmp/planner-prompt.md
       - name: Claude schreibt den Plan
-        if: steps.pause.outputs.paused != 'true'
+        if: steps.pause.outputs.paused != 'true' && steps.ctx.outputs.linear_ok != 'false'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -88,7 +90,7 @@ jobs:
             --max-turns 15
             --allowedTools "Read,Write,Glob,Grep"
       - name: Issues anlegen (je Spur max. 3, 1 Design-Paket)
-        if: steps.pause.outputs.paused != 'true'
+        if: steps.pause.outputs.paused != 'true' && steps.ctx.outputs.linear_ok != 'false'
         run: |
           if [ "$DRY" = "true" ]; then node scripts/autonomy/planner.mjs --create plan.json --dry-run | tee -a "$GITHUB_STEP_SUMMARY"
           else node scripts/autonomy/planner.mjs --create plan.json | tee -a "$GITHUB_STEP_SUMMARY"; fi

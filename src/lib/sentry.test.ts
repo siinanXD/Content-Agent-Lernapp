@@ -34,7 +34,7 @@ test("Sentry: zählt über Seiten, Abfrage mit Token und Level-Filter", async ()
 
 test("Sentry: HTTP-Fehler bleibt „nicht verfügbar“ für die Kritisch-Zahl", async () => {
   const m = await collectSentryMetrics(env as never, (async () => res([], "", 401)) as never);
-  assert.equal(m.sentry, "Fehler: HTTP 401");
+  assert.equal(m.sentry, "nicht messbar (Sentry: HTTP 401)");
   assert.equal(m.sentry_kritisch, "nicht verfügbar");
 });
 

@@ -14,6 +14,7 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
+import { fetchJson } from "./http.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
@@ -204,7 +205,11 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const reportedBefore = new Set(prev.reported ?? []);
   const fresh = incidents.filter((i) => !reportedBefore.has(i.key));
   // Planer nachfüllen (SIN-253): Bauphase: unter 6 startbaren Todos, höchstens alle 2 h (SIN-262, Repo-Variablen REFILL_*; Merker `lastRefill`).
-  const refill = decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, now });
+  // Linear nicht lesbar (SIN-263): „0 startbar“ ist dann nur geraten. Kein Anstoß und keine 2-h-Sperre, der nächste Takt versucht es erneut.
+  const refill =
+    snap.linearOk === false
+      ? { trigger: false, reason: "Linear nicht lesbar, nächster Versuch beim nächsten Takt", maxIssues: 0, bugsOnly: false }
+      : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, now });
   const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
   const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}) };
@@ -334,6 +339,8 @@ async function collectGithub(repo, now) {
   return { runs, prs, checks };
 }
 
+const serviceOf = (url) => (/vercel/.test(url) ? "Vercel" : /supabase/.test(url) ? "Supabase" : /sentry/.test(url) ? "Sentry" : /langfuse/.test(url) ? "Langfuse" : new URL(url).hostname);
+
 /** Misst, was ohne Bezahlplan lesbar ist. Fehlt ein Token oder schlägt die Abfrage fehl: { error } → „nicht messbar“. */
 export async function collectUsage({ env = process.env, now = new Date(), runs = [], fetchImpl = fetch } = {}) {
   /** @type {Record<string, any>} */
@@ -344,11 +351,7 @@ export async function collectUsage({ env = process.env, now = new Date(), runs =
   usage.api_kosten_eur = { error: "Ledger nicht angebunden" };
   const until = parsePausedUntil(env.AGENT_PAUSED_UNTIL);
   usage.claude_max = { text: `kein Zähler; ${until && until > now ? `pausiert bis ${until.toISOString()}` : "keine Limit-Pause aktiv"}` };
-  const json = async (url, init) => {
-    const res = await fetchImpl(url, init);
-    if (!res.ok) throw new Error(String(res.status));
-    return res.json();
-  };
+  const json = (url, init) => fetchJson(serviceOf(url), url, init, { fetchImpl });
   const guard = async (key, missing, fn) => {
     if (missing) return void (usage[key] = { error: `${missing} fehlt` });
     try {
@@ -437,9 +440,11 @@ export async function main(argv, env = process.env) {
     const now = new Date();
     const g = await collectGithub(repo, now);
     let issues = [];
+    let linearOk = true;
     try {
       issues = await fetchProjectIssues();
     } catch (e) {
+      linearOk = false;
       console.log(`Linear nicht lesbar: ${e.message}`);
     }
     const failures = {};
@@ -452,7 +457,7 @@ export async function main(argv, env = process.env) {
     }
     const phaseEnv = { phase: env.PHASE, observeDays: env.OBSERVE_DAYS, since: env.PHASE_SINCE, lastPlan: null };
     if (issues.length) phaseEnv.lastPlan = await lastPlanAt(linear).catch(() => null);
-    snap = { now: now.toISOString(), ...g, issues, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage: await collectUsage({ env, now, runs: g.runs }) };
+    snap = { now: now.toISOString(), ...g, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage: await collectUsage({ env, now, runs: g.runs }) };
     statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);

@@ -3,21 +3,23 @@
  * Auswahl und Prompt sind reine Funktionen; nur `linear()` spricht mit dem Netz.
  */
 
+import { fetchJson } from "./http.mjs";
+
 export const PROJECT_NAME = "Content-Agent-Lernapp";
 export const MAX_PARALLEL = 2;
 export const MAX_REPAIR_ROUNDS = 3;
 const LINEAR_URL = "https://api.linear.app/graphql";
 
 /** Linear-API: persönlicher Key ohne „Bearer“. */
-export async function linear(query, variables = {}, { key = process.env.LINEAR_API_KEY, fetchImpl = fetch } = {}) {
+export async function linear(query, variables = {}, { key = process.env.LINEAR_API_KEY, fetchImpl = fetch, ...http } = {}) {
   if (!key) throw new Error("LINEAR_API_KEY fehlt");
-  const res = await fetchImpl(LINEAR_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: key },
-    body: JSON.stringify({ query, variables }),
-  });
-  const json = await res.json();
-  if (!res.ok || json.errors) throw new Error(`Linear-Fehler: ${JSON.stringify(json.errors ?? res.status)}`);
+  const json = await fetchJson(
+    "Linear",
+    LINEAR_URL,
+    { method: "POST", headers: { "Content-Type": "application/json", Authorization: key }, body: JSON.stringify({ query, variables }) },
+    { fetchImpl, ...http },
+  );
+  if (json?.errors) throw new Error(`Linear-Fehler: ${JSON.stringify(json.errors)}`);
   return json.data;
 }
 
@@ -155,12 +157,17 @@ export function reconcile(issues, prs, /** @type {{ runningWorkers?: string[], n
 export const STUCK_MIN = 60;
 const stuckMinutes = (issue, now) => (new Date(now).getTime() - new Date(issue.updatedAt ?? now).getTime()) / 60000;
 
+/** Status je Team einmal pro Lauf lesen, nicht je Issue (SIN-263: weniger Linear-Anfragen). */
+const statesCache = new WeakMap();
+
 export async function stateIdByName(teamId, name, call = linear) {
-  const data = await call(
-    `query($id: String!) { team(id: $id) { states { nodes { id name } } } }`,
-    { id: teamId },
-  );
-  const s = data.team.states.nodes.find((n) => n.name === name);
+  const perCall = statesCache.get(call) ?? new Map();
+  statesCache.set(call, perCall);
+  if (!perCall.has(teamId)) {
+    const data = await call(`query($id: String!) { team(id: $id) { states { nodes { id name } } } }`, { id: teamId });
+    perCall.set(teamId, data.team.states.nodes);
+  }
+  const s = perCall.get(teamId).find((n) => n.name === name);
   if (!s) throw new Error(`Status „${name}“ im Team nicht gefunden`);
   return s.id;
 }
