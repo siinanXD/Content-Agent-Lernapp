@@ -1,0 +1,96 @@
+# Live-Check nach jedem Production-Deploy (SIN-319): Ein Test-Agent prüft alle Funktionen der Live-App anhand der
+# Checkliste docs/ops/live-checkliste.md, nicht nur /api/health (so fällt „alle API-Routen 500“, SIN-308, sofort auf).
+# Auslöser: Production-Deploy READY (deployment_status, wie deploy-smoke), 1× nachts, von Hand (auch gegen eine Vorschau-URL).
+# Ergebnis: Häkchen-Liste und Screenshots als Artefakt `live-check`, Zusammenfassung als Annotation „Live-Check hh:mm: n/n grün“
+# (liest der Status-Wächter, Status-Seite und Tages-Update zeigen sie).
+# Bei Rot nach einem Deploy: Der Lauf wird rot, `revert-guard` öffnet den Revert-PR (risk:medium). Der nächtliche Lauf meldet nur.
+# Nur lesend, ohne Secrets: schreibende Endpunkte sind abgefangen oder laufen mit Test-Kennung, echte Nutzerdaten bleiben unberührt.
+# Sentry-Prüfung (SE-01) läuft nur, wenn SENTRY_* im Lauf stehen; ohne steht „nicht verfügbar“ im Bericht.
+name: nach-deploy
+
+on:
+  deployment_status:
+  schedule:
+    - cron: "5 19 * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Adresse der App (leer = Production). Für einen Test mit einer Vorschau."
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nach-deploy-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  live-check:
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LIVE_URL: ${{ inputs.url || 'https://content-agent-ashen-nu.vercel.app' }}
+      PLAYWRIGHT_BASE_URL: ${{ inputs.url || 'https://content-agent-ashen-nu.vercel.app' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: Warten, bis die App antwortet
+        run: |
+          for try in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "${LIVE_URL%/}/api/health") || code=000
+            echo "Versuch ${try}: ${code}"
+            [ "$code" != "000" ] && [ "$code" -lt 500 ] && exit 0
+            [ "$code" = "503" ] && break
+            sleep 10
+          done
+          echo "Die App antwortet nicht gesund, der Live-Check zeigt es im Bericht."
+
+      - name: API prüfen
+        run: node scripts/autonomy/live-check.mjs api --base "$LIVE_URL"
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Seiten und Abläufe prüfen (Handy und Desktop)
+        continue-on-error: true
+        run: npx playwright test --config playwright.live.config.ts
+
+      - name: Lighthouse-Kurzlauf (Startseite, Lernpfad)
+        id: lighthouse
+        continue-on-error: true
+        run: node scripts/lighthouse-gate.mjs --base "$LIVE_URL" / /lernpfad
+
+      - name: Sentry, neue Fehler seit dem Deploy
+        # Ohne SENTRY_*-Werte (kein Secret in diesem Workflow) schreibt der Schritt „null“, der Bericht meldet „nicht verfügbar“.
+        run: node scripts/autonomy/live-check.mjs sentry --since "$(date -u -d '-15 minutes' +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Bericht
+        if: always()
+        id: bericht
+        env:
+          LIGHTHOUSE: ${{ steps.lighthouse.outcome == 'success' && 'ok' || 'fail' }}
+        run: node scripts/autonomy/live-check.mjs report --base "$LIVE_URL" --lighthouse "$LIGHTHOUSE"
+
+      - name: Bericht und Screenshots sichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-check
+          path: |
+            live-ergebnis/bericht.md
+            live-ergebnis/*.json
+            live-ergebnis/dateien/**/*.png
+            live-ergebnis/dateien/**/*.zip
+          if-no-files-found: warn
+          retention-days: 14

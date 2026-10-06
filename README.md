@@ -92,6 +92,8 @@ Git deploys are off (`git.deploymentEnabled: false` in `vercel.json`, SIN-309): 
 
 Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). After each Production deploy the workflow `deploy-smoke` checks `/api/health` and `/api/learner/phase-a` for 200 and opens a revert PR otherwise (SIN-308). URL env vars (e.g. `LANGFUSE_BASE_URL`) are cleaned of quotes and validated in `src/lib/env.ts`; an invalid value disables the feature and logs a warning instead of crashing.
 
+**Live-Check (SIN-319).** After each Production deploy (and nightly at 21:05 Berlin time) the workflow `nach-deploy` checks the live app against `docs/ops/live-checkliste.md`: API routes (`scripts/autonomy/live-check.mjs`), all pages on phone and desktop, the unit flow with all 5 question types, exam mode, offline mode, service worker, axe and a Lighthouse short run (`live/live.spec.ts`). It only reads or uses test data (write endpoints are stubbed, test id `livecheck-<time>`). Result: artifact `live-check` (checklist + screenshots) and the line "Live-Check hh:mm: n/n grün" on the status page and in the daily update. If it is red after a deploy, `revert-guard` opens a revert PR. Every new page or feature goes into the checklist (a unit test keeps list and checks in sync). Locally: `npm run build && npm start -- --port 43123`, then `npm run live:local`. Against another URL: `PLAYWRIGHT_BASE_URL=<url> npm run live:browser` and `npm run live:api -- --base <url>`, or run the workflow by hand with a URL.
+
 ## Secrets
 
 Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.
