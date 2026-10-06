@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { approvalStillValid, classifyRisk } from "../../../scripts/autonomy/risk.mjs";
+import { approvalStillValid, classifyRisk, fetchDependencyInfo, newDependencies } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
@@ -37,16 +37,92 @@ test("Gate: Standard ist risk:medium, auch für Storage, Config", () => {
   );
 });
 
-test("Gate: jede Workflow-Änderung ist high (SIN-234)", () => {
-  for (const f of [".github/workflows/ci.yml", ".github/workflows/x.yaml"]) {
-    const r = risk([file(f, patch("+foo: bar"))]);
-    assert.equal(r.risk, "risk:high", f);
-    assert.ok(r.reasons.some((x) => x.category === "workflow"), f);
-  }
-  assert.equal(risk([file(".github/workflows/x.yml", patch("-  contents: write", "+  contents: read"))]).risk, "risk:high");
-  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:high");
+test("Gate: normale Workflow-Änderungen sind medium (SIN-252)", () => {
+  const wf = ".github/workflows/ci.yml";
+  assert.equal(risk([file(wf, patch("+      - run: npm run lint"))]).risk, "risk:medium");
+  assert.equal(risk([file(wf, patch("-  - cron: '0 6 * * *'", "+  - cron: '0 8 * * *'"))]).risk, "risk:medium");
+  assert.equal(risk([file(wf, patch("+      - uses: actions/checkout@v4"))]).risk, "risk:medium");
+  assert.equal(risk([file(wf, patch("+      - uses: anthropics/claude-code-action@v1"))]).risk, "risk:medium");
+  assert.equal(risk([file(wf, patch("+  contents: read"))]).risk, "risk:medium");
+  assert.equal(risk([file(wf, patch("-  contents: write", "+  contents: read"))]).risk, "risk:medium");
+  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:medium");
   assert.equal(risk([file(".github/dependabot.yml", patch("+a: b"))]).risk, "risk:medium");
-  assert.equal(risk([file("docs/autonomy/worker.yml", patch("+a: b"))]).risk, "risk:medium");
+});
+
+test("Gate: Rechte in Workflows sind high (SIN-252 Punkt 6)", () => {
+  const wf = ".github/workflows/ci.yml";
+  const cases = [
+    patch("+  contents: write"),
+    patch("+permissions: write-all"),
+    patch("+        token: ${{ secrets.NEW_TOKEN }}"),
+    patch("+      - uses: some-org/fancy-action@v1"),
+    patch("-          claude_args: --allowedTools Read,Edit", "+          claude_args: --allowedTools Read,Edit,Bash"),
+    patch("+          allowed_bots: dependabot"),
+  ];
+  for (const c of cases) assert.equal(risk([file(wf, c)]).risk, "risk:high", c);
+  // bereits genutzt oder verkleinert: medium
+  assert.equal(
+    risk([file(wf, patch("-          t: ${{ secrets.A }}", "+          u: ${{ secrets.A }}"))]).risk,
+    "risk:medium",
+  );
+  assert.equal(
+    risk([file(wf, patch("-          claude_args: --allowedTools Read,Edit,Bash", "+          claude_args: --allowedTools Read,Edit"))]).risk,
+    "risk:medium",
+  );
+  assert.equal(risk([file(wf, patch("-      - uses: some-org/x@v1", "+      - uses: some-org/x@v2"))]).risk, "risk:medium");
+});
+
+test("Gate: das Gate selbst ist high (SIN-252 Punkt 5)", () => {
+  for (const f of [".github/workflows/pr-gate.yml", "scripts/autonomy/risk.mjs"]) {
+    const r = risk([file(f, patch("+x"))]);
+    assert.equal(r.risk, "risk:high", f);
+    assert.ok(r.reasons.some((x) => x.category === "gate"), f);
+  }
+  assert.equal(risk([file("scripts/autonomy/steckbrief.mjs", patch("+x"))]).risk, "risk:medium");
+});
+
+test("Gate: Figma-Tokens, Docs, Tests sind medium (SIN-252)", () => {
+  for (const f of ["docs/design/tokens.md", "docs/ARCHITECTURE.md", "src/app/globals.css", "docs/decisions/SIN-1-x.md", "e2e/a.spec.ts"]) {
+    assert.equal(risk([file(f, patch("+--color-brand-primary: #C2410C;"))]).risk, "risk:medium", f);
+  }
+});
+
+test("Gate: Geld, Service-Role im Client, Spalte umbenennen sind high (SIN-252)", () => {
+  assert.equal(risk([file("src/lib/config.ts", patch("+const k = process.env.STRIPE_LIVE_MODE;"))]).risk, "risk:high");
+  assert.equal(risk([file("src/lib/pricing/plans.ts", patch("+x"))]).risk, "risk:high");
+  assert.equal(risk([file("src/components/a.tsx", patch("+const k = process.env.SUPABASE_SERVICE_ROLE_KEY;"))]).risk, "risk:high");
+  assert.equal(risk([file("src/lib/x.ts", patch("+NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY"))]).risk, "risk:high");
+  assert.equal(risk([file("src/lib/supabase/admin.ts", patch("+const k = process.env.SUPABASE_SERVICE_ROLE_KEY;"))]).risk, "risk:medium");
+  assert.equal(
+    risk([file("supabase/migrations/4_d.sql", patch("+alter table t rename column a to b;"), "added")]).risk,
+    "risk:high",
+  );
+});
+
+test("Gate: neue npm-Abhängigkeit nur mit MIT/Apache und > 500 Sternen medium (SIN-252)", () => {
+  const pkg = [file("package.json", patch('+    "left-pad": "^1.3.0",'))];
+  assert.deepEqual(newDependencies(pkg), ["left-pad"]);
+  assert.equal(risk(pkg).risk, "risk:high");
+  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "MIT", stars: 900 } } }).risk, "risk:medium");
+  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "Apache-2.0", stars: 501 } } }).risk, "risk:medium");
+  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "MIT", stars: 500 } } }).risk, "risk:high");
+  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "GPL-3.0", stars: 9000 } } }).risk, "risk:high");
+  assert.equal(risk(pkg, { depInfo: { "left-pad": null } }).risk, "risk:high");
+  // Versions-Bump und Skripte sind keine neue Abhängigkeit
+  assert.deepEqual(newDependencies([file("package.json", patch('-    "zod": "^3.0.0",', '+    "zod": "^3.1.0",'))]), []);
+  assert.deepEqual(newDependencies([file("package.json", patch('+    "lint": "eslint .",'))]), []);
+});
+
+test("fetchDependencyInfo liest Lizenz und Sterne, Fehler ergeben null", async () => {
+  const fetchFn = async (url: string) => {
+    if (url.includes("registry.npmjs.org/good")) {
+      return { ok: true, json: async () => ({ license: "MIT", repository: { url: "git+https://github.com/o/r.git" } }) };
+    }
+    if (url.includes("api.github.com/repos/o/r")) return { ok: true, json: async () => ({ stargazers_count: 1234 }) };
+    return { ok: false, json: async () => ({}) };
+  };
+  const info = await fetchDependencyInfo(["good", "bad"], fetchFn as unknown as typeof fetch);
+  assert.deepEqual(info, { good: { license: "MIT", stars: 1234 }, bad: null });
 });
 
 test("Gate: Secret-Leak ist high", () => {
@@ -77,9 +153,7 @@ test("Gate: geschwächte Sicherheit ist high", () => {
 
 test("Gate: Zahlungen und Grundsatz-Entscheidungen sind high", () => {
   assert.equal(risk([file("src/lib/stripe/client.ts")]).risk, "risk:high");
-  for (const f of ["docs/PRODUCT.md", "docs/ARCHITECTURE.md", "docs/design/tokens.md"]) {
-    assert.equal(risk([file(f)]).risk, "risk:high", f);
-  }
+  assert.equal(risk([file("docs/PRODUCT.md")]).risk, "risk:high");
   assert.equal(risk([file("docs/DECISIONS.md")]).risk, "risk:medium");
   assert.equal(
     risk([file("package.json", patch('-    "next": "16.3.8",', '+    "sveltekit": "1.0.0",'))]).risk,

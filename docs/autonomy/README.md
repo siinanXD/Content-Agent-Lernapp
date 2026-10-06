@@ -39,9 +39,9 @@
 1. GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Name `agent-workflows`, Ablauf 1 Jahr, nur Repo `Content-Agent-Lernapp`. Rechte: Contents RW, Pull requests RW, Issues RW, **Workflows RW**, Metadata R.
 2. In Infisical `/content-agent-lernapp` → Development als `AGENT_WORKFLOW_TOKEN` speichern, dann GitHub-Sync „Trigger Sync“.
 3. **Letzte Kopie:** `dispatch.yml`, `claude.yml`, `repair.yml`, `worker.yml` aus diesem Ordner nach `.github/workflows/` kopieren (überschreiben). Den ersten Kommentarblock „Vorlage (SIN-234) …“ kannst du löschen.
-4. Prüfen: Test-PR, der eine Workflow-Datei ändert. Er muss Label `risk:high` bekommen und auf `freigegeben` warten.
+4. Prüfen: Test-PR, der in einer Workflow-Datei `contents: write` ergänzt. Er muss Label `risk:high` bekommen und auf `freigegeben` warten (eine normale Schritt-Änderung bleibt `risk:medium`).
 
-Ohne das Secret laufen die Workflows wie bisher (Rückfall auf Claude-GitHub-App bzw. `github.token`). Ab Schritt 3 ist `risk.mjs` schon aktiv: jede Änderung unter `.github/workflows/` ist `risk:high` (Grund „workflow“). Danach entfällt die Kopier-Pflicht; diese Vorlagen und die Abschnitte „Einmalig von Sinan“ unten sind dann nur noch Historie und werden entfernt, sobald die Workflows live sind.
+Ohne das Secret laufen die Workflows wie bisher (Rückfall auf Claude-GitHub-App bzw. `github.token`). Ab SIN-252 ist eine Workflow-Änderung nur noch `risk:high`, wenn sie Rechte erweitert (`permissions`, neue Secrets, `allowedTools`/`allowed_bots`, neue Drittanbieter-Action) oder das Gate selbst ändert. Danach entfällt die Kopier-Pflicht; diese Vorlagen und die Abschnitte „Einmalig von Sinan“ unten sind dann nur noch Historie und werden entfernt, sobald die Workflows live sind.
 
 ---
 
