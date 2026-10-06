@@ -10,6 +10,11 @@
  *       das Issue „Produkt-Abnahme MAF Metall“ für Sinan an und plant bis zur Antwort nur Fehler und Content.
  *       Davor: Free-Tier-Prüfung (ab 80 % ein Linear-Issue, SIN-225) und Wochenbericht (limits.mjs).
  *
+ * Phasen (SIN-244): Repo-Variable PHASE (`bauen` | `betrieb`), OBSERVE_DAYS (Standard 7), PHASE_SINCE (Beginn des Betriebs).
+ *   In `betrieb` plant der Planer nur am Ende eines Beobachtungsfensters (höchstens 5 Issues, Label `wochenplan`);
+ *   dazwischen nur Fehler/Sicherheit (backend, Label `bug`) und Content. Für Dry-Runs mit Fixtures überschreiben
+ *   `--phase`, `--last-plan <ISO>`, `--since <ISO>`, `--observe-days <n>` und `--now <ISO>` die Umgebung.
+ *
  * Content (SIN-226): Abdeckung je Curriculum-Map und Modul, Bestehensquote, Läufe, Regeln (content-metrics.mjs).
  * Kennzahlen ohne Zugang (Supabase, PostHog, Sentry, Kosten, Figma) stehen als „nicht verfügbar“ im Prompt.
  * Dry-Run: nur lesen, nichts in Linear anlegen.
@@ -19,6 +24,7 @@ import { pathToFileURL } from "node:url";
 import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
 import { runLimitCheck } from "./limits.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
+import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
 import {
   ABNAHME_TITLE,
@@ -144,11 +150,17 @@ export async function assessReadiness({ metrics, issues, env = process.env, read
   return { rows, abnahme: file.abnahme ?? null };
 }
 
-export function buildPlannerPrompt({ definition, issues, metrics, readiness = "", content = "", maintenance = false }) {
+export function buildPlannerPrompt(
+  /** @type {{ definition: string, issues: unknown[], metrics: object, readiness?: string, content?: string, maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null }} */
+  { definition, issues, metrics, readiness = "", content = "", maintenance = false, phase = null },
+) {
+  const betrieb = phase?.phase === "betrieb";
   return [
     "Du bist der Planer für die Content-Agent-Lernapp (Regeln: AGENTS.md).",
     "Ziel: ein fertiges Produkt mit einem Modul (MAF Metall komplett), kein MVP. Vergleiche den Ist-Stand mit der Definition fertig und der Produktreife-Tabelle.",
-    `Plane getrennt nach drei Spuren, je Spur höchstens ${MAX_PER_LANE} neue Linear-Issues (zusammen höchstens ${MAX_ISSUES_PER_WEEK}):`,
+    betrieb && phase.due
+      ? `Plane getrennt nach drei Spuren, zusammen höchstens ${MAX_PLAN_ISSUES_BETRIEB} neue Linear-Issues, sortiert nach Wirkung (je Spur höchstens ${MAX_PER_LANE}):`
+      : `Plane getrennt nach drei Spuren, je Spur höchstens ${MAX_PER_LANE} neue Linear-Issues (zusammen höchstens ${MAX_ISSUES_PER_WEEK}):`,
     "- frontend: Lern-Erlebnis, Screens, Motivation (Serie, Tagesziel, Wiederholung), Barrierefreiheit, Offline. Kennzahlen: Lighthouse, axe, PostHog-Abbrüche, Figma-Abgleich.",
     "- content: Abdeckung, Qualität, neue Berufe (nur mit amtlicher Quelle).",
     "- backend: Pipeline, Datenmodell, Kosten, Stabilität, Sentry-Fehler, Skalierung.",
@@ -167,6 +179,7 @@ export function buildPlannerPrompt({ definition, issues, metrics, readiness = ""
     "- Design nötig (`needsDesign: true`): neue Screens, neue Komponenten, neue Farben/Tokens, geänderte Navigation. Setze `blockedBy` auf den Titel eines Design-Eintrags im Plan (oder eine offene Kennung wie SIN-123).",
     `- Bündle alle Design-Arbeiten zu höchstens ${MAX_DESIGN_PER_WEEK} Design-Paket pro Woche (\`lane: "design"\`, Label \`design\`, Backlog bis Sinan die Sitzung macht, kein Dispatcher-Lauf).`,
     "- Agenten erfinden keine Komponenten im Code. Weicht der Code von Figma ab (Kennzahl `figma_abgleich`), plane die Abweichung als Issue.",
+    ...(betrieb ? betriebPrompt(phase) : []),
     ...(maintenance
       ? [
           "",
@@ -195,12 +208,31 @@ export function buildPlannerPrompt({ definition, issues, metrics, readiness = ""
   ].join("\n");
 }
 
+/** Zusatz zum Prompt für die Phase Betrieb (SIN-244). */
+function betriebPrompt(phase) {
+  if (!phase.due) {
+    return [
+      "",
+      `**Phase Betrieb, Beobachtungsfenster läuft (${renderPhase(phase)}):** Keine neuen Feature-Issues. Plane NUR Fehler (Sentry, backend), Sicherheit und Content. Keine frontend- oder design-Einträge. Sammle die Befunde, sie fließen in den Wochenplan.`,
+    ];
+  }
+  return [
+    "",
+    `**Phase Betrieb, Planungstag (Fenster ${phase.observeDays} Tage zu Ende):** Werte das Fenster aus: Nutzungsdaten (PostHog, learning_progress), Abbrüche, Fehlerquoten (Sentry), Kosten, Feedback (Figma-/GitHub-Kommentare, Support). Beginne den Bericht mit den Befunden, dann höchstens ${MAX_PLAN_ISSUES_BETRIEB} Issues, sortiert nach Wirkung (wichtigstes zuerst).`,
+    `Unter etwa ${MIN_ACTIVE_USERS} aktiven Nutzern: nur eindeutige Signale umsetzen (PRODUCT.md, Lern-Schleife). Fehlt die Zahl aktiver Nutzer („nicht verfügbar“), gilt das als unter ${MIN_ACTIVE_USERS}.`,
+  ];
+}
+
 /**
  * Prüft den Plan des Modells. Wirft bei ungültigen Einträgen, kürzt je Spur auf MAX_PER_LANE
  * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
  * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string }[]}
  */
-export function validatePlan(plan, existingTitles = [], { maintenance = false } = {}) {
+export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null }} */ { maintenance = false, phase = null } = {}) {
+  const betrieb = phase?.phase === "betrieb";
+  // Betrieb: im Beobachtungsfenster nur Fehler und Content, am Fensterende der Wochenplan.
+  const observing = betrieb && !phase.due;
+  const planning = betrieb && phase.due;
   if (!Array.isArray(plan)) throw new Error("Plan muss eine Liste sein");
   const taken = new Set(existingTitles.map((t) => t.trim().toLowerCase()));
   const planTitles = new Set(plan.map((p) => String(p?.title ?? "").trim().toLowerCase()));
@@ -218,14 +250,18 @@ export function validatePlan(plan, existingTitles = [], { maintenance = false } 
       if (!known) throw new Error(`Eintrag ${i}: needsDesign braucht blockedBy (Design-Eintrag im Plan oder SIN-Kennung)`);
     }
     if (taken.has(p.title.trim().toLowerCase())) continue;
-    if (maintenance && !MAINTENANCE_LANES.includes(p.lane)) continue;
+    if ((maintenance || observing) && !MAINTENANCE_LANES.includes(p.lane)) continue;
     const cap = p.lane === "design" ? MAX_DESIGN_PER_WEEK : MAX_PER_LANE;
     if ((count[p.lane] = (count[p.lane] ?? 0) + 1) > cap) continue;
     out.push({
       lane: p.lane,
       title: p.title.trim(),
       priority: p.priority,
-      labels: p.lane === "design" ? ["design", "frontend"] : [p.lane],
+      labels: [
+        ...(p.lane === "design" ? ["design", "frontend"] : [p.lane]),
+        ...(observing && p.lane === "backend" ? ["bug"] : []),
+        ...(planning ? [PLAN_LABEL] : []),
+      ],
       ...(p.lane === "frontend" ? { needsDesign: Boolean(p.needsDesign) } : {}),
       ...(p.needsDesign ? { blockedBy } : {}),
       description: `${p.description ?? ""}${
@@ -233,8 +269,16 @@ export function validatePlan(plan, existingTitles = [], { maintenance = false } 
       }\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`.trim(),
     });
   }
+  // Wochenplan: höchstens 5 insgesamt, wichtigste zuerst (Priorität, bei Gleichstand Planreihenfolge).
+  // Fällt ein Design-Eintrag weg, fällt das Frontend-Issue, das darauf wartet, mit weg.
+  let result = out;
+  if (planning) {
+    const kept = [...out].sort((a, b) => a.priority - b.priority).slice(0, MAX_PLAN_ISSUES_BETRIEB);
+    const titles = new Set(kept.map((r) => r.title.toLowerCase()));
+    result = kept.filter((r) => !r.blockedBy || !planTitles.has(r.blockedBy.toLowerCase()) || titles.has(r.blockedBy.toLowerCase()));
+  }
   // Design zuerst, damit es beim Anlegen schon existiert, wenn das Frontend-Issue darauf wartet.
-  return out.sort((a, b) => Number(b.lane === "design") - Number(a.lane === "design"));
+  return result.sort((a, b) => Number(b.lane === "design") - Number(a.lane === "design"));
 }
 
 async function labelId(teamId, name, cache, call) {
@@ -275,6 +319,15 @@ export async function createIssues(items, existing = [], call = linear) {
   }
 }
 
+/** Phase aus Umgebung und Linear; die Dry-Run-Schalter überschreiben beides (Fixtures). */
+async function resolvePhase(argv, issues) {
+  const arg = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : undefined);
+  const now = arg("--now") ? new Date(arg("--now")) : new Date();
+  const lastPlan = arg("--last-plan") ?? (issues ? await lastPlanAt(linear) : null);
+  const env = { ...process.env, ...(arg("--phase") && { PHASE: arg("--phase") }), ...(arg("--since") && { PHASE_SINCE: arg("--since") }), ...(arg("--observe-days") && { OBSERVE_DAYS: arg("--observe-days") }) };
+  return phaseFromEnv(env, { lastPlan, now });
+}
+
 export async function main(argv) {
   const dry = argv.includes("--dry-run");
   const arg = (name) => argv[argv.indexOf(name) + 1];
@@ -286,7 +339,9 @@ export async function main(argv) {
     const sourceIssues = (issues ?? []).filter((i) => /quellen-monitor/i.test(i.title));
     const content = renderContentSection(await collectContentMetrics(), { sourceIssues });
     const definition = extractSection(readFileSync("docs/PRODUCT.md", "utf8"), "Definition fertig");
+    const phase = await resolvePhase(argv, issues);
     const prompt = buildPlannerPrompt({
+      phase,
       definition,
       issues: issues ?? [],
       metrics,
@@ -305,7 +360,9 @@ export async function main(argv) {
     console.log(`${await runLimitCheck({ dry, existingTitles })}\n`);
     const { rows, abnahme } = await assessReadiness({ metrics: await collectMetrics(), issues });
     const maintenance = inMaintenanceMode(rows, abnahme);
-    const items = validatePlan(plan, existingTitles, { maintenance });
+    const phase = await resolvePhase(argv, issues);
+    console.log(`${renderPhase(phase)}\n`);
+    const items = validatePlan(plan, existingTitles, { maintenance, phase });
     if (maintenance && !existingTitles.includes(ABNAHME_TITLE)) items.push({ ...abnahmeIssue(rows), lane: "abnahme" });
     console.log(`Produktreife\n\n${renderReadiness(rows)}\n\n${maintenance ? "Pflege-Modus: nur Fehler und Content.\n" : ""}`);
     if (dry) {

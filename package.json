@@ -23,6 +23,8 @@
     "autonomy:status:dry": "node scripts/autonomy/status.mjs --fixture docs/autonomy/fixture-status.json",
     "autonomy:digest:dry": "node scripts/autonomy/digest.mjs --slot morgen --fixture docs/autonomy/fixture-digest.json && node scripts/autonomy/digest.mjs --slot abend --fixture docs/autonomy/fixture-digest.json",
     "autonomy:planner:dry": "node scripts/autonomy/planner.mjs --create docs/autonomy/fixture-plan.json --dry-run",
+    "autonomy:planner:dry:beobachten": "node scripts/autonomy/planner.mjs --create docs/autonomy/fixture-plan.json --dry-run --phase betrieb --since 2026-10-09T06:00:00Z --now 2026-10-12T06:00:00Z",
+    "autonomy:planner:dry:betrieb": "node scripts/autonomy/planner.mjs --create docs/autonomy/fixture-plan.json --dry-run --phase betrieb --since 2026-10-05T06:00:00Z --now 2026-10-12T06:00:00Z",
     "autonomy:planner:context": "node scripts/autonomy/planner.mjs --context --dry-run",
     "hermes:dry-run": "node --import tsx scripts/hermes-dry-run.mjs",
     "pilot:maf": "node --import tsx scripts/pilot-maf.mjs",

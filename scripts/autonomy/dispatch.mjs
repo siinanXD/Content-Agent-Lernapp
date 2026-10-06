@@ -15,6 +15,7 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./budget.mjs";
+import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
@@ -161,7 +162,9 @@ export async function main(argv) {
     return;
   }
   const openPrs = fixtureAt >= 0 ? [] : await fetchOpenPrs();
-  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, (i) => claudeMayTake(i, { openPrs }));
+  // Phase (SIN-244): im Betrieb nur bug, security, content und der letzte Wochenplan.
+  const phase = parsePhase(process.env.PHASE);
+  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, (i) => phaseAllowsIssue(phase, i) && claudeMayTake(i, { openPrs }));
   if (!picked.length) {
     console.log(`Nichts zu starten: ${reason}`);
     output("found", "false");

@@ -14,8 +14,10 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
+import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
+  linear,
   comment,
   fetchProjectIssues,
   hasOpenBlockers,
@@ -126,7 +128,9 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const openPrs = prs.filter((p) => p.state === "open");
   const mergedPrs = prs.filter((p) => p.merged_at && since(p.merged_at));
   const prLite = openPrs.map((p) => ({ title: p.title, head: p.head }));
-  const mayTake = (i) => claudeMayTake(i, { now, openPrs: prLite });
+  // Phase (SIN-244): im Betrieb startet der Dispatcher nur bug, security, content und den Wochenplan.
+  const phase = phaseState({ ...snap.phaseEnv, now });
+  const mayTake = (i) => phaseAllowsIssue(phase.phase, i) && claudeMayTake(i, { now, openPrs: prLite });
   const order = startOrder(issues, mayTake);
   const started = issues.filter((i) => i.state?.type === "started");
   const todo = issues.filter((i) => i.state?.name === "Todo");
@@ -206,7 +210,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   // --- Text ---
   const out = [`# ${STATUS_TITLE}`, "", `Stand: ${now.toISOString()} (UTC). Dieser Text wird bei jedem Lauf neu geschrieben.`, ""];
-  out.push("## Jetzt", "");
+  out.push("## Jetzt", "", `- ${renderPhase(phase)}`);
   if (running.length) {
     const how = running.length > 1 ? "parallel" : "einzeln";
     for (const r of running) out.push(`- Worker ${idOf(r.display_title) ?? "?"} (${r.status === "in_progress" ? "läuft" : "wartet"}) seit ${hm(mins(r.created_at, now))}, ${how}: [Lauf](${r.html_url})`);
@@ -432,7 +436,9 @@ export async function main(argv, env = process.env) {
         failures[r.id] = "";
       }
     }
-    snap = { now: now.toISOString(), ...g, issues, failures, paused: env.AGENT_PAUSED_UNTIL, usage: await collectUsage({ env, now, runs: g.runs }) };
+    const phaseEnv = { phase: env.PHASE, observeDays: env.OBSERVE_DAYS, since: env.PHASE_SINCE, lastPlan: null };
+    if (issues.length) phaseEnv.lastPlan = await lastPlanAt(linear).catch(() => null);
+    snap = { now: now.toISOString(), ...g, issues, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage: await collectUsage({ env, now, runs: g.runs }) };
     statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);

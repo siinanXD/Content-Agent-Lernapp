@@ -20,6 +20,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-247 | SIN-247: Gate „wartet auf Freigabe“ gelb statt rot | [SIN-247-gate-gelb.md](decisions/SIN-247-gate-gelb.md) |
 | SIN-246 | SIN-246 — Tages-Update um 10:00 und 20:00 | [SIN-246-tages-update.md](decisions/SIN-246-tages-update.md) |
 | SIN-245 | SIN-245 — Stil E (Orange/Weiß/Schwarz) aus Figma übernehmen | [SIN-245-stil-e.md](decisions/SIN-245-stil-e.md) |
+| SIN-244 | SIN-244 — Planer-Phasen: bauen, dann beobachten und wöchentlich planen | [SIN-244-planer-phasen.md](decisions/SIN-244-planer-phasen.md) |
 | SIN-240 | SIN-240 — Loop-Härtung: Agenten-Token überall, Abgleich, eine Datei je Entscheidung, Gate nach CI | [SIN-240-loop-haertung.md](decisions/SIN-240-loop-haertung.md) |
 | SIN-236 | SIN-236 — package-lock.json normal committen | [SIN-236-package-lock-committen.md](decisions/SIN-236-package-lock-committen.md) |
 | SIN-230 | SIN-230 — Design-Paket 1: Schwerpunkt-Auswahl, Einwilligung, Karte, Feedback | [SIN-230-design-paket-1.md](decisions/SIN-230-design-paket-1.md) |
