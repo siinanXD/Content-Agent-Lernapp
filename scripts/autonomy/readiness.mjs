@@ -87,7 +87,7 @@ export async function fetchFigmaFrames(fileKey, env = process.env, fetchImpl = f
  *   built?: Record<string, { datum?: string, beleg?: string }>, ran?: Record<string, { datum?: string, beleg?: string, ergebnis?: string }>,
  *   goldsetTarget?: number, figma?: { frames: string[] } | { error: string } | null, expected?: string[] }} ctx
  * `issues: null` = Linear nicht erreichbar.
- * @returns {{ id: string, area: string, label: string, status: Status, detail: string }[]}
+ * @returns {{ id: string, area: string, label: string, status: Status, detail: string, stufe: string }[]}
  */
 export function evaluateReadiness({ metrics, issues, confirmations = {}, built = {}, ran = {}, goldsetTarget = DEFAULT_GOLDSET_TARGET, figma = null, expected = [] }) {
   const auto = {
