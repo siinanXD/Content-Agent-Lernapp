@@ -60,7 +60,7 @@ Seite `Components` hält die Master-Komponenten; Screens nutzen Instanzen.
 | 0b | `00b Einwilligung mit KI-Hinweis` | 20:343 | `/einwilligung` |
 | 15 | `15 Schwerpunkt wählen` | 20:356 | `/schwerpunkt` |
 | 16 | `16 Einstellungen` | 21:331 | `/einstellungen` (+ `/impressum`, `/datenschutz`, `/ki-hinweis`, `/quellen` als Gerüst „Text folgt“) |
-| 17 | `17 Zustände` | 21:409 | Komponente `StateView` |
+| 17 | `17 Zustände (Laden · Leer · Fehler · Offline)` | 21:409 | Komponente `StateView` |
 
 ## Tokens
 
