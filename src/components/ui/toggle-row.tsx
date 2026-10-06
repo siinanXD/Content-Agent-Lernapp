@@ -21,7 +21,7 @@ export function ToggleRow({
         role="switch"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-9 accent-[var(--color-brand-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+        className="h-11 w-11 accent-[var(--color-brand-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
       />
     </label>
   );

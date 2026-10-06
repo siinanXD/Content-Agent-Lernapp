@@ -17,7 +17,7 @@
     "ap22:ab:dry": "node --import tsx scripts/ap22-ab.ts --dry-run",
     "ap15:phase-a:dry":"node --import tsx scripts/ap15-phase-a.ts --dry-run",
     "test:a11y": "playwright test",
-    "test:lighthouse": "node scripts/lighthouse-gate.mjs http://127.0.0.1:43123/",
+    "test:lighthouse": "node scripts/lighthouse-gate.mjs --base http://127.0.0.1:43123",
     "decisions:index": "node scripts/decisions-index.mjs",
     "autonomy:dispatch:dry": "node scripts/autonomy/dispatch.mjs --dry-run --fixture docs/autonomy/fixture-issues.json",
     "autonomy:status:dry": "node scripts/autonomy/status.mjs --fixture docs/autonomy/fixture-status.json",
