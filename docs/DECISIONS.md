@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-261 | SIN-261: merge-gate wieder als echter Job | [SIN-261-merge-gate-job.md](decisions/SIN-261-merge-gate-job.md) |
+| SIN-255 | SIN-255: E2E-Gesamtweg Start bis Prüfungsmodus | [SIN-255-e2e-gesamtweg.md](decisions/SIN-255-e2e-gesamtweg.md) |
 | SIN-253 | SIN-253 — Planer füllt die Schlange nach | [SIN-253-planer-nachfuellen.md](decisions/SIN-253-planer-nachfuellen.md) |
 | SIN-252 | SIN-252: Gate lockern, risk:high nur bei echten Risiken | [SIN-252-gate-lockern.md](decisions/SIN-252-gate-lockern.md) |
 | SIN-251 | SIN-251 — Entscheidungs-Index im selben PR | [SIN-251-index-im-selben-pr.md](decisions/SIN-251-index-im-selben-pr.md) |
