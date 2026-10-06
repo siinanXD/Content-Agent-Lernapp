@@ -15,7 +15,7 @@ export function LegalPage({
       <main className="flex flex-1 flex-col gap-4 px-6 pb-8 pt-12">
         <Link
           href="/einstellungen"
-          className="text-sm text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+          className="inline-flex min-h-11 items-center self-start text-sm text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
         >
           Zurück zu den Einstellungen
         </Link>
