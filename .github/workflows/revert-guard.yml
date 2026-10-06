@@ -5,12 +5,16 @@
 # Regeln: nur ein Revert-PR je Commit; kein Revert eines Reverts (sonst Endlosschleife); Merge-Commits und
 # Commits ohne Squash-Form werden nicht angefasst, dort meldet der Lauf nur. Der Hinweis im PR-Text taucht im
 # Tages-Update (SIN-246) auf, weil der PR-Titel mit `revert:` beginnt.
+# Live-Check (SIN-319): Wird `nach-deploy` nach einem Production-Deploy rot (Auslöser deployment_status, nicht der
+# nächtliche Lauf), nimmt dieser Lauf den Commit des Deploys zurück, solange er noch die Spitze von main ist. Der
+# Revert-Commit löst über den Status-Wächter den nächsten Deploy aus (letzter grüner Stand). Hilft das nicht, wird
+# `nach-deploy` erneut rot; der Revert eines Reverts ist gesperrt, dann bleibt die Meldung im Status und Tages-Update.
 # Token: AGENT_WORKFLOW_TOKEN (nie github.token, sonst starten keine Folge-Workflows).
 name: revert-guard
 
 on:
   workflow_run:
-    workflows: [ci]
+    workflows: [ci, nach-deploy]
     types: [completed]
     branches: [main]
 
@@ -24,12 +28,16 @@ concurrency:
 
 jobs:
   revert:
-    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event == 'push'
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      ((github.event.workflow_run.name == 'ci' && github.event.workflow_run.event == 'push') ||
+       (github.event.workflow_run.name == 'nach-deploy' && github.event.workflow_run.event == 'deployment_status'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       SHA: ${{ github.event.workflow_run.head_sha }}
+      REASON: ${{ github.event.workflow_run.name == 'nach-deploy' && 'der Live-Check nach dem Production-Deploy rot war' || 'die CI auf main rot wurde' }}
     steps:
       - name: Revert-PR öffnen
         run: |
@@ -62,7 +70,7 @@ jobs:
           git commit --amend -q -m "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}
 
 Part of ${issue:-SIN-252}
-Revert von ${SHA}, weil die CI auf main rot wurde.
+Revert von ${SHA}, weil ${REASON}.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
           git push -q origin "$branch"
@@ -70,7 +78,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
           body="Part of ${issue:-SIN-252}
 
 ## Was ändert sich
-Nimmt \`${SHA:0:7}\` (${title}) zurück, weil die CI auf \`main\` nach dem Merge rot wurde. Der Stand von vorher ist wieder da.
+Nimmt \`${SHA:0:7}\` (${title}) zurück, weil ${REASON}. Der Stand von vorher ist wieder da.
 
 ## Nach dem Merge
 Auto-Merge bei grünen Checks (\`risk:medium\`). Danach das ursprüngliche Issue prüfen und die Änderung in einem neuen PR korrigiert wieder einbringen.

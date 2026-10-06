@@ -17,6 +17,7 @@ import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { collectBackup } from "./backup.mjs";
+import { collectLiveCheck } from "./live-check.mjs";
 import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
 import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh, parseState } from "./status.mjs";
@@ -168,7 +169,8 @@ export function buildDigest(snap) {
 
   const r = snap.readiness;
   const b = snap.backup;
-  lines.push("", `Sicherung: ${b ? (b.ok ? b.line.replace("Letzte Sicherung ", "zuletzt ") : `⚠️ ${b.line}`) : "nicht verfügbar"}`);
+  const live = snap.liveCheck ? ` · ${snap.liveCheck.ok ? "" : "⚠️ "}${snap.liveCheck.line}` : " · Live-Check: nicht verfügbar";
+  lines.push("", `Sicherung: ${b ? (b.ok ? b.line.replace("Letzte Sicherung ", "zuletzt ") : `⚠️ ${b.line}`) : "nicht verfügbar"}${live}`);
   lines.push("", r ? `Phase: ${r.green === r.total ? "beobachten" : "bauen"} · Produktreife ${r.green} von ${r.total} Punkten` : "Phase und Produktreife: nicht verfügbar");
   lines.push("", markOf(day, snap.slot, snap.now, snap.force));
   return { text: lines.join("\n"), day };
@@ -233,7 +235,8 @@ async function collect(repo, slot, now, since, env) {
     console.log(`Token-Liste nicht lesbar: ${e.message}`);
   }
   const backup = await collectBackup(repo, now, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, legalOpen, tokens, content, quotas, readiness, backup };
+  const liveCheck = await collectLiveCheck(repo, gh);
+  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, legalOpen, tokens, content, quotas, readiness, backup, liveCheck };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {
