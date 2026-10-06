@@ -1,0 +1,18 @@
+// SIN-257: alle Routen unter src/app (dynamische Route mit Beispiel-ID).
+export const routes = [
+  "/",
+  "/willkommen",
+  "/einwilligung",
+  "/schwerpunkt",
+  "/lernpfad",
+  "/einheit/unit-03",
+  "/ergebnis",
+  "/wiederholung",
+  "/pruefung",
+  "/profil",
+  "/einstellungen",
+  "/impressum",
+  "/datenschutz",
+  "/ki-hinweis",
+  "/quellen",
+];
