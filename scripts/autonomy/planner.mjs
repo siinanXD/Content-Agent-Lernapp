@@ -98,7 +98,9 @@ export async function collectMetrics(env = process.env, http = {}) {
         const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
         m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
       } catch (e) {
-        m.kosten_pro_lauf = notMeasurable(e);
+        m.kosten_pro_lauf = e.status === 404
+          ? "nicht messbar (Tabelle pipeline_run_costs fehlt in Supabase, Migration 20261006020000 anwenden)"
+          : notMeasurable(e);
       }
       m.fragen_bewertet = total;
       m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";

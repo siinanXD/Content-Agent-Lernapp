@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-269 | SIN-269: E2E-Gesamtweg je veröffentlichtem Kurs | [SIN-269-e2e-je-kurs.md](decisions/SIN-269-e2e-je-kurs.md) |
+| SIN-268 | SIN-268 — Kostenmessung pro Kurslauf reparieren | [SIN-268-kostenmessung.md](decisions/SIN-268-kostenmessung.md) |
 | SIN-267 | SIN-267 — Tages-Update: Wiederholungsschutz nach Zeit statt nach Tag | [SIN-267-digest-wiederholungsschutz.md](decisions/SIN-267-digest-wiederholungsschutz.md) |
 | SIN-266 | SIN-266 — Deploys bündeln, Planung nicht blockieren | [SIN-266-deploys-buendeln.md](decisions/SIN-266-deploys-buendeln.md) |
 | SIN-264 | SIN-264 — Vercel Hobby: Deployments-Limit bewusst akzeptiert | [SIN-264-vercel-deployments-limit.md](decisions/SIN-264-vercel-deployments-limit.md) |
