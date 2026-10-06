@@ -1,0 +1,11 @@
+# SIN-272: Sicherheits-Stichprobe MAF Metall
+
+- **Links:** Linear [SIN-272](https://linear.app/sinan-kahraman/issue/SIN-272), [MaschFüAusbV](https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html), Quellenliste `docs/content/maf-metall.json`, Produktreife `docs/PRODUCT.md` (Abschnitt Produktreife), Vorläufer `pickSafetySample` in `src/lib/generate/content-grow.ts`
+- **Entscheidung:** Eigenes Skript `scripts/safety-sample.mjs` mit reiner Logik in `src/lib/quality/safety-sample.ts` (Tests daneben). Es nimmt veröffentlichte Einheiten aus `--units <datei>` oder `--url <app>` (`/api/learner/phase-a`), wählt die sicherheitsrelevanten (Flag `safetyFlag`, Sicherheits-Block der Lehrplan-Karte oder Stichwort im Titel), zieht mit festem Seed (Standard 272, Größe 15, Mulberry32 über nach Id sortierte Liste) und prüft je Einheit: Quelle vorhanden und URL, Quelle in der Quellenliste der Lehrplan-Karten (amtlich), Abrufdatum vorhanden, gültig und nicht in der Zukunft. Bericht: `docs/quality/sicherheits-stichprobe-maf-metall.md` mit Seed, Ergebnis je Einheit, Liste der fehlenden Angaben und leerer Spalte „Mensch“. Exit 2 bei leerer Stichprobe oder Befund.
+- **Annahmen:**
+  - Die veröffentlichten Einheiten liegen nur in Supabase (`phase-a-published.json` im Repo hat `units: []`). In der Sandbox gibt es weder Keys noch eine bekannte App-URL; der Bericht für MAF Metall wurde deshalb **nicht** erzeugt. Er entsteht mit dem ersten Lauf gegen die Live-App.
+  - Der Phase-A-Kurs (M0, LF1, LF2, PA) ist der Bestand „veröffentlichte MAF-Metall-Einheiten“. Der Kurs hat 248 Einheiten; die Karte `maf-metall` hat mehr Module, die Lücken füllt AP-23.
+  - Das Skript prüft nur Quelle und Abrufdatum, nicht den fachlichen Inhalt. Den Abgleich mit der amtlichen Quelle macht ein Mensch.
+  - `content-safety` in `docs/product-readiness.json` bleibt **leer**, bis eine Person den Bericht geprüft und bestätigt hat (Datum und Beleg). Ein Eintrag ohne Bericht wäre erfunden.
+  - Stichprobengröße 15 ist eine Schätzung (ca. 10 % der erwarteten sicherheitsrelevanten Einheiten, aber mehr als bei `pickSafetySample`, weil nur einmal geprüft wird); über `--size` änderbar.
+- **Warum:** `pickSafetySample` ist nicht seedbar und prüft keine Quellen. Ein kleines Skript ohne neue Abhängigkeit erfüllt „reproduzierbar“ und trennt Fakten (Skript) von Bewertung (Mensch).

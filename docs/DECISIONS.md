@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-273 | SIN-273 — Sentry und PostHog prüfen, Planer-Auslese vervollständigen | [SIN-273-sentry-posthog-planer.md](decisions/SIN-273-sentry-posthog-planer.md) |
+| SIN-272 | SIN-272: Sicherheits-Stichprobe MAF Metall | [SIN-272-sicherheits-stichprobe.md](decisions/SIN-272-sicherheits-stichprobe.md) |
 | SIN-271 | SIN-271: Hex-Farben entfernen, Messung nachweisen | [SIN-271-hex-farben-und-messung.md](decisions/SIN-271-hex-farben-und-messung.md) |
 | SIN-270 | SIN-270 — Bewertungslauf aller Fragen mit Langfuse-Meldung | [SIN-270-bewertungslauf-langfuse.md](decisions/SIN-270-bewertungslauf-langfuse.md) |
 | SIN-269 | SIN-269: E2E-Gesamtweg je veröffentlichtem Kurs | [SIN-269-e2e-je-kurs.md](decisions/SIN-269-e2e-je-kurs.md) |
