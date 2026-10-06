@@ -70,3 +70,10 @@ test("Entscheidungs-Index: zwei parallele PRs ändern verschiedene Dateien, der 
   const text = readFileSync(join(root, "docs", "DECISIONS.md"), "utf8");
   assert.ok(text.indexOf("SIN-2-b.md") < text.indexOf("SIN-1-a.md"));
 });
+
+test("pr-gate: merge-gate ist ein echter Job, kein Check-Run (SIN-261)", () => {
+  const wf = readFileSync(join(process.cwd(), ".github/workflows/pr-gate.yml"), "utf8");
+  assert.match(wf, /^ {2}merge-gate:\n {4}needs: gate\n {4}if: always\(\)/m);
+  assert.match(wf, /waiting: \$\{\{ steps\.decide\.outputs\.waiting \}\}/);
+  assert.doesNotMatch(wf, /checks\.create/);
+});
