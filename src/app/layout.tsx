@@ -9,11 +9,15 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
+// Geist Mono nur für Kennungen und Zahlen: nicht vorladen, damit die Schrift den ersten Bildaufbau nicht bremst (SIN-311).
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -40,8 +44,18 @@ export default function RootLayout({
   return (
     <html
       lang="de"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Vor dem ersten Bild: schon beantwortete Einwilligung markieren, das Banner bleibt dann verborgen (SIN-311). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var o=JSON.parse(localStorage.getItem("cal-onboarding")||"null");if(o&&o.consent!==null&&o.consent!==undefined)document.documentElement.dataset.consent="decided"}catch(e){}',
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col bg-[var(--color-bg-canvas)] text-[var(--color-text-primary)]">
         <PostHogProvider>
           <A11yProvider>

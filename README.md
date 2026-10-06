@@ -65,7 +65,7 @@ A11y gates (axe über alle Routen, Tastatur, Lighthouse a11y ≥ 0.9) laufen im 
 
 | Was | Befehl / Workflow | Wirkung |
 | --- | --- | --- |
-| Leistungsbudget | `npm run build && npm run perf:budget -- --serve` · Grenzen in `performance-budget.json` | LCP, CLS, TBT und JS-Größe je Route (Handy, Median aus 3 Läufen). Überschreitung macht `build` rot und blockiert den Merge. |
+| Leistungsbudget | `npm run build && npm run perf:budget -- --serve` · Grenzen in `performance-budget.json` | LCP (höchstens 2,5 s), CLS, TBT und JS-Größe je Route (Handy, Median aus 5 Läufen; `--details` zeigt das LCP-Element). Überschreitung macht `build` rot und blockiert den Merge. |
 | Bildvergleich | `npm run visual -- --update-snapshots`, danach `npm run visual` · Workflow `visual.yml` | Handy- und Desktop-Bilder aller Seiten gegen main. Nur Hinweis (Lauf-Bericht, Artefakt `bildvergleich`), kein Gate; die Referenz kommt immer frisch aus main. |
 | Aufräum-Agent | `npm run cleanup:scan` · Workflow `aufraeumen.yml` (montags) | Ungenutzte Dateien, tote Pakete, große Dateien, Doppelungen, Doku-Abgleich: ein PR pro Woche. |
 | README-Erinnerung | `npm run readme:check` · Schritt im CI-Job `build` | Warnung, wenn ein PR Befehle, Seiten, Umgebungsvariablen oder Workflows ändert, ohne `README.md` anzufassen. |
