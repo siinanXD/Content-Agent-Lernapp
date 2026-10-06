@@ -189,6 +189,45 @@ export async function recordClaudeUsageTrace(payload: {
   });
 }
 
+/** SIN-258: Token und Euro eines Pipeline-Laufs als Trace (nur Zahlen und Kennungen). */
+export async function recordRunCostTrace(payload: {
+  name: string;
+  record: {
+    runId: string;
+    courseId: string;
+    kind: string;
+    claudeInputTokens: number;
+    claudeOutputTokens: number;
+    claudeCacheCreationTokens: number;
+    claudeCacheReadTokens: number;
+    openaiInputTokens: number;
+    openaiOutputTokens: number;
+    costUsd: number;
+    costEur: number;
+    capEur: number;
+    stopped: boolean;
+  };
+}): Promise<string | null> {
+  const r = payload.record;
+  return recordEvaluationTrace({
+    name: payload.name,
+    courseId: r.courseId,
+    passed: !r.stopped,
+    scores: {
+      costEur: r.costEur,
+      costUsd: r.costUsd,
+      capEur: r.capEur,
+      claudeInputTokens: r.claudeInputTokens,
+      claudeOutputTokens: r.claudeOutputTokens,
+      claudeCacheCreationTokens: r.claudeCacheCreationTokens,
+      claudeCacheReadTokens: r.claudeCacheReadTokens,
+      openaiInputTokens: r.openaiInputTokens,
+      openaiOutputTokens: r.openaiOutputTokens,
+    },
+    metadata: { kind: "run-cost", runId: r.runId, runKind: r.kind },
+  });
+}
+
 export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
   dataset: string;
   upserted: number;
