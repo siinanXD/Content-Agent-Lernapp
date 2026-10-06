@@ -193,3 +193,25 @@ test("Nachfüllen (SIN-262): Repo-Variablen überschreiben Schwelle, Obergrenze 
   assert.equal(decideRefill({ ...base, startable: 1, phase: "betrieb", env: {} }).trigger, false);
   assert.deepEqual(refillConfig({ REFILL_MIN: "x", REFILL_MAX: "" }), { min: 6, max: 10, cooldownH: 2 });
 });
+
+test("Status (SIN-309): hängende Production → Meldung, Bug-Issue ohne Duplikat, Merker und Vercel-Zähler", () => {
+  const stuck = { since: "2026-10-06T11:00:00.000Z", sha: "03e0768aaaaaaa", state: "CANCELED" };
+  const snap = {
+    ...fixture(),
+    deploy: { deploy: false, reason: "x", lastAt: "2026-10-06T03:39:00.000Z", nextAt: null, pending: 1, stuck, attempt: { sha: stuck.sha, at: stuck.since, state: "CANCELED" }, live: { sha: "aaaaaaa1111111", at: "2026-10-06T03:39:00.000Z", ahead: 3 } },
+    usage: { vercel_deployments_tag: 72, vercel_split: { production: 40, preview: 32 } },
+  };
+  type Act = { type: string; issue?: { title: string } };
+  const r = analyze(snap, limits, {});
+  assert.ok(keys(r).includes("deploy-stuck:03e0768aaaaaaa"));
+  assert.match(renderAlert(r.fresh), /Production hängt seit 11:00 UTC: Hook-Deploy für 03e0768 ist CANCELED/);
+  const bug = r.actions.find((a: Act) => a.type === "create-issue" && a.issue?.title.startsWith("Bug: Production-Deploy"));
+  assert.ok(bug);
+  assert.match(r.body, /Live-Stand: Commit aaaaaaa \(03:39 UTC\), main ist 3 Merge\(s\) voraus/);
+  assert.match(r.body, /Vercel heute: 72\/100 \(Production 40, Vorschau 32\) ⚠️/);
+  assert.deepEqual(parseState(r.body).deployAttempt, snap.deploy.attempt);
+  assert.deepEqual(parseState(r.body).deployStuck, stuck);
+  // Gleicher Titel schon offen: kein zweites Issue.
+  const dup = analyze({ ...snap, issues: [...snap.issues, { ...snap.issues[0], title: (bug as { issue: { title: string } }).issue.title }] }, limits, {});
+  assert.equal(dup.actions.filter((a: Act) => a.issue?.title.startsWith("Bug: Production-Deploy")).length, 0);
+});
