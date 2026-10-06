@@ -1,0 +1,399 @@
+{
+  "datum": "2026-10-06",
+  "schwelle": 0.9,
+  "routen": [
+    {
+      "route": "/",
+      "scores": {
+        "performance": 0.97,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 767,
+        "lcpMs": 2577,
+        "tbtMs": 59,
+        "cls": 0
+      },
+      "lcpElement": "<h1 id=\"start-titel\" class=\"text-[44px] font-bold leading-[44px]\" style=\"font-family:var(--font-display)\">",
+      "failing": [
+        "errors-in-console"
+      ],
+      "savings": [
+        "unused-javascript 300 ms",
+        "legacy-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/anmelden",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 764,
+        "lcpMs": 2115,
+        "tbtMs": 50,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"text-sm leading-[18px] text-[var(--color-text-secondary)]\">",
+      "failing": [],
+      "savings": [
+        "unused-javascript 300 ms",
+        "legacy-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/ausbilder",
+      "scores": {
+        "performance": 0.95,
+        "accessibility": 1,
+        "best-practices": 0.96,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 770,
+        "lcpMs": 2740,
+        "tbtMs": 95,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"text-[15px] text-[var(--color-text-secondary)]\">",
+      "failing": [
+        "errors-in-console"
+      ],
+      "savings": [
+        "unused-javascript 300 ms",
+        "legacy-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/datenschutz",
+      "scores": {
+        "performance": 1,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 766,
+        "lcpMs": 1824,
+        "tbtMs": 49,
+        "cls": 0
+      },
+      "lcpElement": "<h1 class=\"text-[28px] font-bold text-[var(--color-text-primary)]\" style=\"font-family:var(--font-display)\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/demo",
+      "scores": {
+        "performance": 0.96,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 762,
+        "lcpMs": 2563,
+        "tbtMs": 99,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"text-[15px] leading-5 text-[var(--color-text-secondary)]\">",
+      "failing": [],
+      "savings": [
+        "unused-javascript 300 ms",
+        "legacy-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/einheit/unit-03",
+      "scores": {
+        "performance": 0.98,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 770,
+        "lcpMs": 2135,
+        "tbtMs": 93,
+        "cls": 0.042
+      },
+      "lcpElement": "<img src=\"/generated/lockout-flow.svg\" alt=\"Ablauf Freischalten sichern prüfen\" class=\"mx-auto max-h-56 w-full object-contain\">",
+      "failing": [
+        "bf-cache"
+      ],
+      "savings": [
+        "server-response-time 63 ms",
+        "unused-javascript 300 ms",
+        "legacy-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/einstellungen",
+      "scores": {
+        "performance": 0.98,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 772,
+        "lcpMs": 2431,
+        "tbtMs": 46,
+        "cls": 0
+      },
+      "lcpElement": "<h1 class=\"text-[28px] font-bold text-[var(--color-text-primary)]\" style=\"font-family:var(--font-display)\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/einwilligung",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 765,
+        "lcpMs": 1964,
+        "tbtMs": 52,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"mt-2 text-[15px] leading-6 text-[var(--color-text-primary)]\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/ergebnis",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 767,
+        "lcpMs": 1977,
+        "tbtMs": 42,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"mt-1 text-sm text-[var(--color-text-secondary)]\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/impressum",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 767,
+        "lcpMs": 1975,
+        "tbtMs": 46,
+        "cls": 0
+      },
+      "lcpElement": "<h1 class=\"text-[28px] font-bold text-[var(--color-text-primary)]\" style=\"font-family:var(--font-display)\">",
+      "failing": [],
+      "savings": [
+        "unused-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/ki-hinweis",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 763,
+        "lcpMs": 1969,
+        "tbtMs": 43,
+        "cls": 0
+      },
+      "lcpElement": "<h1 class=\"text-[28px] font-bold text-[var(--color-text-primary)]\" style=\"font-family:var(--font-display)\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/lernpfad",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 765,
+        "lcpMs": 1972,
+        "tbtMs": 99,
+        "cls": 0
+      },
+      "lcpElement": "<h2 class=\"text-lg font-medium text-[var(--color-text-primary)]\" style=\"font-family:var(--font-display)\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/profil",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 765,
+        "lcpMs": 1973,
+        "tbtMs": 93,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"mt-2 text-[15px] text-[var(--color-text-secondary)]\">",
+      "failing": [],
+      "savings": [
+        "unused-javascript 250 ms"
+      ]
+    },
+    {
+      "route": "/pruefung",
+      "scores": {
+        "performance": 0.96,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 768,
+        "lcpMs": 2716,
+        "tbtMs": 97,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"text-sm text-[var(--color-text-secondary)]\">",
+      "failing": [],
+      "savings": [
+        "unused-javascript 300 ms",
+        "legacy-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/pruefung/ergebnis",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 768,
+        "lcpMs": 1973,
+        "tbtMs": 45,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"text-[15px] text-[var(--color-text-secondary)]\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/quellen",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 765,
+        "lcpMs": 1966,
+        "tbtMs": 45,
+        "cls": 0
+      },
+      "lcpElement": "<h1 class=\"text-[28px] font-bold text-[var(--color-text-primary)]\" style=\"font-family:var(--font-display)\">",
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/schwerpunkt",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 765,
+        "lcpMs": 1973,
+        "tbtMs": 87,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"mt-2 text-[15px] text-[var(--color-text-secondary)]\">",
+      "failing": [],
+      "savings": [
+        "unused-javascript 260 ms"
+      ]
+    },
+    {
+      "route": "/start",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 764,
+        "lcpMs": 1973,
+        "tbtMs": 94,
+        "cls": 0
+      },
+      "failing": [],
+      "savings": []
+    },
+    {
+      "route": "/wiederholung",
+      "scores": {
+        "performance": 0.95,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 768,
+        "lcpMs": 2763,
+        "tbtMs": 96,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"text-[15px] text-[var(--color-text-primary)]\">",
+      "failing": [],
+      "savings": [
+        "unused-javascript 300 ms",
+        "legacy-javascript 150 ms"
+      ]
+    },
+    {
+      "route": "/willkommen",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "best-practices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "fcpMs": 766,
+        "lcpMs": 1974,
+        "tbtMs": 49,
+        "cls": 0
+      },
+      "lcpElement": "<p class=\"text-[15px] leading-[22px] text-[var(--color-text-on-brand)]\">",
+      "failing": [],
+      "savings": []
+    }
+  ]
+}

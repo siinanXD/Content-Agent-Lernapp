@@ -15,6 +15,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | --- | --- | --- |
 | SIN-292 | SIN-292: Planer unterscheidet „gebaut“ von „gelaufen“ und legt keine Duplikate an | [SIN-292-gebaut-gelaufen.md](decisions/SIN-292-gebaut-gelaufen.md) |
 | SIN-291 | SIN-291 — Selbst-Diagnose: Der Loop erkennt Stillstand, nennt die Ursache und legt das Bug-Issue selbst an | [SIN-291-selbst-diagnose.md](decisions/SIN-291-selbst-diagnose.md) |
+| SIN-286 | SIN-286: Qualität je Screen messen, Bundle verschlanken | [SIN-286-qualitaet-messen.md](decisions/SIN-286-qualitaet-messen.md) |
 | SIN-280 | SIN-280 — Kosten pro Kurslauf messen | [SIN-280-kosten-pro-lauf.md](decisions/SIN-280-kosten-pro-lauf.md) |
 | SIN-278 | SIN-278: Sicherheits-Stichprobe gegen die Live-App | [SIN-278-live-stichprobe.md](decisions/SIN-278-live-stichprobe.md) |
 | SIN-277 | SIN-277 — Datenmodell für Demo-Anfragen und Ausbilder-Ansicht | [SIN-277-datenmodell.md](decisions/SIN-277-datenmodell.md) |

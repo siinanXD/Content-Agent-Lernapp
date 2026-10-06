@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import posthog from "posthog-js";
-import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { syncPostHogConsent } from "@/lib/analytics-consent";
 import { loadOnboarding } from "@/lib/learner/onboarding";
 
@@ -10,6 +8,8 @@ import { loadOnboarding } from "@/lib/learner/onboarding";
  * PostHog EU provider. Initializes only when NEXT_PUBLIC_POSTHOG_KEY is set
  * and the learner consented (Onboarding 00b, SIN-230).
  * Default host: https://eu.i.posthog.com (override via NEXT_PUBLIC_POSTHOG_HOST).
+ * posthog-js wird erst bei gesetztem Key nachgeladen (SIN-286, Lighthouse): sonst liegt es
+ * in jedem Bundle. Niemand nutzt den React-Kontext, darum kein PHProvider.
  * @see https://posthog.com/docs/libraries/next-js
  */
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
@@ -21,14 +21,21 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() ||
       "https://eu.i.posthog.com";
 
+    let removed = false;
+    let sync = () => {};
     // Widerruf in den Einstellungen stoppt die Erfassung sofort.
-    function sync() {
-      syncPostHogConsent(posthog, loadOnboarding().consent, { key: key!, host });
-    }
-    sync();
-    window.addEventListener("cal-consent-change", sync);
-    return () => window.removeEventListener("cal-consent-change", sync);
+    void import("posthog-js").then(({ default: posthog }) => {
+      if (removed) return;
+      sync = () => syncPostHogConsent(posthog, loadOnboarding().consent, { key, host });
+      sync();
+    });
+    const onChange = () => sync();
+    window.addEventListener("cal-consent-change", onChange);
+    return () => {
+      removed = true;
+      window.removeEventListener("cal-consent-change", onChange);
+    };
   }, []);
 
-  return <PHProvider client={posthog}>{children}</PHProvider>;
+  return children;
 }

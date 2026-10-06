@@ -18,7 +18,7 @@ export default function AnmeldenPage() {
     e.preventDefault();
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
     if (!email) return;
-    const client = getBrowserSupabase();
+    const client = await getBrowserSupabase();
     if (!client) {
       setStatus("nicht-eingerichtet");
       return;
