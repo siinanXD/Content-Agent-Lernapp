@@ -44,8 +44,9 @@ Injizierte Secret-Namen:
 | `NEXT_PUBLIC_SUPABASE_URL` | optionaler Alias | nicht nötig, solange Server `SUPABASE_URL` liest |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | optionaler Alias | nicht nötig, solange Server `SUPABASE_ANON_KEY` liest |
 | `NEXT_PUBLIC_SENTRY_DSN` | **fehlt** (optional) | Sentry EU; ohne Wert = No-Op (SIN-203) |
-| `SENTRY_AUTH_TOKEN` | optional | Source-Maps-Upload im Vercel-Build |
-| `SENTRY_ORG` / `SENTRY_PROJECT` | optional | zu `SENTRY_AUTH_TOKEN` |
+| `SENTRY_AUTH_TOKEN` | optional | Source-Maps-Upload im Vercel-Build; Planer-Kennzahlen `sentry`/`sentry_kritisch` (Leserechte, SIN-259). Ohne = „nicht verfügbar“ |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | optional | zu `SENTRY_AUTH_TOKEN` (Slugs) |
+| `SENTRY_BASE_URL` | optional | Default `https://de.sentry.io` (EU) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | **fehlt** (optional) | PostHog EU Project API Key; ohne = No-Op |
 | `NEXT_PUBLIC_POSTHOG_HOST` | optional | Default im Code `https://eu.i.posthog.com` |
 
