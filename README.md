@@ -72,6 +72,8 @@ A11y gates (axe über alle Routen, Tastatur, Lighthouse a11y ≥ 0.9) laufen im 
 | Aufräum-Agent | `npm run cleanup:scan` · Workflow `aufraeumen.yml` (montags) | Ungenutzte Dateien, tote Pakete, große Dateien, Doppelungen, Doku-Abgleich: ein PR pro Woche. |
 | README-Erinnerung | `npm run readme:check` · Schritt im CI-Job `build` | Warnung, wenn ein PR Befehle, Seiten, Umgebungsvariablen oder Workflows ändert, ohne `README.md` anzufassen. |
 | Changelog | `npm run changelog` (braucht volle Git-Historie) | [`CHANGELOG.md`](CHANGELOG.md) aus den Conventional-Commit-Titeln auf main, ohne KI. Erzeugt, nicht von Hand bearbeiten; der Aufräum-Lauf aktualisiert sie. |
+| CodeQL | Workflow `codeql.yml` (PR, main, montags) · `node scripts/autonomy/codeql-gate.mjs <Ordner>` | JavaScript/TypeScript. Funde ab `security-severity` 7.0 machen den Lauf rot (SARIF als Artefakt `codeql-sarif`). |
+| Paket-Updates | `.github/dependabot.yml` (Dependabot, montags) | npm und Actions: Minor/Patch als Bündel, Major einzeln. Sicherheits-Updates sofort (Repo-Einstellung). Entscheidung: [`SIN-295`](docs/decisions/SIN-295-codeql-updates.md). |
 
 Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
 
