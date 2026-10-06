@@ -22,6 +22,21 @@ function capture(event: string, properties?: Props): void {
     });
 }
 
+/** Verwirft die Zufalls-Kennung dieses Geräts (Einstellungen · Nutzungsdaten löschen). */
+export async function forgetAnalyticsUser(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim()) return;
+  try {
+    const [{ default: posthog }, { forgetPostHogUser }] = await Promise.all([
+      import("posthog-js"),
+      import("@/lib/analytics-consent"),
+    ]);
+    forgetPostHogUser(posthog);
+  } catch {
+    /* analytics must never break the app */
+  }
+}
+
 /** Fired when a learner opens a Einheit. */
 export function trackUnitStarted(properties: {
   unitId: string;

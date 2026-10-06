@@ -8,12 +8,25 @@ import { Progress } from "@/components/ui/progress";
 import { ToggleRow } from "@/components/ui/toggle-row";
 import { loadSession } from "@/lib/learner/session";
 import { loadStack, stackSize, type LeitnerStack } from "@/lib/learner/leitner";
+import {
+  formatDays,
+  loadLearningSummary,
+  type LearningSummary,
+} from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
 
 export default function ProfilPage() {
   const session = useAfterMount(loadSession, null);
   const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
   const reviewSize = stack ? stackSize(stack) : 0;
+  const summary = useAfterMount<LearningSummary | "laden" | "fehler">(
+    loadLearningSummary,
+    "laden",
+  );
+  const streak =
+    summary === "laden" || summary === "fehler"
+      ? { days: 0, learnedToday: false, previousDays: 0 }
+      : summary.streak;
   const { prefs, setPrefs } = useA11y();
 
   const daysDone = 15;
@@ -59,7 +72,10 @@ export default function ProfilPage() {
 
         <MetaRow label="Beruf" value={session?.keyword ?? "Maschinen- und Anlagenführer"} />
         <MetaRow label="Variante" value={variantLabel} />
-        <MetaRow label="Serie" value={`${session?.streakDays ?? 7} Tage am Stück`} />
+        <MetaRow label="Serie" value={`${formatDays(streak.days)} am Stück`} />
+        {streak.previousDays > 0 ? (
+          <MetaRow label="Letzte Serie" value={formatDays(streak.previousDays)} />
+        ) : null}
         <MetaRow
           label="Punkte gesamt"
           value={(session?.totalPoints ?? 1840).toLocaleString("de-DE")}

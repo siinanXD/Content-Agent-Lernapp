@@ -17,6 +17,7 @@ import {
   type OnboardingState,
   type Reminder,
 } from "@/lib/learner/onboarding";
+import { forgetAnalyticsUser } from "@/lib/analytics";
 import { useAfterMount } from "@/lib/use-after-mount";
 
 const LEGAL = [
@@ -33,6 +34,8 @@ export default function EinstellungenPage() {
   const storedOnboarding = useAfterMount<OnboardingState | null>(loadOnboarding, null);
   const [reminder, setReminder] = useState<Reminder | null>(null);
   const [consent, setConsent] = useState<boolean | null | undefined>(undefined);
+  const [consentTime, setConsentTime] = useState<string | null>(null);
+  const [revoked, setRevoked] = useState(false);
   const [message, setMessage] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -40,9 +43,35 @@ export default function EinstellungenPage() {
   const shownConsent =
     (consent !== undefined ? consent : storedOnboarding?.consent) ?? false;
 
+  const reminderActive = shownConsent && shownReminder.enabled;
+  const consentAt = consentTime ?? storedOnboarding?.consentAt;
+  const consentNote = revoked
+    ? "Messung gestoppt. Danke trotzdem."
+    : shownConsent && consentAt
+      ? `Erteilt am ${new Date(consentAt).toLocaleDateString("de-DE", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })}`
+      : "";
+
   function updateReminder(next: Reminder) {
     setReminder(next);
     saveReminder(next);
+  }
+
+  /** Widerruf wirkt sofort: `saveOnboarding` löst die Synchronisierung mit PostHog aus. Erinnerungen enden mit. */
+  function changeConsent(c: boolean) {
+    setConsent(c);
+    setRevoked(!c);
+    setConsentTime(saveOnboarding({ consent: c }).consentAt);
+    if (!c) updateReminder({ ...shownReminder, enabled: false });
+  }
+
+  function deleteUsageData() {
+    changeConsent(false);
+    void forgetAnalyticsUser();
+    setMessage("Die Kennung auf diesem Gerät ist verworfen. Dein Lernfortschritt bleibt.");
   }
 
   function exportData() {
@@ -91,13 +120,34 @@ export default function EinstellungenPage() {
             checked={prefs.readAloud}
             onChange={(c) => setPrefs({ ...prefs, readAloud: c })}
           />
+        </Section>
+
+        <Section title="Datennutzung">
+          <ToggleRow
+            id="consent"
+            label="Anonyme Nutzungsdaten"
+            description="Hilft, Fragen und Einheiten zu verbessern"
+            checked={shownConsent}
+            onChange={changeConsent}
+          />
+          <p role="status" className="text-xs text-[var(--color-text-secondary)]">
+            {consentNote}
+          </p>
           <ToggleRow
             id="reminder"
-            label="Erinnerung"
-            checked={shownReminder.enabled}
+            label="Lern-Erinnerung"
+            description={
+              reminderActive
+                ? `Eine Nachricht am Tag um ${shownReminder.time}`
+                : shownConsent
+                  ? "Aus"
+                  : "Aus, nur mit Einwilligung"
+            }
+            checked={reminderActive}
+            disabled={!shownConsent}
             onChange={(c) => updateReminder({ ...shownReminder, enabled: c })}
           />
-          {shownReminder.enabled ? (
+          {reminderActive ? (
             <label className="flex min-h-11 items-center justify-between gap-3 text-[15px] text-[var(--color-text-primary)]">
               Uhrzeit
               <input
@@ -110,18 +160,26 @@ export default function EinstellungenPage() {
               />
             </label>
           ) : null}
+          <h3
+            className="pt-1 text-[15px] font-medium text-[var(--color-text-primary)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Was gespeichert wird
+          </h3>
+          <p className="text-sm leading-5 text-[var(--color-text-secondary)]">
+            Antworten (richtig/falsch), Dauer pro Einheit, Abbrüche, mit einer
+            Zufalls-Kennung. Kein Name, keine E-Mail in den Nutzungsdaten.
+          </p>
+          <Button variant="secondary" onClick={deleteUsageData}>
+            Meine Nutzungsdaten löschen
+          </Button>
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            Entfernt alle Nutzungsdaten zu dieser Kennung. Dein Lernfortschritt
+            bleibt.
+          </p>
         </Section>
 
-        <Section title="Daten">
-          <ToggleRow
-            id="consent"
-            label="Nutzungsdaten teilen"
-            checked={shownConsent}
-            onChange={(c) => {
-              setConsent(c);
-              saveOnboarding({ consent: c });
-            }}
-          />
+        <Section title="Daten auf diesem Gerät">
           <Button variant="secondary" onClick={exportData}>
             Daten exportieren
           </Button>

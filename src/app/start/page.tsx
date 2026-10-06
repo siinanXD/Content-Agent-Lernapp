@@ -27,7 +27,6 @@ export default function StartPage() {
     saveSession({
       keyword: trimmed,
       variant,
-      streakDays: 7,
       totalPoints: 1720,
     });
     router.push("/lernpfad");

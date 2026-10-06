@@ -28,7 +28,6 @@ export default function SchwerpunktPage() {
     saveSession({
       keyword: "Maschinen- und Anlagenführer",
       variant: "pruefung",
-      streakDays: 0,
       totalPoints: 0,
     });
     router.push("/lernpfad");

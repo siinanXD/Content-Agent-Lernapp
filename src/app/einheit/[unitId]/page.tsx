@@ -20,6 +20,7 @@ import {
 } from "@/lib/learner/playable-path";
 import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
 import { loadSession, saveSession } from "@/lib/learner/session";
+import { recordLearningEvent } from "@/lib/learner/streak";
 import {
   loadStack,
   markCorrect,
@@ -181,9 +182,9 @@ export default function EinheitPage() {
     const session = loadSession() ?? {
       keyword: "Maschinen- und Anlagenführer",
       variant: "pruefung" as const,
-      streakDays: 7,
       totalPoints: 1720,
     };
+    recordLearningEvent("unit");
     const points = scored * 20 + 20;
     saveSession({
       ...session,

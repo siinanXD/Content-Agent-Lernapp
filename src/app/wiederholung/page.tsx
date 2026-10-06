@@ -27,6 +27,7 @@ import {
 import { StateView } from "@/components/ui/state-view";
 import { useOnline } from "@/lib/use-online";
 import { loadSession, saveSession } from "@/lib/learner/session";
+import { recordLearningEvent } from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
 
 export default function WiederholungPage() {
@@ -84,9 +85,9 @@ export default function WiederholungPage() {
       const session = loadSession() ?? {
         keyword: "Maschinen- und Anlagenführer",
         variant: "pruefung" as const,
-        streakDays: 7,
         totalPoints: 1720,
       };
+      recordLearningEvent("review");
       saveSession({
         ...session,
         lastResult: {

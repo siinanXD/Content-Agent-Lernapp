@@ -11,10 +11,16 @@ export function ProgressRing({
   done,
   total,
   label = "heute",
+  onDark = false,
+  showLabel = true,
 }: {
   done: number;
   total: number;
   label?: string;
+  /** Auf dunkler Karte (Figma 22 „Tagesziel-Karte“): dunkler Track, heller Wert */
+  onDark?: boolean;
+  /** Beschriftung unter dem Wert sichtbar; für Screenreader bleibt sie erhalten */
+  showLabel?: boolean;
 }) {
   const ratio = total <= 0 ? 0 : Math.max(0, Math.min(1, done / total));
   return (
@@ -41,7 +47,7 @@ export function ProgressRing({
           cy={SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="var(--color-border-subtle)"
+          stroke={onDark ? "var(--color-track-on-dark)" : "var(--color-border-subtle)"}
           strokeWidth={STROKE}
         />
         <circle
@@ -58,14 +64,24 @@ export function ProgressRing({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
         <span
-          className="text-[18px] font-semibold text-[var(--color-text-primary)]"
+          className={`text-[18px] font-semibold ${
+            onDark ? "text-[var(--color-text-on-brand)]" : "text-[var(--color-text-primary)]"
+          }`}
           style={{ fontFamily: "var(--font-mono)" }}
         >
           {done}/{total}
         </span>
-        <span className="mt-1 text-[10px] text-[var(--color-text-secondary)]">
-          {label}
-        </span>
+        {showLabel ? (
+          <span
+            className={`mt-1 text-[10px] ${
+              onDark
+                ? "text-[var(--color-text-soft-on-dark)]"
+                : "text-[var(--color-text-secondary)]"
+            }`}
+          >
+            {label}
+          </span>
+        ) : null}
       </div>
     </div>
   );

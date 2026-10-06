@@ -1,6 +1,26 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { syncPostHogConsent, type ConsentClient } from "./analytics-consent";
+import {
+  forgetPostHogUser,
+  syncPostHogConsent,
+  type ConsentClient,
+} from "./analytics-consent";
+
+test("Nutzungsdaten löschen: Erfassung stoppt und die Kennung wird verworfen", () => {
+  const calls: string[] = [];
+  forgetPostHogUser({
+    __loaded: true,
+    opt_out_capturing: () => calls.push("opt_out"),
+    reset: () => calls.push("reset"),
+  });
+  assert.deepEqual(calls, ["opt_out", "reset"]);
+  // Nie initialisiert (nie eingewilligt): nichts zu tun
+  forgetPostHogUser({
+    opt_out_capturing: () => calls.push("x"),
+    reset: () => calls.push("y"),
+  });
+  assert.deepEqual(calls, ["opt_out", "reset"]);
+});
 
 const config = { key: "phc_test", host: "https://eu.i.posthog.com" };
 

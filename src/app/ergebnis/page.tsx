@@ -4,8 +4,19 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StatChip } from "@/components/ui/stat-chip";
 import { MobileShell } from "@/components/learner/mobile-shell";
+import { DailyGoal } from "@/components/ui/daily-goal";
+import {
+  DEFAULT_REMINDER,
+  loadOnboarding,
+  loadReminder,
+} from "@/lib/learner/onboarding";
 import { PLAYABLE_TODAY } from "@/lib/learner/playable-path";
 import { loadSession } from "@/lib/learner/session";
+import {
+  formatDays,
+  loadLearningSummary,
+  type LearningSummary,
+} from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
 import type { TrafficLight } from "@/lib/content/didaktik";
 
@@ -17,6 +28,15 @@ const lightClass: Record<TrafficLight, string> = {
 
 export default function ErgebnisPage() {
   const session = useAfterMount(loadSession, null);
+  const summary = useAfterMount<LearningSummary | "laden" | "fehler">(
+    loadLearningSummary,
+    "laden",
+  );
+  const onboarding = useAfterMount(loadOnboarding, null);
+  const reminder = useAfterMount(loadReminder, DEFAULT_REMINDER);
+  // Erinnerungen gibt es nur mit Einwilligung (SIN-279).
+  const showReminder = onboarding?.consent === true && reminder.enabled;
+  const ready = summary !== "laden" && summary !== "fehler" ? summary : null;
 
   const result = session?.lastResult;
   const title = result?.unitTitle ?? "Elektrische Gefahren";
@@ -59,11 +79,14 @@ export default function ErgebnisPage() {
           label="Punkte heute"
           showLabel
         />
-        <StatChip
-          kind="serie"
-          value={`${session?.streakDays ?? 7} Tage`}
-          label="Serie"
-        />
+        {ready && ready.streak.days > 0 ? (
+          <StatChip
+            kind="serie"
+            value={formatDays(ready.streak.days)}
+            label="Serie"
+            showLabel
+          />
+        ) : null}
         <StatChip
           kind="wiederholung"
           value={`${correct}/${total}`}
@@ -71,6 +94,12 @@ export default function ErgebnisPage() {
           showLabel
         />
       </section>
+
+      {ready ? (
+        <div className="px-6 pb-4">
+          <DailyGoal summary={ready} dueCount={0} />
+        </div>
+      ) : null}
 
       {areaResults.length > 0 ? (
         <section className="px-6 pb-4" aria-label="Ergebnis je Prüfungsgebiet">
@@ -124,6 +153,19 @@ export default function ErgebnisPage() {
             Tagesziel: fällige Wiederholungen zuerst, dann neue Einheiten
           </p>
         </div>
+        {showReminder ? (
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
+            <p
+              className="text-[15px] font-medium text-[var(--color-text-primary)]"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Erinnerung um {reminder.time}
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              Eine Nachricht pro Tag, nur wenn du noch nicht gelernt hast
+            </p>
+          </div>
+        ) : null}
         <Link href="/wiederholung" className="block">
           <Button variant="secondary">Zur Wiederholung</Button>
         </Link>
@@ -131,7 +173,7 @@ export default function ErgebnisPage() {
           <Button>Weiter lernen</Button>
         </Link>
         <Link href="/lernpfad" className="block">
-          <Button variant="secondary">Zum Lernpfad</Button>
+          <Button variant="secondary">Für heute fertig</Button>
         </Link>
       </section>
     </MobileShell>
