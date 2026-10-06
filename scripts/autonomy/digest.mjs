@@ -16,6 +16,7 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
+import { collectBackup } from "./backup.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
 import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh } from "./status.mjs";
 
@@ -155,6 +156,8 @@ export function buildDigest(snap) {
   lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"}`);
 
   const r = snap.readiness;
+  const b = snap.backup;
+  lines.push("", `Sicherung: ${b ? (b.ok ? b.line.replace("Letzte Sicherung ", "zuletzt ") : `⚠️ ${b.line}`) : "nicht verfügbar"}`);
   lines.push("", r ? `Phase: ${r.green === r.total ? "beobachten" : "bauen"} · Produktreife ${r.green} von ${r.total} Punkten` : "Phase und Produktreife: nicht verfügbar");
   lines.push("", markOf(day, snap.slot, snap.now, snap.force));
   return { text: lines.join("\n"), day };
@@ -206,7 +209,8 @@ async function collect(repo, slot, now, since, env) {
     console.log(`Entscheidungen nicht lesbar: ${e.message}`);
   }
   const decisionsOpen = await collectOpenDecisions(repo, prs.map((p) => ({ ...p, labels: p.labels.map((l) => l.name) })), now).catch(() => []);
-  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, content, quotas, readiness };
+  const backup = await collectBackup(repo, now, gh);
+  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, content, quotas, readiness, backup };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {

@@ -15,6 +15,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
+import { collectBackup } from "./backup.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
@@ -185,6 +186,10 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     incidents.push({ key: `quota:${q.key}`, text: `Kontingent ${q.name} bei ${q.pct} % (${q.text} von ${q.limit}).` });
   }
 
+  // Sicherung (SIN-293): Fehler oder überfällig = Meldung. Fehlt der Messwert (nicht lesbar), bleibt es still.
+  const backup = snap.backup ?? null;
+  if (backup?.incident) incidents.push(backup.incident);
+
   // --- Selbst-Diagnose (SIN-291): Ursache aus den letzten Logs, Bug-Issue ohne Duplikat ---
   const diagnosis =
     started.length < MAX_PARALLEL
@@ -251,6 +256,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     for (const r of running) out.push(`- Worker ${idOf(r.display_title) ?? "?"} (${r.status === "in_progress" ? "läuft" : "wartet"}) seit ${hm(mins(r.created_at, now))}, ${how}: [Lauf](${r.html_url})`);
   } else out.push("- Kein Worker läuft.");
   if (paused) out.push(`- ⏸ Pause bis ${pausedUntil}.`);
+  out.push(`- ${backup ? `${backup.ok ? "" : "⚠️ "}${backup.line}` : "Letzte Sicherung: nicht lesbar"}`);
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
   if (linearQ.level !== "unknown" && linearQ.level !== "ok") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
   out.push("");
@@ -547,7 +553,8 @@ export async function main(argv, env = process.env) {
     const logs = await collectLogs(repo, g.runs).catch(() => []);
     const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
     const doneTitles = linearOk ? await doneTitlesSince(STALL_PREFIX, now).catch(() => []) : [];
-    snap = { now: now.toISOString(), ...g, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage, deploy, logs, decisions, doneTitles };
+    const backup = await collectBackup(repo, now, gh);
+    snap = { now: now.toISOString(), ...g, backup, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage, deploy, logs, decisions, doneTitles };
     statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
