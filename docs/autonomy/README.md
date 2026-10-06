@@ -4,6 +4,10 @@
 
 **Einmalig von Sinan:** Secrets `LINEAR_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` setzen. Optional `AGENT_VARIABLES_TOKEN` (PAT, nur „Variables: write“), damit der Dispatcher `AGENT_PAUSED_UNTIL` bei Claude-Limit selbst setzt. Pause von Hand: Repo-Variable `AGENT_PAUSED_UNTIL` auf eine ISO-Zeit setzen, leeren hebt sie auf. Einfacher: Notbremse per Workflow `loop-pause` (siehe SIN-294 unten).
 
+## SIN-320: Sparsam bauen
+
+Größe je Issue (`groesse:klein|mittel|gross`) bestimmt Modell und `--max-turns` des Workers (klein: Haiku, 30; mittel: Sonnet, 80; groß: Sonnet, 150; Haiku ohne PR → zweiter Versuch mit Sonnet). Kleinkram desselben Bereichs läuft als ein Lauf mit einem PR. Nach jedem Worker- und Repair-Lauf steht der Verbrauch (Tokens, Runden, Dauer, API-Gegenwert) im PR-Steckbrief und in Linear, die Wochensumme samt „Teuersten 3“ im Tages-Update. Kriterien und Einzelheiten: `docs/autonomy/groessen.md`; Entscheidung: `docs/decisions/SIN-320-sparsam-bauen.md`. Prüfen: `npm run autonomy:dispatch:dry` (Größe und Bündel stehen in der Ausgabe), `npm run autonomy:digest:dry`.
+
 ## SIN-294: Notbremse, Erreichbarkeit der App, Token-Ablauf
 
 **Notbremse.** Workflow `loop-pause.yml` (nur `workflow_dispatch`): `aktion` = `pausieren` (optional `stunden`, leer = 24, höchstens 720) oder `fortsetzen`. Er setzt die Repo-Variable `AGENT_PAUSED_UNTIL` auf die Endzeit (UTC) oder löscht sie; Dispatcher und Planer lesen sie wie bisher und starten dann nichts. Laufende Worker enden normal. Braucht das Secret `AGENT_VARIABLES_TOKEN` (PAT, nur „Variables: write“); fehlt es, schlägt der Lauf rot fehl und nennt die Variable zum Von-Hand-Setzen. Am Handy: GitHub Mobile → Actions → `loop-pause` → Run workflow → Aktion wählen. Die Status-Seite zeigt „Pausiert bis …“. Prüfen: `node scripts/autonomy/pause.mjs pausieren 2` (berechnet nur den Wert, setzt nichts).

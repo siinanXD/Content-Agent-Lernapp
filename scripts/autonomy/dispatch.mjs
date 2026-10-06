@@ -7,7 +7,8 @@
  *   node scripts/autonomy/dispatch.mjs --blocker SIN-123 "Text"   Blocker-Kommentar
  *   node scripts/autonomy/dispatch.mjs --no-pr SIN-123 [datei]    Worker ohne PR: zurück auf Todo + Grund, zu große Aufträge zerlegen (SIN-291)
  *
- *   node scripts/autonomy/dispatch.mjs --prompt SIN-123   Prompt für den Worker-Lauf
+ *   node scripts/autonomy/dispatch.mjs --prompt SIN-123 [--bundle "SIN-124 SIN-125"] [--attempt 2]
+ *                                        Prompt, Größe, Modell und Runden-Deckel für den Worker-Lauf (SIN-320)
  *
  * Ausgabe für GitHub Actions: GITHUB_OUTPUT (found, identifiers; beim Worker identifier, prompt).
  * Der Dispatcher wählt nur (bis zu 2, Spuren abwechselnd); jedes Issue läuft in einem eigenen Worker-Lauf.
@@ -18,7 +19,8 @@ import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./budget.mjs";
 import { noPrComment, splitIssue, summarizeExecution, tooBig } from "./diagnose.mjs";
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
-import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, createLinearIssues, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState } from "./linear.mjs";
+import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
+import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, createLinearIssues, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -52,7 +54,7 @@ async function fetchRunningWorkers() {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
     });
     if (!res.ok) return undefined; // Läufe unbekannt: lieber nichts zurücksetzen
-    for (const r of (await res.json()).workflow_runs ?? []) ids.push(String(r.display_title ?? "").match(/SIN-\d+/)?.[0]);
+    for (const r of (await res.json()).workflow_runs ?? []) ids.push(...(String(r.display_title ?? "").match(/SIN-\d+/g) ?? []));
   }
   return ids.filter(Boolean);
 }
@@ -111,9 +113,21 @@ export async function main(argv) {
   const promptAt = argv.indexOf("--prompt");
   if (promptAt >= 0) {
     const issue = await findByIdentifier(argv[promptAt + 1]);
+    const arg = (n) => argv[argv.indexOf(n) + 1];
+    const rest = [];
+    for (const id of argv.includes("--bundle") ? arg("--bundle").split(/[\s+,]+/).filter(Boolean) : []) rest.push(await findByIdentifier(id));
+    // Größe, Modell und Runden (SIN-320): klein → Haiku, sonst Sonnet; Versuch 2 immer Sonnet.
+    const attempt = Number(argv.includes("--attempt") ? arg("--attempt") : 1) || 1;
+    const size = runSize([issue, ...rest]);
+    const model = modelFor(size, attempt);
+    const turns = maxTurnsFor(size, attempt);
+    const retryNote = attempt > 1 ? "\n\nZweiter Versuch (SIN-320): Ein erster Lauf mit einem kleineren Modell hat keinen PR geliefert. Prüfe `git status` und `git log` und setze auf dem vorhandenen Stand fort." : "";
     output("identifier", issue.identifier);
-    output("prompt", buildPrompt(issue));
-    return console.log(`Prompt für ${issue.identifier}`);
+    output("size", size);
+    output("model", model);
+    output("max_turns", String(turns));
+    output("prompt", buildPrompt(issue) + bundlePrompt(issue, rest) + retryNote);
+    return console.log(`Prompt für ${[issue, ...rest].map((i) => i.identifier).join(", ")} (Größe ${size}, ${model}, ${turns} Runden)`);
   }
   // Issue zurück auf Todo, wenn Claude es nicht fertig bekam (Limit, Fehler), damit kein Slot blockiert.
   const resetAt = argv.indexOf("--reset");
@@ -191,20 +205,25 @@ export async function main(argv) {
   const openPrs = fixtureAt >= 0 ? [] : await fetchOpenPrs();
   // Phase (SIN-244): im Betrieb nur bug, security, content und der letzte Wochenplan.
   const phase = parsePhase(process.env.PHASE);
-  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, (i) => phaseAllowsIssue(phase, i) && claudeMayTake(i, { openPrs }));
+  const may = (i) => phaseAllowsIssue(phase, i) && claudeMayTake(i, { openPrs });
+  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, may);
   if (!picked.length) {
     console.log(`Nichts zu starten: ${reason}`);
     output("found", "false");
     return;
   }
-  for (const issue of picked) {
-    console.log(`${dry ? "[dry-run] " : ""}Nächstes Issue: ${issue.identifier} (${issue.title}), Spur ${laneOf(issue)}, Priorität ${issue.priority}`);
-    if (dry) console.log(`\n${buildPrompt(issue)}\n`);
-    else await setState(issue, "In Progress");
+  // Kleinkram desselben Bereichs läuft als ein Lauf mit einem PR (SIN-320).
+  const runs = bundle(picked, startOrder(issues, may), laneOf);
+  for (const { lead, rest } of runs) {
+    for (const issue of [lead, ...rest]) {
+      console.log(`${dry ? "[dry-run] " : ""}Nächstes Issue: ${issue.identifier} (${issue.title}), Spur ${laneOf(issue)}, Größe ${sizeOf(issue)}, Priorität ${issue.priority}${issue === lead ? "" : ` (gebündelt mit ${lead.identifier})`}`);
+      if (!dry) await setState(issue, "In Progress");
+    }
+    if (dry) console.log(`\n${buildPrompt(lead)}${bundlePrompt(lead, rest)}\n`);
   }
   // Der Workflow startet je Kennung einen eigenen Worker-Lauf (worker.yml, SIN-227).
   output("found", "true");
-  output("identifiers", picked.map((i) => i.identifier).join(" "));
+  output("identifiers", runs.map(bundleEntry).join(" "));
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
