@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { loadOnboarding } from "@/lib/learner/onboarding";
-import { scrubEvent, shouldSendClientEvent } from "@/lib/sentry-privacy";
+import { SENTRY_PRIVACY_OPTIONS, scrubEvent, shouldSendClientEvent } from "@/lib/sentry-privacy";
 
 /**
  * Browser Sentry init (Next.js instrumentation-client).
@@ -13,7 +13,8 @@ const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
 if (dsn) {
   Sentry.init({
     dsn,
-    // Nur mit Einwilligung (Onboarding 00b), ohne Personendaten (SIN-259).
+    ...SENTRY_PRIVACY_OPTIONS,
+    // Nur mit Einwilligung (Onboarding 00b), ohne Personendaten (SIN-259); überschreibt beforeSend.
     beforeSend: (event) => (shouldSendClientEvent(loadOnboarding().consent) ? scrubEvent(event) : null),
     tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
   });

@@ -23,6 +23,7 @@ import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs
 import { pathToFileURL } from "node:url";
 import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
 import { runLimitCheck } from "./limits.mjs";
+import { collectPostHogMetrics } from "./posthog.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
@@ -110,23 +111,7 @@ export async function collectMetrics(env = process.env, http = {}) {
     }
   }
   Object.assign(m, await collectSentryMetrics(env, http.fetchImpl, http));
-  if (env.POSTHOG_PERSONAL_API_KEY && env.POSTHOG_PROJECT_ID) {
-    try {
-      const data = await fetchJson("PostHog", `https://eu.posthog.com/api/projects/${env.POSTHOG_PROJECT_ID}/query/`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${env.POSTHOG_PERSONAL_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: {
-            kind: "HogQLQuery",
-            query: "select event, count() from events where timestamp > now() - interval 7 day and event in ('unit_started','unit_completed','question_answered') group by event",
-          },
-        }),
-      }, http);
-      m.posthog = JSON.stringify(data.results);
-    } catch (e) {
-      m.posthog = notMeasurable(e);
-    }
-  }
+  Object.assign(m, await collectPostHogMetrics(env, http.fetchImpl, http));
   m.figma_abgleich = await figmaTokenMetric(env, http.fetchImpl);
   return m;
 }

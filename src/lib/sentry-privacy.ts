@@ -36,7 +36,11 @@ export function shouldSendClientEvent(consent: boolean | null): boolean {
   return consent === true;
 }
 
+/** Umgebung für Sentry: Vercel setzt `VERCEL_ENV`, lokal `NODE_ENV`. Das Release setzt der Build aus `release.name`. */
+export const SENTRY_ENVIRONMENT = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
+
 export const SENTRY_PRIVACY_OPTIONS = {
   sendDefaultPii: false,
+  environment: SENTRY_ENVIRONMENT,
   beforeSend: scrubEvent,
 } as const;
