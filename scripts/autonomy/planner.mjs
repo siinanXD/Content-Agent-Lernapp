@@ -21,7 +21,8 @@
  */
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import { LANES, countIssues, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
@@ -353,6 +354,14 @@ export async function main(argv) {
   } catch (e) {
     if (!(e instanceof ServiceError)) throw e;
     abortLinearDown(e);
+    return;
+  }
+
+  // Linear-Kontingent (SIN-291): ab 95 % der Issue-Grenze legt der Planer nichts an und meldet es; der Wächter legt das Hinweis-Issue an.
+  const quota = issues ? linearQuota(await countIssues(linear).catch(() => null)) : linearQuota(null);
+  if (quota.level === "stop" && (argv.includes("--context") || argv.includes("--create"))) {
+    console.log(`::warning::${renderLinearQuota(quota)}. Der Planer legt keine neuen Issues an, bis aufgeräumt ist.`);
+    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, "linear_ok=false\n");
     return;
   }
 

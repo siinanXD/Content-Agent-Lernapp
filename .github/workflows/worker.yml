@@ -2,8 +2,9 @@
 # concurrency-Gruppe gilt je Issue, nicht global. So laufen bis zu 2 Issues wirklich parallel und ein
 # langer Claude-Lauf blockiert weder den Dispatcher noch ein anderes Issue.
 # Ergebnis: Hat Claude einen PR geöffnet, zählt der Lauf als Erfolg (auch bei --max-turns): kein Reset, keine
-# Pause, der Dispatcher wird angestoßen. Nur ohne PR: Issue zurück auf Todo; nur bei echter Usage-/Rate-Limit-
-# Meldung (Ergebnis-Eintrag des Logs, nicht max-turns) wird AGENT_PAUSED_UNTIL gesetzt.
+# Pause, der Dispatcher wird angestoßen. Ohne PR (auch wenn Claude „Erfolg“ meldet, SIN-291): Issue sofort zurück
+# auf Todo mit Kommentar (letzte Ausgabe, num_turns, permission denials); zu große Aufträge werden in Teil-Issues
+# zerlegt. Nur bei echter Usage-/Rate-Limit-Meldung (Ergebnis-Eintrag des Logs, nicht max-turns) wird AGENT_PAUSED_UNTIL gesetzt.
 # Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN; optional AGENT_VARIABLES_TOKEN (PAT, nur „Variables: write“).
 name: worker
 # Die Kennung steht im Lauf-Titel: der Loop-Status (status.yml, SIN-238) ordnet Läufe damit Issues zu.
@@ -94,7 +95,7 @@ jobs:
 
       - name: PR vorhanden?
         id: pr
-        if: steps.claude.outcome == 'failure'
+        if: steps.claude.outcome == 'failure' || steps.claude.outcome == 'success'
         run: |
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
           n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
@@ -106,14 +107,15 @@ jobs:
         if: steps.claude.outcome == 'success' || steps.pr.outputs.has_pr == 'true'
         run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
 
-      # Kein PR: Issue zurück auf Todo (kein blockierter Slot). Pause nur bei echtem Limit.
+      # Kein PR (auch bei gemeldetem Erfolg): Issue zurück auf Todo mit Grund, zu große Aufträge zerlegen
+      # (SIN-291). Pause nur bei echtem Limit.
       - name: Fehler auswerten
         id: limit
-        if: steps.claude.outcome == 'failure' && steps.pr.outputs.has_pr != 'true'
+        if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
         env:
           EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |
-          node scripts/autonomy/dispatch.mjs --reset "$IDENTIFIER"
+          node scripts/autonomy/dispatch.mjs --no-pr "$IDENTIFIER" "$EXECUTION_FILE"
           if [ -f "$EXECUTION_FILE" ]; then node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE"; fi
       - name: Pause bis Reset setzen
         if: steps.limit.outputs.until != ''
@@ -127,7 +129,7 @@ jobs:
             gh variable set AGENT_PAUSED_UNTIL --repo "$GITHUB_REPOSITORY" --body "$UNTIL"
           fi
       - name: Lauf ohne PR als fehlgeschlagen markieren
-        if: steps.claude.outcome == 'failure' && steps.pr.outputs.has_pr != 'true'
+        if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
         run: |
-          echo "::error::Claude-Lauf für $IDENTIFIER fehlgeschlagen, kein PR."
+          echo "::error::Claude-Lauf für $IDENTIFIER ohne PR beendet (Ergebnis: ${{ steps.claude.outcome }})."
           exit 1

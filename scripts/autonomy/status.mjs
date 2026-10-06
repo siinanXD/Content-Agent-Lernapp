@@ -17,11 +17,15 @@ import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
+import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
   linear,
   comment,
+  countIssues,
+  createLinearIssues,
+  doneTitlesSince,
   fetchProjectIssues,
   hasOpenBlockers,
   isHumanIssue,
@@ -36,7 +40,8 @@ export const MENTION = "@siinanXD";
 export const STATUS_LABEL = "loop-status";
 export const STATUS_TITLE = "Loop-Status";
 export const IDLE_MIN = 45;
-export const STUCK_MIN = 60;
+/** Geister-Issue: „In Progress“ ohne Worker-Lauf und ohne PR (SIN-291: 15 Min, vorher 60). */
+export const STUCK_MIN = 15;
 export const APPROVAL_MIN = 120;
 export const KICK_MIN = 10;
 /** So lange wartet der Wächter nach einer @claude-Bitte, bevor er sie wiederholt oder an Sinan eskaliert. */
@@ -68,9 +73,13 @@ const QUOTAS = [
   ["sentry_events_monat", "Sentry: Fehler im Monat"],
   ["posthog_events_monat", "PostHog: Events im Monat"],
   ["langfuse_units_monat", "Langfuse: Units im Monat"],
+  ["linear_issues", "Linear Free: Issues"],
   ["claude_max", "Claude Max"],
   ["api_kosten_eur", "Anthropic/OpenAI API: Kosten (Ledger)"],
 ];
+
+/** Eigene Warnschwellen je Kontingent (sonst `warnschwelle_prozent`): Linear-Issues ab 85 % (SIN-291). */
+const WARN_PCT = { linear_issues: LINEAR_WARN_PCT };
 
 /**
  * Kontingent-Zeilen. `usage[key]`: Zahl (gemessen), `{ text }` (Anzeige ohne Prozent, z. B. Claude Max)
@@ -90,7 +99,7 @@ export function buildQuotaRows(usage = {}, limitsFile = {}) {
       row.text = `${u}${lim?.einheit ? ` ${lim.einheit}` : ""}`;
     } else if (u?.text) row.text = u.text;
     else row.text = `nicht messbar${u?.error ? ` (${u.error})` : ""}`;
-    row.over = row.pct != null && row.pct >= warn; // ab 80 % (SIN-251, wie der Wächter SIN-225)
+    row.over = row.pct != null && row.pct >= (WARN_PCT[key] ?? warn); // ab 80 % (SIN-251, wie der Wächter SIN-225)
     return row;
   });
 }
@@ -176,7 +185,21 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     incidents.push({ key: `quota:${q.key}`, text: `Kontingent ${q.name} bei ${q.pct} % (${q.text} von ${q.limit}).` });
   }
 
+  // --- Selbst-Diagnose (SIN-291): Ursache aus den letzten Logs, Bug-Issue ohne Duplikat ---
+  const diagnosis =
+    started.length < MAX_PARALLEL
+      ? diagnoseStall({ running: running.length, paused, startable: order.length, idleMin: mins(idleSince, now), logs: snap.logs ?? [] })
+      : null;
+  if (diagnosis) incidents.push({ key: `stall:${diagnosis.cause}`, text: `Stillstand: ${diagnosis.label}. ${diagnosis.reason}` });
+  const known = [...issues, ...(snap.doneTitles ?? []).map((title) => ({ title }))];
+  const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null);
+  const stop = linearQ.level === "stop";
+  const bugs = [newStallIssue(diagnosis, known), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
+  const decisions = snap.decisions ?? [];
+  for (const d of decisions) incidents.push({ key: `decision:${d.number}`, text: `Entscheidung nötig in gemergtem PR #${d.number} (${cell(d.title)}): ${d.question}` });
+
   // --- Selbstheilung ---
+  for (const issue of bugs) actions.push({ type: "create-issue", issue });
   const conflictAsks = {};
   for (const p of openPrs.filter((x) => isAgentPr(x) && !x.draft && !labelNames(x).includes("no-automerge") && x.mergeable_state === "dirty")) {
     const asks = (prev.conflictAsks ?? {})[p.number] ?? [];
@@ -196,7 +219,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   for (const p of openPrs.filter((x) => APPROVAL_LABELS.some((l) => labelNames(x).includes(l)) && checks[x.number]?.mergeGate === "failure")) {
     incidents.push({ key: `stale-gate:${p.number}`, text: `PR #${p.number}: \`merge-gate\` ist rot, obwohl freigegeben (Freigabe vor neuem Commit). Bitte Label \`freigegeben\` entfernen und neu setzen: ${p.html_url}` });
   }
-  // Abgleich wie im Dispatcher (SIN-240): Merge → Done; ohne Worker und PR seit 60 Min → Todo.
+  // Abgleich wie im Dispatcher (SIN-240): Merge → Done; ohne Worker und PR seit 15 Min (SIN-291) → Todo.
   const runningWorkers = running.map((r) => idOf(r.display_title)).filter(Boolean);
   const reconciled = reconcile(issues, prs.map((p) => ({ title: p.title, head: p.head, state: p.state, merged: Boolean(p.merged_at) })), { runningWorkers, now });
   for (const { issue } of reconciled.filter((a) => a.to === "Done")) actions.push({ type: "linear-done", issue });
@@ -210,7 +233,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const refill =
     snap.linearOk === false
       ? { trigger: false, reason: "Linear nicht lesbar, nächster Versuch beim nächsten Takt", maxIssues: 0, bugsOnly: false }
-      : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, now });
+      : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, linearFull: stop, now });
   const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
   const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}) };
@@ -228,7 +251,14 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     for (const r of running) out.push(`- Worker ${idOf(r.display_title) ?? "?"} (${r.status === "in_progress" ? "läuft" : "wartet"}) seit ${hm(mins(r.created_at, now))}, ${how}: [Lauf](${r.html_url})`);
   } else out.push("- Kein Worker läuft.");
   if (paused) out.push(`- ⏸ Pause bis ${pausedUntil}.`);
+  if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
+  if (linearQ.level !== "unknown" && linearQ.level !== "ok") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
   out.push("");
+  if (decisions.length) {
+    out.push("## Braucht dich", "", "Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
+    for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
+    out.push("");
+  }
   if (openPrs.length) {
     out.push("Offene PRs:", "");
     for (const p of openPrs) {
@@ -269,7 +299,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   if (snap.deploy) out.push("", renderDeploy(snap.deploy));
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
-  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill };
+  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis };
 }
 
 /** Kommentar mit Erwähnung für neue Vorfälle; leer, wenn es nichts Neues gibt. */
@@ -316,6 +346,52 @@ export async function fetchFailureLine(repo, runId, call = gh) {
   return cell(`Schritt „${step?.name ?? job.name}“ fehlgeschlagen`);
 }
 
+/** Text einer URL (Job-Log: GitHub antwortet mit einem Redirect auf den Log-Speicher). */
+async function ghText(path, { token = process.env.GITHUB_TOKEN, fetchImpl = fetch } = {}) {
+  const res = await fetchImpl(`${GH}${path}`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } });
+  if (!res.ok) throw new Error(`GitHub GET ${path}: ${res.status}`);
+  return res.text();
+}
+
+/**
+ * Logs für die Selbst-Diagnose (SIN-291): je Workflow (planner, dispatch, worker) der letzte abgeschlossene Lauf;
+ * nur wenn er fehlgeschlagen ist (ein späterer Erfolg heilt den Vorfall). Letzte 6000 Zeichen des roten Jobs.
+ * @returns {Promise<{ workflow: string, runId: number, url: string, text: string, at: string }[]>} neueste zuerst
+ */
+export async function collectLogs(repo, runs, { call = gh, text = ghText } = {}) {
+  const out = [];
+  for (const workflow of DIAG_WORKFLOWS) {
+    const last = runs
+      .filter((r) => r.name === workflow && r.status === "completed")
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+    if (!last || last.conclusion !== "failure") continue;
+    try {
+      const { jobs } = await call(`/repos/${repo}/actions/runs/${last.id}/jobs?per_page=20`);
+      const job = jobs.find((j) => j.conclusion === "failure") ?? jobs.at(-1);
+      const log = job ? await text(`/repos/${repo}/actions/jobs/${job.id}/logs`) : "";
+      out.push({ workflow, runId: last.id, url: last.html_url, text: log.slice(-6000), at: last.created_at });
+    } catch (e) {
+      out.push({ workflow, runId: last.id, url: last.html_url, text: `Log nicht lesbar: ${e.message}`, at: last.created_at });
+    }
+  }
+  return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+}
+
+/** Offene Entscheidungen aus gemergten PRs; Kommentare nur für PRs, die überhaupt eine Frage haben. */
+export async function collectDecisions(repo, prs, now, { call = gh, owner = "siinanXD" } = {}) {
+  const candidates = pendingDecisions(prs, {}, { owner, now });
+  const comments = {};
+  for (const c of candidates) {
+    try {
+      const list = await call(`/repos/${repo}/issues/${c.number}/comments?per_page=100`);
+      comments[c.number] = list.map((x) => ({ user: x.user?.login, created_at: x.created_at }));
+    } catch {
+      /* ohne Kommentare bleibt die Frage sichtbar */
+    }
+  }
+  return pendingDecisions(prs, comments, { owner, now });
+}
+
 async function collectGithub(repo, now) {
   const since = new Date(now.getTime() - DAY_MS).toISOString().slice(0, 10);
   const { workflow_runs } = await gh(`/repos/${repo}/actions/runs?per_page=100&created=>=${since}`);
@@ -323,12 +399,12 @@ async function collectGithub(repo, now) {
     id: r.id, name: r.name, display_title: r.display_title, status: r.status, conclusion: r.conclusion,
     created_at: r.created_at, updated_at: r.updated_at, html_url: r.html_url,
   }));
-  const list = await gh(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=50`);
+  const list = await gh(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`);
   const prs = [];
   const checks = {};
   for (const p of list) {
     const pr = {
-      number: p.number, title: p.title, head: p.head?.ref, draft: p.draft, state: p.state, merged_at: p.merged_at,
+      number: p.number, title: p.title, body: p.merged_at ? p.body : undefined, head: p.head?.ref, draft: p.draft, state: p.state, merged_at: p.merged_at,
       labels: p.labels.map((l) => l.name), created_at: p.created_at, updated_at: p.updated_at, html_url: p.html_url,
     };
     if (p.state === "open") {
@@ -363,6 +439,10 @@ export async function collectUsage({ env = process.env, now = new Date(), runs =
     }
   };
   const bearer = (t) => ({ headers: { Authorization: `Bearer ${t}` } });
+  // Linear Free (SIN-291): Issue-Zahl gegen das Limit von 250.
+  await guard("linear_issues", !env.LINEAR_API_KEY && "LINEAR_API_KEY", () =>
+    countIssues((q, v) => linear(q, v, { key: env.LINEAR_API_KEY, fetchImpl })),
+  );
   await guard("vercel_deployments_tag", !env.VERCEL_TOKEN && "VERCEL_TOKEN", async () => {
     const q = new URLSearchParams({ since: String(now.getTime() - DAY_MS), limit: "100" });
     if (env.VERCEL_PROJECT_ID) q.set("projectId", env.VERCEL_PROJECT_ID);
@@ -463,7 +543,11 @@ export async function main(argv, env = process.env) {
     // Production bündeln (SIN-266): Stand und Entscheidung; ausgelöst wird nach dem Schreiben des Status (unten).
     const vercelPct = percent(usage.vercel_deployments_tag, limitsFile.limits?.vercel_deployments_tag?.limit);
     const deploy = await planDeploy({ env, now, vercelPct, call: gh });
-    snap = { now: now.toISOString(), ...g, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage, deploy };
+    // Selbst-Diagnose (SIN-291): Logs der letzten roten Läufe, offene Entscheidungen, kürzlich erledigte Bug-Issues.
+    const logs = await collectLogs(repo, g.runs).catch(() => []);
+    const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
+    const doneTitles = linearOk ? await doneTitlesSince(STALL_PREFIX, now).catch(() => []) : [];
+    snap = { now: now.toISOString(), ...g, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage, deploy, logs, decisions, doneTitles };
     statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
@@ -472,7 +556,11 @@ export async function main(argv, env = process.env) {
   console.log(res.body);
   if (alert) console.log(`\n--- Erwähnung ---\n${alert}`);
   for (const a of res.actions) {
-    const what = a.type === "linear-done" ? `${a.issue.identifier} → Done` : a.type === "linear-todo" ? `${a.issue.identifier} → Todo` : `PR #${a.pr}: ${a.text}`;
+    const what =
+      a.type === "linear-done" ? `${a.issue.identifier} → Done`
+      : a.type === "linear-todo" ? `${a.issue.identifier} → Todo`
+      : a.type === "create-issue" ? `Bug-Issue: ${a.issue.title}\n${a.issue.description}`
+      : `PR #${a.pr}: ${a.text}`;
     console.log(`\n--- Aktion ${a.type} ---\n${what}`);
   }
   console.log(`\nPlaner nachfüllen: ${res.refill.trigger ? `ja (${res.refill.reason}, bis zu ${res.refill.maxIssues} Issues${res.refill.bugsOnly ? ", nur Bugs" : ""})` : `nein (${res.refill.reason})`}`);
@@ -501,13 +589,17 @@ export async function main(argv, env = process.env) {
       const token = env.AGENT_WORKFLOW_TOKEN || env.GITHUB_TOKEN;
       await gh(`/repos/${repo}/issues/${a.pr}/comments`, { method: "POST", body: { body: a.text }, token });
     }
+    if (a.type === "create-issue") {
+      // Ist Linear selbst die Ursache (Limit), schlägt das Anlegen fehl: der Vorfall ging schon per Erwähnung an Sinan.
+      await createLinearIssues([a.issue]).catch((e) => console.log(`::warning::Bug-Issue nicht angelegt: ${e.message}`));
+    }
     if (a.type === "linear-done") {
       await setState(a.issue, "Done");
       await comment(a.issue.id, "Status auf Done gesetzt: der PR ist gemergt (Loop-Wächter, SIN-238).");
     }
     if (a.type === "linear-todo") {
       await setState(a.issue, "Todo");
-      await comment(a.issue.id, "Zurück auf Todo: seit über 60 Min weder Worker noch PR (Loop-Wächter, SIN-240).");
+      await comment(a.issue.id, `Zurück auf Todo: seit über ${STUCK_MIN} Min weder Worker noch PR (Loop-Wächter, SIN-240, SIN-291).`);
     }
   }
   return res;
