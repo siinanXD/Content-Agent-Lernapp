@@ -157,9 +157,13 @@ jobs:
         with:
           script: |
             const fs = require("node:fs");
-            const { classifyRisk, approvalStillValid, newDependencies, fetchDependencyInfo } = await import(
-              `${process.env.GITHUB_WORKSPACE}/scripts/autonomy/risk.mjs`
-            );
+            const riskModule = await import(`${process.env.GITHUB_WORKSPACE}/scripts/autonomy/risk.mjs`);
+            const { classifyRisk, approvalStillValid } = riskModule;
+            // risk.mjs kommt aus der Basis (main). Neue Exporte sind optional: Die neuen Regeln greifen erst
+            // nach dem Merge, vorher fällt das Gate auf den alten Stand zurück statt zu crashen.
+            const newDependencies = typeof riskModule.newDependencies === "function" ? riskModule.newDependencies : () => [];
+            const fetchDependencyInfo = typeof riskModule.fetchDependencyInfo === "function"
+              ? riskModule.fetchDependencyInfo : async () => ({});
             const { owner, repo } = context.repo;
             const action = context.payload.action;
             const sender = context.payload.sender?.login;
