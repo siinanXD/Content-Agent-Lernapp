@@ -1,0 +1,11 @@
+# SIN-275 — Frontend-Worker prüfen sich selbst (Screenshots + Design-Checkliste)
+
+- **Links:** Linear [SIN-275](https://linear.app/sinan-kahraman/issue/SIN-275/frontend-worker-prufen-sich-selbst-playwright-screenshots-web-design); [Playwright: Screenshots](https://playwright.dev/docs/screenshots); [WCAG 2.2](https://www.w3.org/TR/WCAG22/); Kandidaten für neue Apps: [SIN-202](https://linear.app/sinan-kahraman/issue/SIN-202/projekt-starter-neues-repo-mit-einem-schritt-infisical-vercel-sentry), [SIN-243](https://linear.app/sinan-kahraman/issue/SIN-243/release-kit-login-startseite-stripe-abos-rechtsseiten-sicheres-backend).
+- **Entscheidung:** `worker.yml` installiert Chromium, erlaubt `npx playwright` und `scripts/autonomy/screenshots.mjs` und lädt `screenshots/` als Artefakt hoch. Das Skript startet `next start`, macht Handy- (390 px) und Desktop-Bilder und meldet Konsolenfehler und HTTP-Fehler im Bericht. Der Worker-Prompt (`buildPrompt`) verlangt das vor jedem Frontend-PR samt Vergleich mit Figma und dem Hinweis „Klickpfad geprüft“. Die Checkliste liegt als eigene Kurzliste (WCAG 2.2 AA + AGENTS.md) in `docs/skills/web-design-guidelines/SKILL.md`. „Taste“ und „Awesome Design.md“ kommen nicht in dieses Repo (würden von Stil E abweichen); sie sind Kandidaten für SIN-202 / SIN-243.
+- **Annahmen:**
+  1. Die Skill-Datei liegt vorläufig unter `docs/skills/`, weil der Agent unter `.claude/` nicht schreiben durfte. Verschieben nach `.claude/skills/web-design-guidelines/SKILL.md` und den Pfad in `buildPrompt` anpassen, sobald das geht.
+  2. Ein Fremd-Skill (z. B. Vercel `web-design-guidelines`) konnte ohne Netzzugriff nicht auf Lizenz, Aktivität und Sterne geprüft werden; deshalb eigene Liste.
+  3. Screenshots hängen als Workflow-Artefakt am Worker-Lauf, nicht als Bild im PR-Steckbrief (dafür bräuchte `pr-gate` eine Änderung, das wäre ein eigenes risk:high-Gate).
+  4. `claude.yml` (Ersatz-Agent) bleibt unverändert („Kein Playwright“).
+  5. Die `allowedTools`-Erweiterung ist `risk:high` (Agenten-Rechte): einmal Freigabe nötig.
+- **Warum:** Fehler wie SIN-249 sollen vor dem PR auffallen. Eigenes kleines Skript mit dem schon vorhandenen `@playwright/test` statt neuer Abhängigkeit.

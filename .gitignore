@@ -20,6 +20,9 @@
 # production
 /build
 
+# Worker-Screenshots (SIN-275, nur Artefakt)
+/screenshots/
+
 # misc
 .DS_Store
 *.pem

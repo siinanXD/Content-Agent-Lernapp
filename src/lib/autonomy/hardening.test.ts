@@ -39,6 +39,13 @@ test("Worker-Prompt: Prüfungen vor dem Push, Merge von main, Entscheidungsdatei
   assert.match(p, /docs\/decisions\/SIN-9-<kurz>\.md/);
 });
 
+test("Worker-Prompt: Frontend-Selbstprüfung mit Screenshots und Checkliste (SIN-275)", () => {
+  const p = buildPrompt({ identifier: "SIN-9", title: "T", description: "d" });
+  assert.match(p, /screenshots\.mjs/);
+  assert.match(p, /web-design-guidelines/);
+  assert.match(p, /Klickpfad geprüft/);
+});
+
 test("Entscheidungs-Index: eine Datei je Entscheidung, neueste zuerst, Fremddateien ignoriert", () => {
   assert.equal(titleOf("SIN-1-x.md", "text\n# Titel | mit Strich\n"), "Titel / mit Strich");
   assert.equal(titleOf("SIN-1-x.md", "ohne Überschrift"), "SIN-1-x");
