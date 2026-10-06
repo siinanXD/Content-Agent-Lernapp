@@ -14,12 +14,16 @@ test("Limits: Warnung ab 80 % (inklusive), nur gemessene Werte", () => {
 });
 
 test("Limits: ein Issue je Limit, keine Dubletten", () => {
-  const alerts = limitAlerts({ vercel_deployments_tag: 90, supabase_db_mb: 450 }, limits);
+  // SIN-266: Vercel bekommt nie ein Issue, Supabase-Speicher erst ab 90 % (mit Label claude).
+  const alerts = limitAlerts({ vercel_deployments_tag: 95, supabase_db_mb: 450 }, limits);
   const items = newLimitIssues(alerts);
-  assert.equal(items.length, 2);
+  assert.equal(items.length, 1);
   assert.match(items[0].title, /^Free-Tier: .+ nahe am Limit$/);
   assert.match(items[0].description, /90 %/);
-  assert.equal(newLimitIssues(alerts, [limitIssue(alerts[0]).title.toUpperCase()]).length, 1);
+  assert.ok(items[0].labels.includes("claude"));
+  const supabase = alerts.find((a: { key: string }) => a.key === "supabase_db_mb");
+  assert.equal(newLimitIssues(alerts, [` ${limitIssue(supabase).title} `]).length, 0);
+  assert.equal(newLimitIssues(limitAlerts({ supabase_db_mb: 410 }, limits)).length, 0);
 });
 
 test("Limits: Wochenbericht zählt Läufe, Limit-Abbrüche und gemergte PRs der letzten 7 Tage", () => {

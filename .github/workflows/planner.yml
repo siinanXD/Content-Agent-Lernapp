@@ -22,7 +22,7 @@ on:
         type: string
         default: ""
       bugs_only:
-        description: "Nachfüllen (SIN-253): nur Bugs (Free-Tier-Kontingent über 80 %)"
+        description: "Nachfüllen (SIN-253): nur Bugs (Claude-Kontingent knapp oder API-Deckel fast erreicht, SIN-266)"
         type: boolean
         default: false
 
