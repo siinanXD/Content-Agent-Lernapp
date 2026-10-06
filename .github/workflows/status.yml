@@ -38,6 +38,10 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ github.token }}
       AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
+      # Phase (SIN-244): Anzeige und Startfilter
+      PHASE: ${{ vars.PHASE }}
+      OBSERVE_DAYS: ${{ vars.OBSERVE_DAYS }}
+      PHASE_SINCE: ${{ vars.PHASE_SINCE }}
       LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
       AGENT_WORKFLOW_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

@@ -38,6 +38,8 @@ jobs:
       cancel-in-progress: false
     env:
       AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
+      # Phase (SIN-244): im Betrieb startet der Dispatcher nur bug, security, content, wochenplan
+      PHASE: ${{ vars.PHASE }}
       GITHUB_TOKEN: ${{ github.token }}
       DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
     steps:

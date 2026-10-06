@@ -22,7 +22,7 @@ export async function linear(query, variables = {}, { key = process.env.LINEAR_A
 }
 
 const ISSUE_FIELDS = `
-  id identifier title description priority url updatedAt
+  id identifier title description priority url updatedAt createdAt
   labels { nodes { name } }
   state { id name type }
   team { id }
