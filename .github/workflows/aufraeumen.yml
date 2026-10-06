@@ -1,0 +1,72 @@
+# Aufräum-Agent (SIN-300): jede Woche genau ein PR mit Pflege, nie mehr.
+# Montag 06:17 UTC (nach Quellen-Monitor 05:17 und Content-Fabrik 05:47). Ablauf:
+#   1. offener Aufräum-PR vorhanden → Stopp (ein PR pro Woche, keine Stapel)
+#   2. CHANGELOG.md deterministisch aus den PR-Titeln erzeugen (scripts/changelog.mjs, ohne KI)
+#   3. Aufräum-Scan (scripts/autonomy/cleanup-scan.mjs): ungenutzte Dateien, tote Pakete, große Dateien, Doppelungen
+#   4. Claude prüft jeden Treffer, räumt nur Sicheres auf, gleicht README.md mit dem Code ab und öffnet den einen PR
+# Kosten: ein Claude-Lauf (Sonnet) mit höchstens 80 Runden je Woche. Secrets: CLAUDE_CODE_OAUTH_TOKEN, AGENT_WORKFLOW_TOKEN.
+name: aufraeumen
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: aufraeumen
+  cancel-in-progress: false
+
+jobs:
+  aufraeumen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+    steps:
+      - name: Offener Aufräum-PR?
+        id: offen
+        run: |
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --search "chore(aufraeumen) in:title" --json number --jq 'length')
+          echo "offen=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        if: steps.offen.outputs.offen != 'true'
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        if: steps.offen.outputs.offen != 'true'
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Pakete, Changelog, Scan
+        if: steps.offen.outputs.offen != 'true'
+        run: |
+          npm ci --no-audit --no-fund
+          npm run -s changelog
+          npm run -s cleanup:scan > aufraeum-scan.md
+          cat aufraeum-scan.md
+      - name: Claude räumt auf
+        if: steps.offen.outputs.offen != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          allowed_bots: "github-actions,github-actions[bot]"
+          prompt: |
+            Wöchentlicher Aufräum-Lauf (SIN-300). Regeln: AGENTS.md. Genau ein Pull Request, nie mehr.
+            Eingabe: aufraeum-scan.md (Scan-Treffer sind Hinweise, keine Urteile) und das neu erzeugte CHANGELOG.md.
+            1. Ungenutzte Dateien, tote Pakete: prüfe jeden Treffer (Grep auch in docs/, scripts/, Konfiguration). Entferne nur, was sicher ungenutzt ist, samt zugehörigem Test. Nie Migrationen, Inhalte unter content/ oder docs/decisions/ löschen; keine Pakete hinzufügen.
+            2. Doppelte Logik und Dateien über 500 Zeilen: nur kleine, sichere Zusammenführungen. Große Umbauten nicht anfassen, stattdessen im PR unter „Entscheidung nötig“ als Vorschlag nennen.
+            3. Doku-Abgleich README.md ↔ Code: Befehle (package.json), Routen (src/app), Umgebungsvariablen (.env.example), Verzeichnisse. Korrigiere Abweichungen in README.md.
+            4. CHANGELOG.md ist erzeugt: nicht von Hand ändern, die neue Fassung gehört in den PR.
+            Vor dem Push: `npm run typecheck`, `npm run lint`, `npm test`. Rot? Erst beheben. Gibt es nichts zu tun außer dem Changelog, ist der Changelog allein der PR.
+            Branch `claude/aufraeumen-<Datum>`, PR-Titel `chore(aufraeumen): Wochenpflege <Datum> (SIN-300)`, Body beginnt mit "Part of SIN-300", danach `## Was ändert sich` (2–4 Zeilen), `## Nach dem Merge`. Kein Draft, nie selbst mergen. Commit-Nachrichten enthalten `Part of SIN-300`.
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 80
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*)"
