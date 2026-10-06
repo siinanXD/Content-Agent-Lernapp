@@ -63,8 +63,12 @@ jobs:
           GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           IDENTIFIERS: ${{ steps.pick.outputs.identifiers }}
         run: |
-          for id in $IDENTIFIERS; do
-            gh workflow run worker.yml --repo "$GITHUB_REPOSITORY" --ref main -f identifier="$id"
+          # Eintrag „SIN-1“ oder „SIN-1+SIN-2+SIN-3“ (gebündelter Kleinkram, SIN-320): erstes = führendes Issue.
+          for entry in $IDENTIFIERS; do
+            id="${entry%%+*}"
+            rest=""
+            [ "$entry" != "$id" ] && rest="$(printf '%s' "${entry#*+}" | tr '+' ' ')"
+            gh workflow run worker.yml --repo "$GITHUB_REPOSITORY" --ref main -f identifier="$id" -f bundle="$rest"
           done
 
   linear-done:
@@ -85,8 +89,10 @@ jobs:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
           TITLE: ${{ github.event.pull_request.title }}
         run: |
-          id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
-          [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --done "$id" || echo "Keine Linear-ID im Titel."
+          # Gebündelte PRs (SIN-320) nennen mehrere Kennungen im Titel: alle auf Done.
+          ids=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | sort -u)
+          [ -n "$ids" ] || echo "Keine Linear-ID im Titel."
+          for id in $ids; do node scripts/autonomy/dispatch.mjs --done "$id"; done
       # Frei gewordene Slots sofort füllen (SIN-237), nicht erst beim nächsten 30-Min-Lauf.
       - name: Dispatcher neu anstoßen
         env:

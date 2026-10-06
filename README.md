@@ -19,6 +19,8 @@ Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen 
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
 - [`AGENTS.md`](AGENTS.md) — Entscheidungs- und Stopp-Regeln
+- [`docs/LANDKARTE.md`](docs/LANDKARTE.md) — Repo-Landkarte: wo liegt was, Befehle, Konventionen (SIN-320)
+- [`docs/autonomy/groessen.md`](docs/autonomy/groessen.md) — Größen der Issues, Modell und Runden je Größe, Bündeln, Verbrauch (SIN-320)
 - [`docs/content/README.md`](docs/content/README.md) — Curriculum-Maps (AP-13): MAF in allen fünf Schwerpunkten und Industriekaufleute 2024
 - [`docs/content/DIDAKTIK.md`](docs/content/DIDAKTIK.md) — Didaktik-Vorgabe (AP-18): Schablone je Einheit, Fragestufen, Wiederholung, Prüfungsmodus, Bilder
 - [`docs/content/MAF-CURRICULUM.md`](docs/content/MAF-CURRICULUM.md) — Vorgängerversion v1 (nur Metall); runtime loader uses `docs/content/maf-metall.json` via AP-14 ([PR #24](https://github.com/siinanXD/Content-Agent-Lernapp/pull/24))

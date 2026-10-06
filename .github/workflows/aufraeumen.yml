@@ -63,6 +63,7 @@ jobs:
             1. Ungenutzte Dateien, tote Pakete: prüfe jeden Treffer (Grep auch in docs/, scripts/, Konfiguration). Entferne nur, was sicher ungenutzt ist, samt zugehörigem Test. Nie Migrationen, Inhalte unter content/ oder docs/decisions/ löschen; keine Pakete hinzufügen.
             2. Doppelte Logik und Dateien über 500 Zeilen: nur kleine, sichere Zusammenführungen. Große Umbauten nicht anfassen, stattdessen im PR unter „Entscheidung nötig“ als Vorschlag nennen.
             3. Doku-Abgleich README.md ↔ Code: Befehle (package.json), Routen (src/app), Umgebungsvariablen (.env.example), Verzeichnisse. Korrigiere Abweichungen in README.md.
+            3b. docs/LANDKARTE.md (SIN-320) gleicht Verzeichnisse, Workflows, Skripte und Befehle mit dem Code ab; höchstens 150 Zeilen, nur korrigieren, was nicht mehr stimmt.
             4. CHANGELOG.md ist erzeugt: nicht von Hand ändern, die neue Fassung gehört in den PR.
             Vor dem Push: `npm run typecheck`, `npm run lint`, `npm test`. Rot? Erst beheben. Gibt es nichts zu tun außer dem Changelog, ist der Changelog allein der PR.
             Branch `claude/aufraeumen-<Datum>`, PR-Titel `chore(aufraeumen): Wochenpflege <Datum> (SIN-300)`, Body beginnt mit "Part of SIN-300", danach `## Was ändert sich` (2–4 Zeilen), `## Nach dem Merge`. Kein Draft, nie selbst mergen. Commit-Nachrichten enthalten `Part of SIN-300`.

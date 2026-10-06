@@ -17,6 +17,8 @@ export const SECTIONS = {
   cost: ["kosten", "kosten/folgen", "kosten und folgen"],
   revert: ["rückgängig"],
   decision: ["entscheidung nötig"],
+  // SIN-320: schreibt der Worker (verbrauch.mjs), eine Zeile je Lauf mit Tokens, Runden, Dauer, API-Gegenwert.
+  usage: ["verbrauch"],
 };
 
 /** Zerlegt den PR-Body in Abschnitte. @returns {Record<string, string>} Schlüssel aus SECTIONS */
@@ -160,6 +162,7 @@ export function buildSteckbrief(input) {
     }`,
     `**Nach dem Merge:** ${sec.after ? short(sec.after, 2).join(" ") : migration ? "Die Migration läuft." : "Nichts Besonderes."}`,
     ...(sec.cost ? [`**Kosten/Folgen:** ${short(sec.cost, 3).join(" ")}`] : []),
+    ...(sec.usage ? ["**Verbrauch:**", ...short(sec.usage, 4).map((l) => `- ${l}`)] : []),
     `**Rückgängig:** ${sec.revert ? short(sec.revert, 2).join(" ") : migration ? "Nicht trivial: Migration, Revert-PR genügt nicht allein." : "Revert-PR genügt."}`,
     ...(high && reasons.length ? ["", "<details><summary>Gründe für risk:high</summary>", "", ...reasons.slice(0, 15).map((r) => `- ${r.text}`), "", "</details>"] : []),
   ];

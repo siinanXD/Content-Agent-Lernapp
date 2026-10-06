@@ -135,7 +135,7 @@ export function buildPrompt(issue) {
     "",
     issue.description ?? "(ohne Beschreibung)",
     "",
-    "Regeln: AGENTS.md. Lies zuerst docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
+    "Regeln: AGENTS.md. Lies zuerst docs/LANDKARTE.md (wo liegt was), docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
     `Entscheidungen und Annahmen: eine neue Datei docs/decisions/${issue.identifier}-<kurz>.md (Kopf: Links, Entscheidung, Annahmen, Warum). docs/DECISIONS.md nie von Hand bearbeiten: vor dem Push \`npm run decisions:index\` ausführen und den Index im selben PR committen (CI prüft ihn).`,
     `Arbeite auf einem neuen Branch claude/${issue.identifier.toLowerCase()}. Ein PR pro Arbeitspaket, Reparaturen im selben PR.`,
     `PR-Titel als Conventional Commit mit (${issue.identifier}), Body beginnt mit "Part of ${issue.identifier}". Kein Draft, nie selbst mergen.`,
