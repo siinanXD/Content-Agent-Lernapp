@@ -63,6 +63,22 @@ export type SharedModuleLink = {
   sortOrder: number;
 };
 
+/** SIN-260: Ledger-Eintrag eines Bewertungslaufs. */
+export type JudgeRunRecord = {
+  runId: string;
+  judgeModel: string;
+  promptVersion: string;
+  questionsTotal: number;
+  questionsJudged: number;
+  questionsPassed: number;
+  openaiInputTokens: number;
+  openaiOutputTokens: number;
+  costUsd: number;
+  costEur: number;
+  stopped: boolean;
+  stopReason?: string;
+};
+
 export type { QuestionEvaluationRecord };
 
 export type StorageBackend = "mock" | "supabase";
@@ -81,6 +97,8 @@ export interface CourseStorage {
   appendQuestionEvaluations(records: QuestionEvaluationRecord[]): Promise<void>;
   /** All judge rows for a course, oldest first. */
   listQuestionEvaluations(courseId: string): Promise<QuestionEvaluationRecord[]>;
+  /** Ledger je Bewertungslauf (SIN-260), append-only. */
+  appendJudgeRun(run: JudgeRunRecord): Promise<void>;
   /** Gemeinsame Module, die dieser Kurs per Verknüpfung zeigt (AP-20). */
   listSharedModuleLinks(courseId: string): Promise<SharedModuleLink[]>;
   recordProgress(input: RecordProgressInput): Promise<LearningProgressEvent>;

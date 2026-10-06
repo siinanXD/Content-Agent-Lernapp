@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "quality:sync-goldset": "node --import tsx scripts/ap06-sync-goldset.ts",
     "quality:calibrate": "node --import tsx scripts/ap06-calibrate.ts",
+    "quality:judge-backfill": "node --import tsx scripts/sin260-judge-backfill.ts",
     "quality:smoke": "node --import tsx scripts/ap06-smoke.ts",
     "ap15:phase-a": "node --import tsx scripts/ap15-phase-a.ts",
     "ap22:ab": "node --import tsx scripts/ap22-ab.ts",
