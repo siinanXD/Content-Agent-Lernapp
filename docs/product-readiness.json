@@ -6,7 +6,7 @@
       "datum": "2026-10-06",
       "beleg": "SIN-256: Service Worker und Warteschlange, Playwright-Test nur in der CI (docs/decisions/SIN-256-offline-einheiten.md)",
       "issues": ["SIN-256"],
-      "lauf": "CI-Lauf des Offline-Tests als Beleg verlinken"
+      "lauf": "Workflow run-task, Aufgabe offline-check (SIN-302)"
     },
     "content-safety": {
       "datum": "2026-10-06",
@@ -18,7 +18,7 @@
       "datum": "2026-10-06",
       "beleg": "SIN-258/SIN-268/SIN-280: Ledger pipeline_run_costs und Deckel, nie mit Live-Lauf gemessen (docs/decisions/SIN-258-kosten-ledger.md)",
       "issues": ["SIN-258", "SIN-268", "SIN-280"],
-      "lauf": "Workflow content-grow mit Secrets starten, Ledger-Zeile als Beleg"
+      "lauf": "Workflow content-grow oder run-task judge-backfill schreibt Ledger-Zeilen; danach run-task cost-report (SIN-302)"
     }
   },
   "bestaetigt": {

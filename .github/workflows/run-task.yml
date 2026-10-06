@@ -1,0 +1,129 @@
+# Lauf-Aufgaben mit Secrets (SIN-302): Messläufe wirklich ausführen, die der Worker nur bauen kann (er läuft ohne API-Secrets).
+# Nur aus einer festen Liste (Eingabe `task`, siehe TASKS in scripts/autonomy/run-task.mjs), nie ein freier Befehl.
+# Start: von Hand (Actions → run-task) oder durch den Planer (scripts/autonomy/planner.mjs, Agenten-Token).
+# Kosten: höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag (Schritt „Tagesdeckel“); die Skripte brechen bei 20 € je Lauf ab.
+# Ergebnis: Rohdaten in docs/quality/runs/, Eintrag in docs/product-readiness.json, beides per PR (Risiko setzt pr-gate).
+# `migrate`: nur additive Migrationen, vorher frische Sicherung (backup.yml, SIN-293); nicht additive bleiben liegen.
+# Secrets nur in den Schritten, die sie brauchen: ANTHROPIC_API_KEY, OPENAI_API_KEY, LANGFUSE_*, SUPABASE_*.
+name: run-task
+
+run-name: "Lauf ${{ inputs.task }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Aufgabe (feste Liste)"
+        type: choice
+        required: true
+        options:
+          - judge-backfill
+          - ab-haiku-sonnet
+          - cost-report
+          - lighthouse
+          - offline-check
+          - migrate
+      dry_run:
+        description: "Nur anzeigen, was laufen würde (kostet nichts)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: run-task-${{ inputs.task }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Tagesdeckel (höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag)
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          TASK: ${{ inputs.task }}
+        run: |
+          node --input-type=module -e '
+            import { dailyLimitReached } from "./scripts/autonomy/run-task.mjs";
+            const r = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/run-task.yml/runs?per_page=50`, { headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: "application/vnd.github+json" } });
+            if (!r.ok) throw new Error(`GitHub HTTP ${r.status}`);
+            const runs = (await r.json()).workflow_runs;
+            if (dailyLimitReached(process.env.TASK, runs, new Date(), Number(process.env.GITHUB_RUN_ID))) {
+              console.log("::error::Tagesdeckel: diese Aufgabe ist heute schon gelaufen (höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag).");
+              process.exit(1);
+            }'
+      - run: npm ci --no-audit --no-fund
+      - name: Sicherung vor Migration (SIN-293)
+        id: backup
+        if: ${{ inputs.task == 'migrate' && !inputs.dry_run }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node --import tsx scripts/backup.ts export
+          echo "at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - name: Bauen und Chromium (Lighthouse, Offline)
+        if: ${{ inputs.task == 'lighthouse' || inputs.task == 'offline-check' }}
+        run: |
+          npx playwright install --with-deps chromium
+          npm run build
+      - name: Aufgabe ausführen
+        id: task
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          BACKUP_AT: ${{ steps.backup.outputs.at }}
+          TASK: ${{ inputs.task }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/run-task.mjs --task "$TASK" --dry-run
+          else node scripts/autonomy/run-task.mjs --task "$TASK"; fi
+      - name: Rohdaten ablegen
+        if: ${{ always() && !inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-${{ inputs.task }}
+          path: |
+            docs/quality/runs/
+            docs/ops/ap22-runs/
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+      # Ergebnis als PR (Squash-Merge durch Auto-Merge). Nur wenn der Lauf durchlief und Dateien geändert hat.
+      - name: Ergebnis als PR
+        if: ${{ success() && !inputs.dry_run && inputs.task != 'migrate' }}
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          TASK: ${{ inputs.task }}
+        run: |
+          git add docs/quality/runs docs/ops/ap22-runs docs/product-readiness.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Keine Änderungen, kein PR."; exit 0; fi
+          branch="claude/lauf-${TASK}-${GITHUB_RUN_ID}"
+          git config user.name "claude[bot]"
+          git config user.email "claude[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git commit -m "chore(qualitaet): Lauf ${TASK} mit Beleg (SIN-302)" -m "Part of SIN-302"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "chore(qualitaet): Lauf ${TASK} mit Beleg (SIN-302)" \
+            --body "$(printf 'Part of SIN-302\n\n## Was ändert sich\nErgebnis des Laufs `%s` (Rohdaten unter `docs/quality/runs/`, Eintrag in `docs/product-readiness.json`).\n\n## Nach dem Merge\nDer Planer wertet den Punkt beim nächsten Lauf als gelaufen.\n\nLauf: %s/%s/actions/runs/%s' "$TASK" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
