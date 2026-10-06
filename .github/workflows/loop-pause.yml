@@ -1,0 +1,60 @@
+# Notbremse (SIN-294): setzt oder entfernt die Repo-Variable AGENT_PAUSED_UNTIL von Hand.
+# Dispatcher und Planer lesen sie (budget.mjs, isPaused) und starten dann nichts; laufende Worker enden normal.
+# Am Handy: GitHub Mobile → Actions → loop-pause → Run workflow → aktion wählen.
+# Secret: AGENT_VARIABLES_TOKEN (PAT, nur „Variables: write“), dasselbe wie in worker.yml.
+name: loop-pause
+
+on:
+  workflow_dispatch:
+    inputs:
+      aktion:
+        description: "pausieren (Loop stoppt) oder fortsetzen (Pause aufheben)"
+        type: choice
+        options:
+          - pausieren
+          - fortsetzen
+        default: pausieren
+      stunden:
+        description: "Nur bei pausieren: Dauer in Stunden (leer = 24, höchstens 720)"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: loop-pause
+  cancel-in-progress: false
+
+jobs:
+  pause:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.AGENT_VARIABLES_TOKEN }}
+      AKTION: ${{ inputs.aktion }}
+      STUNDEN: ${{ inputs.stunden }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Wert berechnen
+        id: calc
+        run: node scripts/autonomy/pause.mjs "$AKTION" "$STUNDEN"
+      - name: Variable setzen oder entfernen
+        env:
+          UNTIL: ${{ steps.calc.outputs.until }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret AGENT_VARIABLES_TOKEN fehlt: AGENT_PAUSED_UNTIL bitte von Hand setzen (Settings → Variables)."
+            exit 1
+          fi
+          if [ -n "$UNTIL" ]; then
+            gh variable set AGENT_PAUSED_UNTIL --repo "$GITHUB_REPOSITORY" --body "$UNTIL"
+            echo "Pausiert bis $UNTIL" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            gh variable delete AGENT_PAUSED_UNTIL --repo "$GITHUB_REPOSITORY" || echo "Variable war nicht gesetzt."
+            echo "Pause aufgehoben" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi

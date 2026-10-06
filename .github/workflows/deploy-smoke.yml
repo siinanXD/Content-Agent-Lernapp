@@ -1,0 +1,100 @@
+# Smoke-Test nach jedem Production-Deploy (SIN-308): /api/health und /api/learner/phase-a müssen 200 liefern.
+# Sonst öffnet dieser Lauf einen Revert-PR (wie revert-guard, SIN-252) und der Lauf wird rot (GitHub meldet das).
+# Auslöser: Vercel meldet jeden Deploy als deployment_status. Token: AGENT_WORKFLOW_TOKEN (nie github.token).
+name: deploy-smoke
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      SHA: ${{ github.event.deployment.sha }}
+      URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+    steps:
+      - name: Erreichbarkeit prüfen
+        id: smoke
+        run: |
+          set -uo pipefail
+          fail=0
+          for path in /api/health /api/learner/phase-a; do
+            code=000
+            for try in 1 2 3; do
+              code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "${URL%/}${path}") || code=000
+              [ "$code" = "200" ] && break
+              sleep 10
+            done
+            echo "${path}: ${code}"
+            [ "$code" = "200" ] || fail=1
+          done
+          echo "fail=${fail}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Revert-PR öffnen
+        if: steps.smoke.outputs.fail == '1'
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then echo "::warning::AGENT_WORKFLOW_TOKEN fehlt, kein Revert-PR."; exit 1; fi
+          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          git config user.name "claude[bot]"
+          git config user.email "claude[bot]@users.noreply.github.com"
+
+          # Nur zurücknehmen, wenn der Deploy noch die Spitze von main ist.
+          if [ "$(git rev-parse origin/main)" != "$SHA" ]; then
+            echo "main ist weiter als $SHA, ein neuerer Deploy entscheidet."; exit 1
+          fi
+          title=$(git log -1 --format=%s "$SHA")
+          case "$title" in
+            revert:*|Revert*) echo "Der Commit ist selbst ein Revert, Stopp: $title"; exit 1 ;;
+          esac
+          if [ "$(git log -1 --format=%p "$SHA" | wc -w)" -ne 1 ]; then echo "Merge-Commit, kein automatischer Revert."; exit 1; fi
+
+          branch="claude/revert-${SHA:0:7}"
+          if [ -n "$(gh pr list --head "$branch" --state all --json number --jq '.[0].number')" ]; then
+            echo "Revert-PR für $SHA existiert schon."; exit 1
+          fi
+
+          git checkout -b "$branch" origin/main
+          git revert --no-edit "$SHA"
+          issue=$(printf '%s' "$title" | grep -oE 'SIN-[0-9]+' | tail -1 || true)
+          git commit --amend -q -m "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}
+
+          Part of ${issue:-SIN-308}
+          Revert von ${SHA}, weil der Smoke-Test nach dem Production-Deploy rot war.
+
+          Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+          git push -q origin "$branch"
+
+          body="Part of ${issue:-SIN-308}
+
+          ## Was ändert sich
+          Nimmt \`${SHA:0:7}\` (${title}) zurück, weil \`/api/health\` oder \`/api/learner/phase-a\` nach dem Production-Deploy nicht 200 lieferten. Der Stand von vorher ist wieder da.
+
+          ## Nach dem Merge
+          Auto-Merge bei grünen Checks (\`risk:medium\`). Danach das ursprüngliche Issue prüfen und die Änderung korrigiert neu einbringen.
+
+          Fehlgeschlagener Lauf: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          gh pr create --base main --head "$branch" \
+            --title "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}" --body "$body"
+
+      - name: Lauf rot melden
+        if: steps.smoke.outputs.fail == '1'
+        run: |
+          echo "::error::Smoke-Test nach Production-Deploy fehlgeschlagen."
+          exit 1

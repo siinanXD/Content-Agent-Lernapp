@@ -2,7 +2,21 @@
 
 **Stand:** Schritte 1 und 2 sind erledigt (Workflows aktiv, `pr-gate` nutzt `risk.mjs`). `dispatch.yml` und `planner.yml` hier bleiben als Vorlage; maßgeblich sind die Dateien in `.github/workflows/`. Entscheidung: D-39.
 
-**Einmalig von Sinan:** Secrets `LINEAR_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` setzen. Optional `AGENT_VARIABLES_TOKEN` (PAT, nur „Variables: write“), damit der Dispatcher `AGENT_PAUSED_UNTIL` bei Claude-Limit selbst setzt. Pause von Hand: Repo-Variable `AGENT_PAUSED_UNTIL` auf eine ISO-Zeit setzen, leeren hebt sie auf.
+**Einmalig von Sinan:** Secrets `LINEAR_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` setzen. Optional `AGENT_VARIABLES_TOKEN` (PAT, nur „Variables: write“), damit der Dispatcher `AGENT_PAUSED_UNTIL` bei Claude-Limit selbst setzt. Pause von Hand: Repo-Variable `AGENT_PAUSED_UNTIL` auf eine ISO-Zeit setzen, leeren hebt sie auf. Einfacher: Notbremse per Workflow `loop-pause` (siehe SIN-294 unten).
+
+## SIN-294: Notbremse, Erreichbarkeit der App, Token-Ablauf
+
+**Notbremse.** Workflow `loop-pause.yml` (nur `workflow_dispatch`): `aktion` = `pausieren` (optional `stunden`, leer = 24, höchstens 720) oder `fortsetzen`. Er setzt die Repo-Variable `AGENT_PAUSED_UNTIL` auf die Endzeit (UTC) oder löscht sie; Dispatcher und Planer lesen sie wie bisher und starten dann nichts. Laufende Worker enden normal. Braucht das Secret `AGENT_VARIABLES_TOKEN` (PAT, nur „Variables: write“); fehlt es, schlägt der Lauf rot fehl und nennt die Variable zum Von-Hand-Setzen. Am Handy: GitHub Mobile → Actions → `loop-pause` → Run workflow → Aktion wählen. Die Status-Seite zeigt „Pausiert bis …“. Prüfen: `node scripts/autonomy/pause.mjs pausieren 2` (berechnet nur den Wert, setzt nichts).
+
+**Erreichbarkeit der App.** `GET https://content-agent-ashen-nu.vercel.app/api/health` antwortet `200` mit `"ok": true, "db": "ok"`, wenn die Datenbank (Supabase, eine Lesezeile aus `courses`, Zeitlimit 4 s) antwortet, sonst `503` mit `"db": "unreachable"`. Einmalig von Sinan bei [cron-job.org](https://cron-job.org):
+
+1. Neuer Cronjob: URL `https://content-agent-ashen-nu.vercel.app/api/health`, Methode GET, Takt alle 5 Minuten, Zeitlimit 30 s.
+2. Als Erfolg gilt HTTP 2xx (Standard).
+3. Benachrichtigungen einschalten: „bei Fehlschlag“ (und „bei Wiederherstellung“) per E-Mail an Sinans Adresse, Schwelle 1 Fehler.
+
+Die Route liefert nur Dienstname, Speicher-Art und DB-Zustand, keine Geheimnisse und keine Personendaten.
+
+**Token-Ablauf.** `docs/autonomy/tokens.md` listet alle Tokens mit Ablaufdatum (Name, Ort, Ablauf, Rechte, nie Werte). Die Status-Seite zeigt „läuft in X Tagen ab“; ab 14 Tagen vorher (und danach) steht der Token im Tages-Update unter „Braucht dich“. Bekannt: `cron-takt` und Figma `agents-read` laufen am 03.01.2027 ab. Bei `unbekannt` trägt Sinan das Datum nach; ein erneuerter Token bekommt sein neues Datum in der Tabelle. Entscheidung: `docs/decisions/SIN-294-notbremse-erreichbarkeit-token.md`.
 
 ---
 
