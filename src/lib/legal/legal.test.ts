@@ -71,8 +71,9 @@ test("Auftragsverarbeiter passen zur Konfiguration im Repo", () => {
   assert.equal(region("PostHog"), "EU");
   assert.ok(code("src/lib/quality/langfuse-client.ts").includes("LANGFUSE_EU_HOST"));
   assert.equal(region("Langfuse"), "EU");
-  assert.ok(!vercel.includes('"regions"'), "vercel.json setzt jetzt eine Region: Datenschutz Abschnitt 4 nachtragen");
-  for (const name of ["Vercel", "Supabase", "Sentry"]) assert.match(region(name) ?? "", /^\[Region prüfen\]$/, name);
+  assert.ok(vercel.includes('"regions": ["fra1"]'), "vercel.json: Region geändert, Datenschutz Abschnitt 4 anpassen");
+  assert.match(region("Vercel") ?? "", /^Funktionen in Frankfurt \(fra1\)/);
+  for (const name of ["Supabase", "Sentry"]) assert.match(region(name) ?? "", /^\[Region prüfen\]$/, name);
 });
 
 test("Rechts-Checkliste: offene Punkte erscheinen unter „Braucht dich“, abgehakte nicht", () => {

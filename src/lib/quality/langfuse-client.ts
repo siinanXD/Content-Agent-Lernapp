@@ -17,6 +17,7 @@ import {
   propagateAttributes,
   startActiveObservation,
 } from "@langfuse/tracing";
+import { cleanEnvValue, readEnvUrl } from "@/lib/env";
 import type { CostLedger } from "./cost-guard";
 import { LANGFUSE_DATASET_NAME } from "./maf-goldset";
 import type { GoldQuestion } from "./maf-goldset-fixture";
@@ -38,14 +39,13 @@ export type LangfuseConfig = {
 };
 
 export function getLangfuseConfig(): LangfuseConfig | null {
-  const publicKey = process.env.LANGFUSE_PUBLIC_KEY?.trim();
-  const secretKey = process.env.LANGFUSE_SECRET_KEY?.trim();
+  const publicKey = cleanEnvValue(process.env.LANGFUSE_PUBLIC_KEY);
+  const secretKey = cleanEnvValue(process.env.LANGFUSE_SECRET_KEY);
   if (!publicKey || !secretKey) return null;
-  return {
-    publicKey,
-    secretKey,
-    baseUrl: process.env.LANGFUSE_BASE_URL?.trim() || LANGFUSE_EU_HOST,
-  };
+  const hasBaseUrl = Boolean(cleanEnvValue(process.env.LANGFUSE_BASE_URL));
+  const baseUrl = readEnvUrl("LANGFUSE_BASE_URL") ?? (hasBaseUrl ? null : LANGFUSE_EU_HOST);
+  if (!baseUrl) return null;
+  return { publicKey, secretKey, baseUrl };
 }
 
 export function langfuseConfigured(): boolean {
