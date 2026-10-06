@@ -2,8 +2,9 @@
 # Risiko-Label automatisch und schaltet Auto-Merge ein.
 #
 #   risk:medium (Standard) → Auto-Merge (Squash), sobald alle Pflicht-Checks grün sind
-#   risk:high              → Check `merge-gate` bleibt rot, bis Sinan das Label
-#                            `freigegeben` setzt.
+#   risk:high              → Check `merge-gate` bleibt ausstehend (gelb, „wartet auf Freigabe von
+#                            Sinan“), bis Sinan das Label `freigegeben` setzt. Ausstehend sperrt den
+#                            Merge wie rot (SIN-247). Rot nur bei echten Fehlern.
 #
 # Die Regeln stehen in scripts/autonomy/risk.mjs (SIN-223), geladen aus der Basis des PRs.
 # Die Freigabe überlebt Folge-Commits, solange kein neuer High-Grund dazukommt. Das Gate
@@ -30,6 +31,7 @@ permissions:
   pull-requests: write
   issues: write
   actions: write
+  checks: write
 
 # Kein cancel-in-progress: Ein abgebrochener Lauf darf keine Entscheidung verschlucken.
 concurrency:
@@ -96,7 +98,10 @@ jobs:
           fi
           echo "PR-Titel ok."
 
-  merge-gate:
+  # SIN-247: Der Job heißt `gate`. Den Pflicht-Check `merge-gate` (Ruleset) schreibt der letzte Schritt als
+  # Check-Run: success, in_progress (wartet auf Freigabe, gelb) oder failure (echter Fehler). Ein Job selbst
+  # kann nicht „ausstehend“ enden.
+  gate:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -143,6 +148,7 @@ jobs:
           fi
 
       - name: Risiko bestimmen, Label setzen, Auto-Merge steuern
+        id: decide
         uses: actions/github-script@v7
         env:
           SECRET_LEAK: ${{ steps.leaks.outputs.leak }}
@@ -337,5 +343,34 @@ jobs:
             }
 
             if (risk === "risk:high" && !approved) {
-              core.setFailed("risk:high: wartet auf das Label `freigegeben` von Sinan.");
+              core.setOutput("waiting", "true");
+              core.notice("risk:high: wartet auf das Label `freigegeben` von Sinan.");
+            }
+
+      # Pflicht-Check `merge-gate` (Name aus dem Ruleset). Nicht freigegeben = ausstehend, nicht rot.
+      - name: Check-Run merge-gate schreiben
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          JOB_STATUS: ${{ job.status }}
+          WAITING: ${{ steps.decide.outputs.waiting }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const failed = process.env.JOB_STATUS !== "success";
+            const waiting = !failed && process.env.WAITING === "true";
+            const base = {
+              owner, repo, name: "merge-gate", head_sha: context.payload.pull_request.head.sha,
+              details_url: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+            };
+            if (waiting) {
+              await github.rest.checks.create({ ...base, status: "in_progress", output: {
+                title: "wartet auf Freigabe von Sinan",
+                summary: "risk:high: Der Merge ist gesperrt, bis das Label `freigegeben` gesetzt ist. Das ist kein Fehler.",
+              } });
+            } else {
+              await github.rest.checks.create({ ...base, status: "completed", conclusion: failed ? "failure" : "success", output: {
+                title: failed ? "Gate-Fehler" : "Gate ok",
+                summary: failed ? "Fork, Secret-Leak, veralteter Lauf oder Skript-Fehler. Details im Lauf." : "Keine offene Freigabe nötig.",
+              } });
             }
