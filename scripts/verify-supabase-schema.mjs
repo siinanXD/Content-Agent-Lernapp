@@ -12,6 +12,9 @@ const TABLES = [
   "questions",
   "evaluations",
   "learning_progress",
+  // SIN-268: Kosten-Ledger und Bewertungslauf (Migration 20261006020000 holt beide nach)
+  "pipeline_run_costs",
+  "judge_runs",
 ];
 
 const url = process.env.SUPABASE_URL?.trim();
@@ -46,7 +49,7 @@ for (const table of TABLES) {
 }
 
 if (failed > 0) {
-  console.log(`\nverify: ${failed}/${TABLES.length} tables missing — apply supabase/migrations/20261003030000_ap17_course_persistence.sql`);
+  console.log(`\nverify: ${failed}/${TABLES.length} tables missing — apply supabase/migrations/20261003030000_ap17_course_persistence.sql and 20261006020000_sin268_repair_run_costs.sql`);
   process.exit(1);
 }
 

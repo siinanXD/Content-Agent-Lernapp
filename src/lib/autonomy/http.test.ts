@@ -129,3 +129,14 @@ test("Wächter: Linear nicht lesbar → kein Nachfüllen, Sperre (lastRefill) bl
   const ok = analyze({ ...snap, linearOk: true }, {}, {});
   assert.equal(ok.refill.trigger, true);
 });
+
+test("Planer: Kostentabelle fehlt (404 PGRST205) → klare Meldung statt HTTP 404", async () => {
+  const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
+  const fetchImpl = (async (url: string) =>
+    String(url).includes("pipeline_run_costs")
+      ? reply({ status: 404, body: JSON.stringify({ code: "PGRST205", message: "Could not find the table" }) })
+      : reply({ body: "[]", headers: { "content-type": "application/json", "content-range": "0-0/3" } })) as never;
+  const m = await collectMetrics(env as never, { fetchImpl, ...quick });
+  assert.match(String(m.kosten_pro_lauf), /^nicht messbar \(Tabelle pipeline_run_costs fehlt/);
+  assert.doesNotMatch(String(m.kosten_pro_lauf), /404/);
+});
