@@ -115,7 +115,7 @@ export function buildPrompt(issue) {
     issue.description ?? "(ohne Beschreibung)",
     "",
     "Regeln: AGENTS.md. Lies zuerst docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
-    `Entscheidungen und Annahmen: eine neue Datei docs/decisions/${issue.identifier}-<kurz>.md (Kopf: Links, Entscheidung, Annahmen, Warum). docs/DECISIONS.md nie bearbeiten, den Index erzeugt ein Skript.`,
+    `Entscheidungen und Annahmen: eine neue Datei docs/decisions/${issue.identifier}-<kurz>.md (Kopf: Links, Entscheidung, Annahmen, Warum). docs/DECISIONS.md nie von Hand bearbeiten: vor dem Push \`npm run decisions:index\` ausführen und den Index im selben PR committen (CI prüft ihn).`,
     `Arbeite auf einem neuen Branch claude/${issue.identifier.toLowerCase()}. Ein PR pro Arbeitspaket, Reparaturen im selben PR.`,
     `PR-Titel als Conventional Commit mit (${issue.identifier}), Body beginnt mit "Part of ${issue.identifier}". Kein Draft, nie selbst mergen.`,
     "PR-Titel in Klartext (Conventional Commit, SIN-248). PR-Beschreibung nach dem ersten Satz in festen Abschnitten mit `## `-Überschriften, daraus baut pr-gate den Steckbrief für Sinan: `## Was ändert sich` (2–4 Zeilen aus Nutzersicht, keine Dateilisten), `## Ausprobieren` (ein Klickpfad, z. B. Startseite → Los geht’s → Einverstanden; bei Backend-only weglassen), `## Nach dem Merge` (was automatisch passiert), `## Kosten` (nur wenn relevant: API-Kosten, neue Secrets, neue Dienste), `## Rückgängig` (nur wenn nicht „Revert-PR genügt“). Braucht es eine Entscheidung von Sinan: `## Entscheidung nötig` mit Frage und 2–3 Optionen.",

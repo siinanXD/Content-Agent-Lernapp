@@ -28,6 +28,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # SIN-251: Der Index liegt im selben PR. Fehlt er oder ist er veraltet, schlägt der Check fehl.
+      - name: Entscheidungs-Index aktuell
+        run: node scripts/decisions-index.mjs --check || { echo "::error::docs/DECISIONS.md ist veraltet. Lokal 'npm run decisions:index' ausführen und die Datei im selben PR committen."; exit 1; }
+
       - name: Lint
         run: npm run lint
 

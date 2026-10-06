@@ -87,7 +87,7 @@ export function buildQuotaRows(usage = {}, limitsFile = {}) {
       row.text = `${u}${lim?.einheit ? ` ${lim.einheit}` : ""}`;
     } else if (u?.text) row.text = u.text;
     else row.text = `nicht messbar${u?.error ? ` (${u.error})` : ""}`;
-    row.over = row.pct != null && row.pct > warn;
+    row.over = row.pct != null && row.pct >= warn; // ab 80 % (SIN-251, wie der Wächter SIN-225)
     return row;
   });
 }
