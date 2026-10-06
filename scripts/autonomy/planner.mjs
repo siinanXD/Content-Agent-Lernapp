@@ -152,7 +152,7 @@ export async function assessReadiness({ metrics, issues, env = process.env, read
 
 export function buildPlannerPrompt(
   /** @type {{ definition: string, issues: unknown[], metrics: object, readiness?: string, content?: string, maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null }} */
-  { definition, issues, metrics, readiness = "", content = "", maintenance = false, phase = null },
+  { definition, issues, metrics, readiness = "", content = "", maintenance = false, phase = null, maxIssues = null, bugsOnly = false },
 ) {
   const betrieb = phase?.phase === "betrieb";
   return [
@@ -180,6 +180,10 @@ export function buildPlannerPrompt(
     `- Bündle alle Design-Arbeiten zu höchstens ${MAX_DESIGN_PER_WEEK} Design-Paket pro Woche (\`lane: "design"\`, Label \`design\`, Backlog bis Sinan die Sitzung macht, kein Dispatcher-Lauf).`,
     "- Agenten erfinden keine Komponenten im Code. Weicht der Code von Figma ab (Kennzahl `figma_abgleich`), plane die Abweichung als Issue.",
     ...(betrieb ? betriebPrompt(phase) : []),
+    ...(maxIssues != null
+      ? ["", `**Nachfüllen (SIN-253):** Die Schlange ist fast leer. Plane höchstens ${maxIssues} neue startbare Issues (Design-Pakete zählen nicht), wichtigstes zuerst, drei Spuren abwechselnd, nach der Produktreife-Tabelle.`]
+      : []),
+    ...(bugsOnly ? ["", "**Nur Bugs:** Ein Free-Tier-Kontingent liegt über 80 %. Keine neuen Feature-Issues, nur Fehler (Spur backend)."] : []),
     ...(maintenance
       ? [
           "",
@@ -228,7 +232,7 @@ function betriebPrompt(phase) {
  * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
  * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string }[]}
  */
-export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null }} */ { maintenance = false, phase = null } = {}) {
+export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly = false } = {}) {
   const betrieb = phase?.phase === "betrieb";
   // Betrieb: im Beobachtungsfenster nur Fehler und Content, am Fensterende der Wochenplan.
   const observing = betrieb && !phase.due;
@@ -251,6 +255,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
     }
     if (taken.has(p.title.trim().toLowerCase())) continue;
     if ((maintenance || observing) && !MAINTENANCE_LANES.includes(p.lane)) continue;
+    if (bugsOnly && p.lane !== "backend") continue; // Free-Tier über 80 %: nur Bugs (SIN-225, SIN-253)
     const cap = p.lane === "design" ? MAX_DESIGN_PER_WEEK : MAX_PER_LANE;
     if ((count[p.lane] = (count[p.lane] ?? 0) + 1) > cap) continue;
     out.push({
@@ -259,7 +264,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
       priority: p.priority,
       labels: [
         ...(p.lane === "design" ? ["design", "frontend"] : [p.lane]),
-        ...(observing && p.lane === "backend" ? ["bug"] : []),
+        ...((observing || bugsOnly) && p.lane === "backend" ? ["bug"] : []),
         ...(planning ? [PLAN_LABEL] : []),
       ],
       ...(p.lane === "frontend" ? { needsDesign: Boolean(p.needsDesign) } : {}),
@@ -274,6 +279,12 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
   let result = out;
   if (planning) {
     const kept = [...out].sort((a, b) => a.priority - b.priority).slice(0, MAX_PLAN_ISSUES_BETRIEB);
+    const titles = new Set(kept.map((r) => r.title.toLowerCase()));
+    result = kept.filter((r) => !r.blockedBy || !planTitles.has(r.blockedBy.toLowerCase()) || titles.has(r.blockedBy.toLowerCase()));
+  }
+  // Nachfüllen (SIN-253): nur so viele, dass wieder 5–8 startbar sind; Design-Einträge zählen nicht (nicht startbar).
+  if (maxIssues != null) {
+    const kept = [...result].sort((a, b) => a.priority - b.priority).slice(0, Math.max(0, maxIssues));
     const titles = new Set(kept.map((r) => r.title.toLowerCase()));
     result = kept.filter((r) => !r.blockedBy || !planTitles.has(r.blockedBy.toLowerCase()) || titles.has(r.blockedBy.toLowerCase()));
   }
@@ -319,6 +330,12 @@ export async function createIssues(items, existing = [], call = linear) {
   }
 }
 
+/** Grenzen des Nachfüll-Anstoßes (SIN-253) aus PLAN_MAX_ISSUES und PLAN_BUGS_ONLY; ohne Wert: Wochenplan-Regeln. */
+export function refillLimits(env = process.env) {
+  const n = Number.parseInt(env.PLAN_MAX_ISSUES ?? "", 10);
+  return { maxIssues: Number.isFinite(n) && n >= 0 ? n : null, bugsOnly: env.PLAN_BUGS_ONLY === "true" };
+}
+
 /** Phase aus Umgebung und Linear; die Dry-Run-Schalter überschreiben beides (Fixtures). */
 async function resolvePhase(argv, issues) {
   const arg = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : undefined);
@@ -342,6 +359,7 @@ export async function main(argv) {
     const phase = await resolvePhase(argv, issues);
     const prompt = buildPlannerPrompt({
       phase,
+      ...refillLimits(process.env),
       definition,
       issues: issues ?? [],
       metrics,
@@ -362,7 +380,7 @@ export async function main(argv) {
     const maintenance = inMaintenanceMode(rows, abnahme);
     const phase = await resolvePhase(argv, issues);
     console.log(`${renderPhase(phase)}\n`);
-    const items = validatePlan(plan, existingTitles, { maintenance, phase });
+    const items = validatePlan(plan, existingTitles, { maintenance, phase, ...refillLimits(process.env) });
     if (maintenance && !existingTitles.includes(ABNAHME_TITLE)) items.push({ ...abnahmeIssue(rows), lane: "abnahme" });
     console.log(`Produktreife\n\n${renderReadiness(rows)}\n\n${maintenance ? "Pflege-Modus: nur Fehler und Content.\n" : ""}`);
     if (dry) {

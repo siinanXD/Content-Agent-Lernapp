@@ -213,6 +213,9 @@ test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
   const mk = (n: number, lane = "backend") => ({ lane, title: `T${n}`, acceptance: ["ok"], priority: 2 });
   assert.equal(validatePlan(Array.from({ length: 8 }, (_, i) => mk(i))).length, 3);
   assert.equal(validatePlan([mk(1)], ["t1"]).length, 0);
+  // Nachfüllen (SIN-253): Obergrenze und nur Bugs
+  assert.equal(validatePlan(Array.from({ length: 8 }, (_, i) => mk(i)), [], { maxIssues: 2 }).length, 2);
+  assert.equal(validatePlan([mk(1), mk(2, "frontend")], [], { bugsOnly: true }).map((r: { lane: string }) => r.lane).join(), "backend");
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: [], priority: 1 }]));
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: ["a"], priority: 9 }]));
   assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 1 }]), /lane/);

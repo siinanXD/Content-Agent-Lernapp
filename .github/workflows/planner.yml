@@ -17,6 +17,14 @@ on:
         description: "Nur anzeigen, nichts in Linear anlegen"
         type: boolean
         default: false
+      max_issues:
+        description: "Nachfüllen (SIN-253): höchstens so viele neue Issues; leer = Wochenplan-Regeln"
+        type: string
+        default: ""
+      bugs_only:
+        description: "Nachfüllen (SIN-253): nur Bugs (Free-Tier-Kontingent über 80 %)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -42,6 +50,8 @@ jobs:
       POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
       FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
       DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+      PLAN_MAX_ISSUES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_issues || '' }}
+      PLAN_BUGS_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.bugs_only }}
       AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
       # Phase (SIN-244): bauen | betrieb, Beobachtungsfenster in Tagen, Beginn des Betriebs (ISO-Datum)
       PHASE: ${{ vars.PHASE }}
