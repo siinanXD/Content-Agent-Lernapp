@@ -20,7 +20,7 @@
 
 `status.yml` schreibt den Text des angepinnten Issues „Loop-Status“ (Label `loop-status`, wird beim ersten Lauf angelegt) neu: Jetzt, Schlange, letzte 24 h, Kontingente in %. Bei Stillstand oder Abbruch kommt ein Kommentar mit @siinanXD (Push über GitHub Mobile), je Vorfall einmal. Der Merker steht als HTML-Kommentar am Ende des Issue-Texts, nicht löschen. Entscheidung: D-47.
 
-**Wächter-Fälle:** Worker fehlgeschlagen · kein Worker seit > 45 Min trotz startbarer Todos · „In Progress“ ohne Worker und PR seit > 60 Min · PR wartet > 2 h auf Freigabe · Pause aktiv · Kontingent > 80 %. **Selbstheilung:** Merge-Konflikt in Agenten-PR → `@claude` im PR (2 Versuche, dann Meldung an Sinan) · `merge-gate` rot trotz `freigegeben` → Hinweis „Label entfernen und neu setzen“ · „In Progress“ mit gemergtem PR → Done · Stillstand → `status.yml` stößt `dispatch.yml` an (höchstens alle 10 Min).
+**Wächter-Fälle:** Worker fehlgeschlagen · kein Worker seit > 45 Min trotz startbarer Todos · „In Progress“ ohne Worker und PR seit > 60 Min · PR wartet > 2 h auf Freigabe · Pause aktiv · Kontingent > 80 % (Meldung; „nur Bugs“ planen gilt nur bei Claude-Kontingent/API-Deckel, SIN-266). **Production-Deploy (SIN-266):** `main` baut nicht von selbst; `status.yml` löst den Deploy Hook (`VERCEL_DEPLOY_HOOK_PROD`) höchstens 1× pro Stunde aus, nur bei neuem App-Code (ab Vercel 90 % alle 3 h). **Selbstheilung:** Merge-Konflikt in Agenten-PR → `@claude` im PR (2 Versuche, dann Meldung an Sinan) · `merge-gate` rot trotz `freigegeben` → Hinweis „Label entfernen und neu setzen“ · „In Progress“ mit gemergtem PR → Done · Stillstand → `status.yml` stößt `dispatch.yml` an (höchstens alle 10 Min).
 
 **Einmalig von Sinan:**
 
