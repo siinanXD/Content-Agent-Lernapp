@@ -4,6 +4,7 @@
  *
  *   node --import tsx scripts/safety-sample.mjs --units export.json [--seed 272] [--size 15]
  *   node --import tsx scripts/safety-sample.mjs --url https://<app> [--seed 272] [--size 15]
+ *   node --import tsx scripts/safety-sample.mjs --live --review-page   (SIN-278: URL aus docs/autonomy/config.json, Prüfseite für Sinan)
  *
  * --units: JSON-Datei mit { units: [...] } oder [...] (z. B. Antwort von /api/learner/phase-a).
  * --url:   Basis-URL der App; liest /api/learner/phase-a.
@@ -16,6 +17,7 @@ import path from "node:path";
 
 const { loadAllCurricula } = await import("../src/lib/content/curriculum.ts");
 const { buildSafetySample, renderReport } = await import("../src/lib/quality/safety-sample.ts");
+const { buildQuestionSample, renderReviewPage } = await import("../src/lib/quality/review-page.ts");
 
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => {
@@ -32,7 +34,9 @@ if (!Number.isInteger(seed) || !Number.isInteger(size) || size < 1) {
 let units = [];
 let source;
 const file = opt("units");
-const base = opt("url");
+const base =
+  opt("url") ??
+  (argv.includes("--live") ? JSON.parse(readFileSync("docs/autonomy/config.json", "utf8")).APP_BASE_URL : undefined);
 if (file) {
   const data = JSON.parse(readFileSync(file, "utf8"));
   units = Array.isArray(data) ? data : (data.units ?? []);
@@ -52,6 +56,15 @@ if (file) {
 }
 
 const today = new Date().toISOString().slice(0, 10);
+if (argv.includes("--review-page")) {
+  // SIN-278: Prüfseite mit 10 % der Fragen zu Elektrik und Maschinensicherheit
+  const mafMetall = loadAllCurricula().find((c) => c.id === "maf-metall");
+  const r = buildQuestionSample(units, mafMetall, { seed });
+  const page = path.join(process.cwd(), "docs", "content", `safety-sample-${today}.md`);
+  writeFileSync(page, renderReviewPage(r, { date: today, source, seed }));
+  console.log(`${r.sample.length} von ${r.total} Fragen. Seite: ${path.relative(process.cwd(), page)}`);
+  process.exit(r.sample.length === 0 ? 2 : 0);
+}
 const result = buildSafetySample(units, loadAllCurricula(), { seed, size, today });
 const out = path.join(process.cwd(), "docs", "quality", "sicherheits-stichprobe-maf-metall.md");
 writeFileSync(out, renderReport(result, { date: today, source }));
