@@ -153,12 +153,17 @@ jobs:
         env:
           SECRET_LEAK: ${{ steps.leaks.outputs.leak }}
           AGENT_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           script: |
             const fs = require("node:fs");
-            const { classifyRisk, approvalStillValid } = await import(
-              `${process.env.GITHUB_WORKSPACE}/scripts/autonomy/risk.mjs`
-            );
+            const riskModule = await import(`${process.env.GITHUB_WORKSPACE}/scripts/autonomy/risk.mjs`);
+            const { classifyRisk, approvalStillValid } = riskModule;
+            // risk.mjs kommt aus der Basis (main). Neue Exporte sind optional: Die neuen Regeln greifen erst
+            // nach dem Merge, vorher fällt das Gate auf den alten Stand zurück statt zu crashen.
+            const newDependencies = typeof riskModule.newDependencies === "function" ? riskModule.newDependencies : () => [];
+            const fetchDependencyInfo = typeof riskModule.fetchDependencyInfo === "function"
+              ? riskModule.fetchDependencyInfo : async () => ({});
             const { owner, repo } = context.repo;
             const action = context.payload.action;
             const sender = context.payload.sender?.login;
@@ -198,10 +203,14 @@ jobs:
             const files = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/pr-files.json`, "utf8"));
             let labels = pr.labels.map((l) => l.name);
             const isFork = pr.head.repo?.full_name !== `${owner}/${repo}`;
+            const gateFiles = files.map((f) => ({
+              filename: f.filename, previous_filename: f.previous_filename, status: f.status, patch: f.patch,
+            }));
+            // SIN-252: neue npm-Abhängigkeiten nur mit MIT/Apache und > 500 Sternen (npm-Registry, GitHub-API).
+            const depInfo = await fetchDependencyInfo(newDependencies(gateFiles), fetch, process.env.GITHUB_TOKEN);
             const { risk, reasons } = classifyRisk({
-              files: files.map((f) => ({
-                filename: f.filename, previous_filename: f.previous_filename, status: f.status, patch: f.patch,
-              })),
+              files: gateFiles,
+              depInfo,
               labels,
               isFork,
               secretLeak: process.env.SECRET_LEAK === "true",
