@@ -90,8 +90,7 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
   );
 
   // Start → Onboarding
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/willkommen$/);
+  await page.goto("/willkommen");
   await page.getByRole("link", { name: "Los geht’s" }).click();
   await page.getByRole("button", { name: "Ohne Nutzungsdaten weiter" }).click();
   await page.getByRole("button", { name: "Metall- und Kunststofftechnik" }).click();
@@ -179,7 +178,8 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
     }
     await page.getByRole("button", { name: "Weiter", exact: true }).click();
   }
-  await expect(page).toHaveURL(/\/ergebnis$/);
-  await expect(page.getByRole("heading", { name: "Prüfung ausgewertet" })).toBeVisible();
+  await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
+  await expect(page.getByRole("heading", { name: /der Bestehensgrenze$/ })).toBeVisible();
+  await expect(page.getByText(/Grenze 50 %\. Das ist eine Übungsprüfung/)).toBeVisible();
 });
 }
