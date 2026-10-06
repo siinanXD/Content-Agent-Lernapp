@@ -46,7 +46,10 @@ test("Geladene Einheit offline bis zum Ergebnis, Antworten kommen nach Netzrück
     }),
   );
   const received: { questionId: string; correct: boolean; anonymousId: string }[] = [];
+  // Geroutete Anfragen würden auch offline beantwortet; hier simuliert die Route den Netzausfall.
+  let offline = false;
   await context.route("**/api/progress", (route) => {
+    if (offline) return route.abort("internetdisconnected");
     received.push(route.request().postDataJSON());
     return route.fulfill({ status: 201, json: { ok: true } });
   });
@@ -64,6 +67,7 @@ test("Geladene Einheit offline bis zum Ergebnis, Antworten kommen nach Netzrück
 
   // Netz weg, harter Neuaufruf: Einheit kommt aus dem Cache, Hinweis erscheint.
   await context.setOffline(true);
+  offline = true;
   await page.reload();
   await expect(page.getByRole("heading", { name: "Berufsbildung 1" })).toBeVisible();
   await expect(page.locator('[data-state-kind="offline"]')).toContainText("Antworten werden gespeichert");
@@ -87,6 +91,7 @@ test("Geladene Einheit offline bis zum Ergebnis, Antworten kommen nach Netzrück
 
   // Netz zurück: Warteschlange wird geleert.
   await context.setOffline(false);
+  offline = false;
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
   await expect.poll(() => received.length).toBe(2);
   expect(received.map((r) => r.questionId)).toEqual(["M0-1-u1-q1", "M0-1-u1-q2"]);

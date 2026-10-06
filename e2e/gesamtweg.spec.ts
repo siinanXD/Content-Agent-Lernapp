@@ -63,9 +63,10 @@ async function reviewAllCorrect(page: Page) {
   await expect(page.getByText(`${total} von ${total} richtig`)).toBeVisible();
 }
 
-test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage → Prüfungsmodus", async ({ page }) => {
+test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage → Prüfungsmodus", async ({ page, context }) => {
   await page.clock.install({ time: START });
-  await page.route("**/api/learner/phase-a", (route) =>
+  // context.route greift auch für den Service Worker, der phase-a seit SIN-256 selbst lädt.
+  await context.route("**/api/learner/phase-a", (route) =>
     route.fulfill({
       json: {
         courseId: "e22073de",
