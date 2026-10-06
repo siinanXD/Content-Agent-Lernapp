@@ -48,11 +48,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        {/* Vor dem ersten Bild: schon beantwortete Einwilligung markieren, das Banner bleibt dann verborgen (SIN-311). */}
+        {/* Vor dem ersten Bild: schon beantwortete Einwilligung markieren, das Banner bleibt dann verborgen (SIN-311).
+            Erster Start auf /start: sofort zu /willkommen, ohne auf JS und Hydration zu warten (SIN-315, LCP). */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var o=JSON.parse(localStorage.getItem("cal-onboarding")||"null");if(o&&o.consent!==null&&o.consent!==undefined)document.documentElement.dataset.consent="decided"}catch(e){}',
+              'try{var o=JSON.parse(localStorage.getItem("cal-onboarding")||"null");if(o&&o.consent!==null&&o.consent!==undefined)document.documentElement.dataset.consent="decided";else if(location.pathname==="/start")location.replace("/willkommen")}catch(e){}',
           }}
         />
       </head>
