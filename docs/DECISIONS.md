@@ -17,6 +17,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-278 | SIN-278: Sicherheits-Stichprobe gegen die Live-App | [SIN-278-live-stichprobe.md](decisions/SIN-278-live-stichprobe.md) |
 | SIN-277 | SIN-277 — Datenmodell für Demo-Anfragen und Ausbilder-Ansicht | [SIN-277-datenmodell.md](decisions/SIN-277-datenmodell.md) |
 | SIN-277 | SIN-277 — Design-Paket 2: Startseite, Ausbilder-Ansicht, Demo-Zugang, Prüfungsergebnis | [SIN-277-design-paket-2.md](decisions/SIN-277-design-paket-2.md) |
+| SIN-274 | SIN-274: Figma-Abgleich „17 Zustände“ | [SIN-274-figma-abgleich.md](decisions/SIN-274-figma-abgleich.md) |
 | SIN-273 | SIN-273 — Sentry und PostHog prüfen, Planer-Auslese vervollständigen | [SIN-273-sentry-posthog-planer.md](decisions/SIN-273-sentry-posthog-planer.md) |
 | SIN-272 | SIN-272: Sicherheits-Stichprobe MAF Metall | [SIN-272-sicherheits-stichprobe.md](decisions/SIN-272-sicherheits-stichprobe.md) |
 | SIN-271 | SIN-271: Hex-Farben entfernen, Messung nachweisen | [SIN-271-hex-farben-und-messung.md](decisions/SIN-271-hex-farben-und-messung.md) |

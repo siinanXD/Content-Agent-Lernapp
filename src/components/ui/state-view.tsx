@@ -11,8 +11,8 @@ const copy: Record<Kind, { title: string; text: string }> = {
     text: "Bitte versuche es noch einmal.",
   },
   offline: {
-    title: "Keine Verbindung",
-    text: "Bereits geladene Einheiten kannst du weiter lernen.",
+    title: "Du bist offline",
+    text: "Geladene Einheiten kannst du weiter lernen. Ergebnisse werden später übertragen.",
   },
 };
 
