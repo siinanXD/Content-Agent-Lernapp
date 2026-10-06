@@ -12,7 +12,8 @@ fi
 
 # Nur Doku geändert (docs/, *.md, .github/, e2e/, scripts/autonomy/, Tests ohne Laufzeit-Wirkung)?
 if git diff --quiet HEAD^ HEAD -- . \
-  ':(exclude)docs' ':(exclude)*.md' ':(exclude).github' ':(exclude)e2e' ':(exclude)scripts/autonomy' ':(exclude)scripts/decisions-index.mjs'; then
+  ':(exclude)docs' ':(exclude)*.md' ':(exclude).github' ':(exclude)e2e' ':(exclude)scripts/autonomy' ':(exclude)scripts/decisions-index.mjs' \
+  ':(exclude,glob)**/*.test.*' ':(exclude)playwright.config.ts'; then
   echo "Nur Doku/CI geändert: Build wird übersprungen."
   exit 0
 fi
