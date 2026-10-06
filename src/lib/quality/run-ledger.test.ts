@@ -52,6 +52,16 @@ describe("Kosten-Ledger je Pipeline-Lauf (SIN-258)", () => {
     assert.equal(rec.costEur, 20.4);
   });
 
+  it("schreibt einen Lauf über dem Deckel als gestoppt ins Ledger (SIN-280)", async () => {
+    const ledger = addClaudeMeasuredUsage(emptyLedger(), { input_tokens: 0, output_tokens: 5_000_000 });
+    await recordRunCost({ runId: "r4", courseId: "c4", kind: "content-grow", ledger });
+    const [row] = await listRunCosts();
+    assert.equal(row!.runId, "r4");
+    assert.equal(row!.stopped, true);
+    assert.equal(row!.capEur, 20);
+    assert.ok(row!.costEur >= 20);
+  });
+
   it("Planer-Kennzahl kosten_pro_lauf", () => {
     assert.equal(summarizeRunCosts([]), "keine Läufe im Ledger");
     const s = summarizeRunCosts([
