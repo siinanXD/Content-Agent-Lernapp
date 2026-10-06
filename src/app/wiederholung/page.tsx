@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { BottomNav } from "@/components/learner/bottom-nav";
@@ -18,6 +18,7 @@ import {
   stackSize,
   type LeitnerStack,
 } from "@/lib/learner/leitner";
+import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
 import { getQuestionById } from "@/lib/learner/playable-path";
 import { loadSession, saveSession } from "@/lib/learner/session";
 import { useAfterMount } from "@/lib/use-after-mount";
@@ -31,10 +32,24 @@ export default function WiederholungPage() {
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  // Fragen kommen aus dem veröffentlichten Kurs; nach hartem Reload erst laden.
+  const [pathReady, setPathReady] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchPhaseAPathUnits().then(() => {
+      if (!cancelled) setPathReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Die Fälligkeitsliste bleibt für die ganze Runde fest: Antworten verschieben
+  // dueAt und würden sonst Fragen aus der Liste fallen lassen.
   const due = useMemo(
-    () => (stack ? dueItems(stack, new Date(), 10) : []),
-    [stack],
+    () => (loadedStack ? dueItems(loadedStack, new Date(), 10) : []),
+    [loadedStack],
   );
   const currentItem = due[index];
   const question = currentItem
@@ -81,7 +96,7 @@ export default function WiederholungPage() {
     setRevealed(false);
   }
 
-  if (stack === null) {
+  if (stack === null || !pathReady) {
     return (
       <MobileShell>
         <main className="px-6 py-16">

@@ -41,8 +41,9 @@ async function readStack(page: Page): Promise<StackItem[]> {
   );
 }
 
-async function answerFirstOption(page: Page) {
-  await page.locator("button[aria-pressed]").first().click();
+/** Wählt die letzte Option (falsch), damit die Frage in den Leitner-Stapel kommt. */
+async function answerWrong(page: Page) {
+  await page.locator("button[aria-pressed]").last().click();
   await page.getByRole("button", { name: "Antwort prüfen" }).click();
 }
 
@@ -90,13 +91,13 @@ test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage �
   await page.locator('[data-state="heute"]').first().click();
   await expect(page).toHaveURL(/\/einheit\//);
 
-  // Einheit durchspielen. Frage 1 wird (wenn möglich) die erste Option gewählt;
-  // der Leitner-Stapel füllt sich mit falschen und Anwenden-Fragen.
+  // Einheit durchspielen. Alle Fragen werden falsch beantwortet;
+  // so füllt sich der Leitner-Stapel (Stufe 1, fällig nach 1 Tag).
   const counter = page.getByText(/^Frage \d+ von \d+/);
   for (let guard = 0; guard < 30; guard++) {
     const progress = (await counter.textContent()) ?? "";
     const feedback = page.getByTestId("answer-feedback");
-    if (!(await feedback.isVisible())) await answerFirstOption(page);
+    if (!(await feedback.isVisible())) await answerWrong(page);
     await expect(feedback).toBeVisible();
     if (/^Frage (\d+) von \1\b/.test(progress)) {
       await page.getByRole("button", { name: "Ergebnis anzeigen", exact: true }).click();
@@ -117,7 +118,10 @@ test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage �
   const items = await readStack(page);
   expect(items.length).toBeGreaterThan(0);
   const dueAt = items.map((i) => new Date(i.dueAt).getTime());
-  expect(Math.min(...dueAt) - START.getTime()).toBe(DAY_MS);
+  // Die Browser-Uhr läuft weiter (install), daher ein kleiner Spielraum.
+  const wait = Math.min(...dueAt) - START.getTime();
+  expect(wait).toBeGreaterThanOrEqual(DAY_MS);
+  expect(wait).toBeLessThan(DAY_MS + MINUTE_MS);
 
   // Je Intervall: kurz davor nichts fällig, danach fällig; richtig → nächste Stufe.
   const intervals = [
@@ -130,8 +134,7 @@ test("Start → Lernpfad → Einheit → Ergebnis → Wiederholung 1/3/7 Tage �
     await page.goto("/wiederholung");
     await expect(page.getByText(/keine fälligen Fragen/)).toBeVisible();
     await page.clock.fastForward(4 * MINUTE_MS);
-    await page.goto("/wiederholung");
-    await reviewAllCorrect(page);
+    await page.goto("/wiederholung");    await reviewAllCorrect(page);
     const stages = (await readStack(page)).map((i) => i.stage);
     expect(Math.min(...stages)).toBe(stage);
     await page.goto("/wiederholung");
