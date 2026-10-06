@@ -51,7 +51,7 @@ export default function StartPage() {
         >
           Aus einem Schlagwort wird dein MAF-Kurs.
         </p>
-        <p className="text-[15px] leading-[22px] text-[#d6d4d1]">
+        <p className="text-[15px] leading-[22px] text-[var(--color-text-on-brand)]">
           Offizielle AO und RLP. Einheiten à 5–10 Minuten. Du gibst nur das Ziel
           vor.
         </p>
