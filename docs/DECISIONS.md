@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-301 | SIN-301 — Rechtsseiten: Impressum, Datenschutz, Hinweis zu KI-Inhalten | [SIN-301-rechtsseiten.md](decisions/SIN-301-rechtsseiten.md) |
 | SIN-292 | SIN-292: Planer unterscheidet „gebaut“ von „gelaufen“ und legt keine Duplikate an | [SIN-292-gebaut-gelaufen.md](decisions/SIN-292-gebaut-gelaufen.md) |
 | SIN-291 | SIN-291 — Selbst-Diagnose: Der Loop erkennt Stillstand, nennt die Ursache und legt das Bug-Issue selbst an | [SIN-291-selbst-diagnose.md](decisions/SIN-291-selbst-diagnose.md) |
 | SIN-286 | SIN-286: Qualität je Screen messen, Bundle verschlanken | [SIN-286-qualitaet-messen.md](decisions/SIN-286-qualitaet-messen.md) |
