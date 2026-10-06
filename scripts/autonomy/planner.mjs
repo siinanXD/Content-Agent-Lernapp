@@ -30,6 +30,7 @@ import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
+import { dispatchRun, taskForCheck } from "./run-task.mjs";
 import { RUN_LABEL, duplicateComment, isRunnable, rowFor, splitDuplicates, toRunOrder } from "./duplicates.mjs";
 import {
   ABNAHME_TITLE,
@@ -173,7 +174,7 @@ export function buildPlannerPrompt(
     "",
     "Gebaut ist nicht gelaufen (SIN-292): Die Produktreife-Tabelle hat die Spalte Stufe (fehlt, gebaut nicht gelaufen, gelaufen unter Ziel, erfüllt).",
     "- fehlt: Bau-Issue ist richtig.",
-    "- gebaut, nicht gelaufen: KEIN Bau-Issue. Plane einen Lauf-Auftrag (Workflow mit echten Secrets starten, Ergebnis mit Beleg in docs/product-readiness.json eintragen). Setze `check` auf die Kennung des Punkts.",
+    "- gebaut, nicht gelaufen: KEIN Bau-Issue. Plane einen Lauf-Auftrag (Workflow mit echten Secrets starten, Ergebnis mit Beleg in docs/product-readiness.json eintragen). Setze `check` auf die Kennung des Punkts. Gibt es dafür eine Aufgabe in `run-task.yml` (SIN-302: Offline, Kosten, Lighthouse), startet das Skript den Workflow selbst (höchstens 1 Lauf je Aufgabe und Tag) und legt kein Issue an.",
     "- gelaufen, Ergebnis unter Ziel: Verbesserung des Ergebnisses planen, nicht das Werkzeug neu bauen.",
     "- erfüllt: nichts planen.",
     "",
@@ -302,6 +303,25 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
   return result.sort((a, b) => Number(b.lane === "design") - Number(a.lane === "design"));
 }
 
+/**
+ * „Gebaut, nicht gelaufen“ mit passender Aufgabe (SIN-302): Der Planer startet den Lauf-Workflow statt ein Issue anzulegen.
+ * Läuft die Aufgabe heute schon (Tagesdeckel) oder fehlt das Token, entsteht trotzdem kein Issue.
+ * @returns {Promise<{ rest: any[], started: { task: string, started: boolean, grund?: string }[] }>}
+ */
+export async function startRuns(plan, rows, { dry = false, dispatch = dispatchRun } = {}) {
+  const rest = [];
+  const started = [];
+  for (const entry of plan) {
+    const task = isRunnable(rowFor(entry, rows)) ? taskForCheck(entry.check) : undefined;
+    if (!task) {
+      rest.push(entry);
+      continue;
+    }
+    started.push({ task, ...(dry ? { started: false, grund: "Trockenlauf" } : await dispatch(task)) });
+  }
+  return { rest, started };
+}
+
 async function labelId(teamId, name, cache, call) {
   if (cache.has(name)) return cache.get(name);
   const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: teamId, n: name });
@@ -420,7 +440,9 @@ export async function main(argv) {
       console.log(`${dry ? "[dry-run] " : ""}Duplikat: „${d.entry.title}“ → Kommentar an ${d.issue.identifier} (${d.grund})`);
       if (!dry) await commentOnIssue(d.issue.id, duplicateComment(d.entry, d.grund));
     }
-    const items = validatePlan(fresh, [...existingTitles, ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ...refillLimits(process.env) });
+    const { rest, started } = await startRuns(fresh, rows, { dry });
+    for (const r of started) console.log(`${r.started ? "Lauf gestartet" : "Lauf nicht gestartet"}: ${r.task}${r.grund ? ` (${r.grund})` : ""}`);
+    const items = validatePlan(rest, [...existingTitles, ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ...refillLimits(process.env) });
     if (maintenance && !existingTitles.includes(ABNAHME_TITLE)) items.push({ ...abnahmeIssue(rows), lane: "abnahme" });
     console.log(`Produktreife\n\n${renderReadiness(rows)}\n\n${maintenance ? "Pflege-Modus: nur Fehler und Content.\n" : ""}`);
     if (dry) {
