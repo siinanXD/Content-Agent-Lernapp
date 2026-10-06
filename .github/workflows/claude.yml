@@ -2,7 +2,7 @@
 # Auslöser: @claude in Issue-/PR-Kommentaren und Reviews, oder Label "claude" auf einem Issue.
 # Es läuft nur für Nutzer mit Schreibrechten (Standard der Action).
 # Alles läuft mit AGENT_WORKFLOW_TOKEN (SIN-240); ohne das Secret scheitert der Lauf sofort.
-# Claude darf damit auch .github/workflows/ pushen; pr-gate setzt dann risk:high.
+# Claude darf damit auch .github/workflows/ pushen; pr-gate setzt risk:high nur bei erweiterten Rechten (SIN-252).
 # Bei Aufträgen aus einem Issue öffnet Claude den PR selbst (gh pr create).
 # Danach entscheidet pr-gate: risk:medium mergt automatisch, risk:high wartet auf `freigegeben`.
 # Vor dem Push prüft Claude selbst (SIN-215): venv unter /tmp/venv, pip, pytest, ruff, npm ci,
