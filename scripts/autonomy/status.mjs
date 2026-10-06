@@ -17,6 +17,7 @@ import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
 import { collectBackup } from "./backup.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
+import { parseTokens, renderTokens } from "./tokens.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
@@ -255,7 +256,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     const how = running.length > 1 ? "parallel" : "einzeln";
     for (const r of running) out.push(`- Worker ${idOf(r.display_title) ?? "?"} (${r.status === "in_progress" ? "läuft" : "wartet"}) seit ${hm(mins(r.created_at, now))}, ${how}: [Lauf](${r.html_url})`);
   } else out.push("- Kein Worker läuft.");
-  if (paused) out.push(`- ⏸ Pause bis ${pausedUntil}.`);
+  if (paused) out.push(`- ⏸ Pausiert bis ${pausedUntil}. Fortsetzen: Workflow \`loop-pause\` mit „fortsetzen“.`);
   out.push(`- ${backup ? `${backup.ok ? "" : "⚠️ "}${backup.line}` : "Letzte Sicherung: nicht lesbar"}`);
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
   if (linearQ.level !== "unknown" && linearQ.level !== "ok") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
@@ -302,6 +303,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   for (const r of failed) out.push(`  - ${idOf(r.display_title) ?? "?"}: ${cell(failures[r.id] || "kein Fehlertext lesbar")} ([Lauf](${r.html_url}))`);
   out.push(`- Pausen: ${paused ? `aktiv bis ${pausedUntil}` : "keine aktiv"}`);
   out.push("", "## Kontingente", "", renderQuotaTable(quotaRows));
+  out.push("", "## Token-Ablauf", "", renderTokens(snap.tokens, now), "", "Liste ohne Werte: docs/autonomy/tokens.md");
   if (snap.deploy) out.push("", renderDeploy(snap.deploy));
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
@@ -514,6 +516,15 @@ function output(name, value) {
   if (file) appendFileSync(file, `${name}=${value}\n`);
 }
 
+/** Token-Liste aus docs/autonomy/tokens.md; nicht lesbar → [] („Token-Liste nicht lesbar“). */
+function readTokens() {
+  try {
+    return parseTokens(readFileSync(new URL("../../docs/autonomy/tokens.md", import.meta.url), "utf8"));
+  } catch {
+    return [];
+  }
+}
+
 export async function main(argv, env = process.env) {
   const dry = argv.includes("--dry-run");
   const fixtureAt = argv.indexOf("--fixture");
@@ -523,6 +534,7 @@ export async function main(argv, env = process.env) {
   let statusIssue = null;
   if (fixtureAt >= 0) {
     snap = JSON.parse(readFileSync(argv[fixtureAt + 1], "utf8"));
+    snap.tokens ??= readTokens();
   } else {
     if (!repo || !env.GITHUB_TOKEN) throw new Error("GITHUB_REPOSITORY und GITHUB_TOKEN nötig (oder --fixture)");
     const now = new Date();
@@ -554,7 +566,7 @@ export async function main(argv, env = process.env) {
     const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
     const doneTitles = linearOk ? await doneTitlesSince(STALL_PREFIX, now).catch(() => []) : [];
     const backup = await collectBackup(repo, now, gh);
-    snap = { now: now.toISOString(), ...g, backup, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage, deploy, logs, decisions, doneTitles };
+    snap = { now: now.toISOString(), ...g, backup, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles };
     statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);

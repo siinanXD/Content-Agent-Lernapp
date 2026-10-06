@@ -17,6 +17,7 @@ import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { collectBackup } from "./backup.mjs";
+import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
 import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh } from "./status.mjs";
 
@@ -101,9 +102,11 @@ export function openLegalItems(md) {
   return [...String(md).matchAll(/^- \[ \] (.+)$/gm)].map((m) => m[1].trim());
 }
 
-/** @param {{ openPrs?: any[], issues?: any[], decisions?: { number: number, title: string, question: string }[], legalOpen?: string[] }} snap */
-export function needsYou({ openPrs = [], issues = [], decisions = [], legalOpen = [] }) {
+/** @param {{ openPrs?: any[], issues?: any[], decisions?: { number: number, title: string, question: string }[], legalOpen?: string[], tokens?: { name: string, ort: string, ablauf: string, rechte: string }[], now?: Date }} snap */
+export function needsYou({ openPrs = [], issues = [], decisions = [], legalOpen = [], tokens = [], now = new Date() }) {
   const out = [];
+  // SIN-294: Token läuft in höchstens 14 Tagen ab (oder ist abgelaufen).
+  for (const t of expiringSoon(tokens, now)) out.push(`Token ${t.name} ${describeExpiry(t, now)} (${t.ablauf}), erneuern und docs/autonomy/tokens.md anpassen`);
   if (legalOpen.length) out.push(`Recht: ${legalOpen.length} ${legalOpen.length === 1 ? "Punkt" : "Punkte"} offen vor dem Demo-Zugang (docs/legal/checkliste-demo-zugang.md), z. B. ${trim(legalOpen[0], 50)}`);
   // SIN-291: Entscheidungen in schon gemergten PRs, bis Sinan im PR antwortet.
   for (const d of decisions) out.push(`Entscheidung PR #${d.number}: ${trim(d.question, 70)}`);
@@ -151,7 +154,7 @@ export function buildDigest(snap) {
   lines.push("", `**${abend ? "Über Nacht geplant" : "Heute geplant"}**`);
   lines.push(...(queue.length ? queue.map((i) => `- ${i.identifier} ${trim(i.title, 70)} (${laneOf(i)})`) : ["- nichts in der Schlange"]));
 
-  const need = needsYou({ ...snap, decisions: snap.decisionsOpen });
+  const need = needsYou({ ...snap, decisions: snap.decisionsOpen, now });
   lines.push("", "**Braucht dich**", ...(need.length ? [...need.slice(0, MAX_ITEMS).map((n) => `- ${n}`), ...more(need, MAX_ITEMS)] : ["Nichts zu tun."]));
 
   const c = snap.content;
@@ -221,8 +224,14 @@ async function collect(repo, slot, now, since, env) {
   } catch (e) {
     console.log(`Rechts-Checkliste nicht lesbar: ${e.message}`);
   }
+  let tokens = [];
+  try {
+    tokens = parseTokens(readFileSync(new URL("../../docs/autonomy/tokens.md", import.meta.url), "utf8"));
+  } catch (e) {
+    console.log(`Token-Liste nicht lesbar: ${e.message}`);
+  }
   const backup = await collectBackup(repo, now, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, legalOpen, content, quotas, readiness, backup };
+  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, legalOpen, tokens, content, quotas, readiness, backup };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {
