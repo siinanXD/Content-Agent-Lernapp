@@ -1,0 +1,15 @@
+# SIN-293 — Nächtliche Sicherung der Inhalte mit Wiederherstellungs-Skript
+
+- **Links:** Linear [SIN-293](https://linear.app/sinan-kahraman/issue/SIN-293/nachtliche-sicherung-der-inhalte-mit-getesteter-wiederherstellung); [Supabase Storage: Buckets (privat)](https://supabase.com/docs/guides/storage/buckets/fundamentals); [Supabase JS: upsert](https://supabase.com/docs/reference/javascript/upsert); [Supabase: Backups (Free ohne automatische Sicherung)](https://supabase.com/docs/guides/platform/backups); [GitHub: Workflow-Annotationen](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands); Vorgänger [SIN-291](SIN-291-selbst-diagnose.md).
+- **Entscheidung:** Eigenes kleines Skript `scripts/backup.ts` mit Logik in `src/lib/backup/backup.ts` (kein neues npm-Paket, nur der vorhandene `@supabase/supabase-js`). Eine fertige Lösung (`pg_dump`, Supabase-CLI) braucht die direkte Datenbankverbindung, die als Secret fehlt; die REST-Schnittstelle mit dem vorhandenen Service-Key reicht und läuft überall gleich (Workflow, lokal, Branch).
+  1. `backup.yml` läuft nachts, liest die Tabellen nur lesend, schreibt `JJJJ-MM-TT.json.gz` in den privaten Bucket `backups`, lädt zur Probe zurück und prüft; erst dann Aufbewahrung (14 Tage täglich, ältere montags, jüngste nie).
+  2. Wiederherstellung per `upsert` in Fremdschlüssel-Reihenfolge, löscht nie; Ziel nur über `RESTORE_*`, Produktion nur mit `--allow-production`.
+  3. Status-Seite, Wächter und Tages-Update lesen den Lauf von `backup.yml` (Zeit) und eine Job-Annotation (Fragenzahl), damit der Status-Workflow keinen Supabase-Schlüssel braucht. Fehler oder über 36 h ohne Erfolg = Meldung.
+- **Annahmen:**
+  1. Gesichert werden alle Nicht-Mock-Kurse, nicht nur `published`: Auch Kurse in Arbeit enthalten teuer erzeugte Inhalte; die Tabelle ist klein (Größenordnung 1.745 Fragen).
+  2. „Module“ sind keine eigene Tabelle; sie stecken in `plans.payload`, `units.id` und `shared_modules`.
+  3. Bucket statt Branch `backups`: Das Repo ist öffentlich, ein Branch oder Artefakt würde die Inhalte (inkl. Bewertungsbegründungen) veröffentlichen und bräuchte `contents: write`. Der Bucket nutzt vorhandene Secrets (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` stehen bereits in anderen Workflows) und `permissions: contents: read`.
+  4. Der Bucket liegt im selben Supabase-Projekt (Schutz vor Migrations-/Aufräumfehlern, nicht vor Projektverlust). Ein zweiter Ablageort ist ein Folgepunkt, falls Sinan ihn will.
+  5. Der Bucket wird beim ersten Lauf automatisch angelegt (privat); Storage-Größe bleibt weit unter dem Free-Limit (komprimiert wenige MB je Tag).
+  6. Der Restore gegen einen echten Supabase-Branch konnte hier nicht laufen (keine Schlüssel). Der Rundlauf ist gegen eine In-Memory-Datenbank getestet; der Live-Test steht als offener Punkt in `docs/ops/BACKUP.md`.
+- **Warum:** Free Tier hat keine automatischen Backups; ein falscher Migrations-PR kann Content löschen, der Geld gekostet hat. Wenig Bewegliches, keine neue Abhängigkeit, keine Personendaten in der Sicherung.
