@@ -20,6 +20,12 @@ import {
 } from "@/lib/learner/leitner";
 import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
 import { getQuestionById } from "@/lib/learner/playable-path";
+import {
+  enqueueProgress,
+  flushProgress,
+} from "@/lib/learner/progress-outbox";
+import { StateView } from "@/components/ui/state-view";
+import { useOnline } from "@/lib/use-online";
 import { loadSession, saveSession } from "@/lib/learner/session";
 import { useAfterMount } from "@/lib/use-after-mount";
 
@@ -28,6 +34,7 @@ export default function WiederholungPage() {
   // After an answer the page works on the updated stack, as before.
   const [answeredStack, setAnsweredStack] = useState<LeitnerStack | null>(null);
   const stack = answeredStack ?? loadedStack;
+  const online = useOnline();
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
@@ -67,6 +74,8 @@ export default function WiederholungPage() {
       : markWrong(nextStack, currentItem.questionId);
     saveStack(nextStack);
     setAnsweredStack(nextStack);
+    enqueueProgress({ questionId: currentItem.questionId, correct: result.correct });
+    void flushProgress();
     if (result.correct) setCorrectCount((c) => c + 1);
   }
 
@@ -176,6 +185,11 @@ export default function WiederholungPage() {
           Fällige Fragen
         </h1>
       </header>
+      {online ? null : (
+        <section className="px-6">
+          <StateView kind="offline" text="Antworten werden gespeichert und später gesendet." />
+        </section>
+      )}
       <section className="flex flex-1 flex-col gap-3 px-6 pb-8 pt-4">
         <h2
           className="text-lg font-medium leading-6"
