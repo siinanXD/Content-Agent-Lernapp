@@ -36,16 +36,16 @@ Dev server: [http://127.0.0.1:43123](http://127.0.0.1:43123) (`npm run dev` → 
 
 Playable path (Figma approved by Sinan 2026-10-02; Didaktik D-31):
 
-0. `/` Startseite für Bildungsträger (Scroll-Story), `/willkommen` App-Einstieg  
+0. `/` Startseite für Bildungsträger (Scroll-Story), `/willkommen` App-Einstieg (dann `/einwilligung`, `/schwerpunkt`; Variante 2026, SIN-315)  
 1. `/start` — Schlagwort + Lernvariante → Kurs erzeugen  
-2. `/lernpfad` — Module/Blöcke, Wiederholung, Prüfungsmodus  
+2. `/lernpfad` — „Heute“ als Bento (Als Nächstes, Tagesziel, Serie, Wiederholung, Prüfungsreife je Lernfeld), darunter die Lernpfad-Karte  
 3. `/einheit/unit-03` — sections + alle 5 Fragetypen (+ Bildfragen)  
 4. `/wiederholung` — Leitner 1/3/7/14  
 5. `/pruefung` — schriftliche Teile aus `exam.gradedParts` (MAF PT/PP/WiSo)  
 6. `/ergebnis` — Punkte + Ampel je Gebiet  
 7. `/profil` — Fortschritt, Stapelgröße, Prüfungsreife  
 
-Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`. Phase-A SVGs: `npm run content:mermaid`.
+Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`. Figma-Seiten und Frame-IDs auflisten: `node scripts/autonomy/figma.mjs --pages` (Token `FIGMA_ACCESS_TOKEN`, nur lesend). Phase-A SVGs: `npm run content:mermaid`.
 
 ```bash
 npm test

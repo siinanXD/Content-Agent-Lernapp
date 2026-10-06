@@ -1,7 +1,8 @@
 /**
  * Figma-Lesezugriff für Agenten (SIN-239). Nur lesen, Token `FIGMA_ACCESS_TOKEN`.
  *   node scripts/autonomy/figma.mjs --node 12:34 [--file KEY]   Werte (Farben, Abstände, Texte) eines Knotens
- *   node scripts/autonomy/figma.mjs --tokens                     Abgleich docs/design/tokens.json ↔ Figma-Farben
+ *   node scripts/autonomy/figma.mjs --pages                      Seiten und oberste Frames (IDs finden)
+ *   node scripts/autonomy/figma.mjs --tokens                    Abgleich docs/design/tokens.json ↔ Figma-Farben
  * Ohne Token: „nicht verfügbar“, Exit-Code 0 (wie bisher im Bericht).
  */
 import { readFileSync } from "node:fs";
@@ -69,6 +70,20 @@ export async function readNodeValues(fileKey, nodeId, env = process.env, fetchIm
 }
 
 /**
+ * Seiten und oberste Frames der Datei (`id name`). `null` ohne Token.
+ * @param {string} fileKey
+ * @param {Record<string, string | undefined>} [env]
+ */
+export async function listPages(fileKey, env = process.env, fetchImpl = fetch) {
+  const json = await get(`files/${fileKey}?depth=2`, env, fetchImpl);
+  if (!json) return null;
+  return json.document.children.flatMap((p) => [
+    `SEITE ${p.id} ${p.name}`,
+    ...(p.children ?? []).map((c) => `  ${c.id} ${c.name}`),
+  ]);
+}
+
+/**
  * Token-Farben aus tokens.json, die in der Figma-Datei nicht vorkommen. `null` ohne Token.
  * @param {{ color?: Record<string, { value: string }> }} tokens
  * @param {string} fileKey
@@ -90,11 +105,15 @@ export async function main(argv, env = process.env, fetchImpl = fetch) {
     const v = await readNodeValues(fileKey, arg("--node"), env, fetchImpl);
     return console.log(v ? JSON.stringify(v, null, 2) : NOT_AVAILABLE);
   }
+  if (argv.includes("--pages")) {
+    const l = await listPages(fileKey, env, fetchImpl);
+    return console.log(l ? l.join("\n") : NOT_AVAILABLE);
+  }
   if (argv.includes("--tokens")) {
     const d = await diffColorTokens(JSON.parse(readFileSync("docs/design/tokens.json", "utf8")), fileKey, env, fetchImpl);
     return console.log(d === null ? NOT_AVAILABLE : d.length ? `Token-Farben ohne Figma-Entsprechung: ${d.join(", ")}` : "Token-Farben stimmen mit Figma überein");
   }
-  throw new Error("Aufruf: --node ID [--file KEY] oder --tokens");
+  throw new Error("Aufruf: --node ID [--file KEY], --pages oder --tokens");
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

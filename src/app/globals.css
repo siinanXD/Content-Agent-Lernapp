@@ -87,6 +87,25 @@ html[data-consent="decided"] [data-consent-banner] {
   --color-track-on-dark: #44403c;
   --color-text-muted-on-dark: #a8a29e;
   --color-text-soft-on-dark: #d6d3d1;
+  /* Variante 2026 (SIN-315, Figma 52:377 / 56:369): Label auf dunkler Kachel, Wochenpunkte der Serie */
+  --color-accent-on-dark: #fdba74;
+  --color-week-dot-idle: #fed7aa;
+}
+
+/* Mono-Label der Variante 2026 (Regeln 3): Kennungen, Zahlen und Kachel-Überschriften. */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-label-size);
+  line-height: var(--type-mono-label-line);
+  font-weight: var(--type-mono-label-weight);
+  letter-spacing: var(--type-mono-label-tracking);
+}
+
+/* Ring und Balken füllen sich kurz (Regeln 5: Bewegung zeigt eine Veränderung, ≤ 300 ms). */
+@media (prefers-reduced-motion: no-preference) {
+  .fill-motion {
+    transition: stroke-dashoffset 300ms ease-out, width 300ms ease-out;
+  }
 }
 
 /* Kontrollkästchen (Screen 20): Kasten 20 px wie in Figma, Ziel 44 px (WCAG 2.5.8). */

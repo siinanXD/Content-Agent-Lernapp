@@ -37,7 +37,8 @@ export function A11yProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ prefs, setPrefs }}>
       <div
         data-simple-language={prefs.simpleLanguage ? "true" : "false"}
-        className={prefs.simpleLanguage ? "text-[17px] leading-7" : undefined}
+        // flex-1: gibt dem Inhalt die volle Fensterhöhe (Hauptkacheln füllen den Bildschirm, Variante 2026)
+        className={`flex flex-1 flex-col${prefs.simpleLanguage ? " text-[17px] leading-7" : ""}`}
       >
         {children}
       </div>

@@ -1,7 +1,4 @@
-const SIZE = 76;
 const STROKE = 8;
-const RADIUS = (SIZE - STROKE) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /**
  * ProgressRing (Figma, Stil E): Tagesziel als Ring, Wert „2/4“ in Geist Mono.
@@ -13,6 +10,7 @@ export function ProgressRing({
   label = "heute",
   onDark = false,
   showLabel = true,
+  size = 76,
 }: {
   done: number;
   total: number;
@@ -21,7 +19,12 @@ export function ProgressRing({
   onDark?: boolean;
   /** Beschriftung unter dem Wert sichtbar; für Screenreader bleibt sie erhalten */
   showLabel?: boolean;
+  /** Kantenlänge in px (Standard 76; Heute-Kachel 84, Figma 52:377) */
+  size?: number;
 }) {
+  const SIZE = size;
+  const RADIUS = (SIZE - STROKE) / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
   const ratio = total <= 0 ? 0 : Math.max(0, Math.min(1, done / total));
   return (
     <div
@@ -60,6 +63,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={CIRCUMFERENCE * (1 - ratio)}
+          className="fill-motion"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">

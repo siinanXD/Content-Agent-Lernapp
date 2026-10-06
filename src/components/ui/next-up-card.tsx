@@ -1,50 +1,50 @@
 import Link from "next/link";
 
 /**
- * NextUpCard (Figma, Stil E): dunkle Karte „Als Nächstes“ mit Frage-Vorschau
- * und Start-Knopf. Text auf Hero hell (Token text-on-brand, ≥ 4,5:1),
- * Knopf weißer Text auf brand-primary.
+ * Hauptkachel „Als Nächstes“ (Figma 52:377, Variante 2026): dunkle Kachel mit genau einer Aktion.
+ * Knopf: dunkler Text auf brand-accent (weißer Text nur auf brand-primary, AGENTS.md).
  */
 export function NextUpCard({
   indexLabel,
   title,
   minutes,
-  preview,
+  note,
   href,
 }: {
   indexLabel: string;
   title: string;
   minutes: number;
-  preview?: string;
+  /** Ein ruhiger Satz unter dem Titel, z. B. wie weit das Tagesziel danach ist */
+  note?: string;
   href: string;
 }) {
   return (
     <section
       aria-label="Als Nächstes"
-      className="flex flex-col gap-2.5 rounded-[var(--radius-lg)] bg-[var(--color-bg-hero)] p-[18px]"
+      className="flex flex-col gap-3.5 rounded-[var(--radius-xl)] bg-[var(--color-bg-hero)] p-5 sm:p-[var(--space-32)]"
     >
-      <div className="flex items-center justify-between gap-2 text-[var(--color-text-on-brand)]">
-        <p
-          className="text-[11px] font-medium uppercase tracking-wide"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          Als Nächstes · {indexLabel}
-        </p>
-        <p className="text-xs">{minutes} Min</p>
+      <div className="mono-label flex items-center justify-between gap-2">
+        <p className="text-[var(--color-accent-on-dark)]">Als Nächstes · {minutes} Min</p>
+        <p className="text-[var(--color-text-muted-on-dark)]">{indexLabel}</p>
       </div>
-      <h2 className="text-[22px] font-bold leading-[1.3] text-[var(--color-text-on-brand)]">
+      <h2
+        className="text-[28px] font-bold leading-[1.05] text-[var(--color-text-on-brand)]"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
         {title}
       </h2>
-      {preview ? (
-        <p className="line-clamp-2 text-sm leading-[1.3] text-[var(--color-text-on-brand)]">
-          {preview}
-        </p>
+      {note ? (
+        <p className="text-sm leading-[1.3] text-[var(--color-text-soft-on-dark)]">{note}</p>
       ) : null}
       <Link
         href={href}
-        className="mt-1 flex min-h-[50px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-base font-semibold text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
+        className="mt-1 flex min-h-[51px] items-center justify-between rounded-[14px] bg-[var(--color-brand-accent)] px-[18px] text-base font-semibold text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
+        style={{ fontFamily: "var(--font-display)" }}
       >
         Einheit starten
+        <span aria-hidden="true" className="text-lg">
+          →
+        </span>
       </Link>
     </section>
   );

@@ -151,6 +151,48 @@ export function recordLearningEvent(
   return next;
 }
 
+export type WeekDot = {
+  /** Kurzname des Wochentags, `Mo` bis `So` */
+  label: string;
+  /** Mindestens ein Lernereignis an diesem Tag */
+  learned: boolean;
+  today: boolean;
+  /** Liegt nach heute */
+  future: boolean;
+};
+
+const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+/** Die sieben Punkte der laufenden Woche (Montag bis Sonntag) aus echten Lernereignissen (Figma 52:377). */
+export function computeWeek(
+  events: readonly LearningEvent[],
+  now: Date = new Date(),
+  timeZone?: string,
+): WeekDot[] {
+  const today = dayKey(now, timeZone);
+  const [y, m, d] = today.split("-").map(Number);
+  // 0 = Montag; rechnet auf Datumsebene, daher unabhängig von Sommerzeit.
+  const sinceMonday = (new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay() + 6) % 7;
+  const learnedDays = new Set(events.map((e) => e.day));
+  return WEEKDAYS.map((label, i) => {
+    const day = shiftDay(today, i - sinceMonday);
+    return { label, learned: learnedDays.has(day), today: day === today, future: day > today };
+  });
+}
+
+/** Wochenpunkte für jetzt aus dem lokalen Speicher; ohne lesbaren Speicher eine leere Woche. */
+export function loadWeek(): WeekDot[] {
+  return computeWeek(loadLearningEvents());
+}
+
+/** Leere Woche für das Server-HTML (SIN-311): nichts erfunden, bis der lokale Speicher gelesen ist. */
+export const EMPTY_WEEK: WeekDot[] = WEEKDAYS.map((label) => ({
+  label,
+  learned: false,
+  today: false,
+  future: false,
+}));
+
 export type LearningSummary = {
   streak: StreakState;
   goal: DailyGoalState;

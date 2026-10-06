@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   computeDailyGoal,
   computeStreak,
+  computeWeek,
   dailyGoalCopy,
   dayKey,
   formatDays,
@@ -206,5 +207,39 @@ describe("computeDailyGoal (SIN-290)", () => {
     const events = [ev("2026-10-06T20:00:00Z")]; // 22:00 Berlin
     assert.equal(computeDailyGoal(events, new Date("2026-10-06T21:59:00Z"), BERLIN, 4).done, 1);
     assert.equal(computeDailyGoal(events, new Date("2026-10-06T22:01:00Z"), BERLIN, 4).done, 0);
+  });
+});
+
+describe("Wochenpunkte (SIN-315)", () => {
+  // Dienstag, 6.10.2026 (Berlin)
+  const now = new Date("2026-10-06T10:00:00Z");
+
+  it("zeigt Montag bis Sonntag der laufenden Woche mit echten Lerntagen", () => {
+    const week = computeWeek([ev("2026-10-05T09:00:00Z")], now, BERLIN);
+    assert.deepEqual(
+      week.map((d) => d.label),
+      ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+    );
+    assert.deepEqual(
+      week.map((d) => d.learned),
+      [true, false, false, false, false, false, false],
+    );
+    assert.equal(week[1]!.today, true);
+    assert.deepEqual(
+      week.map((d) => d.future),
+      [false, false, true, true, true, true, true],
+    );
+  });
+
+  it("zählt Ereignisse der Vorwoche und der Folgewoche nicht mit", () => {
+    const week = computeWeek([ev("2026-10-04T09:00:00Z"), ev("2026-10-12T09:00:00Z")], now, BERLIN);
+    assert.equal(week.some((d) => d.learned), false);
+  });
+
+  it("zeigt am Sonntag die Woche des Montags davor", () => {
+    const sunday = new Date("2026-10-11T10:00:00Z");
+    const week = computeWeek([ev("2026-10-05T09:00:00Z")], sunday, BERLIN);
+    assert.equal(week[0]!.learned, true);
+    assert.equal(week[6]!.today, true);
   });
 });

@@ -115,6 +115,32 @@ test("Lernen ohne Ereignis: Serie 0, Tagesziel 0 von 4, nichts erfunden", async 
   await expect(page.locator('[data-kind="serie"]')).toContainText("0 Tage");
 });
 
+test("Heute (SIN-315): Hauptkachel mit einer Aktion, Wochenpunkte, Prüfungsreife je Lernfeld, Zustand offline", async ({
+  page,
+  context,
+}) => {
+  await seedEvents(page, [0]);
+  await page.goto("/lernpfad");
+
+  const main = page.getByRole("region", { name: "Als Nächstes" });
+  await expect(main.getByRole("link")).toHaveCount(1);
+  await expect(main.getByRole("link", { name: /Einheit starten/ })).toBeVisible();
+
+  const week = page.getByRole("list", { name: "Diese Woche" });
+  await expect(week.getByRole("listitem")).toHaveCount(7);
+  await expect(week.getByText(/\(heute\): gelernt$/)).toHaveCount(1);
+
+  await expect(page.getByRole("progressbar", { name: "M0 Prüfungsreife" })).toHaveAttribute(
+    "aria-valuenow",
+    /^\d{1,3}$/,
+  );
+  await expect(page.getByRole("link", { name: /Wiederholung/ }).first()).toBeVisible();
+
+  await context.setOffline(true);
+  await expect(page.locator('[data-state-kind="offline"]')).toBeVisible();
+  await context.setOffline(false);
+});
+
 test("Einwilligungs-Banner: gleichwertige Knöpfe, per Tastatur bedienbar, ohne Zustimmung kein Zwang", async ({
   page,
 }) => {
@@ -143,7 +169,7 @@ test("Einwilligungs-Banner: gleichwertige Knöpfe, per Tastatur bedienbar, ohne 
   expect(
     await page.evaluate(() => JSON.parse(window.localStorage.getItem("cal-onboarding") ?? "{}").consent),
   ).toBe(false);
-  await expect(page.getByRole("heading", { name: "Lernpfad", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Heute", level: 1 })).toBeVisible();
 });
 
 test("Einstellungen · Datennutzung: Erinnerung nur mit Einwilligung, Widerruf stoppt sofort", async ({ page }) => {

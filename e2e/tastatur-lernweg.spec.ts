@@ -63,9 +63,9 @@ test("Lernweg komplett mit der Tastatur", async ({ page, context }) => {
   // Onboarding
   await page.goto("/willkommen");
   await activate(page, page.getByRole("link", { name: "Los geht’s" }), "Los geht’s");
-  await activate(page, page.getByRole("button", { name: "Ohne Nutzungsdaten weiter" }), "Einwilligung");
+  await activate(page, page.getByRole("button", { name: "Ablehnen" }), "Einwilligung");
   await activate(page, page.getByRole("button", { name: "Metall- und Kunststofftechnik" }), "Schwerpunkt", "Space");
-  await activate(page, page.getByRole("button", { name: "Weiter", exact: true }), "Schwerpunkt bestätigen");
+  await activate(page, page.getByRole("button", { name: "Lernpfad erstellen" }), "Schwerpunkt bestätigen");
 
   // Lernpfad → Einheit
   await expect(page).toHaveURL(/\/lernpfad$/);

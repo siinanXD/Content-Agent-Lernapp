@@ -9,7 +9,7 @@ export function MobileShell({
   className?: string;
 }) {
   return (
-    <div className="flex min-h-full justify-center bg-[var(--color-bg-canvas)]">
+    <div className="flex min-h-full flex-1 justify-center bg-[var(--color-bg-canvas)]">
       <div
         className={`flex w-full max-w-[390px] min-h-full flex-col bg-[var(--color-bg-canvas)] shadow-[0_0_0_1px_var(--color-border-subtle)] ${className}`}
       >

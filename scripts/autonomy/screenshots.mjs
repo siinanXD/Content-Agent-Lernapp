@@ -3,12 +3,13 @@
  *
  *   npm run build && node scripts/autonomy/screenshots.mjs /lernpfad /einheit/unit-03
  *
- * Startet `next start` selbst (Port 43124), außer BASE_URL ist gesetzt. Ausgabe in screenshots/
+ * Startet `next start` selbst (freier Port), außer BASE_URL ist gesetzt. Ausgabe in screenshots/
  * (nicht im Repo, wird als Artefakt hochgeladen) und screenshots/report.md. Exit 1 bei Seitenfehlern.
  * Ohne Route: Startseite. Chromium einmalig: npx playwright install chromium
  */
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { chromium } from "@playwright/test";
 
 export const VIEWPORTS = [
@@ -32,6 +33,18 @@ export function renderReport(results) {
   ].join("\n");
 }
 
+/** Ein freier lokaler Port. */
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const s = createServer();
+    s.once("error", reject);
+    s.listen(0, "127.0.0.1", () => {
+      const { port } = s.address();
+      s.close(() => resolve(port));
+    });
+  });
+}
+
 async function waitFor(url, ms = 60_000) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
@@ -43,8 +56,13 @@ async function waitFor(url, ms = 60_000) {
 
 async function main(routes, outDir = "screenshots") {
   const external = process.env.BASE_URL;
-  const base = external ?? "http://127.0.0.1:43124";
-  const server = external ? null : spawn("npx", ["next", "start", "--hostname", "127.0.0.1", "--port", "43124"], { stdio: "ignore" });
+  // Freier Port statt fester 43124: ein übrig gebliebener Server eines früheren Laufs liefert sonst einen alten Build aus.
+  const port = external ? 0 : await freePort();
+  const base = external ?? `http://127.0.0.1:${port}`;
+  // detached: eigene Prozessgruppe, damit am Ende auch `next-server` (Kind von `npx`) beendet wird.
+  const server = external
+    ? null
+    : spawn("npx", ["next", "start", "--hostname", "127.0.0.1", "--port", String(port)], { stdio: "ignore", detached: true });
   const results = [];
   let browser;
   try {
@@ -71,7 +89,13 @@ async function main(routes, outDir = "screenshots") {
     }
   } finally {
     await browser?.close();
-    server?.kill();
+    if (server?.pid) {
+      try {
+        process.kill(-server.pid);
+      } catch {
+        server.kill();
+      }
+    }
   }
   writeFileSync(`${outDir}/report.md`, renderReport(results));
   console.log(renderReport(results));

@@ -29,10 +29,10 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   await page.getByRole("link", { name: "Los geht’s" }).click();
 
   await expect(page).toHaveURL(/\/einwilligung$/);
-  await page.getByRole("button", { name: "Ohne Nutzungsdaten weiter" }).click();
+  await page.getByRole("button", { name: "Ablehnen" }).click();
 
   await expect(page).toHaveURL(/\/schwerpunkt$/);
-  const weiter = page.getByRole("button", { name: "Weiter", exact: true });
+  const weiter = page.getByRole("button", { name: "Lernpfad erstellen" });
   await expect(weiter).toBeDisabled();
   await page.getByRole("button", { name: "Metall- und Kunststofftechnik" }).click();
   // Zwei Maps: zweite Auswahl (Betrieb) mit Default; kein „Referenzberuf“ mehr (SIN-249)
