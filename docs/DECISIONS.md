@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-293 | SIN-293 — Nächtliche Sicherung der Inhalte mit Wiederherstellungs-Skript | [SIN-293-sicherung.md](decisions/SIN-293-sicherung.md) |
 | SIN-292 | SIN-292: Planer unterscheidet „gebaut“ von „gelaufen“ und legt keine Duplikate an | [SIN-292-gebaut-gelaufen.md](decisions/SIN-292-gebaut-gelaufen.md) |
 | SIN-291 | SIN-291 — Selbst-Diagnose: Der Loop erkennt Stillstand, nennt die Ursache und legt das Bug-Issue selbst an | [SIN-291-selbst-diagnose.md](decisions/SIN-291-selbst-diagnose.md) |
 | SIN-280 | SIN-280 — Kosten pro Kurslauf messen | [SIN-280-kosten-pro-lauf.md](decisions/SIN-280-kosten-pro-lauf.md) |

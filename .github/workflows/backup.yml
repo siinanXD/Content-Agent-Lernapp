@@ -1,0 +1,36 @@
+# Nächtliche Sicherung der Inhalte (SIN-293): Kurse, Quellen, Einheiten, Fragen, Bewertungen als JSON.gz in den
+# privaten Supabase-Bucket `backups` (14 Tage täglich, ältere wöchentlich). Nur lesend gegenüber den Tabellen;
+# der Service-Key steht nur in diesem Workflow. Keine Personendaten (kein learning_progress).
+# Takt: GitHub `schedule` plus optional cron-job.org (POST .../workflows/backup.yml/dispatches, Body {"ref":"main"}).
+# Die Status-Seite liest Zeit und Fragenzahl aus der Job-Annotation „Sicherung …: n Fragen“. Rot = Meldung.
+# Wiederherstellung: docs/ops/BACKUP.md.
+name: backup
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Sichern, hochladen, zur Probe zurücklesen, aufräumen
+        run: node --import tsx scripts/backup.ts export
