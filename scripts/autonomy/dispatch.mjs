@@ -5,6 +5,7 @@
  *   node scripts/autonomy/dispatch.mjs [--dry-run]     wählen (+ In Progress, außer Dry-Run)
  *   node scripts/autonomy/dispatch.mjs --done SIN-123   Linear auf Done (nach Merge)
  *   node scripts/autonomy/dispatch.mjs --blocker SIN-123 "Text"   Blocker-Kommentar
+ *   node scripts/autonomy/dispatch.mjs --no-pr SIN-123 [datei]    Worker ohne PR: zurück auf Todo + Grund, zu große Aufträge zerlegen (SIN-291)
  *
  *   node scripts/autonomy/dispatch.mjs --prompt SIN-123   Prompt für den Worker-Lauf
  *
@@ -12,11 +13,12 @@
  * Der Dispatcher wählt nur (bis zu 2, Spuren abwechselnd); jedes Issue läuft in einem eigenen Worker-Lauf.
  * Dry-Run: nur lesen, nichts in Linear ändern. Ohne LINEAR_API_KEY: `--fixture datei.json`.
  */
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./budget.mjs";
+import { noPrComment, splitIssue, summarizeExecution, tooBig } from "./diagnose.mjs";
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
-import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState } from "./linear.mjs";
+import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, createLinearIssues, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -56,7 +58,7 @@ async function fetchRunningWorkers() {
 }
 
 /**
- * Setzt Linear nach PR- und Worker-Stand (Merge → Done; ohne Merge geschlossen oder seit 60 Min weder Worker noch PR → Todo);
+ * Setzt Linear nach PR- und Worker-Stand (Merge → Done; ohne Merge geschlossen oder seit 15 Min weder Worker noch PR → Todo);
  * gibt die Issues danach zurück.
  */
 async function syncWithPrs(issues, prs, dry, runningWorkers) {
@@ -120,6 +122,31 @@ export async function main(argv) {
     if (dry) return console.log(`[dry-run] ${issue.identifier} → Todo`);
     await setState(issue, "Todo");
     return console.log(`${issue.identifier} → Todo`);
+  }
+
+  // Worker-Lauf ohne PR (SIN-291): Issue sofort zurück auf Todo, Kommentar mit Grund; zu große Aufträge in Teil-Issues.
+  // `--no-pr SIN-123 <execution_file>`: die Datei der Action (JSON-Array der Sitzung), darf fehlen.
+  const noPrAt = argv.indexOf("--no-pr");
+  if (noPrAt >= 0) {
+    const issue = await findByIdentifier(argv[noPrAt + 1]);
+    const file = argv[noPrAt + 2];
+    const summary = summarizeExecution(file && existsSync(file) ? readFileSync(file, "utf8") : "");
+    const text = noPrComment(issue.identifier, summary);
+    const parts = tooBig(summary) ? splitIssue(issue) : [];
+    if (dry) return console.log(`[dry-run] ${issue.identifier} → ${parts.length ? `${parts.length} Teil-Issues` : "Todo"}\n${text}`);
+    await comment(issue.id, text);
+    if (parts.length) {
+      try {
+        const ids = await createLinearIssues(parts.map((p) => ({ ...p, parentId: issue.id })));
+        await comment(issue.id, `Zerlegt in ${ids.join(", ")}. Dieses Issue wird abgebrochen (SIN-291).`);
+        await setState(issue, "Canceled");
+        return console.log(`${issue.identifier} → Canceled, Teil-Issues ${ids.join(", ")}`);
+      } catch (e) {
+        console.log(`::warning::Zerlegen fehlgeschlagen (${e.message}), Issue geht zurück auf Todo.`);
+      }
+    }
+    await setState(issue, "Todo");
+    return console.log(`${issue.identifier} → Todo (kein PR)`);
   }
 
   const doneAt = argv.indexOf("--done");

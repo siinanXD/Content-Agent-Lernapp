@@ -9,6 +9,7 @@
     "sentry_events_monat": { "limit": 5000, "einheit": "Fehler/Monat", "quelle": "https://sentry.io/pricing/", "geprueft": null },
     "posthog_events_monat": { "limit": 1000000, "einheit": "Events/Monat", "quelle": "https://posthog.com/pricing", "geprueft": null },
     "langfuse_units_monat": { "limit": 50000, "einheit": "Units/Monat", "quelle": "https://langfuse.com/pricing", "geprueft": null },
+    "linear_issues": { "limit": 250, "einheit": "Issues", "hinweis": "Linear Free; Hinweis ab 85 %, Planer legt ab 95 % nichts mehr an (SIN-291)", "quelle": "https://linear.app/pricing", "geprueft": null },
     "api_kosten_eur": { "limit": 20, "einheit": "EUR/Kurslauf", "quelle": "AGENTS.md (Stopp-Regel)", "geprueft": "2026-10-05" }
   }
 }

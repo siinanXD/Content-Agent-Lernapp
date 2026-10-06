@@ -42,6 +42,25 @@ export async function fetchProjectIssues(call = linear, project = PROJECT_NAME) 
   return data.issues.nodes;
 }
 
+/** In den letzten `days` Tagen erledigte Issues des Projekts (Duplikat-Schutz des Planers, SIN-292). */
+export async function fetchRecentlyDone(call = linear, { project = PROJECT_NAME, days = 14, now = new Date() } = {}) {
+  const since = new Date(now.getTime() - days * 24 * 3600 * 1000).toISOString();
+  const data = await call(
+    `query($project: String!, $since: DateTimeOrDuration!) {
+       issues(first: 100, filter: { project: { name: { eq: $project } }, completedAt: { gte: $since } }) {
+         nodes { id identifier title description completedAt state { type } }
+       }
+     }`,
+    { project, since },
+  );
+  return data.issues.nodes;
+}
+
+/** Kommentar an ein bestehendes Issue. */
+export async function commentOnIssue(issueId, body, call = linear) {
+  await call(`mutation($i: CommentCreateInput!) { commentCreate(input: $i) { success } }`, { i: { issueId, body } });
+}
+
 /** Offener Blocker: eine „blocks“-Relation, deren Quelle noch nicht abgeschlossen ist. */
 export function hasOpenBlockers(issue) {
   return (issue.inverseRelations?.nodes ?? []).some(
@@ -146,7 +165,7 @@ export function reconcile(issues, prs, /** @type {{ runningWorkers?: string[], n
     const mine = prs.filter((p) => prMentions(p, issue.identifier));
     if (mine.some((p) => p.merged)) actions.push({ issue, to: "Done" });
     else if (mine.length && !mine.some((p) => p.state === "open")) actions.push({ issue, to: "Todo" });
-    // SIN-240: weder PR noch laufender Worker seit STUCK_MIN → zurück auf Todo (nur, wenn die Läufe bekannt sind).
+    // SIN-240/SIN-291: weder PR noch laufender Worker seit STUCK_MIN (Geister-Issue) → zurück auf Todo (nur, wenn die Läufe bekannt sind).
     else if (!mine.length && runningWorkers && !runningWorkers.includes(issue.identifier) && stuckMinutes(issue, now) > STUCK_MIN) {
       actions.push({ issue, to: "Todo" });
     }
@@ -154,8 +173,8 @@ export function reconcile(issues, prs, /** @type {{ runningWorkers?: string[], n
   return actions;
 }
 
-/** So lange darf „In Progress“ ohne Worker und ohne PR stehen, bevor der Abgleich das Issue freigibt. */
-export const STUCK_MIN = 60;
+/** So lange darf „In Progress“ ohne Worker-Lauf und ohne PR stehen, bevor der Abgleich das Issue freigibt (SIN-291: 15 Min, vorher 60). */
+export const STUCK_MIN = 15;
 const stuckMinutes = (issue, now) => (new Date(now).getTime() - new Date(issue.updatedAt ?? now).getTime()) / 60000;
 
 /** Status je Team einmal pro Lauf lesen, nicht je Issue (SIN-263: weniger Linear-Anfragen). */
@@ -182,6 +201,57 @@ export async function linearTeamAndProject(call = linear, project = PROJECT_NAME
   const p = data.projects.nodes[0];
   if (!p?.teams.nodes[0]) throw new Error(`Projekt „${project}“ oder Team nicht gefunden`);
   return { projectId: p.id, teamId: p.teams.nodes[0].id };
+}
+
+/** Anzahl aller nicht archivierten Issues im Workspace (Linear Free: 250, SIN-291). Linear liefert keine Summe: seitenweise zählen. */
+export async function countIssues(call = linear, pageSize = 250, maxPages = 4) {
+  let n = 0;
+  let after = null;
+  for (let page = 0; page < maxPages; page++) {
+    const data = await call(
+      `query($after: String) { issues(first: ${pageSize}, after: $after, includeArchived: false) { nodes { id } pageInfo { hasNextPage endCursor } } }`,
+      { after },
+    );
+    n += data.issues.nodes.length;
+    if (!data.issues.pageInfo.hasNextPage) return n;
+    after = data.issues.pageInfo.endCursor;
+  }
+  return n;
+}
+
+/** Titel der in den letzten 24 h erledigten Issues mit diesem Titelanfang (gegen Duplikate am selben Tag). */
+export async function doneTitlesSince(prefix, now = new Date(), call = linear) {
+  const since = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+  const data = await call(
+    `query($s: DateTimeOrDuration!, $p: String!) { issues(first: 50, filter: { completedAt: { gte: $s }, title: { startsWith: $p } }) { nodes { title } } }`,
+    { s: since, p: prefix },
+  );
+  return data.issues.nodes.map((n) => n.title);
+}
+
+/**
+ * Legt Issues als Todo an (Labels, die es gibt; Priorität; optional `parentId`). Gibt die Kennungen zurück.
+ * @param {{ title: string, description: string, priority: number, labels?: string[], parentId?: string }[]} items
+ */
+export async function createLinearIssues(items, call = linear) {
+  if (!items.length) return [];
+  const { teamId, projectId } = await linearTeamAndProject(call);
+  const stateId = await stateIdByName(teamId, "Todo", call);
+  const created = [];
+  for (const it of items) {
+    const labelIds = [];
+    for (const n of it.labels ?? []) {
+      const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: teamId, n });
+      labelIds.push(...found.issueLabels.nodes.map((l) => l.id));
+    }
+    const data = await call(`mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { identifier url } } }`, {
+      i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds, ...(it.parentId ? { parentId: it.parentId } : {}) },
+    });
+    const { identifier, url } = data.issueCreate.issue;
+    console.log(`Angelegt: ${identifier} ${url}`);
+    created.push(identifier);
+  }
+  return created;
 }
 
 export async function setState(issue, name, call = linear) {

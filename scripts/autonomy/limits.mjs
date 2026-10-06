@@ -5,7 +5,7 @@
  */
 import { readFileSync } from "node:fs";
 import { buildQuotaRows, collectUsage, gh } from "./status.mjs";
-import { linearTeamAndProject, stateIdByName, linear } from "./linear.mjs";
+import { createLinearIssues, doneTitlesSince, linear } from "./linear.mjs";
 
 export const LIMITS_FILE = new URL("../../docs/autonomy/free-tier-limits.json", import.meta.url);
 export const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -13,10 +13,9 @@ export const ISSUE_PREFIX = "Free-Tier:";
 
 export const readLimits = () => JSON.parse(readFileSync(LIMITS_FILE, "utf8"));
 
-/** Kontingente mit gemessenem Verbrauch ab der Warnschwelle (Standard 80 %, „erreicht“ = ≥). */
+/** Kontingente mit gemessenem Verbrauch ab der Warnschwelle (Standard 80 %, „erreicht“ = ≥; Linear-Issues ab 85 %, SIN-291). */
 export function limitAlerts(usage, limitsFile) {
-  const warn = limitsFile.warnschwelle_prozent ?? 80;
-  return buildQuotaRows(usage, limitsFile).filter((r) => r.pct != null && r.pct >= warn);
+  return buildQuotaRows(usage, limitsFile).filter((r) => r.over);
 }
 
 /**
@@ -84,31 +83,10 @@ export async function countLimitAborts(repo, runs, call) {
 }
 
 /** Titel der in den letzten 24 h erledigten Free-Tier-Issues (gegen Duplikate am selben Tag). */
-export async function recentlyDoneTitles(now = new Date(), call = linear) {
-  const since = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
-  const data = await call(
-    `query($s: DateTimeOrDuration!, $p: String!) { issues(first: 50, filter: { completedAt: { gte: $s }, title: { startsWith: $p } }) { nodes { title } } }`,
-    { s: since, p: ISSUE_PREFIX },
-  );
-  return data.issues.nodes.map((n) => n.title);
-}
+export const recentlyDoneTitles = (now = new Date(), call = linear) => doneTitlesSince(ISSUE_PREFIX, now, call);
 
 /** Legt die Issues an (Todo, Label Spur). Ohne Linear-Zugang nur Ausgabe. */
-export async function createLimitIssues(items, call = linear) {
-  const { teamId, projectId } = await linearTeamAndProject(call);
-  const stateId = await stateIdByName(teamId, "Todo", call);
-  for (const it of items) {
-    const labelIds = [];
-    for (const n of it.labels) {
-      const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: teamId, n });
-      labelIds.push(...found.issueLabels.nodes.map((l) => l.id));
-    }
-    const data = await call(`mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { identifier url } } }`, {
-      i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds },
-    });
-    console.log(`Angelegt: ${data.issueCreate.issue.identifier} ${data.issueCreate.issue.url}`);
-  }
-}
+export const createLimitIssues = (items, call = linear) => createLinearIssues(items, call);
 
 /** Läufe und gemergte PRs der letzten 7 Tage aus GitHub. */
 export async function collectWeek(repo, now = new Date(), call = gh) {

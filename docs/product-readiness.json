@@ -1,6 +1,26 @@
 {
   "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry; alles andere zählt nur mit Bestätigung.",
   "goldsetTarget": 0.9,
+  "gebaut": {
+    "qual-offline": {
+      "datum": "2026-10-06",
+      "beleg": "SIN-256: Service Worker und Warteschlange, Playwright-Test nur in der CI (docs/decisions/SIN-256-offline-einheiten.md)",
+      "issues": ["SIN-256"],
+      "lauf": "CI-Lauf des Offline-Tests als Beleg verlinken"
+    },
+    "content-safety": {
+      "datum": "2026-10-06",
+      "beleg": "SIN-272: scripts/safety-sample.mjs, Bericht nie erzeugt (docs/decisions/SIN-272-sicherheits-stichprobe.md)",
+      "issues": ["SIN-272"],
+      "lauf": "node scripts/safety-sample.mjs --url <App-URL>; Mensch prüft den Bericht"
+    },
+    "betrieb-kosten": {
+      "datum": "2026-10-06",
+      "beleg": "SIN-258/SIN-268/SIN-280: Ledger pipeline_run_costs und Deckel, nie mit Live-Lauf gemessen (docs/decisions/SIN-258-kosten-ledger.md)",
+      "issues": ["SIN-258", "SIN-268", "SIN-280"],
+      "lauf": "Workflow content-grow mit Secrets starten, Ledger-Zeile als Beleg"
+    }
+  },
   "bestaetigt": {
     "lernen-e2e": {
       "datum": "2026-10-06",
