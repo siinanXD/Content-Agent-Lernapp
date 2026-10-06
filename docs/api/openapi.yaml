@@ -109,7 +109,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RefreshResult'
+  /api/demo:
+    post:
+      summary: Demo-Zugang anfragen (SIN-277); Einwilligung ist Pflicht
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organisation, contactName, email, participants, schwerpunkt, consent]
+              properties:
+                organisation: { type: string, maxLength: 200 }
+                contactName: { type: string, maxLength: 200 }
+                email: { type: string, maxLength: 254 }
+                participants: { type: integer, minimum: 1, maximum: 500 }
+                schwerpunkt: { type: string, maxLength: 200 }
+                consent: { type: boolean, enum: [true] }
+      responses:
+        '201':
+          description: Gespeichert
+        '400':
+          description: Eingaben ungültig oder Einwilligung fehlt (fields je Feld)
+        '413':
+          description: Anfrage zu groß
+        '503':
+          description: Speichern nicht möglich
+  /api/ausbilder/gruppe:
+    get:
+      summary: Gruppenübersicht der angemeldeten Ausbilder (SIN-277); Row Level Security, nur eigene Gruppe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Gruppe und Mitglieder (Fortschritt in Prozent, zuletzt aktiv); keine Bewertung von Personen
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [group, members]
+                properties:
+                  group:
+                    type: object
+                    required: [name, schwerpunkt]
+                    properties:
+                      name: { type: string }
+                      schwerpunkt: { type: string }
+                      examDate: { type: string, format: date, nullable: true }
+                      startsOn: { type: string, format: date, nullable: true }
+                  members:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, progressPercent]
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        progressPercent: { type: integer, minimum: 0, maximum: 100 }
+                        lastActiveAt: { type: string, format: date-time, nullable: true }
+        '401':
+          description: Nicht angemeldet
+        '403':
+          description: Kein Ausbilder-Zugang
+        '404':
+          description: Keine Gruppe zugeordnet
+        '503':
+          description: Nicht eingerichtet oder nicht ladbar
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
   parameters:
     CourseId:
       name: id

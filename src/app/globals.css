@@ -57,3 +57,110 @@ body {
   color: var(--foreground);
   font-family: var(--font-body);
 }
+
+/* Design-Paket 2 (SIN-277, Figma Screens 18–21): Töne für Hinweise, dunkle Flächen und Avatare. */
+:root {
+  --color-bg-hint: #fff7ed;
+  --color-text-hint: #9a3412;
+  --color-bg-avatar: #f5f5f4;
+  --color-track-on-dark: #44403c;
+  --color-text-muted-on-dark: #a8a29e;
+  --color-text-soft-on-dark: #d6d3d1;
+}
+
+/* Kontrollkästchen (Screen 20): Kasten 20 px wie in Figma, Ziel 44 px (WCAG 2.5.8). */
+.checkbox-44 {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+}
+.checkbox-44::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1.5px solid var(--color-text-secondary);
+  border-radius: 4px;
+  background: var(--color-bg-surface);
+}
+.checkbox-44:checked::before {
+  border-color: var(--color-brand-primary);
+  background: var(--color-brand-primary);
+}
+.checkbox-44:checked::after {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 15px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--color-text-on-brand);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.checkbox-44:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+}
+
+/* Scroll-Story der Startseite (Screen 18): ein gepinnter Abschnitt, 4 Schritte.
+   Ohne Scroll-gesteuerte Animation oder bei „Bewegung reduzieren“ stehen die Schritte
+   statisch untereinander (Standardstil). Nur transform/opacity: kein Layout-Shift.
+   Gepinnt ist der Abschnitt zwischen 20 % und 80 % der Cover-Spanne (Höhe 5 × Fenster). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .story {
+      view-timeline: --story block;
+      height: 400svh;
+    }
+    .story-stage {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      display: grid;
+      align-content: center;
+    }
+    .story-step {
+      grid-area: 1 / 1;
+      animation-fill-mode: both;
+      animation-timing-function: linear;
+      animation-timeline: --story;
+    }
+    .story-step-1 { animation-name: story-1; }
+    .story-step-2 { animation-name: story-2; }
+    .story-step-3 { animation-name: story-3; }
+    .story-step-4 { animation-name: story-4; }
+    .story-bar-fill {
+      transform-origin: left;
+      animation: story-bar linear both;
+      animation-timeline: --story;
+    }
+  }
+}
+
+@keyframes story-1 {
+  0%, 33% { opacity: 1; }
+  37%, 100% { opacity: 0; }
+}
+@keyframes story-2 {
+  0%, 33% { opacity: 0; }
+  37%, 48% { opacity: 1; }
+  52%, 100% { opacity: 0; }
+}
+@keyframes story-3 {
+  0%, 48% { opacity: 0; }
+  52%, 63% { opacity: 1; }
+  67%, 100% { opacity: 0; }
+}
+@keyframes story-4 {
+  0%, 63% { opacity: 0; }
+  67%, 100% { opacity: 1; }
+}
+@keyframes story-bar {
+  0%, 67% { transform: scaleX(0); }
+  78%, 100% { transform: scaleX(1); }
+}

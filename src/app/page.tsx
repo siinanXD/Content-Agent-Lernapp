@@ -1,131 +1,239 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { loadOnboarding, needsOnboarding } from "@/lib/learner/onboarding";
-import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/text-field";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { MobileShell } from "@/components/learner/mobile-shell";
-import { saveSession } from "@/lib/learner/session";
 
-type Variant = "pruefung" | "weiterbildung";
+export const metadata: Metadata = {
+  title: "Lernpfad MAF für Bildungsträger",
+  description:
+    "Prüfungsreif in kleinen Schritten: Fragen aus Ausbildungsordnung und Rahmenlehrplan, mit Quelle. Demo-Zugang für Bildungsträger.",
+};
 
-export default function StartPage() {
-  const router = useRouter();
-  const [keyword, setKeyword] = useState("Maschinen- und Anlagenführer");
-  const [variant, setVariant] = useState<Variant>("pruefung");
+const buttonPrimary =
+  "inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 py-3.5 text-base font-semibold text-[var(--color-text-on-brand)] hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
+const focusRing =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
 
-  // Erster Start: erst Onboarding (00 → 00b → 15).
-  useEffect(() => {
-    if (needsOnboarding(loadOnboarding())) router.replace("/willkommen");
-  }, [router]);
+const LEISTUNGEN = [
+  {
+    title: "Alle fünf MAF-Schwerpunkte",
+    text: "Metall, Druck, Textil, Veredelung, Lebensmittel",
+  },
+  { title: "Gruppenübersicht", text: "Wer wo steht, ohne KI-Bewertung" },
+  { title: "Läuft auf alten Handys", text: "auch offline" },
+  { title: "Lizenz pro Teilnehmenden", text: "Preis auf Anfrage" },
+];
 
-  function startCourse() {
-    const trimmed = keyword.trim();
-    if (!trimmed) return;
-    saveSession({
-      keyword: trimmed,
-      variant,
-      streakDays: 7,
-      totalPoints: 1720,
-    });
-    router.push("/lernpfad");
-  }
-
+/** Screen 18 Startseite · Bildungsträger. Statisch gerendert, die Scroll-Story läuft nur per CSS. */
+export default function StartseitePage() {
   return (
     <MobileShell>
-      <section
-        className="flex flex-col gap-4 bg-gradient-to-br from-[var(--color-bg-hero)] to-[var(--color-brand-primary)] px-7 pb-10 pt-14"
-        aria-labelledby="brand-title"
-      >
-        <h1
-          id="brand-title"
-          className="text-[34px] font-bold leading-10 text-[var(--color-text-on-brand)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Content-Agent-Lernapp
-        </h1>
+      <header className="flex items-center justify-between px-[22px] pt-[18px]">
         <p
-          className="text-xl font-medium leading-7 text-[var(--color-text-on-brand)]"
+          className="text-base font-bold"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          Aus einem Schlagwort wird dein MAF-Kurs.
+          Lernpfad MAF
         </p>
-        <p className="text-[15px] leading-[22px] text-[var(--color-text-on-brand)]">
-          Offizielle AO und RLP. Einheiten à 5–10 Minuten. Du gibst nur das Ziel
-          vor.
-        </p>
-      </section>
+        <Link
+          href="/anmelden"
+          className={`inline-flex min-h-11 items-center text-[15px] font-medium ${focusRing}`}
+        >
+          Anmelden
+        </Link>
+      </header>
 
-      <section className="flex flex-col gap-5 px-6 pb-8 pt-6">
-        <TextField
-          label="Schlagwort"
-          id="keyword"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Maschinen- und Anlagenführer"
-        />
+      <main className="flex flex-col">
+        <section
+          className="flex flex-col gap-[18px] px-[22px] pb-10 pt-7"
+          aria-labelledby="start-titel"
+        >
+          <h1
+            id="start-titel"
+            className="text-[44px] font-bold leading-[44px]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Prüfungsreif in kleinen Schritten.
+          </h1>
+          <p className="text-base leading-[22px] text-[var(--color-text-secondary)]">
+            Ihre Teilnehmenden lernen täglich 5–10 Minuten für die
+            Abschlussprüfung Maschinen- und Anlagenführer. Jede Frage ist aus
+            Ausbildungsordnung und Rahmenlehrplan abgeleitet und zeigt ihre
+            Quelle.
+          </p>
+          <div className="flex flex-col items-start gap-3.5">
+            <Link href="/demo" className={buttonPrimary}>
+              Demo-Zugang anfragen
+            </Link>
+            <a
+              href="#story"
+              className={`inline-flex min-h-11 items-center text-[15px] font-medium underline underline-offset-4 ${focusRing}`}
+            >
+              So entsteht eine Frage
+            </a>
+          </div>
+          <p
+            className="pt-3.5 text-xs leading-[15.6px] text-[var(--color-text-secondary)]"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            Grundlage: MaschAnlFAusbV und KMK-Rahmenlehrplan. Keine kopierten
+            IHK-Aufgaben.
+          </p>
+        </section>
 
-        <fieldset className="flex flex-col gap-3 border-0 p-0">
-          <legend className="mb-1 text-sm font-medium text-[var(--color-text-primary)]">
-            Lernvariante
-          </legend>
-          <VariantCard
-            selected={variant === "pruefung"}
-            title="Prüfungsvorbereitung · 2 Monate"
-            detail="40 Tage · ca. 2,5 h/Tag · Fokus Abschlussprüfung"
-            onSelect={() => setVariant("pruefung")}
-          />
-          <VariantCard
-            selected={variant === "weiterbildung"}
-            title="Weiterbildung · 3 Monate"
-            detail="60 Tage · ca. 2 h/Tag · volle Lernfelder"
-            onSelect={() => setVariant("weiterbildung")}
-          />
-        </fieldset>
+        <section id="story" className="story" aria-label="So entsteht eine Frage">
+          <div className="story-stage flex flex-col gap-7 px-[22px] py-9">
+            <Schritt
+              nr={1}
+              titel="1. Es beginnt beim Gesetzestext."
+              text="Die App liest die Ausbildungsordnung und markiert, was in der Prüfung verlangt wird."
+              kennung="§ 4 Ausbildungsrahmenplan"
+              karte="Gefährdungen an elektrischen Anlagen erkennen und Maßnahmen zur Vermeidung ergreifen …"
+            />
+            <Schritt
+              nr={2}
+              titel="2. Daraus wird eine Frage."
+              text="Kurz, eindeutig, mit genau einer richtigen Antwort. Ein zweites Modell prüft sie gegen die Quelle."
+              kennung="M0 · 03 · Frage 1 von 6"
+              karte="Was ist der erste Schritt vor dem Öffnen eines Schaltschranks?"
+            />
+            <Schritt
+              nr={3}
+              titel="3. Jede Antwort zeigt, woher sie kommt."
+              text="Lernende sehen sofort, ob es stimmt, und wo es steht."
+              kennung="Richtig: Freischalten"
+              karte="Quelle: MaschAnlFAusbV, Ausbildungsrahmenplan · abgerufen 05.10.2026"
+            />
+            <Schritt
+              nr={4}
+              titel="4. Fehler kommen wieder."
+              text="Falsch beantwortete Fragen tauchen nach 1, 3 und 7 Tagen erneut auf."
+              kennung="Wiederholung"
+              karte="Di · Do · Di der Folgewoche"
+              balken
+            />
+          </div>
+        </section>
 
-        <Button onClick={startCourse} disabled={!keyword.trim()}>
-          Kurs erzeugen
-        </Button>
-        <p className="text-xs text-[var(--color-text-secondary)]">
-          Design laut Figma — Freigabe durch Sinan ausstehend (SIN-185).
-        </p>
-      </section>
+        <section
+          className="flex flex-col px-[22px] pb-10 pt-10"
+          aria-labelledby="leistungen-titel"
+        >
+          <h2
+            id="leistungen-titel"
+            className="pb-3 text-[28px] font-bold leading-[29px]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Was Sie als Bildungsträger bekommen
+          </h2>
+          <ul className="flex flex-col">
+            {LEISTUNGEN.map((l) => (
+              <li
+                key={l.title}
+                className="flex flex-col gap-0.5 border-t border-[var(--color-border-subtle)] py-3.5"
+              >
+                <span
+                  className="text-base font-semibold"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {l.title}
+                </span>
+                <span className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
+                  {l.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section
+          className="flex flex-col gap-[18px] bg-[var(--color-bg-hero)] px-[22px] pb-12 pt-12"
+          aria-labelledby="abschluss-titel"
+        >
+          <h2
+            id="abschluss-titel"
+            className="text-[34px] font-bold leading-[44px] text-[var(--color-text-on-brand)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Testen Sie es mit einer Gruppe.
+          </h2>
+          <p className="text-base leading-[21px] text-[var(--color-text-muted-on-dark)]">
+            Wir richten einen Demo-Zugang für bis zu 10 Teilnehmende ein. Sie
+            sehen nach zwei Wochen, wer wie weit ist.
+          </p>
+          <Link href="/demo" className={`${buttonPrimary} self-start`}>
+            Demo-Zugang anfragen
+          </Link>
+        </section>
+      </main>
+
+      <footer className="flex flex-wrap gap-x-[18px] px-[22px] py-2 text-sm text-[var(--color-text-secondary)]">
+        <FooterLink href="/impressum">Impressum</FooterLink>
+        <FooterLink href="/datenschutz">Datenschutz</FooterLink>
+        <FooterLink href="/ki-hinweis">Hinweis zu KI-Inhalten</FooterLink>
+      </footer>
     </MobileShell>
   );
 }
 
-function VariantCard({
-  selected,
-  title,
-  detail,
-  onSelect,
+function FooterLink({ href, children }: { href: string; children: string }) {
+  return (
+    <Link
+      href={href}
+      className={`inline-flex min-h-11 items-center ${focusRing}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function Schritt({
+  nr,
+  titel,
+  text,
+  kennung,
+  karte,
+  balken = false,
 }: {
-  selected: boolean;
-  title: string;
-  detail: string;
-  onSelect: () => void;
+  nr: 1 | 2 | 3 | 4;
+  titel: string;
+  text: string;
+  kennung: string;
+  karte: string;
+  balken?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={`flex w-full flex-col gap-1 rounded-[var(--radius-md)] bg-[var(--color-bg-surface)] px-3.5 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)] ${
-        selected
-          ? "border-2 border-[var(--color-brand-primary)]"
-          : "border-[1.5px] border-[var(--color-border-subtle)]"
-      }`}
-    >
-      <span
-        className="text-[15px] font-medium text-[var(--color-text-primary)]"
+    <article className={`story-step story-step-${nr} flex flex-col gap-2.5`}>
+      <h2
+        className="text-[26px] font-bold leading-[34px]"
         style={{ fontFamily: "var(--font-display)" }}
       >
-        {title}
-      </span>
-      <span className="text-[13px] leading-[18px] text-[var(--color-text-secondary)]">
-        {detail}
-      </span>
-    </button>
+        {titel}
+      </h2>
+      <p className="text-base leading-[21px] text-[var(--color-text-secondary)]">
+        {text}
+      </p>
+      <div className="flex flex-col gap-1.5 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-4">
+        <p
+          className="text-xs leading-4 text-[var(--color-text-secondary)]"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
+          {kennung}
+        </p>
+        <p
+          className="text-[15px] font-semibold leading-5"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {karte}
+        </p>
+        {balken ? (
+          <div
+            className="mt-1 h-1 w-full overflow-hidden rounded-[4px] bg-[var(--color-border-subtle)]"
+            aria-hidden="true"
+          >
+            <div className="story-bar-fill h-1 w-3/4 rounded-[4px] bg-[var(--color-brand-primary)]" />
+          </div>
+        ) : null}
+      </div>
+    </article>
   );
 }

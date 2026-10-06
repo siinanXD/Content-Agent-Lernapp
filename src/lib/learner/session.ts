@@ -1,4 +1,5 @@
 import type { AreaResult } from "@/lib/learner/exam";
+import type { WrongAnswer } from "@/lib/learner/exam-result";
 
 export type LearnerSession = {
   keyword: string;
@@ -14,6 +15,8 @@ export type LearnerSession = {
     kind?: "unit" | "exam" | "review";
     areaResults?: AreaResult[];
     partTitle?: string;
+    /** Falsch beantwortete Prüfungsfragen (kommen in die Wiederholung). */
+    wrongAnswers?: WrongAnswer[];
   };
 };
 
