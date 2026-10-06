@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-253 | SIN-253 — Planer füllt die Schlange nach | [SIN-253-planer-nachfuellen.md](decisions/SIN-253-planer-nachfuellen.md) |
 | SIN-252 | SIN-252: Gate lockern, risk:high nur bei echten Risiken | [SIN-252-gate-lockern.md](decisions/SIN-252-gate-lockern.md) |
 | SIN-251 | SIN-251 — Entscheidungs-Index im selben PR | [SIN-251-index-im-selben-pr.md](decisions/SIN-251-index-im-selben-pr.md) |
 | SIN-250 | SIN-250 — Service-Worker: Cache folgt dem Deploy | [SIN-250-service-worker-cache.md](decisions/SIN-250-service-worker-cache.md) |

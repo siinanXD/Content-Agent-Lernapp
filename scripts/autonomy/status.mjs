@@ -14,6 +14,7 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
+import { decideRefill, overQuota } from "./refill.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
@@ -202,7 +203,11 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   // Merker: nur aktive Vorfälle bleiben; eine Meldung je Schlüssel, bis er verschwindet und später wiederkommt.
   const reportedBefore = new Set(prev.reported ?? []);
   const fresh = incidents.filter((i) => !reportedBefore.has(i.key));
-  const state = { reported: incidents.map((i) => i.key), conflictAsks };
+  // Planer nachfüllen (SIN-253): unter 5 startbaren Todos, höchstens alle 6 h (Merker `lastRefill`).
+  const refill = decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, now });
+  const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
+  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}) };
+  if (refill.trigger) state.refilled = refill.maxIssues;
 
   // Kick: Dispatcher anstoßen, wenn nichts läuft, aber etwas startbar ist und der letzte Lauf lange her ist.
   const lastDispatch = runs.filter((r) => r.name === "dispatch").reduce((m, r) => (r.created_at > m ? r.created_at : m), "");
@@ -240,6 +245,11 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       out.push(`- ⛔ ${i.identifier} ${cell(i.title)}: ${why}`);
     }
   }
+  out.push(
+    state.lastRefill
+      ? `- Planer nachgefüllt: angestoßen ${state.lastRefill} (bis zu ${state.refilled ?? "?"} Issues, höchstens 1× alle 6 h)`
+      : "- Planer nachgefüllt: noch nicht",
+  );
   out.push("", "## Letzte 24 h", "");
   out.push(`- Gemergt: ${mergedPrs.length ? mergedPrs.map((p) => `#${p.number}`).join(", ") : "keine"}`);
   out.push(`- Fehlgeschlagene Worker: ${failed.length ? "" : "keine"}`);
@@ -248,7 +258,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   out.push("", "## Kontingente", "", renderQuotaTable(quotaRows));
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
-  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows };
+  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill };
 }
 
 /** Kommentar mit Erwähnung für neue Vorfälle; leer, wenn es nichts Neues gibt. */
@@ -450,8 +460,14 @@ export async function main(argv, env = process.env) {
     const what = a.type === "linear-done" ? `${a.issue.identifier} → Done` : a.type === "linear-todo" ? `${a.issue.identifier} → Todo` : `PR #${a.pr}: ${a.text}`;
     console.log(`\n--- Aktion ${a.type} ---\n${what}`);
   }
+  console.log(`\nPlaner nachfüllen: ${res.refill.trigger ? `ja (${res.refill.reason}, bis zu ${res.refill.maxIssues} Issues${res.refill.bugsOnly ? ", nur Bugs" : ""})` : `nein (${res.refill.reason})`}`);
   output("kick", String(res.kick));
-  if (dry || fixtureAt >= 0) return res;
+  // Dry-Run und Fixture stoßen nichts an; der Merker wird mit dem Status-Text unten gespeichert.
+  const live = !dry && fixtureAt < 0;
+  output("refill", String(live && res.refill.trigger));
+  output("refill_max", String(res.refill.maxIssues));
+  output("refill_bugs_only", String(res.refill.bugsOnly));
+  if (!live) return res;
 
   // Erst melden, dann den Merker speichern: schlägt die Meldung fehl, kommt sie beim nächsten Lauf noch einmal.
   if (alert) await gh(`/repos/${repo}/issues/${statusIssue.number}/comments`, { method: "POST", body: { body: alert } });
