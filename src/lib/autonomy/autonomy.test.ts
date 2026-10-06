@@ -218,10 +218,18 @@ test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
   assert.equal(validatePlan([mk(1), mk(2, "frontend")], [], { bugsOnly: true }).map((r: { lane: string }) => r.lane).join(), "backend");
   // SIN-262: Label claude für Spuren, nicht für Design-Pakete
   const labelsOf = (lane: string) => (validatePlan([mk(1, lane)])[0] as { labels: string[] }).labels;
-  assert.deepEqual(labelsOf("backend"), ["backend", "claude"]);
-  assert.deepEqual(labelsOf("content"), ["content", "claude"]);
-  assert.deepEqual(labelsOf("frontend"), ["frontend", "claude"]);
+  // SIN-320: ohne `size` im Plan gilt `mittel`.
+  assert.deepEqual(labelsOf("backend"), ["backend", "claude", "groesse:mittel"]);
+  assert.deepEqual(labelsOf("content"), ["content", "claude", "groesse:mittel"]);
+  assert.deepEqual(labelsOf("frontend"), ["frontend", "claude", "groesse:mittel"]);
   assert.deepEqual(labelsOf("design"), ["design", "frontend"]);
+  // SIN-320: Größe und Bereich werden Labels, `gross` wird vor dem Start verworfen
+  const sized = validatePlan([
+    { ...mk(1), size: "klein", area: "Doku" },
+    { ...mk(2), size: "gross" },
+  ]) as { labels: string[] }[];
+  assert.equal(sized.length, 1);
+  assert.deepEqual(sized[0].labels, ["backend", "claude", "groesse:klein", "bereich:doku"]);
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: [], priority: 1 }]));
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: ["a"], priority: 9 }]));
   assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 1 }]), /lane/);
@@ -242,7 +250,7 @@ test("Planer: je Spur max. 3 (zusammen 9), 1 Design-Paket, Spur-Label", () => {
   for (const lane of ["frontend", "content", "backend"]) assert.equal(out.filter((i) => i.lane === lane).length, 3);
   assert.deepEqual(out.filter((i) => i.lane === "design").map((i) => i.title), ["D1"]);
   assert.deepEqual(out[0].labels, ["design", "frontend"]); // Design zuerst angelegt
-  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content", "claude"]);
+  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content", "claude", "groesse:mittel"]);
 });
 
 test("Planer: Frontend mit neuer Oberfläche braucht Design als Blocker", () => {

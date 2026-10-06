@@ -4,9 +4,10 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 ## Zuerst lesen
 
-1. `docs/PRODUCT.md` (Konzept, Arbeitspakete AP-00 bis AP-12)
-2. `docs/DECISIONS.md` (Index der bisherigen Entscheidungen; Einzeldateien in `docs/decisions/`)
-3. Das zugewiesene Linear-Issue
+1. `docs/LANDKARTE.md` (wo liegt was, wichtigste Befehle, Konventionen; spart Suchen)
+2. `docs/PRODUCT.md` (Konzept, Arbeitspakete AP-00 bis AP-12)
+3. `docs/DECISIONS.md` (Index der bisherigen Entscheidungen; Einzeldateien in `docs/decisions/`)
+4. Das zugewiesene Linear-Issue
 
 ## Grundsatz
 

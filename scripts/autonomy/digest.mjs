@@ -18,6 +18,7 @@ import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
+import { renderWeekUsage, weekUsage } from "./sparen.mjs";
 import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
 import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh, parseState } from "./status.mjs";
@@ -165,7 +166,7 @@ export function buildDigest(snap) {
     ? `Content: ${c.einheitenNeuWoche ?? 0} neue Einheiten, Bestehensquote ${c.bestehensquote == null ? "nicht verfügbar" : `${c.bestehensquote} %`}, Kosten Fabrik ${Number(c.kostenWocheEur ?? 0).toFixed(2)} € (je 7 Tage)`
     : "Content: nicht verfügbar";
   const high = (snap.quotas ?? []).filter((q) => q.pct != null && q.pct > QUOTA_MIN_PCT);
-  lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"}`);
+  lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"}`, ...renderWeekUsage(snap.usageWeek ?? null));
 
   const r = snap.readiness;
   const b = snap.backup;
@@ -194,6 +195,9 @@ export function collectDecisions(since, run = execFileSync) {
 async function collect(repo, slot, now, since, env) {
   const prs = await gh(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`);
   const mergedPrs = prs.filter((p) => p.merged_at && (!since || p.merged_at > since)).map((p) => ({ title: p.title, merged_at: p.merged_at }));
+  // SIN-320: Verbrauch der letzten 7 Tage aus den Merkern in gemergten PRs (Wochensumme, teuerste 3, Tokens je PR).
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
+  const usageWeek = weekUsage(prs.filter((p) => p.merged_at && p.merged_at > weekAgo).map((p) => ({ title: p.title, body: p.body })));
   const openPrs = prs.filter((p) => p.state === "open").map((p) => ({ number: p.number, title: p.title, labels: p.labels.map((l) => l.name) }));
   let issues = [];
   try {
@@ -236,7 +240,7 @@ async function collect(repo, slot, now, since, env) {
   }
   const backup = await collectBackup(repo, now, gh);
   const liveCheck = await collectLiveCheck(repo, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, legalOpen, tokens, content, quotas, readiness, backup, liveCheck };
+  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, openPrs, issues, decisions, decisionsOpen, legalOpen, tokens, content, quotas, readiness, backup, liveCheck };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {

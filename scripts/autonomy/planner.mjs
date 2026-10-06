@@ -28,6 +28,7 @@ import { collectPostHogMetrics } from "./posthog.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
+import { DEFAULT_SIZE, SIZES } from "./sparen.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
 import { dispatchRun, taskForCheck } from "./run-task.mjs";
@@ -178,6 +179,8 @@ export function buildPlannerPrompt(
     "- gelaufen, Ergebnis unter Ziel: Verbesserung des Ergebnisses planen, nicht das Werkzeug neu bauen.",
     "- erfüllt: nichts planen.",
     "",
+    "Größe (SIN-320): Setze je Eintrag `size` = `klein`, `mittel` oder `gross` nach docs/autonomy/groessen.md (klein: 1–2 Dateien, kein neues Verhalten; mittel: ein Arbeitspaket; gross: mehr als ein PR). Große Aufträge teilst du selbst in mittlere oder kleine Einträge (Blocker-Reihenfolge), ein Eintrag mit `size: gross` wird verworfen. Kleinkram desselben Bereichs (Doku, Index, Labels) bekommt dasselbe `area` (ein kurzes Wort), der Dispatcher bündelt ihn zu einem Lauf.",
+    "",
     "Figma zuerst (SIN-239):",
     "- Ohne Design-Issue: Änderungen, die nur vorhandene Figma-Komponenten und Tokens nutzen (Zustände, Texte, Abstände, Varianten bestehender Screens, Fehler-/Leer-/Ladezustände nach Screen 17). Dann `needsDesign: false`.",
     "- Design nötig (`needsDesign: true`): neue Screens, neue Komponenten, neue Farben/Tokens, geänderte Navigation. Setze `blockedBy` auf den Titel eines Design-Eintrags im Plan (oder eine offene Kennung wie SIN-123).",
@@ -214,7 +217,7 @@ export function buildPlannerPrompt(
     ...Object.entries(metrics).map(([k, v]) => `- ${k}: ${v}`),
     "",
     "## Ausgabe",
-    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft"}].',
+    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "size": "klein|mittel", "area": "optional, nur für klein", "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft"}].',
     "`needsDesign` und `blockedBy` nur bei Frontend-Issues, die ein Design-Paket brauchen (siehe oben). Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
   ].join("\n");
 }
@@ -257,6 +260,12 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
     if (!PLAN_LANES.includes(p.lane)) throw new Error(`Eintrag ${i}: lane muss ${PLAN_LANES.join(", ")} sein`);
     if (!Array.isArray(p.acceptance) || p.acceptance.length === 0) throw new Error(`Eintrag ${i}: Akzeptanzkriterien fehlen`);
     if (![1, 2, 3, 4].includes(p.priority)) throw new Error(`Eintrag ${i}: priority muss 1 bis 4 sein`);
+    const size = SIZES.includes(p.size) ? p.size : DEFAULT_SIZE;
+    if (size === "gross" && p.lane !== "design") {
+      console.log(`Eintrag verworfen (zu gross, vor dem Start teilen, SIN-320): ${p.title}`);
+      continue;
+    }
+    const area = size === "klein" && typeof p.area === "string" && /^[a-z0-9-]{2,30}$/i.test(p.area.trim()) ? p.area.trim().toLowerCase() : "";
     const blockedBy = typeof p.blockedBy === "string" ? p.blockedBy.trim() : "";
     if (p.needsDesign) {
       if (p.lane !== "frontend") throw new Error(`Eintrag ${i}: needsDesign nur für frontend`);
@@ -277,6 +286,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
         ...((observing || bugsOnly) && p.lane === "backend" ? ["bug"] : []),
         ...(planning ? [PLAN_LABEL] : []),
         ...(p.runOrder ? [RUN_LABEL] : []),
+        ...(p.lane === "design" ? [] : [`groesse:${size}`, ...(area ? [`bereich:${area}`] : [])]),
       ],
       ...(p.lane === "frontend" ? { needsDesign: Boolean(p.needsDesign) } : {}),
       ...(p.needsDesign ? { blockedBy } : {}),
