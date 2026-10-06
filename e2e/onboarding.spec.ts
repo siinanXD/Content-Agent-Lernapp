@@ -74,11 +74,13 @@ test("Einwilligung steuert Nutzungsdaten, Widerruf in den Einstellungen", async 
   await page.goto("/einwilligung");
   await page.getByRole("button", { name: "Einverstanden" }).click();
   await page.goto("/einstellungen");
-  const consent = page.getByRole("switch", { name: "Nutzungsdaten teilen" });
+  const consent = page.getByRole("switch", { name: "Anonyme Nutzungsdaten" });
   await expect(consent).toBeChecked();
+  await expect(page.getByText(/^Erteilt am \d{2}\.\d{2}\.\d{4}$/)).toBeVisible();
   await consent.uncheck();
+  await expect(page.getByText("Messung gestoppt. Danke trotzdem.")).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("switch", { name: "Nutzungsdaten teilen" })).not.toBeChecked();
+  await expect(page.getByRole("switch", { name: "Anonyme Nutzungsdaten" })).not.toBeChecked();
 });
 
 for (const route of [

@@ -90,6 +90,8 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
 export type OnboardingState = {
   /** null = noch nicht gefragt */
   consent: boolean | null;
+  /** Zeitpunkt (ISO) der letzten Entscheidung zu `consent`; für „Erteilt am …“ (Figma 26) */
+  consentAt: string | null;
   schwerpunktId: string | null;
   mapId: string | null;
 };
@@ -97,6 +99,7 @@ export type OnboardingState = {
 const KEY = "cal-onboarding";
 export const EMPTY_ONBOARDING: OnboardingState = {
   consent: null,
+  consentAt: null,
   schwerpunktId: null,
   mapId: null,
 };
@@ -113,6 +116,9 @@ export function loadOnboarding(): OnboardingState {
 
 export function saveOnboarding(patch: Partial<OnboardingState>): OnboardingState {
   const next = { ...loadOnboarding(), ...patch };
+  if (patch.consent !== undefined && patch.consentAt === undefined) {
+    next.consentAt = patch.consent === null ? null : new Date().toISOString();
+  }
   window.localStorage.setItem(KEY, JSON.stringify(next));
   window.dispatchEvent(new CustomEvent("cal-consent-change"));
   return next;

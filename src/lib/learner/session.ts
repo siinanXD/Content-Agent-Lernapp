@@ -4,7 +4,6 @@ import type { WrongAnswer } from "@/lib/learner/exam-result";
 export type LearnerSession = {
   keyword: string;
   variant: "pruefung" | "weiterbildung";
-  streakDays: number;
   totalPoints: number;
   lastResult?: {
     unitId: string;

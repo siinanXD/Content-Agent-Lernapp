@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { NextUpCard } from "@/components/ui/next-up-card";
 import { PathNode, type PathNodeState } from "@/components/ui/path-node";
-import { ProgressRing } from "@/components/ui/progress-ring";
+import { ConsentBanner } from "@/components/learner/consent-banner";
+import { DailyGoal } from "@/components/ui/daily-goal";
 import { StatChip } from "@/components/ui/stat-chip";
 import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
@@ -28,6 +29,11 @@ import {
   type LeitnerStack,
 } from "@/lib/learner/leitner";
 import { listExamParts } from "@/lib/learner/exam";
+import {
+  formatDays,
+  loadLearningSummary,
+  type LearningSummary,
+} from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
 import { useOnline } from "@/lib/use-online";
 
@@ -42,6 +48,10 @@ const ZIGZAG = [0, 64, 128, 64];
 
 export default function LernpfadPage() {
   const session = useAfterMount(loadSession, null);
+  const summary = useAfterMount<LearningSummary | "laden" | "fehler">(
+    loadLearningSummary,
+    "laden",
+  );
   const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
   const dueCount = useMemo(() => (stack ? dueItems(stack).length : 0), [stack]);
   const stackCount = stack ? stackSize(stack) : 0;
@@ -61,16 +71,10 @@ export default function LernpfadPage() {
     };
   }, []);
 
-  // „Als Nächstes“: heutige Einheit, sonst die erste offene. Der Ring zählt
-  // die Einheiten ihres Moduls (SIN-245, Annahme in docs/decisions).
+  // „Als Nächstes“: heutige Einheit, sonst die erste offene.
   const nextUnit =
     pathUnits.find((u) => u.status === "today") ??
     pathUnits.find((u) => u.status === "open");
-  const ringUnits = nextUnit
-    ? pathUnits.filter((u) => u.moduleId === nextUnit.moduleId)
-    : pathUnits;
-  const ringDone = ringUnits.filter((u) => u.status === "done").length;
-  const ringTotal = ringUnits.length;
 
   const subtitle = session
     ? `${session.keyword} · ${
@@ -82,6 +86,7 @@ export default function LernpfadPage() {
 
   return (
     <MobileShell>
+      <ConsentBanner />
       <header className="px-6 pb-2 pt-12">
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
@@ -100,16 +105,11 @@ export default function LernpfadPage() {
                 : "Demo-Seed Sicherheit — Phase A noch nicht veröffentlicht"}
             </p>
           </div>
-          <ProgressRing
-            done={ringDone}
-            total={ringTotal}
-            label="erledigt"
-          />
         </div>
         <div className="flex flex-wrap gap-2 pt-2">
           <StatChip
             kind="serie"
-            value={`${session?.streakDays ?? 0} Tage`}
+            value={formatDays(summary === "laden" || summary === "fehler" ? 0 : summary.streak.days)}
             label="Serie"
           />
           <StatChip
@@ -127,6 +127,30 @@ export default function LernpfadPage() {
 
       <section className="flex flex-col gap-3 px-6 pt-2">
         {online ? null : <StateView kind="offline" />}
+        {summary === "laden" ? (
+          <StateView kind="laden" title="Tagesziel wird geladen" text="Einen Moment bitte." />
+        ) : summary === "fehler" ? (
+          <StateView
+            kind="fehler"
+            title="Serie konnte nicht geladen werden"
+            text="Dein Fortschritt ist gespeichert. Wir versuchen es gleich noch einmal."
+          />
+        ) : (
+          <DailyGoal summary={summary} dueCount={dueCount} />
+        )}
+        {dueCount > 0 ? (
+          <Link
+            href="/wiederholung"
+            className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+          >
+            <span className="text-sm font-medium text-[var(--color-text-primary)]">
+              {dueCount} {dueCount === 1 ? "Wiederholung" : "Wiederholungen"} fällig
+            </span>
+            <span className="text-sm font-semibold text-[var(--color-brand-primary)]">
+              Starten
+            </span>
+          </Link>
+        ) : null}
         {nextUnit ? (
           <NextUpCard
             indexLabel={nextUnit.indexLabel}

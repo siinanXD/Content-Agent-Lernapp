@@ -19,6 +19,7 @@ import {
 import { toWrongAnswer, type WrongAnswer } from "@/lib/learner/exam-result";
 import { loadStack, markWrong, saveStack } from "@/lib/learner/leitner";
 import { loadSession, saveSession } from "@/lib/learner/session";
+import { recordLearningEvent } from "@/lib/learner/streak";
 
 function PruefungInner() {
   const router = useRouter();
@@ -98,9 +99,9 @@ function PruefungInner() {
     const session = loadSession() ?? {
       keyword: "Maschinen- und Anlagenführer",
       variant: "pruefung" as const,
-      streakDays: 7,
       totalPoints: 1720,
     };
+    recordLearningEvent("exam");
     saveSession({
       ...session,
       lastResult: {
