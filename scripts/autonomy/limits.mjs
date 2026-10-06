@@ -19,21 +19,30 @@ export function limitAlerts(usage, limitsFile) {
   return buildQuotaRows(usage, limitsFile).filter((r) => r.pct != null && r.pct >= warn);
 }
 
+/**
+ * Nur diese Kontingente bekommen ein Issue (SIN-266): Supabase-Speicher ab 90 % zum Aufräumen. Alle anderen Grenzen
+ * lösen eine Gegenmaßnahme aus (Deploys bündeln, Sampling senken) und stehen im Tages-Update, nie als Issue.
+ */
+export const ISSUE_FROM_PCT = { supabase_db_mb: 90 };
+
 /** Titel enthält nur den Namen, nicht den Prozentwert: ein offenes Issue je Limit, keine Dubletten. */
 export function limitIssue(row) {
   return {
     lane: "backend",
     priority: 2,
-    labels: ["backend"],
+    labels: ["backend", "claude"],
     title: `${ISSUE_PREFIX} ${row.name} nahe am Limit`,
-    description: `${row.name}: ${row.text} von ${row.limit} ${row.unit} (${row.pct} %). Schwelle 80 %.\n\nLimits und Quellen: docs/autonomy/free-tier-limits.json, docs/decisions/SIN-225-free-tier-waechter.md.\n\n## Akzeptanzkriterien\n- [ ] Verbrauch gesenkt oder Limit bewusst akzeptiert (Entscheidungsdatei)`,
+    description: `${row.name}: ${row.text} von ${row.limit} ${row.unit} (${row.pct} %). Schwelle ${ISSUE_FROM_PCT[row.key] ?? 80} %.\n\nLimits und Quellen: docs/autonomy/free-tier-limits.json, docs/decisions/SIN-225-free-tier-waechter.md.\n\n## Akzeptanzkriterien\n- [ ] Verbrauch gesenkt oder Limit bewusst akzeptiert (Entscheidungsdatei)`,
   };
 }
 
-/** Neue Issues für die Warnungen; schon offene (Titel gleich) entfallen. */
+/** Neue Issues für die Warnungen; schon offene oder heute erledigte (Titel gleich) entfallen. */
 export function newLimitIssues(alerts, existingTitles = []) {
   const taken = new Set(existingTitles.map((t) => t.trim().toLowerCase()));
-  return alerts.map(limitIssue).filter((i) => !taken.has(i.title.toLowerCase()));
+  return alerts
+    .filter((a) => a.key in ISSUE_FROM_PCT && a.pct >= ISSUE_FROM_PCT[a.key])
+    .map(limitIssue)
+    .filter((i) => !taken.has(i.title.toLowerCase()));
 }
 
 /**
@@ -74,13 +83,26 @@ export async function countLimitAborts(repo, runs, call) {
   return n;
 }
 
+/** Titel der in den letzten 24 h erledigten Free-Tier-Issues (gegen Duplikate am selben Tag). */
+export async function recentlyDoneTitles(now = new Date(), call = linear) {
+  const since = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+  const data = await call(
+    `query($s: DateTimeOrDuration!, $p: String!) { issues(first: 50, filter: { completedAt: { gte: $s }, title: { startsWith: $p } }) { nodes { title } } }`,
+    { s: since, p: ISSUE_PREFIX },
+  );
+  return data.issues.nodes.map((n) => n.title);
+}
+
 /** Legt die Issues an (Todo, Label Spur). Ohne Linear-Zugang nur Ausgabe. */
 export async function createLimitIssues(items, call = linear) {
   const { teamId, projectId } = await linearTeamAndProject(call);
   const stateId = await stateIdByName(teamId, "Todo", call);
   for (const it of items) {
-    const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: teamId, n: "backend" });
-    const labelIds = found.issueLabels.nodes.map((l) => l.id);
+    const labelIds = [];
+    for (const n of it.labels) {
+      const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: teamId, n });
+      labelIds.push(...found.issueLabels.nodes.map((l) => l.id));
+    }
     const data = await call(`mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { identifier url } } }`, {
       i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds },
     });
@@ -117,12 +139,13 @@ export async function runLimitCheck({ env = process.env, dry = false, existingTi
   const usage = await collectUsage({ env, now, runs: week.runs });
   const rows = buildQuotaRows(usage, limitsFile);
   const alerts = limitAlerts(usage, limitsFile);
-  const items = newLimitIssues(alerts, existingTitles);
   const write = !dry && Boolean(env.LINEAR_API_KEY);
+  const doneTitles = write ? await recentlyDoneTitles(now, call).catch(() => []) : [];
+  const items = newLimitIssues(alerts, [...existingTitles, ...doneTitles]);
   const lines = [
     `## Free-Tier-Prüfung (Schwelle ${limitsFile.warnschwelle_prozent ?? 80} %)`,
     ...rows.map((r) => `- ${r.name}: ${r.text}${r.pct == null ? "" : ` (${r.pct} % von ${r.limit} ${r.unit})`}`),
-    alerts.length ? `\nBei der Schwelle: ${alerts.map((a) => a.name).join(", ")}` : "\nKein Limit bei der Schwelle.",
+    alerts.length ? `\nBei der Schwelle: ${alerts.map((a) => a.name).join(", ")} (bremst die Planung nicht; nur Claude-Kontingent und API-Deckel schalten auf „nur Bugs“)` : "\nKein Limit bei der Schwelle.",
     ...(write ? [] : items.map((it) => `[dry-run] ${it.lane} P${it.priority} ${it.title}`)),
     "",
     renderWeeklyReport(weeklyReport({ runs: week.runs, prs: week.prs, limitAborts, now })),

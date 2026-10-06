@@ -27,8 +27,14 @@ export function nextRefillAt(lastRefill, cooldownH = REFILL_COOLDOWN_H) {
   return Number.isFinite(last) ? new Date(last + cooldownH * HOUR_MS) : null;
 }
 
-/** Kontingent-Zeilen (buildQuotaRows) ab Warnschwelle → nur Bugs. */
-export const overQuota = (quotaRows = []) => quotaRows.some((r) => r.over);
+/**
+ * „Nur Bugs“ gilt ausschließlich für das Claude-Kontingent (Limit-Pause, siehe `paused` in decideRefill) und den
+ * API-Kostendeckel (SIN-266). Vercel, Sentry, PostHog, Langfuse und Supabase bremsen die Planung nie.
+ */
+export const BUGS_ONLY_QUOTAS = ["api_kosten_eur", "claude_max"];
+
+/** Kontingent-Zeilen (buildQuotaRows) ab Warnschwelle, die nur Bugs erlauben. */
+export const overQuota = (quotaRows = []) => quotaRows.some((r) => r.over && BUGS_ONLY_QUOTAS.includes(r.key));
 
 /**
  * Entscheidet, ob der Planer jetzt angestoßen wird.

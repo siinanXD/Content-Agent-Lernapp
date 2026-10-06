@@ -15,6 +15,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
+import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
@@ -265,6 +266,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   for (const r of failed) out.push(`  - ${idOf(r.display_title) ?? "?"}: ${cell(failures[r.id] || "kein Fehlertext lesbar")} ([Lauf](${r.html_url}))`);
   out.push(`- Pausen: ${paused ? `aktiv bis ${pausedUntil}` : "keine aktiv"}`);
   out.push("", "## Kontingente", "", renderQuotaTable(quotaRows));
+  if (snap.deploy) out.push("", renderDeploy(snap.deploy));
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
   return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill };
@@ -457,7 +459,11 @@ export async function main(argv, env = process.env) {
     }
     const phaseEnv = { phase: env.PHASE, observeDays: env.OBSERVE_DAYS, since: env.PHASE_SINCE, lastPlan: null };
     if (issues.length) phaseEnv.lastPlan = await lastPlanAt(linear).catch(() => null);
-    snap = { now: now.toISOString(), ...g, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage: await collectUsage({ env, now, runs: g.runs }) };
+    const usage = await collectUsage({ env, now, runs: g.runs });
+    // Production bündeln (SIN-266): Stand und Entscheidung; ausgelöst wird nach dem Schreiben des Status (unten).
+    const vercelPct = percent(usage.vercel_deployments_tag, limitsFile.limits?.vercel_deployments_tag?.limit);
+    const deploy = await planDeploy({ env, now, vercelPct, call: gh });
+    snap = { now: now.toISOString(), ...g, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, usage, deploy };
     statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
@@ -477,6 +483,14 @@ export async function main(argv, env = process.env) {
   output("refill_max", String(res.refill.maxIssues));
   output("refill_bugs_only", String(res.refill.bugsOnly));
   if (!live) return res;
+
+  if (snap.deploy?.deploy) {
+    if (!env.VERCEL_DEPLOY_HOOK_PROD) console.log("Production-Deploy fällig, aber VERCEL_DEPLOY_HOOK_PROD fehlt.");
+    else {
+      const r = await triggerDeploy(env.VERCEL_DEPLOY_HOOK_PROD).catch((e) => ({ ok: false, status: e.message }));
+      console.log(r.ok ? "Production-Deploy ausgelöst (Deploy Hook)." : `::warning::Deploy Hook fehlgeschlagen (${r.status}), nächster Versuch beim nächsten Takt.`);
+    }
+  }
 
   // Erst melden, dann den Merker speichern: schlägt die Meldung fehl, kommt sie beim nächsten Lauf noch einmal.
   if (alert) await gh(`/repos/${repo}/issues/${statusIssue.number}/comments`, { method: "POST", body: { body: alert } });

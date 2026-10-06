@@ -174,7 +174,10 @@ test("Nachfüllen: genug startbare Todos, Pause und Kontingent über 80 % (nur B
   assert.equal(analyze(many, limits, {}).refill.trigger, false);
   assert.equal(analyze({ ...fixture(), paused: "2026-10-06T00:00:00Z" }, limits, {}).refill.trigger, false);
   const over = { ...fixture(), usage: { vercel_deployments_tag: 95 } };
-  assert.equal(analyze(over, limits, {}).refill.bugsOnly, true);
+  // SIN-266: Vercel (und andere Free-Tier-Grenzen) bremsen die Planung nie, nur der API-Deckel.
+  assert.equal(analyze(over, limits, {}).refill.bugsOnly, false);
+  const cost = { ...fixture(), usage: { api_kosten_eur: 18 } };
+  assert.equal(analyze(cost, limits, {}).refill.bugsOnly, true);
 });
 
 test("Nachfüllen (SIN-262): Repo-Variablen überschreiben Schwelle, Obergrenze und Abstand", () => {
