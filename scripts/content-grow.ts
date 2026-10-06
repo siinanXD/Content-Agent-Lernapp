@@ -55,6 +55,7 @@ import {
 import { JUDGE_MODEL, JUDGE_PROMPT_VERSION, liveJudgeWithUsage } from "../src/lib/quality/evaluate-agent";
 import { recordEvaluationTrace } from "../src/lib/quality/langfuse-client";
 import { toQuestionEvaluationRecords } from "../src/lib/quality/question-evaluations";
+import { assertWithinRunCap, RunBudgetExceededError, recordRunCost } from "../src/lib/quality/run-ledger";
 import {
   aggregateScores,
   QUALITY_THRESHOLDS,
@@ -274,7 +275,14 @@ async function main() {
   // Stufe b: Quellen geändert → nur betroffene Einheiten neu. Alte Fassung bleibt, wenn die neue durchfällt.
   const refreshIds = affected.unitIds.slice(0, affordableUnits(spentTotal(), perUnit));
   report.sourceRefresh.units = refreshIds.length;
+  // SIN-258: Vor jedem bezahlten Batch prüfen; bei Überschreitung des Deckels stoppt der Lauf sauber.
+  const capStop = (e: unknown) => {
+    if (!(e instanceof RunBudgetExceededError)) throw e;
+    report.stopReason = `Deckel erreicht (${e.message}); Rest im nächsten Lauf`;
+  };
+  try {
   if (refreshIds.length > 0) {
+    assertWithinRunCap(spentTotal(), RUN_CAP_EUR);
     const specs = refreshIds.map((id) => {
       const u = priorUnits.find((x) => x.id === id)!;
       return { moduleId: u.moduleId ?? id.split("-")[0]!, blockId: u.blockId ?? id.replace(/-u\d+$/, ""), unitId: id, titleHint: u.title };
@@ -292,9 +300,16 @@ async function main() {
     report.sourceRefresh.changeKeys = affected.changeKeys;
   }
 
+  } catch (e) {
+    capStop(e);
+  }
+
   // Stufe c: nächstes Modul, so viel der Deckel erlaubt.
   const generatedUnits: GeneratedUnit[] = [];
-  if (next && !overBudget(spentTotal())) {
+  try {
+  if (report.stopReason) {
+    report.deferred = next?.pending.length ?? 0;
+  } else if (next && !overBudget(spentTotal())) {
     const { targets, units, leftOver } = trimTargets(
       moduleChunks(next.item.module),
       new Set(next.pending),
@@ -304,6 +319,7 @@ async function main() {
     if (targets.length === 0) {
       report.stopReason = "Deckel: keine Einheit mehr bezahlbar; Rest im nächsten Lauf";
     } else {
+      assertWithinRunCap(spentTotal(), RUN_CAP_EUR);
       const sub = await submitChunkTargets({ keyword: KEYWORD, targets, system: cachedSystem() });
       report.batchIds.push(sub.batchId);
       console.log("Batch", sub.batchId, "Einheiten", units, "Modell", GENERATOR_MODEL);
@@ -330,6 +346,9 @@ async function main() {
     report.stopReason = "Deckel erreicht; Modul kommt im nächsten Lauf";
     report.deferred = next.pending.length;
   }
+  } catch (e) {
+    capStop(e);
+  }
 
   // Veröffentlichen: erst jetzt, alles in einem Schritt.
   const liveIds = new Set(live.map((u) => u.id));
@@ -350,6 +369,21 @@ async function main() {
   const after = nextOpenItem(queue, publishedAfter, discardedAfter, report.deferred > 0 ? next?.item.module.id : null);
   report.nextModuleId = after?.item.module.id ?? null;
   report.resumeModuleId = report.deferred > 0 ? (next?.item.module.id ?? null) : null;
+
+  // SIN-258: Kosten des Laufs ins Ledger (Supabase) und als Trace an Langfuse.
+  try {
+    const cost = await recordRunCost({
+      runId,
+      courseId: COURSE,
+      kind: "content-grow",
+      ledger,
+      totalEur: report.costEur,
+      capEur: RUN_CAP_EUR,
+    });
+    if (cost.stopped && !report.stopReason) report.stopReason = cost.stopReason ?? "Deckel erreicht";
+  } catch (e) {
+    console.error("::warning::Kosten-Ledger nicht geschrieben:", e instanceof Error ? e.message : e);
+  }
 
   const scores = aggregateScores(allEvals);
   report.langfuseTraceId =

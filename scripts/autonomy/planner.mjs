@@ -63,13 +63,22 @@ async function supabaseCount(path, headers, base) {
   return Number(res.headers.get("content-range")?.split("/")[1]);
 }
 
+/** Kennzahl kosten_pro_lauf aus Zeilen von pipeline_run_costs (neueste zuerst, SIN-258). */
+export function summarizeRunCosts(rows, capEur = 20) {
+  if (!rows.length) return "keine Läufe im Ledger";
+  const eur = rows.map((r) => Number(r.cost_eur ?? 0));
+  const avg = eur.reduce((a, b) => a + b, 0) / eur.length;
+  const stopped = rows.filter((r) => r.stopped).length;
+  return `Ø ${avg.toFixed(2)} € je Lauf, letzter ${eur[0].toFixed(2)} €, höchster ${Math.max(...eur).toFixed(2)} € (Deckel ${capEur} €, ${rows.length} Läufe, ${stopped} gestoppt)`;
+}
+
 export async function collectMetrics(env = process.env) {
   const m = {
     einheiten: "nicht verfügbar",
     fragen_bewertet: "nicht verfügbar",
     bestehensquote: "nicht verfügbar",
     bestehensquote_pct: "nicht verfügbar",
-    kosten_pro_lauf: "nicht verfügbar (Ledger/Langfuse nicht angebunden)",
+    kosten_pro_lauf: "nicht verfügbar",
     posthog: "nicht verfügbar",
     sentry: "nicht verfügbar",
     sentry_kritisch: "nicht verfügbar",
@@ -80,6 +89,13 @@ export async function collectMetrics(env = process.env) {
       m.einheiten = await supabaseCount("units?select=id", h, env.SUPABASE_URL);
       const total = await supabaseCount("question_quality_latest?select=question_id", h, env.SUPABASE_URL);
       const passed = await supabaseCount("question_quality_latest?select=question_id&passed=eq.true", h, env.SUPABASE_URL);
+      try {
+        const res = await fetch(`${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`, { headers: h });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        m.kosten_pro_lauf = summarizeRunCosts(await res.json());
+      } catch (e) {
+        m.kosten_pro_lauf = `Fehler: ${e.message}`;
+      }
       m.fragen_bewertet = total;
       m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";
       if (total) m.bestehensquote_pct = Math.round((passed / total) * 100);
