@@ -23,6 +23,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
 import { runLimitCheck } from "./limits.mjs";
+import { collectSentryMetrics } from "./sentry.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
@@ -103,21 +104,7 @@ export async function collectMetrics(env = process.env) {
       m.einheiten = `Fehler: ${e.message}`;
     }
   }
-  if (env.SENTRY_AUTH_TOKEN && env.SENTRY_ORG && env.SENTRY_PROJECT) {
-    const sentry = async (query) => {
-      const url = `https://de.sentry.io/api/0/projects/${env.SENTRY_ORG}/${env.SENTRY_PROJECT}/issues/?query=${encodeURIComponent(query)}&statsPeriod=7d&limit=25`;
-      return fetch(url, { headers: { Authorization: `Bearer ${env.SENTRY_AUTH_TOKEN}` } });
-    };
-    try {
-      const res = await sentry("is:unresolved");
-      m.sentry = res.ok ? `${(await res.json()).length} ungelöste Fehler (7 Tage)` : `Fehler: HTTP ${res.status}`;
-      // Kritisch = Level error oder fatal (Suchsyntax nicht live geprüft, siehe D-42).
-      const crit = await sentry("is:unresolved level:[error,fatal]");
-      if (crit.ok) m.sentry_kritisch = (await crit.json()).length;
-    } catch (e) {
-      m.sentry = `Fehler: ${e.message}`;
-    }
-  }
+  Object.assign(m, await collectSentryMetrics(env));
   if (env.POSTHOG_PERSONAL_API_KEY && env.POSTHOG_PROJECT_ID) {
     try {
       const res = await fetch(`https://eu.posthog.com/api/projects/${env.POSTHOG_PROJECT_ID}/query/`, {

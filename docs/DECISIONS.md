@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-262 | SIN-262: Planer in der Bauphase alle 2 h nachfüllen | [SIN-262-planer-nachfuellen-2h.md](decisions/SIN-262-planer-nachfuellen-2h.md) |
 | SIN-261 | SIN-261: merge-gate wieder als echter Job | [SIN-261-merge-gate-job.md](decisions/SIN-261-merge-gate-job.md) |
 | SIN-260 | SIN-260 — Bewertungslauf über bestehende Fragen | [SIN-260-bewertungslauf.md](decisions/SIN-260-bewertungslauf.md) |
+| SIN-259 | SIN-259 — Sentry-Anbindung: Fehlerzahl für den Planer messbar machen | [SIN-259-sentry-anbindung.md](decisions/SIN-259-sentry-anbindung.md) |
 | SIN-258 | SIN-258 — Kosten pro Kurslauf messen: Ledger und Langfuse | [SIN-258-kosten-ledger.md](decisions/SIN-258-kosten-ledger.md) |
 | SIN-257 | SIN-257: Lighthouse und axe über alle Routen | [SIN-257-lighthouse-axe-alle-routen.md](decisions/SIN-257-lighthouse-axe-alle-routen.md) |
 | SIN-256 | SIN-256 — Offline: Einheiten und Wiederholung ohne Netz | [SIN-256-offline-einheiten.md](decisions/SIN-256-offline-einheiten.md) |
