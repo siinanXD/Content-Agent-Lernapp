@@ -18,7 +18,7 @@ Vertrag (Art. 6 Abs. 1 lit. b DSGVO) für Konto und Lernen, Einwilligung (lit. a
 
 ## 4 Empfänger und Auftragsverarbeiter
 
-- Vercel | Hosting der App | [Region prüfen]
+- Vercel | Hosting der App | Funktionen in Frankfurt (fra1), [Auslieferung statischer Dateien prüfen]
 - Supabase | Datenbank, Anmeldung | [Region prüfen]
 - Sentry | Fehlerberichte | [Region prüfen]
 - PostHog | Nutzungsdaten (Einwilligung) | EU
