@@ -88,6 +88,8 @@ Artifacts land in `docs/ops/AP15-PHASE-A.md` and `docs/ops/ap15-runs/`.
 
 Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).
 
+Git deploys are off (`git.deploymentEnabled: false` in `vercel.json`, SIN-309): neither `main` nor PR branches create Vercel deployments, so nothing counts against the Hobby limit of 100/day. Production is deployed through the deploy hook (`VERCEL_DEPLOY_HOOK_PROD`) by the `status` workflow: at most once per hour, only when app code changed, and only one attempt per commit (a CANCELED/ERROR attempt is reported as "Production hängt" instead of being retried).
+
 Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). After each Production deploy the workflow `deploy-smoke` checks `/api/health` and `/api/learner/phase-a` for 200 and opens a revert PR otherwise (SIN-308). URL env vars (e.g. `LANGFUSE_BASE_URL`) are cleaned of quotes and validated in `src/lib/env.ts`; an invalid value disables the feature and logs a warning instead of crashing.
 
 ## Secrets

@@ -46,6 +46,7 @@ export const IDLE_MIN = 45;
 export const STUCK_MIN = 15;
 export const APPROVAL_MIN = 120;
 export const KICK_MIN = 10;
+export const VERCEL_WARN = 70;
 /** So lange wartet der Wächter nach einer @claude-Bitte, bevor er sie wiederholt oder an Sinan eskaliert. */
 export const CLAUDE_RETRY_MIN = 45;
 export const MAX_CLAUDE_ASKS = 2;
@@ -187,6 +188,22 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     incidents.push({ key: `quota:${q.key}`, text: `Kontingent ${q.name} bei ${q.pct} % (${q.text} von ${q.limit}).` });
   }
 
+  // Production hängt (SIN-309): Hook-Deploy CANCELED/ERROR → Meldung und Bug-Issue, kein zweiter Versuch für denselben Commit.
+  const stuckDeploy = snap.deploy?.stuck ?? null;
+  const deployBugs = [];
+  if (stuckDeploy) {
+    const at = stuckDeploy.since.slice(11, 16);
+    const short = stuckDeploy.sha.slice(0, 7);
+    incidents.push({ key: `deploy-stuck:${stuckDeploy.sha}`, text: `Production hängt seit ${at} UTC: Hook-Deploy für ${short} ist ${stuckDeploy.state}. Kein neuer Versuch für diesen Commit, der nächste kommt mit einem neuen Commit auf main.` });
+    deployBugs.push({
+      lane: "backend",
+      priority: 1,
+      labels: ["claude", "Bug"],
+      title: `Bug: Production-Deploy ${stuckDeploy.state} (${short})`,
+      description: `Der Hook-Deploy für Commit ${stuckDeploy.sha} (ausgelöst ${stuckDeploy.since}) endete mit ${stuckDeploy.state}. Production hängt seit ${at} UTC. Der Wächter versucht diesen Commit nicht erneut (SIN-309). Bitte das Build-Log in Vercel lesen, die Ursache beheben und per Merge einen neuen Commit auslösen.`,
+    });
+  }
+
   // Sicherung (SIN-293): Fehler oder überfällig = Meldung. Fehlt der Messwert (nicht lesbar), bleibt es still.
   const backup = snap.backup ?? null;
   if (backup?.incident) incidents.push(backup.incident);
@@ -200,7 +217,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const known = [...issues, ...(snap.doneTitles ?? []).map((title) => ({ title }))];
   const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null);
   const stop = linearQ.level === "stop";
-  const bugs = [newStallIssue(diagnosis, known), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
+  const bugs = [newStallIssue(diagnosis, known), ...deployBugs.filter((b) => !known.some((k) => k.title === b.title)), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
   const decisions = snap.decisions ?? [];
   for (const d of decisions) incidents.push({ key: `decision:${d.number}`, text: `Entscheidung nötig in gemergtem PR #${d.number} (${cell(d.title)}): ${d.question}` });
 
@@ -242,7 +259,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, linearFull: stop, now });
   const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
-  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}) };
+  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}) };
   if (refill.trigger) state.refilled = refill.maxIssues;
 
   // Kick: Dispatcher anstoßen, wenn nichts läuft, aber etwas startbar ist und der letzte Lauf lange her ist.
@@ -305,6 +322,11 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   out.push("", "## Kontingente", "", renderQuotaTable(quotaRows));
   out.push("", "## Token-Ablauf", "", renderTokens(snap.tokens, now), "", "Liste ohne Werte: docs/autonomy/tokens.md");
   if (snap.deploy) out.push("", renderDeploy(snap.deploy));
+  const split = snap.usage?.vercel_split;
+  if (split && typeof snap.usage.vercel_deployments_tag === "number") {
+    const n = snap.usage.vercel_deployments_tag;
+    out.push(`- Vercel heute: ${n}/100 (Production ${split.production}, Vorschau ${split.preview})${n >= VERCEL_WARN ? " ⚠️ ab 70 Deploys: Limit droht" : ""}`);
+  }
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
   return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis };
@@ -455,7 +477,10 @@ export async function collectUsage({ env = process.env, now = new Date(), runs =
     const q = new URLSearchParams({ since: String(now.getTime() - DAY_MS), limit: "100" });
     if (env.VERCEL_PROJECT_ID) q.set("projectId", env.VERCEL_PROJECT_ID);
     if (env.VERCEL_TEAM_ID) q.set("teamId", env.VERCEL_TEAM_ID);
-    return (await json(`https://api.vercel.com/v6/deployments?${q}`, bearer(env.VERCEL_TOKEN))).deployments.length;
+    const list = (await json(`https://api.vercel.com/v6/deployments?${q}`, bearer(env.VERCEL_TOKEN))).deployments;
+    const production = list.filter((d) => d.target === "production").length;
+    usage.vercel_split = { production, preview: list.length - production };
+    return list.length;
   });
   const sb = !env.SUPABASE_ACCESS_TOKEN ? "SUPABASE_ACCESS_TOKEN" : !env.SUPABASE_PROJECT_REF ? "SUPABASE_PROJECT_REF" : null;
   await guard("supabase_db_mb", sb, async () => {
@@ -560,14 +585,23 @@ export async function main(argv, env = process.env) {
     const usage = await collectUsage({ env, now, runs: g.runs });
     // Production bündeln (SIN-266): Stand und Entscheidung; ausgelöst wird nach dem Schreiben des Status (unten).
     const vercelPct = percent(usage.vercel_deployments_tag, limitsFile.limits?.vercel_deployments_tag?.limit);
-    const deploy = await planDeploy({ env, now, vercelPct, call: gh });
+    statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
+    const deploy = await planDeploy({ env, now, vercelPct, call: gh, prevAttempt: parseState(statusIssue?.body).deployAttempt ?? null });
+    // Auslösen vor dem Schreiben des Status, damit der Versuch (Commit, Zeit) im Merker steht (SIN-309). Nur bei Erfolg: ein Netzfehler sperrt nicht.
+    if (deploy.deploy && !dry) {
+      if (!env.VERCEL_DEPLOY_HOOK_PROD) console.log("Production-Deploy fällig, aber VERCEL_DEPLOY_HOOK_PROD fehlt.");
+      else {
+        const r = await triggerDeploy(env.VERCEL_DEPLOY_HOOK_PROD).catch((e) => ({ ok: false, status: e.message }));
+        if (r.ok && deploy.headSha) deploy.attempt = { sha: deploy.headSha, at: now.toISOString(), state: null };
+        console.log(r.ok ? "Production-Deploy ausgelöst (Deploy Hook)." : `::warning::Deploy Hook fehlgeschlagen (${r.status}), nächster Versuch beim nächsten Takt.`);
+      }
+    }
     // Selbst-Diagnose (SIN-291): Logs der letzten roten Läufe, offene Entscheidungen, kürzlich erledigte Bug-Issues.
     const logs = await collectLogs(repo, g.runs).catch(() => []);
     const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
     const doneTitles = linearOk ? await doneTitlesSince(STALL_PREFIX, now).catch(() => []) : [];
     const backup = await collectBackup(repo, now, gh);
     snap = { now: now.toISOString(), ...g, backup, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles };
-    statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
@@ -590,14 +624,6 @@ export async function main(argv, env = process.env) {
   output("refill_max", String(res.refill.maxIssues));
   output("refill_bugs_only", String(res.refill.bugsOnly));
   if (!live) return res;
-
-  if (snap.deploy?.deploy) {
-    if (!env.VERCEL_DEPLOY_HOOK_PROD) console.log("Production-Deploy fällig, aber VERCEL_DEPLOY_HOOK_PROD fehlt.");
-    else {
-      const r = await triggerDeploy(env.VERCEL_DEPLOY_HOOK_PROD).catch((e) => ({ ok: false, status: e.message }));
-      console.log(r.ok ? "Production-Deploy ausgelöst (Deploy Hook)." : `::warning::Deploy Hook fehlgeschlagen (${r.status}), nächster Versuch beim nächsten Takt.`);
-    }
-  }
 
   // Erst melden, dann den Merker speichern: schlägt die Meldung fehl, kommt sie beim nächsten Lauf noch einmal.
   if (alert) await gh(`/repos/${repo}/issues/${statusIssue.number}/comments`, { method: "POST", body: { body: alert } });

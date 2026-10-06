@@ -49,7 +49,7 @@ jobs:
       LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
       AGENT_WORKFLOW_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      # Production-Deploy (SIN-266): Deploy Hook, höchstens 1× pro Stunde und nur bei neuem App-Code
+      # Production-Deploy (SIN-266, SIN-309): Deploy Hook, höchstens 1× pro Stunde, nur bei neuem App-Code, ein Versuch je Commit
       VERCEL_DEPLOY_HOOK_PROD: ${{ secrets.VERCEL_DEPLOY_HOOK_PROD }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
