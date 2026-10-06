@@ -6,8 +6,9 @@
  *
  * Schreibt einen kurzen Kommentar mit @siinanXD ins Issue „Loop-Status“ (Push über GitHub Mobile), optional
  * zusätzlich Telegram (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID). Der Merker steht als HTML-Kommentar im Text:
- * `<!-- digest: {"day":"2026-10-05","slot":"morgen","at":"…"} -->`. Gibt es für Tag + Slot schon einen Kommentar,
- * wird nichts erneut gesendet; der Merker des letzten Updates ist auch der Beginn von „seit dem letzten Update“.
+ * `<!-- digest: {"day":"2026-10-05","slot":"morgen","at":"…"} -->`. Gibt es für den Slot schon einen Kommentar
+ * von vor weniger als 6 h, wird nichts erneut gesendet (SIN-267); `--force` überspringt das, sein Merker trägt
+ * `force:true` und zählt weder für den Schutz noch als Beginn; der Merker des letzten Updates ist auch der Beginn von „seit dem letzten Update“.
  * Auswerten und Rendern sind reine Funktionen (`buildDigest`); nur `collect` und `main` sprechen mit dem Netz.
  */
 import { execFileSync } from "node:child_process";
@@ -45,13 +46,22 @@ export function parseMark(body) {
   }
 }
 
-export const markOf = (day, slot, at) => `<!-- digest: ${JSON.stringify({ day, slot, at })} -->`;
+/** Merker; `force` (Testlauf) kennzeichnet ihn: er sperrt keinen Slot und verschiebt „seit dem letzten Update“ nicht. */
+export const markOf = (day, slot, at, force = false) => `<!-- digest: ${JSON.stringify(force ? { day, slot, at, force: true } : { day, slot, at })} -->`;
 
-/** Letzter Merker unter den Kommentaren und ob Tag + Slot schon gesendet wurden. */
-export function lastDigest(commentBodies, day, slot) {
-  const marks = commentBodies.map(parseMark).filter(Boolean);
+/** Gleicher Slot wird nur innerhalb dieser Zeit unterdrückt (Wiederholungsschutz, SIN-267). */
+export const REPEAT_GUARD_MS = 6 * 60 * 60 * 1000;
+
+/** Letzter Merker (ohne Testläufe) und ob der Slot vor weniger als 6 h schon gesendet wurde. */
+export function lastDigest(commentBodies, now, slot) {
+  const marks = commentBodies.map(parseMark).filter((m) => m && !m.force);
   const last = [...marks].sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1) ?? null;
-  return { last, already: marks.some((m) => m.day === day && m.slot === slot) };
+  const t = new Date(now).getTime();
+  const already = marks.some((m) => {
+    const age = t - new Date(m.at).getTime();
+    return m.slot === slot && age >= 0 && age < REPEAT_GUARD_MS;
+  });
+  return { last, already };
 }
 
 /** Spur eines gemergten PRs aus dem Conventional-Commit-Titel: `feat(lernpfad): Text (SIN-1)`. */
@@ -144,7 +154,7 @@ export function buildDigest(snap) {
 
   const r = snap.readiness;
   lines.push("", r ? `Phase: ${r.green === r.total ? "beobachten" : "bauen"} · Produktreife ${r.green} von ${r.total} Punkten` : "Phase und Produktreife: nicht verfügbar");
-  lines.push("", markOf(day, snap.slot, snap.now));
+  lines.push("", markOf(day, snap.slot, snap.now, snap.force));
   return { text: lines.join("\n"), day };
 }
 
@@ -224,12 +234,13 @@ export async function main(argv, env = process.env) {
   const found = await gh(`/repos/${repo}/issues?labels=${STATUS_LABEL}&state=open&per_page=1`);
   if (!found[0]) throw new Error(`Issue mit Label ${STATUS_LABEL} nicht gefunden`);
   const comments = await gh(`/repos/${repo}/issues/${found[0].number}/comments?per_page=100&sort=created&direction=desc`);
-  const { last, already } = lastDigest(comments.map((c) => c.body), berlinDay(now), slot);
-  if (already && !argv.includes("--force")) {
-    console.log(`Update ${berlinDay(now)} ${slot} wurde schon gesendet, übersprungen.`);
+  const force = argv.includes("--force");
+  const { last, already } = lastDigest(comments.map((c) => c.body), now, slot);
+  if (already && !force) {
+    console.log(`Update ${slot} wurde vor weniger als 6 h schon gesendet, übersprungen.`);
     return null;
   }
-  const { text } = buildDigest(await collect(repo, slot, now, last?.at ?? null, env));
+  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env)), force });
   console.log(text);
   if (dry) return text;
   // Erst der Kommentar (trägt den Merker), dann Telegram: ein Fehler dort wiederholt das Update nicht.
