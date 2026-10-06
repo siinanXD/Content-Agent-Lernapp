@@ -48,4 +48,5 @@ test-results/
 # Bildvergleich (SIN-300): Referenz und Ergebnis nur im CI-Lauf
 visual-referenz/
 visual-ergebnis/
+live-ergebnis/
 playwright-report/
