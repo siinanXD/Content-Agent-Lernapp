@@ -17,6 +17,8 @@ import {
   runJudgeBackfill,
   unitsToEvalItems,
 } from "../src/lib/quality/judge-backfill";
+import { recordEvaluationTrace } from "../src/lib/quality/langfuse-client";
+import { recordRunCost } from "../src/lib/quality/run-ledger";
 import { getStorage } from "../src/lib/storage";
 
 async function main() {
@@ -35,6 +37,7 @@ async function main() {
   const curriculum = loadMafCurriculum();
   const yearOf = (id: string | undefined) => curriculum.modules.find((m) => m.id === id)?.year;
   const courses = (await storage.listCourses()).filter((c) => !c.mock);
+  const baseRunId = `backfill-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   const summary: Array<Record<string, unknown>> = [];
   let spentEur = 0;
 
@@ -58,6 +61,22 @@ async function main() {
       courseId: course.id,
       items,
       stopEur,
+      runId: `${baseRunId}-${course.id.slice(0, 8)}`,
+      // Nur Kennungen und Zahlen nach Langfuse, keine Fragetexte (SIN-270).
+      report: {
+        question: async (q, ctx) => {
+          await recordEvaluationTrace({
+            name: "judge-backfill-question",
+            courseId: ctx.courseId,
+            passed: q.passed,
+            scores: { ...q.scores },
+            metadata: { kind: "question-eval", runId: ctx.runId, unitId: q.unitId, questionId: q.questionId },
+          });
+        },
+        run: async (s) => {
+          await recordRunCost({ runId: s.runId, courseId: course.id, kind: "judge-backfill", ledger: s.ledger });
+        },
+      },
       judge: (chunk) => liveJudgeWithUsage(key!, chunk),
     });
     spentEur += r.ledger.eurEstimate;
