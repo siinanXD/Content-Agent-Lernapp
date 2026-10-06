@@ -15,6 +15,10 @@ const TABLES = [
   // SIN-268: Kosten-Ledger und Bewertungslauf (Migration 20261006020000 holt beide nach)
   "pipeline_run_costs",
   "judge_runs",
+  // SIN-277: Demo-Anfragen und Gruppenübersicht
+  "demo_requests",
+  "trainer_groups",
+  "group_members",
 ];
 
 const url = process.env.SUPABASE_URL?.trim();
