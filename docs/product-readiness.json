@@ -1,6 +1,11 @@
 {
   "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry; alles andere zählt nur mit Bestätigung.",
   "goldsetTarget": 0.9,
-  "bestaetigt": {},
+  "bestaetigt": {
+    "lernen-e2e": {
+      "datum": "2026-10-06",
+      "beleg": "SIN-269: e2e/gesamtweg.spec.ts je veröffentlichtem Kurs, Start bis Prüfungsmodus mit Wiederholung 1/3/7 Tage, CI-Stufe build des PR claude/sin-269 (docs/decisions/SIN-269-e2e-je-kurs.md)"
+    }
+  },
   "abnahme": null
 }
