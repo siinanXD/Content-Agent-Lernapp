@@ -38,11 +38,12 @@ export const overQuota = (quotaRows = []) => quotaRows.some((r) => r.over && BUG
 
 /**
  * Entscheidet, ob der Planer jetzt angestoßen wird.
- * @param {{ startable: number, phase: string, lastRefill?: string|null, quotaOver?: boolean, paused?: boolean, now?: Date, env?: Record<string, string | undefined> }} input
+ * @param {{ startable: number, phase: string, lastRefill?: string|null, quotaOver?: boolean, paused?: boolean, linearFull?: boolean, now?: Date, env?: Record<string, string | undefined> }} input
  * @returns {{ trigger: boolean, reason: string, maxIssues: number, bugsOnly: boolean }}
  */
-export function decideRefill({ startable, phase, lastRefill = null, quotaOver = false, paused = false, now = new Date(), env = process.env }) {
+export function decideRefill({ startable, phase, lastRefill = null, quotaOver = false, paused = false, linearFull = false, now = new Date(), env = process.env }) {
   const no = (reason) => ({ trigger: false, reason, maxIssues: 0, bugsOnly: false });
+  if (linearFull) return no("Linear-Kontingent ab 95 %: der Planer legt keine neuen Issues an (SIN-291)");
   if (phase === "betrieb") return no("Phase Betrieb: Planung nach dem Beobachtungsfenster");
   const { min, max, cooldownH } = refillConfig(env);
   if (startable >= min) return no(`${startable} startbar, genug`);

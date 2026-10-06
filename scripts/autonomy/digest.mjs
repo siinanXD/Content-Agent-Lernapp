@@ -17,7 +17,7 @@ import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
-import { MENTION, STATUS_LABEL, buildQuotaRows, collectUsage, gh } from "./status.mjs";
+import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh } from "./status.mjs";
 
 export const SLOTS = ["morgen", "abend"];
 export const TZ = "Europe/Berlin";
@@ -94,10 +94,12 @@ export function decisionLine(name, text) {
   return `${id.match(/^SIN-\d+/)?.[0] ?? id}: ${trim(sentence.replace(/^SIN-\d+\s*[—-]\s*/, ""), 100)}`;
 }
 
-/** „Braucht dich“: risk:high-PRs ohne Freigabe, needs-human (PR/Issue), Design-Pakete und Abnahme (Linear). */
-/** @param {{ openPrs?: any[], issues?: any[] }} snap */
-export function needsYou({ openPrs = [], issues = [] }) {
+/** „Braucht dich“: offene Entscheidungen, risk:high-PRs ohne Freigabe, needs-human (PR/Issue), Design-Pakete und Abnahme (Linear). */
+/** @param {{ openPrs?: any[], issues?: any[], decisions?: { number: number, title: string, question: string }[] }} snap */
+export function needsYou({ openPrs = [], issues = [], decisions = [] }) {
   const out = [];
+  // SIN-291: Entscheidungen in schon gemergten PRs, bis Sinan im PR antwortet.
+  for (const d of decisions) out.push(`Entscheidung PR #${d.number}: ${trim(d.question, 70)}`);
   for (const p of openPrs) {
     const l = labelNames(p);
     if (l.includes("needs-human")) out.push(`Blocker PR #${p.number}: ${trim(p.title, 60)}`);
@@ -142,7 +144,7 @@ export function buildDigest(snap) {
   lines.push("", `**${abend ? "Über Nacht geplant" : "Heute geplant"}**`);
   lines.push(...(queue.length ? queue.map((i) => `- ${i.identifier} ${trim(i.title, 70)} (${laneOf(i)})`) : ["- nichts in der Schlange"]));
 
-  const need = needsYou(snap);
+  const need = needsYou({ ...snap, decisions: snap.decisionsOpen });
   lines.push("", "**Braucht dich**", ...(need.length ? [...need.slice(0, MAX_ITEMS).map((n) => `- ${n}`), ...more(need, MAX_ITEMS)] : ["Nichts zu tun."]));
 
   const c = snap.content;
@@ -203,7 +205,8 @@ async function collect(repo, slot, now, since, env) {
   } catch (e) {
     console.log(`Entscheidungen nicht lesbar: ${e.message}`);
   }
-  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, content, quotas, readiness };
+  const decisionsOpen = await collectOpenDecisions(repo, prs.map((p) => ({ ...p, labels: p.labels.map((l) => l.name) })), now).catch(() => []);
+  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, content, quotas, readiness };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {

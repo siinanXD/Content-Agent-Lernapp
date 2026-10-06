@@ -10,10 +10,10 @@ const now = new Date("2026-10-05T12:00:00Z");
 const issue = (identifier: string, updatedAt: string, name = "In Progress") => ({ identifier, updatedAt, state: { name } });
 const out = (list: ReturnType<typeof reconcile>) => list.map((a) => `${a.issue.identifier}:${a.to}`);
 
-test("Abgleich: In Progress ohne Worker und PR seit 60 Min → Todo (SIN-240)", () => {
+test("Abgleich: In Progress ohne Worker und PR seit 15 Min → Todo (SIN-240, SIN-291)", () => {
   const issues = [
     issue("SIN-1", "2026-10-05T10:00:00Z"), // 2 h, kein Worker, kein PR → Todo
-    issue("SIN-2", "2026-10-05T11:30:00Z"), // erst 30 Min → bleibt
+    issue("SIN-2", "2026-10-05T11:50:00Z"), // erst 10 Min → bleibt
     issue("SIN-3", "2026-10-05T10:00:00Z"), // Worker läuft → bleibt
     issue("SIN-4", "2026-10-05T10:00:00Z"), // offener PR → bleibt
     issue("SIN-5", "2026-10-05T10:00:00Z"), // gemergter PR → Done
