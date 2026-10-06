@@ -147,3 +147,30 @@ test("Status: Fehlerzeile aus Annotation, sonst Schrittname", async () => {
   const noNote = (async (path: string) => (path.includes("annotations") ? [] : jobs)) as never;
   assert.equal(await fetchFailureLine("o/r", 1, noNote), "Schritt „Test-Fehler“ fehlgeschlagen");
 });
+
+test("Nachfüllen (SIN-253): <5 startbar → Planer anstoßen; zweiter Anstoß binnen 6 h nicht; Betrieb nie", () => {
+  const first = analyze(fixture(), limits, {});
+  assert.equal(first.refill.trigger, true);
+  assert.equal(first.refill.maxIssues, 8 - 2); // 2 startbar → wieder bis 8
+  assert.equal(first.state.lastRefill, "2026-10-05T12:00:00.000Z");
+  assert.match(first.body, /Planer nachgefüllt: angestoßen/);
+
+  const soon = { ...fixture(), now: "2026-10-05T17:00:00Z" };
+  assert.equal(analyze(soon, limits, parseState(first.body)).refill.trigger, false);
+  const later = { ...fixture(), now: "2026-10-05T18:00:00Z" };
+  assert.equal(analyze(later, limits, parseState(first.body)).refill.trigger, true);
+
+  const betrieb = { ...fixture(), phaseEnv: { phase: "betrieb", since: "2026-10-01T00:00:00Z" } };
+  assert.equal(analyze(betrieb, limits, {}).refill.trigger, false);
+});
+
+test("Nachfüllen: genug startbare Todos, Pause und Kontingent über 80 % (nur Bugs)", () => {
+  const many = fixture();
+  for (let n = 0; n < 4; n++) {
+    many.issues.push({ id: `x${n}`, identifier: `SIN-4${n}`, title: `Extra ${n}`, priority: 3, updatedAt: "2026-10-05T08:00:00Z", labels: { nodes: [{ name: "backend" }] }, state: { name: "Todo", type: "unstarted" }, team: { id: "t" } });
+  }
+  assert.equal(analyze(many, limits, {}).refill.trigger, false);
+  assert.equal(analyze({ ...fixture(), paused: "2026-10-06T00:00:00Z" }, limits, {}).refill.trigger, false);
+  const over = { ...fixture(), usage: { vercel_deployments_tag: 95 } };
+  assert.equal(analyze(over, limits, {}).refill.bugsOnly, true);
+});

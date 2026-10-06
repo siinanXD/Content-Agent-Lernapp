@@ -71,3 +71,9 @@ jobs:
         run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
         env:
           GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      # Schlange nachfüllen (SIN-253): unter 5 startbaren Todos, höchstens alle 6 h (Merker im Status-Issue).
+      - name: Planer anstoßen
+        if: steps.status.outputs.refill == 'true' && env.DRY != 'true'
+        run: gh workflow run planner.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false -f max_issues="${{ steps.status.outputs.refill_max }}" -f bugs_only="${{ steps.status.outputs.refill_bugs_only }}"
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
