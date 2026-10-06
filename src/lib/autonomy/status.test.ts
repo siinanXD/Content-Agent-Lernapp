@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { analyze, buildQuotaRows, collectUsage, fetchFailureLine, parseState, percent, renderAlert } from "../../../scripts/autonomy/status.mjs";
 import { startOrder } from "../../../scripts/autonomy/linear.mjs";
+import { decideRefill, refillConfig } from "../../../scripts/autonomy/refill.mjs";
 
 const fixture = () => JSON.parse(readFileSync("docs/autonomy/fixture-status.json", "utf8"));
 const limits = JSON.parse(readFileSync("docs/autonomy/free-tier-limits.json", "utf8"));
@@ -148,16 +149,17 @@ test("Status: Fehlerzeile aus Annotation, sonst Schrittname", async () => {
   assert.equal(await fetchFailureLine("o/r", 1, noNote), "Schritt „Test-Fehler“ fehlgeschlagen");
 });
 
-test("Nachfüllen (SIN-253): <5 startbar → Planer anstoßen; zweiter Anstoß binnen 6 h nicht; Betrieb nie", () => {
+test("Nachfüllen (SIN-253, SIN-262): <6 startbar → Planer anstoßen; zweiter Anstoß binnen 2 h nicht; Betrieb nie", () => {
   const first = analyze(fixture(), limits, {});
   assert.equal(first.refill.trigger, true);
-  assert.equal(first.refill.maxIssues, 8 - 2); // 2 startbar → wieder bis 8
+  assert.equal(first.refill.maxIssues, 10 - 2); // 2 startbar → wieder bis 10
   assert.equal(first.state.lastRefill, "2026-10-05T12:00:00.000Z");
   assert.match(first.body, /Planer nachgefüllt: angestoßen/);
+  assert.match(first.body, /Schlange: 2 startbar, nächstes Nachfüllen frühestens 14:00 UTC/);
 
-  const soon = { ...fixture(), now: "2026-10-05T17:00:00Z" };
+  const soon = { ...fixture(), now: "2026-10-05T13:30:00Z" };
   assert.equal(analyze(soon, limits, parseState(first.body)).refill.trigger, false);
-  const later = { ...fixture(), now: "2026-10-05T18:00:00Z" };
+  const later = { ...fixture(), now: "2026-10-05T14:00:00Z" };
   assert.equal(analyze(later, limits, parseState(first.body)).refill.trigger, true);
 
   const betrieb = { ...fixture(), phaseEnv: { phase: "betrieb", since: "2026-10-01T00:00:00Z" } };
@@ -166,11 +168,25 @@ test("Nachfüllen (SIN-253): <5 startbar → Planer anstoßen; zweiter Anstoß b
 
 test("Nachfüllen: genug startbare Todos, Pause und Kontingent über 80 % (nur Bugs)", () => {
   const many = fixture();
-  for (let n = 0; n < 4; n++) {
+  for (let n = 0; n < 5; n++) {
     many.issues.push({ id: `x${n}`, identifier: `SIN-4${n}`, title: `Extra ${n}`, priority: 3, updatedAt: "2026-10-05T08:00:00Z", labels: { nodes: [{ name: "backend" }] }, state: { name: "Todo", type: "unstarted" }, team: { id: "t" } });
   }
   assert.equal(analyze(many, limits, {}).refill.trigger, false);
   assert.equal(analyze({ ...fixture(), paused: "2026-10-06T00:00:00Z" }, limits, {}).refill.trigger, false);
   const over = { ...fixture(), usage: { vercel_deployments_tag: 95 } };
   assert.equal(analyze(over, limits, {}).refill.bugsOnly, true);
+});
+
+test("Nachfüllen (SIN-262): Repo-Variablen überschreiben Schwelle, Obergrenze und Abstand", () => {
+  const base = { startable: 7, phase: "bauen", now: new Date("2026-10-05T12:00:00Z") };
+  assert.equal(decideRefill({ ...base, env: {} }).trigger, false);
+  const hi = decideRefill({ ...base, env: { REFILL_MIN: "8", REFILL_MAX: "12" } });
+  assert.equal(hi.trigger, true);
+  assert.equal(hi.maxIssues, 5);
+  const last = "2026-10-05T10:30:00Z";
+  assert.equal(decideRefill({ ...base, startable: 1, lastRefill: last, env: {} }).trigger, false);
+  assert.equal(decideRefill({ ...base, startable: 1, lastRefill: last, env: { REFILL_COOLDOWN_H: "1" } }).trigger, true);
+  assert.equal(decideRefill({ ...base, startable: 1, lastRefill: "2026-10-05T09:59:00Z", env: {} }).trigger, true);
+  assert.equal(decideRefill({ ...base, startable: 1, phase: "betrieb", env: {} }).trigger, false);
+  assert.deepEqual(refillConfig({ REFILL_MIN: "x", REFILL_MAX: "" }), { min: 6, max: 10, cooldownH: 2 });
 });

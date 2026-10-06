@@ -42,6 +42,10 @@ jobs:
       PHASE: ${{ vars.PHASE }}
       OBSERVE_DAYS: ${{ vars.OBSERVE_DAYS }}
       PHASE_SINCE: ${{ vars.PHASE_SINCE }}
+      # Nachfüllen (SIN-262): optional, sonst Standard der Bauphase (6 / 10 / 2 h)
+      REFILL_MIN: ${{ vars.REFILL_MIN }}
+      REFILL_MAX: ${{ vars.REFILL_MAX }}
+      REFILL_COOLDOWN_H: ${{ vars.REFILL_COOLDOWN_H }}
       LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
       AGENT_WORKFLOW_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

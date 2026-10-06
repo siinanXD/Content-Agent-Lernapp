@@ -216,6 +216,12 @@ test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
   // Nachfüllen (SIN-253): Obergrenze und nur Bugs
   assert.equal(validatePlan(Array.from({ length: 8 }, (_, i) => mk(i)), [], { maxIssues: 2 }).length, 2);
   assert.equal(validatePlan([mk(1), mk(2, "frontend")], [], { bugsOnly: true }).map((r: { lane: string }) => r.lane).join(), "backend");
+  // SIN-262: Label claude für Spuren, nicht für Design-Pakete
+  const labelsOf = (lane: string) => (validatePlan([mk(1, lane)])[0] as { labels: string[] }).labels;
+  assert.deepEqual(labelsOf("backend"), ["backend", "claude"]);
+  assert.deepEqual(labelsOf("content"), ["content", "claude"]);
+  assert.deepEqual(labelsOf("frontend"), ["frontend", "claude"]);
+  assert.deepEqual(labelsOf("design"), ["design", "frontend"]);
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: [], priority: 1 }]));
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: ["a"], priority: 9 }]));
   assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 1 }]), /lane/);
@@ -236,7 +242,7 @@ test("Planer: je Spur max. 3 (zusammen 9), 1 Design-Paket, Spur-Label", () => {
   for (const lane of ["frontend", "content", "backend"]) assert.equal(out.filter((i) => i.lane === lane).length, 3);
   assert.deepEqual(out.filter((i) => i.lane === "design").map((i) => i.title), ["D1"]);
   assert.deepEqual(out[0].labels, ["design", "frontend"]); // Design zuerst angelegt
-  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content"]);
+  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content", "claude"]);
 });
 
 test("Planer: Frontend mit neuer Oberfläche braucht Design als Blocker", () => {

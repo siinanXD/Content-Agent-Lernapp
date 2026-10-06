@@ -279,7 +279,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
       title: p.title.trim(),
       priority: p.priority,
       labels: [
-        ...(p.lane === "design" ? ["design", "frontend"] : [p.lane]),
+        ...(p.lane === "design" ? ["design", "frontend"] : [p.lane, "claude"]),
         ...((observing || bugsOnly) && p.lane === "backend" ? ["bug"] : []),
         ...(planning ? [PLAN_LABEL] : []),
       ],
