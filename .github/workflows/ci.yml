@@ -56,6 +56,22 @@ jobs:
         env:
           COURSE_STORAGE: mock
 
+      # SIN-300: feste Grenzen je Route (performance-budget.json: LCP, CLS, TBT, JS-Größe). Überschreitung = rot = kein Merge.
+      - name: Leistungsbudget (Lighthouse)
+        run: npm run perf:budget -- --serve
+        env:
+          COURSE_STORAGE: mock
+
+      # SIN-300: Erinnerung, kein Fehler: README.md im selben PR anpassen, wenn Funktion, Einrichtung, Befehle oder Umgebungsvariablen sich ändern.
+      - name: README-Erinnerung
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # HEAD ist der Merge-Commit des PRs in die Basis: der Unterschied zur Basis sind genau die Änderungen des PRs.
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          node scripts/readme-check.mjs --base "origin/$BASE_REF"
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4

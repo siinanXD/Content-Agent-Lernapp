@@ -144,6 +144,7 @@ export function buildPrompt(issue) {
     "Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, `npm run typecheck`, `npm run lint` und `npm test` ausführen. Rot? Erst beheben. Kein PR mit bekannten roten Checks.",
     "Frontend: Werte (Farben, Abstände, Texte) aus Figma lesen, nicht schätzen: `node scripts/autonomy/figma.mjs --node <ID>` (Datei 0SWGDO2ioBD3MyXiAnrbRz, Token FIGMA_ACCESS_TOKEN nur lesend; fehlt er, im PR „nicht verfügbar“ schreiben).",
     "Frontend-Selbstprüfung (SIN-275, Pflicht vor dem PR bei Änderungen an src/app oder Komponenten): Lies docs/skills/web-design-guidelines/SKILL.md. `npm run build`, dann `node scripts/autonomy/screenshots.mjs <geänderte Routen>` (Handy 390 px + Desktop, Chromium ist installiert; sonst `npx playwright install chromium`). Sieh dir die Bilder an, prüfe sie gegen die Checkliste und Figma, behebe Abweichungen oder nenne sie im PR. Spiele den Klickpfad aus dem Issue einmal durch. Schreibe in `## Ausprobieren` „Klickpfad geprüft“ und die Screenshot-Namen (Artefakt `screenshots` des Worker-Laufs).",
+    "README (SIN-300): Ändern sich Funktion, Einrichtung, Befehle oder Umgebungsvariablen, passe `README.md` im selben PR an (CI warnt sonst). `CHANGELOG.md` nie von Hand: sie wird aus den PR-Titeln erzeugt.",
     "Keine neuen Komponenten, Farben oder Screens im Code erfinden. Fehlt etwas in Figma, lege ein Linear-Issue mit Label `design` an, statt zu improvisieren.",
   ].join("\n");
 }

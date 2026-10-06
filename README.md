@@ -36,7 +36,8 @@ Dev server: [http://127.0.0.1:43123](http://127.0.0.1:43123) (`npm run dev` → 
 
 Playable path (Figma approved by Sinan 2026-10-02; Didaktik D-31):
 
-1. `/` Start — Schlagwort + Lernvariante → Kurs erzeugen  
+0. `/` Startseite für Bildungsträger (Scroll-Story), `/willkommen` App-Einstieg  
+1. `/start` — Schlagwort + Lernvariante → Kurs erzeugen  
 2. `/lernpfad` — Module/Blöcke, Wiederholung, Prüfungsmodus  
 3. `/einheit/unit-03` — sections + alle 5 Fragetypen (+ Bildfragen)  
 4. `/wiederholung` — Leitner 1/3/7/14  
@@ -50,7 +51,7 @@ Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · t
 npm test
 npm run content:mermaid
 npm run test:a11y
-npm run test:lighthouse   # app must be running on :43123
+npm run test:lighthouse   # app must be running on :43123 (or add -- --serve)
 npm run hermes:dry-run    # AP-10 scaffold (no live Telegram)
 npm run pilot:maf         # AP-11 seed/fixture pipeline (app on :43123)
 npm run supabase:verify   # when SUPABASE_* present
@@ -58,7 +59,17 @@ npm run build
 npm run lint
 ```
 
-A11y gates (axe critical/serious + Lighthouse a11y ≥ 0.9) run in CI via `.github/workflows/a11y.yml` and must not be disabled.
+A11y gates (axe über alle Routen, Tastatur, Lighthouse a11y ≥ 0.9) laufen im CI-Job `build` (`.github/workflows/ci.yml`) und dürfen nicht abgeschaltet werden.
+
+## Qualität und Pflege (SIN-300)
+
+| Was | Befehl / Workflow | Wirkung |
+| --- | --- | --- |
+| Leistungsbudget | `npm run build && npm run perf:budget -- --serve` · Grenzen in `performance-budget.json` | LCP, CLS, TBT und JS-Größe je Route (Handy, Median aus 3 Läufen). Überschreitung macht `build` rot und blockiert den Merge. |
+| Bildvergleich | `npm run visual -- --update-snapshots`, danach `npm run visual` · Workflow `visual.yml` | Handy- und Desktop-Bilder aller Seiten gegen main. Nur Hinweis (Lauf-Bericht, Artefakt `bildvergleich`), kein Gate; die Referenz kommt immer frisch aus main. |
+| Aufräum-Agent | `npm run cleanup:scan` · Workflow `aufraeumen.yml` (montags) | Ungenutzte Dateien, tote Pakete, große Dateien, Doppelungen, Doku-Abgleich: ein PR pro Woche. |
+| README-Erinnerung | `npm run readme:check` · Schritt im CI-Job `build` | Warnung, wenn ein PR Befehle, Seiten, Umgebungsvariablen oder Workflows ändert, ohne `README.md` anzufassen. |
+| Changelog | `npm run changelog` (braucht volle Git-Historie) | [`CHANGELOG.md`](CHANGELOG.md) aus den Conventional-Commit-Titeln auf main, ohne KI. Erzeugt, nicht von Hand bearbeiten; der Aufräum-Lauf aktualisiert sie. |
 
 Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
 
