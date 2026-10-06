@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-280 | SIN-280 — Kosten pro Kurslauf messen | [SIN-280-kosten-pro-lauf.md](decisions/SIN-280-kosten-pro-lauf.md) |
 | SIN-278 | SIN-278: Sicherheits-Stichprobe gegen die Live-App | [SIN-278-live-stichprobe.md](decisions/SIN-278-live-stichprobe.md) |
 | SIN-277 | SIN-277 — Datenmodell für Demo-Anfragen und Ausbilder-Ansicht | [SIN-277-datenmodell.md](decisions/SIN-277-datenmodell.md) |
+| SIN-275 | SIN-275 — Frontend-Worker prüfen sich selbst (Screenshots + Design-Checkliste) | [SIN-275-frontend-selbstpruefung.md](decisions/SIN-275-frontend-selbstpruefung.md) |
 | SIN-273 | SIN-273 — Sentry und PostHog prüfen, Planer-Auslese vervollständigen | [SIN-273-sentry-posthog-planer.md](decisions/SIN-273-sentry-posthog-planer.md) |
 | SIN-272 | SIN-272: Sicherheits-Stichprobe MAF Metall | [SIN-272-sicherheits-stichprobe.md](decisions/SIN-272-sicherheits-stichprobe.md) |
 | SIN-271 | SIN-271: Hex-Farben entfernen, Messung nachweisen | [SIN-271-hex-farben-und-messung.md](decisions/SIN-271-hex-farben-und-messung.md) |

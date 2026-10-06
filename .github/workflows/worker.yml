@@ -63,6 +63,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # SIN-275: Frontend-Worker sehen ihre Änderungen (Screenshots Handy + Desktop).
+      - name: Chromium für Screenshots
+        run: npm ci && npx playwright install --with-deps chromium
       - name: Prompt für das Issue holen
         id: pick
         run: node scripts/autonomy/dispatch.mjs --prompt "$IDENTIFIER"
@@ -79,7 +82,15 @@ jobs:
           claude_args: |
             --model claude-sonnet-5-5
             --max-turns 150
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
+
+      - name: Screenshots als Artefakt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/
+          if-no-files-found: ignore
 
       - name: PR vorhanden?
         id: pr
