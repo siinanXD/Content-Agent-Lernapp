@@ -4,6 +4,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fetchJson, fetchJsonFull } from "./http.mjs";
 
 export const MAPS_DIR = "docs/content";
 export const RUNS_DIR = "docs/ops/content-runs";
@@ -187,17 +188,14 @@ export function renderWeeklyReport({ coverage, runs }) {
 async function fetchAll(base, table, query, headers) {
   const out = [];
   for (let from = 0; ; from += 1000) {
-    const res = await fetch(`${base}/rest/v1/${table}?${query}`, { headers: { ...headers, Range: `${from}-${from + 999}` } });
-    if (!res.ok) throw new Error(`${table}: HTTP ${res.status}`);
-    const page = await res.json();
+    const page = await fetchJson("Supabase", `${base}/rest/v1/${table}?${query}`, { headers: { ...headers, Range: `${from}-${from + 999}` } });
     out.push(...page);
     if (page.length < 1000) return out;
   }
 }
 
 async function countRows(base, table, headers) {
-  const res = await fetch(`${base}/rest/v1/${table}?select=id`, { headers: { ...headers, Prefer: "count=exact", Range: "0-0" } });
-  if (!res.ok) throw new Error(`${table}: HTTP ${res.status}`);
+  const { res } = await fetchJsonFull("Supabase", `${base}/rest/v1/${table}?select=id`, { headers: { ...headers, Prefer: "count=exact", Range: "0-0" } });
   return Number(res.headers.get("content-range")?.split("/")[1]);
 }
 

@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-263 | SIN-263: Gemeinsamer JSON-Abruf mit Wiederholung, optionale Quellen dürfen ausfallen | [SIN-263-fetchjson-wiederholung.md](decisions/SIN-263-fetchjson-wiederholung.md) |
 | SIN-262 | SIN-262: Planer in der Bauphase alle 2 h nachfüllen | [SIN-262-planer-nachfuellen-2h.md](decisions/SIN-262-planer-nachfuellen-2h.md) |
 | SIN-261 | SIN-261: merge-gate wieder als echter Job | [SIN-261-merge-gate-job.md](decisions/SIN-261-merge-gate-job.md) |
 | SIN-260 | SIN-260 — Bewertungslauf über bestehende Fragen | [SIN-260-bewertungslauf.md](decisions/SIN-260-bewertungslauf.md) |

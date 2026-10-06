@@ -19,11 +19,12 @@
  * Kennzahlen ohne Zugang (Supabase, PostHog, Sentry, Kosten, Figma) stehen als „nicht verfügbar“ im Prompt.
  * Dry-Run: nur lesen, nichts in Linear anlegen.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { LANES, fetchProjectIssues, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
 import { runLimitCheck } from "./limits.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
+import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
@@ -58,9 +59,11 @@ export function extractSection(markdown, heading) {
 /** Abschnitt „Definition fertig“ aus PRODUCT.md. */
 export const extractDefinition = (markdown) => extractSection(markdown, "Definition fertig");
 
-async function supabaseCount(path, headers, base) {
-  const res = await fetch(`${base}/rest/v1/${path}`, { headers: { ...headers, Prefer: "count=exact", Range: "0-0" } });
-  if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+/** Kennzahl eines optionalen Dienstes, der nicht antwortet (SIN-263): kein Abbruch, der Prompt zeigt „nicht messbar“. */
+export const notMeasurable = (e) => `nicht messbar (${e.message})`;
+
+async function supabaseCount(path, headers, base, http) {
+  const { res } = await fetchJsonFull("Supabase", `${base}/rest/v1/${path}`, { headers: { ...headers, Prefer: "count=exact", Range: "0-0" } }, http);
   return Number(res.headers.get("content-range")?.split("/")[1]);
 }
 
@@ -73,7 +76,8 @@ export function summarizeRunCosts(rows, capEur = 20) {
   return `Ø ${avg.toFixed(2)} € je Lauf, letzter ${eur[0].toFixed(2)} €, höchster ${Math.max(...eur).toFixed(2)} € (Deckel ${capEur} €, ${rows.length} Läufe, ${stopped} gestoppt)`;
 }
 
-export async function collectMetrics(env = process.env) {
+/** @param {{ fetchImpl?: typeof fetch, sleep?: (ms: number) => Promise<void>, delays?: number[], log?: (l: string) => void }} [http] */
+export async function collectMetrics(env = process.env, http = {}) {
   const m = {
     einheiten: "nicht verfügbar",
     fragen_bewertet: "nicht verfügbar",
@@ -87,27 +91,26 @@ export async function collectMetrics(env = process.env) {
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const h = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
     try {
-      m.einheiten = await supabaseCount("units?select=id", h, env.SUPABASE_URL);
-      const total = await supabaseCount("question_quality_latest?select=question_id", h, env.SUPABASE_URL);
-      const passed = await supabaseCount("question_quality_latest?select=question_id&passed=eq.true", h, env.SUPABASE_URL);
+      m.einheiten = await supabaseCount("units?select=id", h, env.SUPABASE_URL, http);
+      const total = await supabaseCount("question_quality_latest?select=question_id", h, env.SUPABASE_URL, http);
+      const passed = await supabaseCount("question_quality_latest?select=question_id&passed=eq.true", h, env.SUPABASE_URL, http);
       try {
-        const res = await fetch(`${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`, { headers: h });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        m.kosten_pro_lauf = summarizeRunCosts(await res.json());
+        const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
+        m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
       } catch (e) {
-        m.kosten_pro_lauf = `Fehler: ${e.message}`;
+        m.kosten_pro_lauf = notMeasurable(e);
       }
       m.fragen_bewertet = total;
       m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";
       if (total) m.bestehensquote_pct = Math.round((passed / total) * 100);
     } catch (e) {
-      m.einheiten = `Fehler: ${e.message}`;
+      m.einheiten = notMeasurable(e);
     }
   }
-  Object.assign(m, await collectSentryMetrics(env));
+  Object.assign(m, await collectSentryMetrics(env, http.fetchImpl, http));
   if (env.POSTHOG_PERSONAL_API_KEY && env.POSTHOG_PROJECT_ID) {
     try {
-      const res = await fetch(`https://eu.posthog.com/api/projects/${env.POSTHOG_PROJECT_ID}/query/`, {
+      const data = await fetchJson("PostHog", `https://eu.posthog.com/api/projects/${env.POSTHOG_PROJECT_ID}/query/`, {
         method: "POST",
         headers: { Authorization: `Bearer ${env.POSTHOG_PERSONAL_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,13 +119,13 @@ export async function collectMetrics(env = process.env) {
             query: "select event, count() from events where timestamp > now() - interval 7 day and event in ('unit_started','unit_completed','question_answered') group by event",
           },
         }),
-      });
-      m.posthog = res.ok ? JSON.stringify((await res.json()).results) : `Fehler: HTTP ${res.status}`;
+      }, http);
+      m.posthog = JSON.stringify(data.results);
     } catch (e) {
-      m.posthog = `Fehler: ${e.message}`;
+      m.posthog = notMeasurable(e);
     }
   }
-  m.figma_abgleich = await figmaTokenMetric(env);
+  m.figma_abgleich = await figmaTokenMetric(env, http.fetchImpl);
   return m;
 }
 
@@ -134,7 +137,7 @@ export async function figmaTokenMetric(env = process.env, fetchImpl = fetch) {
     const diff = await diffColorTokens(tokens, tokens.meta?.figmaFileKey ?? DEFAULT_FILE_KEY, env, fetchImpl);
     return diff.length ? `Abweichung, Token-Farben ohne Figma-Entsprechung: ${diff.join(", ")}` : "keine Abweichung";
   } catch (e) {
-    return `Fehler: ${e.message}`;
+    return notMeasurable(e);
   }
 }
 
@@ -348,10 +351,23 @@ async function resolvePhase(argv, issues) {
   return phaseFromEnv(env, { lastPlan, now });
 }
 
+/** Linear ist die einzige Pflichtquelle (SIN-263): ohne sie bricht der Planer sauber ab, die Folgeschritte laufen nicht (Ausgabe `linear_ok=false`). */
+export function abortLinearDown(e, env = process.env, log = console.log) {
+  log(`::warning::Planer abgebrochen: ${e.message}. Nichts angelegt; die 2-h-Sperre wird nicht gesetzt, der Wächter stößt beim nächsten Takt erneut an.`);
+  if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, "linear_ok=false\n");
+}
+
 export async function main(argv) {
   const dry = argv.includes("--dry-run");
   const arg = (name) => argv[argv.indexOf(name) + 1];
-  const issues = process.env.LINEAR_API_KEY ? await fetchProjectIssues(linear) : null;
+  let issues = null;
+  try {
+    issues = process.env.LINEAR_API_KEY ? await fetchProjectIssues(linear) : null;
+  } catch (e) {
+    if (!(e instanceof ServiceError)) throw e;
+    abortLinearDown(e);
+    return;
+  }
 
   if (argv.includes("--context")) {
     const metrics = await collectMetrics();
