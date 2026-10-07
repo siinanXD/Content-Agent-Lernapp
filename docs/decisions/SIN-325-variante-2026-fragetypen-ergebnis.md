@@ -6,4 +6,5 @@
   - Figma W5 und die Fragetyp-Screens nicht gelesen: Knoten-IDs unbekannt, der Token kann die Seite „Variante 2026“ nicht auflisten (wie SIN-314, SIN-323). Aufbau nach den Regeln 2026; beim Abgleich anpassen.
   - Der Verlauf im Kopf der Ergebnis-Seite entfällt (Anti-Slop: keine Verläufe). Die erfundenen Standardwerte („Elektrische Gefahren“, 5 von 6, 120 Punkte) entfallen ebenfalls: ohne gespeichertes Ergebnis zeigt die Seite nur Überschrift, Tagesziel und „Morgen dran“.
   - „Zur Wiederholung“ und „Für heute fertig“ bleiben als zweitrangige Knöpfe unter den Kacheln; die Hauptaktion ist „Weiter lernen“.
+- **Inhalte:** Diese Änderung erzeugt keinen Lerninhalt, sie ändert nur Darstellung (Layout, Größen, Labels). Quelle und Abrufdatum bleiben an den Lerneinheiten selbst; die erfundenen Standardwerte der Ergebnis-Seite entfallen.
 - **Warum:** Wiederverwendung der Bento-Klassen und des Rings hält die Oberfläche einheitlich und vermeidet neue Bausteine.
