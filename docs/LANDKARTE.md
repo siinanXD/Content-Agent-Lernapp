@@ -27,6 +27,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Was | Wo |
 | --- | --- |
 | Erzeugen, Prüfen, Richter | `src/lib/generate/`, `src/lib/quality/`, `src/lib/anthropic/` |
+| Langfuse: Namen, Session, Scores, Queue, Dashboard (SIN-299) | `src/lib/quality/langfuse-names.ts`, `langfuse-verwaltung.ts`, `scripts/langfuse-setup.ts`, `docs/ops/langfuse-dashboard.md` |
 | Hermes (Quellen-Monitor) | `src/lib/hermes/`, `docs/ops/HERMES.md` |
 | Skripte (Kurslauf, Goldset, Pilot) | `scripts/*.ts`, `scripts/*.mjs` |
 | API-Vertrag | `docs/api/openapi.yaml`, `docs/api/postman-collection.json` |
