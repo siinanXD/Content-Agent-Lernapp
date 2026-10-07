@@ -4,7 +4,7 @@ Datei `0SWGDO2ioBD3MyXiAnrbRz`. Zuordnung: `docs/quality/figma-abdeckung.json`, 
 
 „umgesetzt“ heißt: Route oder Komponente existiert im Code. Der Abgleich der Werte (Farben, Abstände, Texte) ist `figma.mjs --node` und nicht Teil dieser Prüfung.
 
-Abgleich mit der Figma-Datei: nicht verfügbar (FIGMA_ACCESS_TOKEN fehlt)
+Abgleich mit der Figma-Datei (Bericht ohne Token erzeugt, Live-Abgleich nur in der Konsole): nicht verfügbar (FIGMA_ACCESS_TOKEN fehlt)
 
 Umgesetzt: 48 von 51 Frames, fehlend: 0, kein App-Screen: 3.
 

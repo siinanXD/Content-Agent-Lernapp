@@ -50,7 +50,7 @@ export function renderReport(map, liveState) {
     "",
     "„umgesetzt“ heißt: Route oder Komponente existiert im Code. Der Abgleich der Werte (Farben, Abstände, Texte) ist `figma.mjs --node` und nicht Teil dieser Prüfung.",
     "",
-    `Abgleich mit der Figma-Datei: ${liveState}`,
+    `Abgleich mit der Figma-Datei (Bericht ohne Token erzeugt, Live-Abgleich nur in der Konsole): ${liveState}`,
     "",
     `Umgesetzt: ${map.frames.filter((f) => f.stand === "umgesetzt").length} von ${map.frames.length} Frames, fehlend: ${missing.length}, kein App-Screen: ${map.frames.filter((f) => f.stand === "kein Screen").length}.`,
     "",
@@ -79,6 +79,7 @@ export async function main(argv, env = process.env, fetchImpl = fetch) {
   const liveState = liveFrames ? `${liveFrames.length} Frames gelesen` : live ? `Figma-Fehler: ${live.error}` : NOT_AVAILABLE;
   if (argv.includes("--liste")) return console.log((liveFrames ?? [liveState]).join("\n")) ?? 0;
   const problems = checkCoverage(map, figmaMd, liveFrames);
+  // Der eingecheckte Bericht bleibt tokenunabhängig (der Test prüft ihn ohne Token); der Live-Stand steht nur in der Konsole.
   if (argv.includes("--write")) writeFileSync(REPORT_PATH, renderReport(map, NOT_AVAILABLE));
   console.log(`Figma-Abgleich: ${liveState}`);
   if (problems.length) {
