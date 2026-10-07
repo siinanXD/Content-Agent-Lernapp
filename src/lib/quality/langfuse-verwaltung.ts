@@ -44,6 +44,11 @@ export function scoreConfigSpecs() {
     numeric(PRUEFPUNKTE.uniqueness, "Anteil der Fragen mit genau einer richtigen Antwort (0–1).", 0, 1),
     numeric(PRUEFPUNKTE.niveau, "Mittleres Niveau (1–5), Schwelle 4.", 1, 5),
     numeric(PRUEFPUNKTE.language, "Mittlere Sprachqualität (1–5), Schwelle 4.", 1, 5),
+    numeric("Bestehensquote", "Anteil der Fragen, die der Richter besteht (0–1).", 0, 1),
+    numeric("Fragen veröffentlicht", "Anzahl veröffentlichter Fragen im Kurslauf.", 0, 100000),
+    numeric("Kosten je Frage (EUR)", "Kosten des Laufs geteilt durch die veröffentlichten Fragen.", 0, 1000),
+    numeric("costEur", "Kosten des Kurslaufs in Euro.", 0, 100000),
+    numeric("capEur", "Kostendeckel je Kurslauf in Euro.", 0, 100000),
     {
       name: STICHPROBE_SCORE,
       dataType: "CATEGORICAL" as const,

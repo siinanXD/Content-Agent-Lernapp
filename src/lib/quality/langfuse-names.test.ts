@@ -89,7 +89,7 @@ describe("Langfuse lesbar (SIN-299)", () => {
     const specs = scoreConfigSpecs();
     assert.deepEqual(
       specs.map((s) => s.name),
-      ["Quellentreue", "Eindeutigkeit", "Niveau", "Sprache", "Stichprobe Sicherheit"],
+      ["Quellentreue", "Eindeutigkeit", "Niveau", "Sprache", "Bestehensquote", "Fragen veröffentlicht", "Kosten je Frage (EUR)", "costEur", "capEur", "Stichprobe Sicherheit"],
     );
     assert.ok(scoreNamesValid(specs.map((s) => s.name)));
     const stich = specs.at(-1)!;
