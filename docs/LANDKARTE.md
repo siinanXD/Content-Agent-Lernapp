@@ -6,6 +6,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 
 - KI erzeugt nur Inhalte; Bewertung und Zulassung macht ein Mensch. Ohne amtliche Quelle kein Lerninhalt.
 - Regeln und Stopp-Regeln: `AGENTS.md`. Konzept und Arbeitspakete: `docs/PRODUCT.md`. Entscheidungen: `docs/decisions/<ISSUE-ID>-<kurz>.md`, Index `docs/DECISIONS.md` (erzeugt, nie von Hand).
+- Fehler nicht doppelt machen: `docs/autonomy/LEHREN.md` lesen, nach jedem behobenen Bug eine Zeile ergänzen.
 - Next.js ist hier neuer als im Training: vor Code in `node_modules/next/dist/docs/` nachlesen.
 
 ## App (Next.js, Vercel)
@@ -40,6 +41,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Review-Agent (zweites Modell, SIN-297) | `.github/workflows/review.yml`, `scripts/autonomy/review.mjs` |
 | Codeanalyse, Paket-Updates | `.github/workflows/codeql.yml`, `scripts/autonomy/codeql-gate.mjs`, `.github/dependabot.yml` |
 | Konflikte in erzeugten Dateien (Index, CHANGELOG) ohne KI | `scripts/autonomy/konflikt.mjs` (Wächter `status.yml`, `repair.yml`) |
+| Lehren, Skills, Laufprotokoll (SIN-296) | `docs/autonomy/LEHREN.md`, `docs/skills/`, `scripts/autonomy/protokoll.mjs` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
 

@@ -139,7 +139,8 @@ jobs:
             0. Merge-Stand: Ergebnis von „main einmergen“ ist `${{ steps.merge.outputs.result }}`. Bei `code` läuft im Branch ein
                offener Merge mit Konflikten (`git status`): löse sie zuerst (beide Seiten erhalten, keine Änderung am Scope)
                und schließe den Merge mit einem Commit ab. Erzeugte Dateien (docs/DECISIONS.md) nie von Hand, sondern `npm run decisions:index`.
-            1. Lies AGENTS.md.
+            1. Lies AGENTS.md und docs/autonomy/LEHREN.md. Nach der Reparatur ergänze LEHREN.md um eine Zeile
+               (Was nicht geht → wie es richtig geht), außer die Lehre steht schon dort (SIN-296).
             2. Lies die Logs des fehlgeschlagenen Laufs: `gh run view ${{ github.event.workflow_run.id }} --log-failed`
             3. Behebe nur die Ursache. Verboten: Tests, Lint-Regeln oder Barrierefreiheits-Tests abschalten oder abschwächen,
                Workflows unter .github/ ändern, Secrets anfassen.

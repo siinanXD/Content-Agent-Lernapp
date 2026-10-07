@@ -19,6 +19,9 @@ export const SECTIONS = {
   decision: ["entscheidung nötig"],
   // SIN-320: schreibt der Worker (verbrauch.mjs), eine Zeile je Lauf mit Tokens, Runden, Dauer, API-Gegenwert.
   usage: ["verbrauch"],
+  // SIN-296: Link zum Laufprotokoll (protokoll.mjs) und neue Skills des Workers.
+  protocol: ["laufprotokoll"],
+  skills: ["neue skills"],
 };
 
 /** Zerlegt den PR-Body in Abschnitte. @returns {Record<string, string>} Schlüssel aus SECTIONS */
@@ -162,6 +165,8 @@ export function buildSteckbrief(input) {
     }`,
     `**Nach dem Merge:** ${sec.after ? short(sec.after, 2).join(" ") : migration ? "Die Migration läuft." : "Nichts Besonderes."}`,
     ...(sec.cost ? [`**Kosten/Folgen:** ${short(sec.cost, 3).join(" ")}`] : []),
+    ...(sec.skills ? ["**Neue Skills:**", ...short(sec.skills, 3).map((l) => `- ${l}`)] : []),
+    ...(sec.protocol ? ["**Laufprotokoll:**", ...short(sec.protocol, 2).map((l) => `- ${l}`)] : []),
     ...(sec.usage ? ["**Verbrauch:**", ...short(sec.usage, 4).map((l) => `- ${l}`)] : []),
     `**Rückgängig:** ${sec.revert ? short(sec.revert, 2).join(" ") : migration ? "Nicht trivial: Migration, Revert-PR genügt nicht allein." : "Revert-PR genügt."}`,
     ...(high && reasons.length ? ["", "<details><summary>Gründe für risk:high</summary>", "", ...reasons.slice(0, 15).map((r) => `- ${r.text}`), "", "</details>"] : []),

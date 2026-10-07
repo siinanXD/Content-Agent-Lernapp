@@ -136,6 +136,7 @@ export function buildPrompt(issue) {
     issue.description ?? "(ohne Beschreibung)",
     "",
     "Regeln: AGENTS.md. Lies zuerst docs/LANDKARTE.md (wo liegt was), docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
+    "Lehren (SIN-296): Lies docs/autonomy/LEHREN.md. Nach jedem behobenen Bug ergänze dort eine Zeile (Was nicht geht → wie es richtig geht; keine Dopplungen, höchstens 150 Zeilen). Wiederholt sich ein Arbeitsablauf, lege docs/skills/<name>/SKILL.md an (Aufbau: docs/skills/README.md), nutze passende vorhandene Skills und nenne neue im PR unter `## Neue Skills`. Das Laufprotokoll erzeugt der Workflow, du schreibst es nicht.",
     `Entscheidungen und Annahmen: eine neue Datei docs/decisions/${issue.identifier}-<kurz>.md (Kopf: Links, Entscheidung, Annahmen, Warum). docs/DECISIONS.md nie von Hand bearbeiten: vor dem Push \`npm run decisions:index\` ausführen und den Index im selben PR committen (CI prüft ihn).`,
     `Arbeite auf einem neuen Branch claude/${issue.identifier.toLowerCase()}. Ein PR pro Arbeitspaket, Reparaturen im selben PR.`,
     `PR-Titel als Conventional Commit mit (${issue.identifier}), Body beginnt mit "Part of ${issue.identifier}". Kein Draft, nie selbst mergen.`,
