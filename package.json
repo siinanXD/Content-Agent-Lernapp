@@ -62,6 +62,7 @@
     "@opentelemetry/sdk-node": "^0.222.0",
     "@opentelemetry/sdk-trace-base": "^2.0.1",
     "@sentry/nextjs": "^11.4.0",
+    "@sentry/node": "^11.4.0",
     "@supabase/supabase-js": "^2.117.2",
     "next": "16.3.8",
     "posthog-js": "^1.435.8",

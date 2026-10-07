@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry; alles andere zählt nur mit Bestätigung.",
+  "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry und betrieb-fabrik; alles andere zählt nur mit Bestätigung.",
   "goldsetTarget": 0.9,
   "gebaut": {
     "qual-offline": {
@@ -13,6 +13,18 @@
       "beleg": "SIN-272: scripts/safety-sample.mjs, Bericht nie erzeugt (docs/decisions/SIN-272-sicherheits-stichprobe.md)",
       "issues": ["SIN-272"],
       "lauf": "node scripts/safety-sample.mjs --url <App-URL>; Mensch prüft den Bericht"
+    },
+    "betrieb-sentry": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-289: Sentry (EU) in App-Routen und Pipeline (src/lib/sentry-pipeline.ts) mit PII-Scrubbing und Test (src/lib/sentry.test.ts); Planer-Kennzahlen sentry/sentry_kritisch, nie mit Live-Token gemessen (docs/decisions/SIN-289-sentry-fabrik-status.md)",
+      "issues": ["SIN-259", "SIN-289"],
+      "lauf": "Planer-Lauf mit SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT; Pipeline braucht NEXT_PUBLIC_SENTRY_DSN in content-grow.yml"
+    },
+    "betrieb-fabrik": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-289: Statusdatensatz je Lauf (Tabelle content_factory_runs, scripts/content-grow.ts), Planer leitet „läuft“ und „hängt“ nach 2 Läufen ohne neues Modul ab (scripts/autonomy/fabrik.mjs, Test src/lib/autonomy/fabrik.test.ts); noch kein Live-Lauf geschrieben (docs/decisions/SIN-289-sentry-fabrik-status.md)",
+      "issues": ["SIN-289"],
+      "lauf": "Migration 20261007020000 in Supabase anwenden, danach Workflow content-grow; der nächste Planer-Lauf misst"
     },
     "betrieb-kosten": {
       "datum": "2026-10-06",

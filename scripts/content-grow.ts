@@ -62,7 +62,9 @@ import {
   type EvaluateResult,
   type QuestionEval,
 } from "../src/lib/quality/schemas";
+import { reportPipelineError, initPipelineSentry } from "../src/lib/sentry-pipeline";
 import { getStorage } from "../src/lib/storage";
+import { recordFactoryRun, toFactoryRunRecord } from "../src/lib/generate/factory-status";
 
 const ROOT = process.cwd();
 const OUT_DIR = join(ROOT, "docs", "ops", "content-runs");
@@ -196,8 +198,17 @@ async function main() {
     }),
   );
 
-  const finish = (code = 0) => {
+  const finish = async (code = 0) => {
     report.costEur = Math.round(report.costEur * 100) / 100;
+    // SIN-289: Statusdatensatz je Lauf (Live-Läufe), Grundlage für „läuft“ und „hängt“ im Planer.
+    if (!dry) {
+      try {
+        await recordFactoryRun(toFactoryRunRecord(report, COURSE, next !== null));
+      } catch (e) {
+        console.error("::warning::Fabrik-Status nicht geschrieben:", e instanceof Error ? e.message : e);
+        await reportPipelineError(e).catch(() => undefined);
+      }
+    }
     writeFileSync(join(OUT_DIR, reportFileName(report)), JSON.stringify(report, null, 2) + "\n");
     writeFileSync(join(ROOT, "content-run-summary.md"), linearSummary(report) + "\n");
     console.log(linearSummary(report));
@@ -412,7 +423,9 @@ async function main() {
   finish(0);
 }
 
-main().catch((err) => {
+initPipelineSentry("content-grow");
+main().catch(async (err) => {
   console.error(err);
+  await reportPipelineError(err).catch(() => undefined);
   process.exit(1);
 });
