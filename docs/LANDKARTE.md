@@ -40,6 +40,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Vorlagen und Konfiguration | `docs/autonomy/` (`README.md`, `groessen.md`, `tokens.md`, Fixtures) |
 | Review-Agent (zweites Modell, SIN-297) | `.github/workflows/review.yml`, `scripts/autonomy/review.mjs` |
 | Codeanalyse, Paket-Updates | `.github/workflows/codeql.yml`, `scripts/autonomy/codeql-gate.mjs`, `.github/dependabot.yml` |
+| Konflikte in erzeugten Dateien (Index, CHANGELOG) ohne KI | `scripts/autonomy/konflikt.mjs` (Wächter `status.yml`, `repair.yml`) |
 | Lehren, Skills, Laufprotokoll (SIN-296) | `docs/autonomy/LEHREN.md`, `docs/skills/`, `scripts/autonomy/protokoll.mjs` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |

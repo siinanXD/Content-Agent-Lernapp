@@ -98,6 +98,27 @@ jobs:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
+      # Reihenfolge (SIN-312): 1) main einmergen, 2) CI-Fehler beheben, 3) pushen. Ohne gelösten Konflikt kann nichts
+      # gepusht werden. Erzeugte Dateien (Index, CHANGELOG) löst das Skript ohne KI; Code-Konflikte bleiben als
+      # offener Merge für Claude liegen. Skripte aus main, nicht aus dem PR-Branch.
+      - uses: actions/checkout@v4
+        if: steps.round.outputs.go == 'true'
+        with:
+          ref: main
+          path: _main
+      - name: main einmergen
+        id: merge
+        if: steps.round.outputs.go == 'true'
+        run: |
+          git config user.name "claude[bot]"
+          git config user.email "claude[bot]@users.noreply.github.com"
+          echo "_main/" >> .git/info/exclude
+          git fetch origin main
+          node _main/scripts/autonomy/konflikt.mjs --local
+      - name: Gelösten Merge pushen
+        if: steps.round.outputs.go == 'true' && steps.merge.outputs.result == 'resolved'
+        run: git push origin "HEAD:${{ github.event.workflow_run.head_branch }}"
+
       - name: Claude repariert die CI
         id: fix
         if: steps.round.outputs.go == 'true'
@@ -115,6 +136,9 @@ jobs:
             Du reparierst die rote CI im Pull Request #${{ steps.round.outputs.number }}
             (Branch `${{ github.event.workflow_run.head_branch }}`), Runde ${{ steps.round.outputs.round }} von 3.
 
+            0. Merge-Stand: Ergebnis von „main einmergen“ ist `${{ steps.merge.outputs.result }}`. Bei `code` läuft im Branch ein
+               offener Merge mit Konflikten (`git status`): löse sie zuerst (beide Seiten erhalten, keine Änderung am Scope)
+               und schließe den Merge mit einem Commit ab. Erzeugte Dateien (docs/DECISIONS.md) nie von Hand, sondern `npm run decisions:index`.
             1. Lies AGENTS.md und docs/autonomy/LEHREN.md. Nach der Reparatur ergänze LEHREN.md um eine Zeile
                (Was nicht geht → wie es richtig geht), außer die Lehre steht schon dort (SIN-296).
             2. Lies die Logs des fehlgeschlagenen Laufs: `gh run view ${{ github.event.workflow_run.id }} --log-failed`
@@ -125,12 +149,7 @@ jobs:
                („${{ steps.round.outputs.title }}“), z. B. `fix(ci): … (SIN-123)`. Dann auf den Branch pushen.
             6. Wenn du die Ursache nicht beheben kannst: nichts pushen, sondern im PR kurz den Blocker beschreiben.
 
-      # Messen (SIN-320): Verbrauch der Reparatur-Runde in den PR-Steckbrief. Skripte aus main, nicht aus dem PR-Branch.
-      - uses: actions/checkout@v4
-        if: always() && steps.round.outputs.go == 'true'
-        with:
-          ref: main
-          path: _main
+      # Messen (SIN-320): Verbrauch der Reparatur-Runde in den PR-Steckbrief (Skripte aus _main, oben ausgecheckt).
       - name: Verbrauch melden
         if: always() && steps.round.outputs.go == 'true'
         continue-on-error: true
