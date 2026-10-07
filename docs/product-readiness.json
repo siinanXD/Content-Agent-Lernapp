@@ -40,15 +40,15 @@
     },
     "recht-impressum": {
       "datum": "2026-10-07",
-      "beleg": "SIN-301/SIN-344: /impressum erreichbar von Fußzeile, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
-      "issues": ["SIN-301", "SIN-344"],
-      "lauf": "PR claude/sin-344 mit Playwright-Test"
+      "beleg": "SIN-301/SIN-344/SIN-353: /impressum erreichbar von Fußzeile (Startseite, Einstellungen) und als Link in /ki-hinweis, axe ohne Fehler (e2e/rechtsseiten-reachable.spec.ts); Build erfolgreich. Befund am Code: 7 Platzhalter offen (SIN-340); Abgleich gegen die laufende App offen.",
+      "issues": ["SIN-301", "SIN-344", "SIN-340"],
+      "lauf": "Lokaler Build mit npm ci && npm run build && npm test (557 Tests grün)"
     },
     "recht-datenschutz": {
       "datum": "2026-10-07",
-      "beleg": "SIN-301/SIN-344: /datenschutz erreichbar von Fußzeile und Onboarding, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
-      "issues": ["SIN-301", "SIN-344"],
-      "lauf": "PR claude/sin-344 mit Playwright-Test"
+      "beleg": "SIN-301/SIN-344/SIN-353: /datenschutz erreichbar von Fußzeile (Startseite, Einstellungen), Onboarding (/einwilligung), Einwilligung (/demo) und Datenschutz (/demo), axe ohne Fehler (e2e/rechtsseiten-reachable.spec.ts); Build erfolgreich. Befund am Code: 5 Platzhalter offen (SIN-341); Abgleich gegen die laufende App offen.",
+      "issues": ["SIN-301", "SIN-344", "SIN-341"],
+      "lauf": "Lokaler Build mit npm ci && npm run build && npm test (557 Tests grün)"
     },
     "recht-einwilligung": {
       "datum": "2026-10-07",
@@ -64,6 +64,10 @@
     }
   },
   "bestaetigt": {
+    "recht-ki": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-353: Prüfung am Code des Branches (Netzzugriff auf die Live-URL war im Lauf gesperrt, keine Messung gegen die Live-App): Build erfolgreich, 557 Tests grün; /ki-hinweis erreichbar von der Fußzeile (Startseite, Einstellungen), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), kein Platzhalter im Text. Live-Abgleich nach dem Merge offen"
+    },
     "design-screens": {
       "datum": "2026-10-07",
       "beleg": "SIN-349: alle 51 Frames der Figma-Datei (Live-Abgleich mit Token am 2026-10-07) einer Route oder Komponente zugeordnet, Dateien vorhanden, 3 Frames sind keine App-Screens (docs/quality/figma-abdeckung.md, Prüfung scripts/autonomy/figma-abdeckung.mjs in npm test); Namens- und Dateiabgleich, Werte-Abgleich siehe design-figma"
