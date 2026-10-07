@@ -57,4 +57,6 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Hostprüfung per `includes`/Regex ohne URL-Parsing → CodeQL `js/incomplete-url-substring-sanitization` (7.8) bricht `analyze`. Richtig: `new URL(u).hostname` gegen eine Liste vergleichen. (SIN-330)
 - Einmalige Fehler im Job `gate` (gitleaks-Download, Label-API) färben `merge-gate` auf allen PRs rot → Download mit `curl --retry`, Label-Anlegen nur warnen, `merge-gate` nennt das Ergebnis von `gate`. (SIN-335)
 - Ein Skript in `scripts/autonomy/*.mjs` mit Top-Level-`await` einbinden, das ein Test importiert → tsx (cjs) bricht den ganzen Testlauf ab. Richtig: `main().catch(…)` in der Haupt-Prüfung statt `await`. (SIN-298)
+- Gate-Bruch-Fehlalarm aus alten Läufen oder Dependabot-PRs → nur Läufe nach dem letzten Merge auf main, Dependabot ignorieren, Check auf main gegenprüfen (grün: PRs neu anstoßen). (SIN-333)
 - Dashboard-Kacheln filtern auf Scores ohne Score-Config (`capEur`, `Bestehensquote`) → jeden im Dashboard genutzten Score in `scoreConfigSpecs()` anlegen. (SIN-299)
+- `/start` springt erst nach Hydration per `router.replace` nach `/willkommen` → Lighthouse misst den Umweg mit (LCP 2756 ms). Richtig: Weiterleitung als Inline-Skript im HTML vor CSS und JS, Schlagzeile als Server-Komponente; mit `--details` prüfen, welche Seite das LCP-Element ist. (SIN-345)

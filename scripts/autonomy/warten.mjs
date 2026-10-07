@@ -49,14 +49,20 @@ export function waitingIssues(issues, prs, runningWorkers = []) {
 
 /**
  * Gate-Bruch erkennen.
- * @param {{ number: number, sha: string, failures: { check: string, step: string, lines?: string }[] }[]} prs offene PRs mit ihren roten Schritten
+ * SIN-333: Es zählen nur frische Läufe (gestartet nach dem letzten Merge auf main), nie Dependabot-PRs, und nur
+ * Checks, die auf main selbst nicht grün sind. Ist der Check auf main grün, landen die PRs in `rerun` (neu anstoßen).
+ * @param {{ number: number, sha: string, author?: string, startedAt?: string, failures: { check: string, step: string, lines?: string }[] }[]} prs offene PRs mit ihren roten Schritten
  * @param {{ title: string }[]} known offene und kürzlich erledigte Issues (Duplikat-Schutz)
- * @returns {{ breaks: { check: string, step: string, prs: number[], lines: string, title: string, issue: object | null }[] }}
+ * @param {{ mainSince?: string, main?: Record<string, string | null> }} ctx letzter Merge auf main (ISO) und Stand der Checks auf main
+ * @returns {{ breaks: { check: string, step: string, prs: number[], lines: string, title: string, issue: object | null }[], rerun: number[] }}
  *   `issue` ist null, wenn es das Bug-Issue schon gibt.
  */
-export function detectGateBreaks(prs, known = []) {
+export function detectGateBreaks(prs, known = [], ctx = {}) {
   const groups = new Map();
+  const since = ctx.mainSince ? Date.parse(ctx.mainSince) : NaN;
   for (const p of prs) {
+    if (String(p.author ?? "").toLowerCase().startsWith("dependabot")) continue;
+    if (!Number.isNaN(since) && p.startedAt && Date.parse(p.startedAt) < since) continue;
     for (const f of p.failures ?? []) {
       const key = `${f.check} / ${f.step}`;
       const g = groups.get(key) ?? { check: f.check, step: f.step, prs: new Map(), lines: "" };
@@ -66,9 +72,15 @@ export function detectGateBreaks(prs, known = []) {
     }
   }
   const breaks = [];
+  const rerun = new Set();
   for (const [key, g] of groups) {
     // Unterschiedlicher Code: mindestens 2 PRs mit verschiedenem Commit.
     if (g.prs.size < MIN_PRS || new Set(g.prs.values()).size < MIN_PRS) continue;
+    // Auf main grün: kein Gate-Bruch, die PRs sind veraltet und laufen neu.
+    if (ctx.main?.[g.check] === "success") {
+      for (const n of g.prs.keys()) rerun.add(n);
+      continue;
+    }
     const title = `${GATE_PREFIX} ${key}`;
     const numbers = [...g.prs.keys()].sort((a, b) => a - b);
     const taken = known.some((k) => String(k.title).trim().toLowerCase() === title.toLowerCase());
@@ -95,7 +107,7 @@ export function detectGateBreaks(prs, known = []) {
           },
     });
   }
-  return { breaks };
+  return { breaks, rerun: [...rerun].sort((a, b) => a - b) };
 }
 
 /**
@@ -103,10 +115,12 @@ export function detectGateBreaks(prs, known = []) {
  * @param {{ number: number, labels: unknown[], state: string }[]} openPrs
  * @param {{ prs: number[] }[]} breaks aktuell erkannte Brüche
  * @param {boolean} bugOpen gibt es ein offenes Gate-Bug-Issue (Titelpräfix)?
- * @returns {{ type: "gate-block" | "gate-release", pr: number }[]}
+ * @param {number[]} rerun PRs mit veraltetem Rot (Check auf main grün): main einmergen, CI läuft neu (SIN-333)
+ * @returns {{ type: "gate-block" | "gate-release" | "gate-rerun", pr: number }[]}
  */
-export function gateActions(openPrs, breaks, bugOpen) {
+export function gateActions(openPrs, breaks, bugOpen, rerun = []) {
   const actions = [];
+  for (const n of rerun) if (openPrs.some((x) => x.number === n && x.state === "open" && !names(x).includes(GATE_LABEL))) actions.push({ type: "gate-rerun", pr: n });
   const hit = new Set(breaks.flatMap((b) => b.prs));
   for (const p of openPrs.filter((x) => x.state === "open")) {
     const marked = names(p).includes(GATE_LABEL);
@@ -135,6 +149,7 @@ export async function collectPrStates(repo, token, fetchImpl = fetch) {
   const out = [];
   for (const p of list) {
     const pr = { number: p.number, title: p.title, head: p.head?.ref, state: p.state, draft: p.draft, labels: p.labels.map((l) => l.name), sha: p.head.sha };
+    pr.author = p.user?.login;
     pr.mergeable_state = (await get(`/repos/${repo}/pulls/${p.number}`, token, fetchImpl)).mergeable_state;
     const cr = await get(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`, token, fetchImpl);
     pr.ci = cr.check_runs.find((c) => c.name === "build")?.conclusion ?? undefined;
@@ -166,7 +181,16 @@ export async function collectGateFailures(repo, token, prs, fetchImpl = fetch) {
         /* Job nicht lesbar: kein Beitrag zum Gate-Bruch */
       }
     }
-    out.push({ number: p.number, sha: p.sha, failures });
+    const starts = (p.checkRuns ?? []).filter((x) => x.conclusion === "failure" && x.started_at).map((x) => x.started_at).sort();
+    out.push({ number: p.number, sha: p.sha, author: p.author, startedAt: starts.at(-1), failures });
   }
+  return out;
+}
+
+/** Stand der Checks auf main (letzter Lauf je Name), für den Gegencheck vor dem Anlegen (SIN-333). */
+export async function collectMainChecks(repo, token, fetchImpl = fetch) {
+  const cr = await get(`/repos/${repo}/commits/main/check-runs?per_page=100`, token, fetchImpl);
+  const out = {};
+  for (const c of [...cr.check_runs].sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)))) out[c.name] = c.conclusion ?? null;
   return out;
 }

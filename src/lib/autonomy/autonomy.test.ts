@@ -4,7 +4,7 @@ import { approvalStillValid, classifyRisk, fetchDependencyInfo, newDependencies 
 import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
-import { MAX_ISSUES_PER_WEEK, extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
+import { DESIGN_VORLAGEN_BLOCK, MAX_ISSUES_PER_WEEK,extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
 import {
   CHECKS,
   abnahmeIssue,
@@ -414,4 +414,18 @@ test("Figma: Worker liest Werte über die API (Mock)", async () => {
   assert.equal(await readNodeValues("KEY", "1:2", {}, fetchMock), null); // ohne Token: nicht verfügbar
   const tokens = { color: { a: { value: "#0B5F6E" }, b: { value: "#FFFFFF" } } };
   assert.deepEqual(await diffColorTokens(tokens, "KEY", { FIGMA_ACCESS_TOKEN: "t" }, fetchMock), ["b (#FFFFFF)"]);
+});
+
+test("Planer: Design-Paket enthält Abschnitt „Vorlagen geprüft“ und Hinweis für Sinan (SIN-306)", () => {
+  const [d] = validatePlan([{ lane: "design", title: "Paket", description: "Screens", acceptance: ["ok"], priority: 2 }]);
+  assert.match(d.description, /## Vorlagen geprüft/);
+  assert.match(d.description, /Figma Community/);
+  assert.match(d.description, /GitHub/);
+  assert.match(d.description, /## Hinweis für Sinan/);
+  assert.match(d.description, /nicht selbst übernehmen/);
+  // keine Dopplung, wenn der Plan den Abschnitt schon liefert
+  const [e] = validatePlan([{ lane: "design", title: "Paket", description: DESIGN_VORLAGEN_BLOCK, acceptance: ["ok"], priority: 2 }]);
+  assert.equal(e.description.match(/## Vorlagen geprüft/g)?.length, 1);
+  // andere Spuren bleiben unverändert
+  assert.doesNotMatch(validatePlan([{ lane: "backend", title: "B", acceptance: ["ok"], priority: 2 }])[0].description, /Vorlagen/);
 });

@@ -50,7 +50,16 @@ export const MAX_PER_LANE = 3;
 export const MAX_DESIGN_PER_WEEK = 1;
 /** Höchstens 3 je Spur (zusammen 9); dazu höchstens 1 Design-Paket. */
 export const MAX_ISSUES_PER_WEEK = MAX_PER_LANE * LANES.length;
-export const PLAN_LANES = [...LANES, "design"];
+/** Pflichtabschnitte jedes Design-Pakets (SIN-306): Vorlagen-Recherche und Hinweis für Sinan. */
+export const DESIGN_VORLAGEN_HEADING = "## Vorlagen geprüft";
+export const DESIGN_VORLAGEN_BLOCK = [
+  DESIGN_VORLAGEN_HEADING,
+  "Quellen: Figma Community (User Flow, Journey Map, UI-Kits, Device Mockups, Präsentation) und GitHub. Je Treffer: Link, Lizenz/Nutzungsbedingungen und Begründung (übernommen oder verworfen); Ergebnis zusätzlich in `docs/decisions/<ISSUE-ID>-<kurz>.md`. Gibt es keinen Treffer, das ausdrücklich hier schreiben.",
+  "",
+  "## Hinweis für Sinan",
+  "Agenten können Figma-Community-Dateien nicht selbst übernehmen. Wird ein Treffer gebraucht: Datei in der Community öffnen, auf „In Entwurf öffnen“ (Kopie anlegen) klicken und den Link der Kopie ins Issue schreiben.",
+].join("\n");
+export const PLAN_LANES =[...LANES, "design"];
 /** Pflege-Modus: nur Fehler (Backend) und Content. */
 export const MAINTENANCE_LANES = ["backend", "content"];
 export const READINESS_FILE = "docs/product-readiness.json";
@@ -189,6 +198,7 @@ export function buildPlannerPrompt(
     "- Ohne Design-Issue: Änderungen, die nur vorhandene Figma-Komponenten und Tokens nutzen (Zustände, Texte, Abstände, Varianten bestehender Screens, Fehler-/Leer-/Ladezustände nach Screen 17). Dann `needsDesign: false`.",
     "- Design nötig (`needsDesign: true`): neue Screens, neue Komponenten, neue Farben/Tokens, geänderte Navigation. Setze `blockedBy` auf den Titel eines Design-Eintrags im Plan (oder eine offene Kennung wie SIN-123).",
     `- Bündle alle Design-Arbeiten zu höchstens ${MAX_DESIGN_PER_WEEK} Design-Paket pro Woche (\`lane: "design"\`, Label \`design\`, Backlog bis Sinan die Sitzung macht, kein Dispatcher-Lauf).`,
+    `- Vorlagen (SIN-306): Jedes Design-Paket enthält den Abschnitt „${DESIGN_VORLAGEN_HEADING.slice(3)}“ (Figma Community und GitHub nach User Flow, Journey Map, UI-Kits, Device Mockups, Präsentation durchsucht; je Treffer Link, Lizenz und Begründung) und den Hinweis für Sinan, dass Community-Dateien nur per Klick kopiert werden können. Das Skript hängt beide Abschnitte an, falls sie in der Beschreibung fehlen.`,
     "- Agenten erfinden keine Komponenten im Code. Weicht der Code von Figma ab (Kennzahl `figma_abgleich`), plane die Abweichung als Issue.",
     ...(betrieb ? betriebPrompt(phase) : []),
     ...(maxIssues != null
@@ -295,6 +305,8 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
       ...(p.lane === "frontend" ? { needsDesign: Boolean(p.needsDesign) } : {}),
       ...(p.needsDesign ? { blockedBy } : {}),
       description: `${p.description ?? ""}${
+        p.lane === "design" && !String(p.description ?? "").includes(DESIGN_VORLAGEN_HEADING) ? `\n\n${DESIGN_VORLAGEN_BLOCK}` : ""
+      }${
         p.lane === "design" ? "\n\nWird in einer Claude-Sitzung mit Figma-Connector erledigt (nicht vom Dispatcher). Danach Frame zur Freigabe in docs/design/." : ""
       }\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`.trim(),
     });
