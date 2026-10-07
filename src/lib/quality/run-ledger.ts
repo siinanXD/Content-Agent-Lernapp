@@ -8,6 +8,7 @@ import { getStorage } from "@/lib/storage";
 import { getServiceSupabase } from "@/lib/storage/supabase-client";
 import { BUDGET_EUR, refreshLedger, type CostLedger } from "./cost-guard";
 import { recordRunCostTrace } from "./langfuse-client";
+import { kurslaufSessionId, traceTitel, type TraceKontext } from "./langfuse-names";
 
 export type RunCostRecord = {
   id: string;
@@ -142,10 +143,17 @@ export async function listRunCosts(): Promise<RunCostRecord[]> {
 
 /** Lauf-Ende: Trace an Langfuse (best effort, ohne Keys null), dann Ledger-Zeile. */
 export async function recordRunCost(
-  input: Parameters<typeof toRunCostRecord>[0],
+  input: Parameters<typeof toRunCostRecord>[0] & { kontext?: Omit<TraceKontext, "schritt"> },
 ): Promise<RunCostRecord> {
   const record = toRunCostRecord(input);
-  const traceId = await recordRunCostTrace({ name: `pipeline-run-${record.kind}`, record });
+  // SIN-299: fachlicher Trace-Name, Session des Kurslaufs (Gesamtkosten dort summiert).
+  const kontext: TraceKontext = { ...input.kontext, schritt: "kosten" };
+  const traceId = await recordRunCostTrace({
+    name: traceTitel(kontext),
+    sessionId: kurslaufSessionId(record.runId),
+    kontext,
+    record,
+  });
   if (traceId) record.langfuseTraceId = traceId;
   await appendRunCost(record);
   return record;

@@ -21,7 +21,8 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 1. Suche auf GitHub und Hugging Face nach einer fertigen Lösung
 2. Lies die offiziellen Docs von Anthropic, OpenAI, Hermes oder Langfuse zum aktuellen Stand. Nutze nie Modellnamen oder Funktionen aus dem Gedächtnis
-3. Schreibe die Entscheidung mit Links und einem Satz Begründung in `docs/decisions/<ISSUE-ID>-<kurz>.md` (eine Datei je Entscheidung, keine laufenden Nummern, SIN-240). `docs/DECISIONS.md` ist ein erzeugter Index: nie bearbeiten
+3. Bei Design/UX: Figma Community nach Vorlagen durchsuchen (User Flow, Journey Map, UI-Kits, Device Mockups, Präsentation). Treffer mit Link, Lizenz/Nutzungsbedingungen und Begründung in `docs/decisions/` festhalten. Agenten können Community-Dateien nicht selbst übernehmen: Sinan muss sie per Klick kopieren (Hinweis im Design-Paket, SIN-306)
+4. Schreibe die Entscheidung mit Links und einem Satz Begründung in `docs/decisions/<ISSUE-ID>-<kurz>.md` (eine Datei je Entscheidung, keine laufenden Nummern, SIN-240). `docs/DECISIONS.md` ist ein erzeugter Index: nie bearbeiten
 
 ### So wird entschieden
 
