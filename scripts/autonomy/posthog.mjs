@@ -11,7 +11,8 @@ const QUERY =
   "select event, count() from events where timestamp > now() - interval 7 day and event in ('unit_started','unit_completed','question_answered') group by event";
 
 export async function collectPostHogMetrics(env = process.env, fetchImpl = fetch, http = {}) {
-  if (!env.POSTHOG_PERSONAL_API_KEY || !env.POSTHOG_PROJECT_ID) return { posthog: NA };
+  const missing = ["POSTHOG_PERSONAL_API_KEY", "POSTHOG_PROJECT_ID"].filter((k) => !env[k]);
+  if (missing.length) return { posthog: `${NA} (Secret fehlt im Workflow: ${missing.join(", ")})` };
   const base = env.POSTHOG_API_BASE_URL || "https://eu.posthog.com";
   try {
     const data = await fetchJson("PostHog", `${base}/api/projects/${encodeURIComponent(env.POSTHOG_PROJECT_ID)}/query/`, {

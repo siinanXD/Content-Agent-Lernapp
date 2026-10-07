@@ -35,7 +35,10 @@ test("Fabrik: kein Lauf seit über 8 Tagen oder gar keiner: steht", () => {
 test("Fabrik: ohne Supabase-Zugang „nicht verfügbar“ und kein Netzaufruf", async () => {
   let calls = 0;
   const m = await collectFabrikMetrics({} as never, { fetchImpl: (async () => (calls++, {})) as never });
-  assert.deepEqual(m, { content_fabrik: "nicht verfügbar", content_fabrik_status: "nicht verfügbar" });
+  assert.deepEqual(m, {
+    content_fabrik: "nicht verfügbar (Secret fehlt im Workflow: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)",
+    content_fabrik_status: "nicht verfügbar",
+  });
   assert.equal(calls, 0);
 });
 
@@ -69,6 +72,21 @@ test("Fabrik-Datensatz: neues Modul nur bei veröffentlichten Einheiten, nur Ken
     Object.keys(rec).sort(),
     ["costEur", "courseId", "moduleId", "newModule", "queueOpen", "runId", "stopReason", "stopped", "unitsGenerated", "unitsPublished"],
   );
+});
+
+test("Fabrik: HTTP-Fehler - nicht messbar mit konkrete Ursache", async () => {
+  const fetchImpl = async () => ({ ok: false, status: 401, headers: new Headers(), text: async () => "", json: async () => ({}) });
+  const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
+  const m = await collectFabrikMetrics(env as never, { fetchImpl: fetchImpl as never, delays: [] } as never);
+  assert.match(String(m.content_fabrik), /^nicht messbar \(Supabase: HTTP 401/);
+  assert.equal(m.content_fabrik_status, "nicht verfügbar");
+});
+
+test("Fabrik: Tabelle fehlt (404) → spezifische Migrationsmeldung", async () => {
+  const fetchImpl = async () => ({ ok: false, status: 404, headers: new Headers(), text: async () => "", json: async () => ({}) });
+  const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
+  const m = await collectFabrikMetrics(env as never, { fetchImpl: fetchImpl as never, delays: [] } as never);
+  assert.match(String(m.content_fabrik), /Migration 20261007020000 anwenden/);
 });
 
 test("Pipeline-Sentry: ohne DSN No-op, Optionen schalten Personendaten ab", () => {
