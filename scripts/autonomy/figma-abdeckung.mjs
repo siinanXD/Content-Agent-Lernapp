@@ -77,7 +77,14 @@ export async function main(argv, env = process.env, fetchImpl = fetch) {
   const live = await fetchFigmaFrames(DEFAULT_FILE_KEY, env, fetchImpl);
   const liveFrames = live && "frames" in live ? live.frames : null;
   const liveState = liveFrames ? `${liveFrames.length} Frames gelesen` : live ? `Figma-Fehler: ${live.error}` : NOT_AVAILABLE;
-  if (argv.includes("--liste")) return console.log((liveFrames ?? [liveState]).join("\n")) ?? 0;
+  if (argv.includes("--liste")) {
+    if (!liveFrames) {
+      console.error(liveState);
+      return 1;
+    }
+    console.log(liveFrames.join("\n"));
+    return 0;
+  }
   const problems = checkCoverage(map, figmaMd, liveFrames);
   // Der eingecheckte Bericht bleibt tokenunabhängig (der Test prüft ihn ohne Token); der Live-Stand steht nur in der Konsole.
   if (argv.includes("--write")) writeFileSync(REPORT_PATH, renderReport(map, NOT_AVAILABLE));
