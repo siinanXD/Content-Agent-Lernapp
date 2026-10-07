@@ -69,3 +69,11 @@ export function trackQuestionAnswered(properties: {
 }): void {
   capture("question_answered", properties);
 }
+
+/** Fired when a learner reports that an AI explanation does not fit ("Passt nicht? Melden"). */
+export function trackExplanationReported(properties: {
+  unitId: string;
+  questionId: string;
+}): void {
+  capture("explanation_reported", properties);
+}
