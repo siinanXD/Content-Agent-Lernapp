@@ -12,12 +12,13 @@
  * Auswerten und Rendern sind reine Funktionen (`buildDigest`); nur `collect` und `main` sprechen mit dem Netz.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
+import { isoWeek } from "./trend-radar.mjs";
 import { renderWeekUsage, weekUsage } from "./sparen.mjs";
 import { sinanLine, sortSinan, syncSinan } from "./sinan.mjs";
 import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
@@ -181,6 +182,9 @@ export function buildDigest(snap) {
   const high = (snap.quotas ?? []).filter((q) => q.pct != null && q.pct > QUOTA_MIN_PCT);
   lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"}`, ...renderWeekUsage(snap.usageWeek ?? null));
 
+  // SIN-313: montags der Link auf den Trend-Radar der Woche.
+  if (snap.trendRadar) lines.push("", `**Trend-Radar:** ${snap.trendRadar}`);
+
   const r = snap.readiness;
   const b = snap.backup;
   const live = snap.liveCheck ? ` · ${snap.liveCheck.ok ? "" : "⚠️ "}${snap.liveCheck.line}` : " · Live-Check: nicht verfügbar";
@@ -203,6 +207,13 @@ export function collectDecisions(since, run = execFileSync) {
       return [];
     }
   });
+}
+
+/** Montags (Berlin) der Bericht des Sonntagslaufs (Vorwoche), sonst `null`. */
+export function mondayRadar(now, files = readdirSync(new URL("../../docs/research/", import.meta.url))) {
+  if (new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(now) !== "Mon") return null;
+  const f = `trend-radar-${isoWeek(new Date(now.getTime() - 24 * 3600 * 1000))}.md`;
+  return files.includes(f) ? `docs/research/${f}` : null;
 }
 
 async function collect(repo, slot, now, since, env, dry = false) {
@@ -260,7 +271,7 @@ async function collect(repo, slot, now, since, env, dry = false) {
   }
   const backup = await collectBackup(repo, now, gh);
   const liveCheck = await collectLiveCheck(repo, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, openPrs, issues, decisions, decisionsOpen, legalOpen, sinanIssues, tokens, content, quotas, readiness, backup, liveCheck };
+  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, openPrs, issues, decisions, decisionsOpen, legalOpen, sinanIssues, tokens, content, quotas, readiness, backup, liveCheck, trendRadar: mondayRadar(now) };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {

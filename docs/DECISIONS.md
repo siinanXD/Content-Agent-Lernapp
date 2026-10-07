@@ -33,6 +33,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-317 | SIN-317: Variante 2026 · 3/4: Wiederholung, Prüfung, Profil, Einstellungen | [SIN-317-variante-2026-teil-3.md](decisions/SIN-317-variante-2026-teil-3.md) |
 | SIN-315 | SIN-315: Variante 2026, Teil 1: Onboarding und Lernpfad (Heute) | [SIN-315-variante-2026-onboarding-lernpfad.md](decisions/SIN-315-variante-2026-onboarding-lernpfad.md) |
 | SIN-314 | SIN-314: Design-Regeln 2026 festschreiben und Tokens ergänzen | [SIN-314-design-regeln-2026.md](decisions/SIN-314-design-regeln-2026.md) |
+| SIN-313 | SIN-313: Trend-Radar als wöchentlicher Workflow | [SIN-313-trend-radar.md](decisions/SIN-313-trend-radar.md) |
 | SIN-312 | SIN-312: Index-Konflikte ohne KI lösen | [SIN-312-index-konflikte.md](decisions/SIN-312-index-konflikte.md) |
 | SIN-311 | SIN-311: Ladezeit verbessern, LCP unter 2,5 s auf Startseite und Lernpfad | [SIN-311-ladezeit-lcp.md](decisions/SIN-311-ladezeit-lcp.md) |
 | SIN-310 | SIN-310 — Aufgaben für Sinan als eigene Linear-Issues | [SIN-310-sinan-issues.md](decisions/SIN-310-sinan-issues.md) |

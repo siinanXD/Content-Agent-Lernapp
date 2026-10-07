@@ -43,6 +43,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Codeanalyse, Paket-Updates | `.github/workflows/codeql.yml`, `scripts/autonomy/codeql-gate.mjs`, `.github/dependabot.yml` |
 | Konflikte in erzeugten Dateien (Index, CHANGELOG) ohne KI | `scripts/autonomy/konflikt.mjs` (Wächter `status.yml`, `repair.yml`) |
 | Lehren, Skills, Laufprotokoll (SIN-296) | `docs/autonomy/LEHREN.md`, `docs/skills/`, `scripts/autonomy/protokoll.mjs` |
+| Trend-Radar (SIN-313, wöchentlich) | `.github/workflows/trend-radar.yml`, `scripts/autonomy/trend-radar.mjs`, Berichte `docs/research/trend-radar-*.md` |
 | Aufgaben für Sinan als Linear-Issues, Label `sinan` (SIN-310) | `scripts/autonomy/sinan.mjs` (`create`, `sync`, `SEED`), Tages-Update und Status-Seite zeigen sie unter „Braucht dich“ |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
