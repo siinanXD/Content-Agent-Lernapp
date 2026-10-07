@@ -52,7 +52,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var o=JSON.parse(localStorage.getItem("cal-onboarding")||"null");if(o&&o.consent!==null&&o.consent!==undefined)document.documentElement.dataset.consent="decided"}catch(e){}',
+              'try{var o=JSON.parse(localStorage.getItem("cal-onboarding")||"null");if(o&&o.consent!==null&&o.consent!==undefined){document.documentElement.dataset.consent="decided";document.cookie="cal-onboarded=1;path=/;max-age=31536000;samesite=lax"}}catch(e){}',
           }}
         />
       </head>

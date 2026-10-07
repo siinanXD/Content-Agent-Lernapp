@@ -7,6 +7,17 @@ const buildId =
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BUILD_ID: buildId },
+  // Erster Start ohne Cookie: Wechsel zum Onboarding auf dem Server statt erst nach dem JS (SIN-345, LCP von /start).
+  async redirects() {
+    return [
+      {
+        source: "/start",
+        missing: [{ type: "cookie" as const, key: "cal-onboarded" }],
+        destination: "/willkommen",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
