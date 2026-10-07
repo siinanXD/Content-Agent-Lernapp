@@ -195,6 +195,47 @@ html[data-consent="decided"] [data-consent-banner] {
   letter-spacing: var(--type-mono-label-tracking);
 }
 
+/* Bento-Raster der Variante 2026 (SIN-318, Regeln: docs/design/regeln-2026.md).
+   Eine Spalte auf dem Handy mit Hauptkachel zuerst, ab 768 px sechs Spalten. Keine Karten in Karten. */
+.bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bento-gap);
+}
+@media (min-width: 768px) {
+  .bento {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--bento-gap-wide);
+  }
+}
+.bento-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--bento-pad);
+  border: var(--bento-line) solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-surface);
+}
+.bento-main {
+  gap: var(--space-16);
+  padding: var(--space-32);
+  border-color: var(--color-bg-hero);
+  background: var(--color-bg-hero);
+  color: var(--color-text-on-brand);
+}
+.bento-label {
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-label-size);
+  line-height: var(--type-mono-label-line);
+  font-weight: var(--type-mono-label-weight);
+  letter-spacing: var(--type-mono-label-tracking);
+  color: var(--color-text-secondary);
+}
+.bento-main .bento-label {
+  color: var(--color-text-muted-on-dark);
+}
+
 /* Bewegung erklärt (Regeln 2026 §5): Säulen wachsen kurz; bei reduced-motion sofort. */
 @media (prefers-reduced-motion: no-preference) {
   .grow-bar {

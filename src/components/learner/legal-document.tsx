@@ -37,8 +37,8 @@ function Inlines({ parts }: { parts: Inline[] }) {
 export function LegalDocument({ doc }: { doc: Doc }) {
   const headings = doc.blocks.flatMap((b) => (b.type === "heading" ? [b] : []));
   return (
-    <MobileShell>
-      <main className="flex flex-1 flex-col gap-3.5 px-5 pb-8 pt-10">
+    <MobileShell wide>
+      <main className="mx-auto flex w-full flex-1 flex-col gap-3.5 px-4 pb-8 pt-10 md:max-w-[720px]">
         <Link
           href="/"
           className={`inline-flex min-h-11 items-center self-start text-sm text-[var(--color-brand-primary)] underline underline-offset-4 ${focusRing}`}
@@ -46,7 +46,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
           Zur Startseite
         </Link>
         <h1
-          className="text-[28px] font-bold leading-[36px] text-[var(--color-text-primary)]"
+          className="text-[32px] font-bold leading-10 text-[var(--color-text-primary)] md:text-[44px] md:leading-[48px]"
           style={{ fontFamily: "var(--font-display)" }}
         >
           {doc.title}
@@ -62,7 +62,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
         {doc.toc ? (
           <nav
             aria-label="Inhalt"
-            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-3.5"
+            className="bento-tile !gap-0 !p-4"
           >
             <ul className="flex flex-col">
               {headings.map((h) => (
@@ -96,7 +96,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
                 {b.items.map((c) => (
                   <li
                     key={c.name}
-                    className="flex items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 py-2.5"
+                    className="flex items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 py-2.5"
                   >
                     <div className="flex flex-col gap-0.5">
                       <span className="text-sm font-semibold leading-[18.2px] text-[var(--color-text-primary)]">

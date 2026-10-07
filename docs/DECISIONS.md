@@ -13,11 +13,14 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-327 | SIN-327: Urgent zieht vor, wartende PRs geben ihren Platz frei | [SIN-327-urgent-und-wartende-prs.md](decisions/SIN-327-urgent-und-wartende-prs.md) |
 | SIN-322 | SIN-322: CI-Gates entsperren (CodeQL, Leistungsbudget) | [SIN-322-ci-gates-entsperren.md](decisions/SIN-322-ci-gates-entsperren.md) |
 | SIN-320 | SIN-320 — Sparsam bauen: Verbrauch messen, Modell und Runden nach Größe, Landkarte, Bündeln | [SIN-320-sparsam-bauen.md](decisions/SIN-320-sparsam-bauen.md) |
 | SIN-319 | SIN-319 — Live-Check nach jedem Deploy | [SIN-319-live-check.md](decisions/SIN-319-live-check.md) |
+| SIN-318 | SIN-318: Variante 2026, Teil 4: Startseite, Ausbilder, Demo/Anmelden, Rechtsseiten | [SIN-318-variante-2026-start-ausbilder.md](decisions/SIN-318-variante-2026-start-ausbilder.md) |
 | SIN-317 | SIN-317: Variante 2026 · 3/4: Wiederholung, Prüfung, Profil, Einstellungen | [SIN-317-variante-2026-teil-3.md](decisions/SIN-317-variante-2026-teil-3.md) |
 | SIN-314 | SIN-314: Design-Regeln 2026 festschreiben und Tokens ergänzen | [SIN-314-design-regeln-2026.md](decisions/SIN-314-design-regeln-2026.md) |
+| SIN-312 | SIN-312: Index-Konflikte ohne KI lösen | [SIN-312-index-konflikte.md](decisions/SIN-312-index-konflikte.md) |
 | SIN-311 | SIN-311: Ladezeit verbessern, LCP unter 2,5 s auf Startseite und Lernpfad | [SIN-311-ladezeit-lcp.md](decisions/SIN-311-ladezeit-lcp.md) |
 | SIN-309 | SIN-309 — Deploy-Schleife beenden: keine Git-Deploys, ein Hook-Versuch je Commit | [SIN-309-deploy-schleife.md](decisions/SIN-309-deploy-schleife.md) |
 | SIN-308 | SIN-308 — Robuste Env-Prüfung, Smoke-Test nach Deploy, Region fra1 | [SIN-308-env-robust-smoke.md](decisions/SIN-308-env-robust-smoke.md) |
@@ -25,6 +28,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-301 | SIN-301 — Rechtsseiten: Impressum, Datenschutz, Hinweis zu KI-Inhalten | [SIN-301-rechtsseiten.md](decisions/SIN-301-rechtsseiten.md) |
 | SIN-300 | SIN-300: Frontend-Qualität und Pflege (Bildvergleich, Leistungsbudget, Aufräum-Agent, README, Changelog) | [SIN-300-frontend-qualitaet-pflege.md](decisions/SIN-300-frontend-qualitaet-pflege.md) |
 | SIN-297 | SIN-297 — Review-Agent mit zweitem Modell und Recht-und-Inhalt-Wächter | [SIN-297-review-agent.md](decisions/SIN-297-review-agent.md) |
+| SIN-296 | SIN-296 — Lehren-Datei, selbst geschriebene Skills und Laufprotokoll pro Worker | [SIN-296-lehren-skills-protokoll.md](decisions/SIN-296-lehren-skills-protokoll.md) |
 | SIN-295 | SIN-295 — CodeQL und automatische Paket-Updates | [SIN-295-codeql-updates.md](decisions/SIN-295-codeql-updates.md) |
 | SIN-294 | SIN-294 — Notbremse, Erreichbarkeits-Prüfung und Token-Ablauf | [SIN-294-notbremse-erreichbarkeit-token.md](decisions/SIN-294-notbremse-erreichbarkeit-token.md) |
 | SIN-293 | SIN-293 — Nächtliche Sicherung der Inhalte mit Wiederherstellungs-Skript | [SIN-293-sicherung.md](decisions/SIN-293-sicherung.md) |

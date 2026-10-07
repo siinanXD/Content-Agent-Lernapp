@@ -20,6 +20,7 @@ import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./
 import { noPrComment, splitIssue, summarizeExecution, tooBig } from "./diagnose.mjs";
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
+import { collectPrStates, waitingIssues } from "./warten.mjs";
 import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, createLinearIssues, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
@@ -206,7 +207,14 @@ export async function main(argv) {
   // Phase (SIN-244): im Betrieb nur bug, security, content und der letzte Wochenplan.
   const phase = parsePhase(process.env.PHASE);
   const may = (i) => phaseAllowsIssue(phase, i) && claudeMayTake(i, { openPrs });
-  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, may);
+  // Wartende PRs (SIN-327): das Issue bleibt „In Progress“, belegt aber keinen Platz.
+  const { GITHUB_REPOSITORY: repo, GITHUB_TOKEN: token } = process.env;
+  const running = fixtureAt >= 0 ? undefined : await fetchRunningWorkers();
+  // Ohne bekannte Worker-Läufe oder PR-Stand lieber nichts freigeben.
+  const prStates = fixtureAt >= 0 || !repo || !token || !running ? [] : await collectPrStates(repo, token).catch(() => []);
+  const waiting = waitingIssues(issues, prStates, running ?? []);
+  for (const [id, w] of waiting) console.log(`${id} wartet (PR #${w.pr}: ${w.reason}), belegt keinen Platz`);
+  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, may, new Set(waiting.keys()));
   if (!picked.length) {
     console.log(`Nichts zu starten: ${reason}`);
     output("found", "false");

@@ -21,6 +21,7 @@ import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
+import { GATE_LABEL, GATE_PREFIX, collectGateFailures, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
@@ -149,6 +150,9 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const mayTake = (i) => phaseAllowsIssue(phase.phase, i) && claudeMayTake(i, { now, openPrs: prLite });
   const order = startOrder(issues, mayTake);
   const started = issues.filter((i) => i.state?.type === "started");
+  // Wartende PRs (SIN-327): Issue bleibt „In Progress“, belegt aber keinen Platz; getrennt von laufenden Workern.
+  const waiting = waitingIssues(issues, prs.map((p) => ({ ...p, ci: checks[p.number]?.ci })), running.map((r) => idOf(r.display_title)).filter(Boolean));
+  const active = started.filter((i) => !waiting.has(i.identifier));
   const todo = issues.filter((i) => i.state?.name === "Todo");
 
   const needsApproval = (p) => labelNames(p).includes("risk:high") && !APPROVAL_LABELS.some((l) => labelNames(p).includes(l));
@@ -165,7 +169,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       text: `Worker ${id} fehlgeschlagen: ${failures[r.id] || "kein Fehlertext lesbar"} ([Lauf](${r.html_url}))`,
     });
   }
-  const startable = order.length > 0 && started.length < MAX_PARALLEL;
+  const startable = order.length > 0 && active.length < MAX_PARALLEL;
   const lastWorkerEnd = workers.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), "");
   const idleSince = [lastWorkerEnd, ...order.map((i) => i.updatedAt)].filter(Boolean).sort().pop();
   if (!running.length && startable && !paused && mins(idleSince, now) > IDLE_MIN) {
@@ -214,21 +218,34 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   // --- Selbst-Diagnose (SIN-291): Ursache aus den letzten Logs, Bug-Issue ohne Duplikat ---
   const diagnosis =
-    started.length < MAX_PARALLEL
+    active.length < MAX_PARALLEL
       ? diagnoseStall({ running: running.length, paused, startable: order.length, idleMin: mins(idleSince, now), logs: snap.logs ?? [] })
       : null;
   if (diagnosis) incidents.push({ key: `stall:${diagnosis.cause}`, text: `Stillstand: ${diagnosis.label}. ${diagnosis.reason}` });
   const known = [...issues, ...(snap.doneTitles ?? []).map((title) => ({ title }))];
+  // Gate-Bruch auf main (SIN-327): derselbe rote Schritt in 2+ PRs mit verschiedenem Code → ein Urgent-Bug, PRs nicht weiter reparieren.
+  const { breaks } = detectGateBreaks(snap.gateFailures ?? [], known);
+  const gateBugOpen = issues.some((i) => String(i.title).startsWith(GATE_PREFIX));
+  for (const b of breaks) {
+    incidents.push({ key: `gate:${b.check}/${b.step}`, text: `Gate-Bruch: \`${b.check}\` / \`${b.step}\` scheitert in ${b.prs.map((n) => `#${n}`).join(", ")}. Urgent-Bug-Issue ${b.issue ? "angelegt" : "offen"}, Reparatur der PRs gesperrt.` });
+  }
   const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null);
   const stop = linearQ.level === "stop";
-  const bugs = [newStallIssue(diagnosis, known), ...deployBugs.filter((b) => !known.some((k) => k.title === b.title)), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
+  const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...deployBugs.filter((b) => !known.some((k) => k.title === b.title)), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
   const decisions = snap.decisions ?? [];
   for (const d of decisions) incidents.push({ key: `decision:${d.number}`, text: `Entscheidung nötig in gemergtem PR #${d.number} (${cell(d.title)}): ${d.question}` });
 
   // --- Selbstheilung ---
   for (const issue of bugs) actions.push({ type: "create-issue", issue });
+  for (const a of gateActions(openPrs, breaks, gateBugOpen)) actions.push(/** @type {any} */ (a));
   const conflictAsks = {};
   for (const p of openPrs.filter((x) => isAgentPr(x) && !x.draft && !labelNames(x).includes("no-automerge") && x.mergeable_state === "dirty")) {
+    // SIN-312: erzeugte Dateien löst konflikt.mjs ohne KI (vorher im Lauf); hier nur noch echte Code-Konflikte.
+    if (snap.conflictResults?.[p.number] === "resolved") continue;
+    if (paused) {
+      incidents.push({ key: `conflict-web:${p.number}`, text: `PR #${p.number} hat einen Code-Konflikt, Claude-Kontingent leer (Pause bis ${pausedUntil}). Konflikt per Web-Editor lösen: ${p.html_url} öffnen, unten „Resolve conflicts“, Markierungen <<<<<<< bis >>>>>>> bereinigen, „Mark as resolved“, „Commit merge“.` });
+      continue;
+    }
     const asks = (prev.conflictAsks ?? {})[p.number] ?? [];
     const waited = asks.length ? mins(asks[asks.length - 1], now) >= CLAUDE_RETRY_MIN : true;
     conflictAsks[p.number] = asks;
@@ -286,6 +303,11 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   if (decisions.length) {
     out.push("## Braucht dich", "", "Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
     for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
+    out.push("");
+  }
+  if (waiting.size) {
+    out.push("Wartende PRs (belegen keinen Platz, Issue bleibt „In Progress“):", "");
+    for (const [id, w] of waiting) out.push(`- ${id}: PR #${w.pr}, ${w.reason}`);
     out.push("");
   }
   if (openPrs.length) {
@@ -443,9 +465,10 @@ async function collectGithub(repo, now) {
       labels: p.labels.map((l) => l.name), created_at: p.created_at, updated_at: p.updated_at, html_url: p.html_url,
     };
     if (p.state === "open") {
+      pr.sha = p.head.sha;
       pr.mergeable_state = (await gh(`/repos/${repo}/pulls/${p.number}`)).mergeable_state;
       const cr = await gh(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`);
-      checks[p.number] = { mergeGate: cr.check_runs.find((c) => c.name === "merge-gate")?.conclusion ?? null };
+      checks[p.number] = { mergeGate: cr.check_runs.find((c) => c.name === "merge-gate")?.conclusion ?? null, ci: cr.check_runs.find((c) => c.name === "build")?.conclusion ?? undefined, checkRuns: cr.check_runs };
     }
     prs.push(pr);
   }
@@ -555,6 +578,15 @@ function readTokens() {
   }
 }
 
+/** Ergebnis von konflikt.mjs (KONFLIKT_FILE); fehlt die Datei, fragt der Wächter wie bisher @claude. */
+function readConflictResults(env) {
+  try {
+    return env.KONFLIKT_FILE ? JSON.parse(readFileSync(env.KONFLIKT_FILE, "utf8")) : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function main(argv, env = process.env) {
   const dry = argv.includes("--dry-run");
   const fixtureAt = argv.indexOf("--fixture");
@@ -604,10 +636,13 @@ export async function main(argv, env = process.env) {
     // Selbst-Diagnose (SIN-291): Logs der letzten roten Läufe, offene Entscheidungen, kürzlich erledigte Bug-Issues.
     const logs = await collectLogs(repo, g.runs).catch(() => []);
     const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
-    const doneTitles = linearOk ? await doneTitlesSince(STALL_PREFIX, now).catch(() => []) : [];
+    const doneTitles = linearOk ? [...(await doneTitlesSince(STALL_PREFIX, now).catch(() => [])), ...(await doneTitlesSince(GATE_PREFIX, now).catch(() => []))] : [];
+    // Rote Schritte offener PRs für den Gate-Bruch (SIN-327); nur PRs mit rotem Check kosten Anfragen.
+    const redPrs = g.prs.filter((p) => p.state === "open" && g.checks[p.number]?.checkRuns?.some((c) => c.conclusion === "failure")).map((p) => ({ number: p.number, sha: p.sha, checkRuns: g.checks[p.number].checkRuns }));
+    const gateFailures = await collectGateFailures(repo, env.GITHUB_TOKEN, redPrs).catch(() => []);
     const backup = await collectBackup(repo, now, gh);
     const liveCheck = await collectLiveCheck(repo, gh);
-    snap = { now: now.toISOString(), ...g, backup, liveCheck, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles };
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
@@ -643,6 +678,21 @@ export async function main(argv, env = process.env) {
     if (a.type === "create-issue") {
       // Ist Linear selbst die Ursache (Limit), schlägt das Anlegen fehl: der Vorfall ging schon per Erwähnung an Sinan.
       await createLinearIssues([a.issue]).catch((e) => console.log(`::warning::Bug-Issue nicht angelegt: ${e.message}`));
+    }
+    // Label und Branch-Update mit dem Agenten-Token: nur so läuft die CI nach dem Push neu (SIN-240).
+    if (a.type === "gate-block" || a.type === "gate-release") {
+      const token = env.AGENT_WORKFLOW_TOKEN || env.GITHUB_TOKEN;
+      try {
+        if (a.type === "gate-block") {
+          await gh(`/repos/${repo}/labels`, { method: "POST", body: { name: GATE_LABEL, color: "D93F0B", description: "Gate auf main kaputt: keine Reparatur (SIN-327)" }, token }).catch(() => {});
+          await gh(`/repos/${repo}/issues/${a.pr}/labels`, { method: "POST", body: { labels: [GATE_LABEL] }, token });
+        } else {
+          await gh(`/repos/${repo}/issues/${a.pr}/labels/${GATE_LABEL}`, { method: "DELETE", token });
+          await gh(`/repos/${repo}/pulls/${a.pr}/update-branch`, { method: "PUT", token });
+        }
+      } catch (e) {
+        console.log(`::warning::${a.type} für PR #${a.pr} fehlgeschlagen: ${e.message}`);
+      }
     }
     if (a.type === "linear-done") {
       await setState(a.issue, "Done");

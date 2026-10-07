@@ -131,7 +131,7 @@ export default function ProfilPage() {
               </p>
               <Link
                 href="/wiederholung"
-                className="text-sm text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+                className="inline-flex min-h-11 items-center text-sm text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
               >
                 Zur Wiederholung
               </Link>

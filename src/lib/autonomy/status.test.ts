@@ -87,6 +87,16 @@ test("Status: Merge-Konflikt → @claude, nach 2 Versuchen Sinan", () => {
   assert.match(renderAlert(third.fresh), /@siinanXD/);
 });
 
+test("Status: Konflikt in erzeugten Dateien (gelöst) → keine @claude-Bitte; bei leerem Kontingent Web-Editor-Anleitung (SIN-312)", () => {
+  const snap = fixture();
+  const asks = (r: { actions: { type: string }[] }) => r.actions.filter((a) => a.type === "ask-claude").length;
+  assert.equal(asks(analyze({ ...snap, conflictResults: { 65: "resolved" } }, limits, {})), 0);
+  assert.equal(asks(analyze({ ...snap, conflictResults: { 65: "code" } }, limits, {})), 1);
+  const paused = analyze({ ...snap, conflictResults: { 65: "code" }, paused: "2026-10-05T15:00:00Z" }, limits, {});
+  assert.equal(asks(paused), 0);
+  assert.ok(keys(paused).includes("conflict-web:65"));
+});
+
 test("Status: merge-gate rot trotz Freigabe → Hinweis, Linear-Abgleich → Done", () => {
   const snap = fixture();
   snap.prs[1].labels = ["risk:high", "freigegeben"];
