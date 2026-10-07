@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-332 | SIN-332 — Production-Deploy per CLI, Smoke-Test im selben Lauf, Alarm bei Rückstand | [SIN-332-production-deploy-cli.md](decisions/SIN-332-production-deploy-cli.md) |
 | SIN-330 | SIN-330: Hostprüfung per URL-Parsing statt Teilstring/Regex | [SIN-330-codeql-hostpruefung.md](decisions/SIN-330-codeql-hostpruefung.md) |
 | SIN-328 | SIN-328 — Stillstand ohne Log: Ursache `ohne-start` statt `unbekannt` | [SIN-328-stillstand-ohne-log.md](decisions/SIN-328-stillstand-ohne-log.md) |
 | SIN-327 | SIN-327: Urgent zieht vor, wartende PRs geben ihren Platz frei | [SIN-327-urgent-und-wartende-prs.md](decisions/SIN-327-urgent-und-wartende-prs.md) |
