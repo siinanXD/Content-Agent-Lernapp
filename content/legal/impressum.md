@@ -1,27 +1,21 @@
 ---
 titel: Impressum
-entwurf: Platzhalter in [ ] vor dem Livegang ausfüllen und rechtlich prüfen lassen.
 ---
 
 ## Angaben gemäß § 5 DDG
 
-[Vor- und Nachname]
+Sinan Kahraman
 sjcode.de
-[Straße Hausnummer]
-[PLZ] Euskirchen
+Mühlenstraße 44
+53879 Euskirchen
 
 ## Kontakt
 
-E-Mail: [kontakt@sjcode.de]
-Telefon: [optional]
-
-## Umsatzsteuer-ID
-
-[USt-IdNr. gemäß § 27a UStG, falls vorhanden]
+E-Mail: kontakt@sjcode.de
 
 ## Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
 
-[Vor- und Nachname, Anschrift wie oben]
+Sinan Kahraman, Mühlenstraße 44, 53879 Euskirchen
 
 ## Hinweis zu KI-Inhalten
 
