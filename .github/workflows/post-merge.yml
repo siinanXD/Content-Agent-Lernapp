@@ -178,6 +178,17 @@ jobs:
               core.warning(`Ohne workflow_dispatch, daher nicht gestartet: ${skipped.join(", ")}`);
             }
 
+            // 4b. Dispatcher sofort anstoßen (SIN-334): frei gewordener Platz, nicht erst beim 30-Min-Zeitplan.
+            // Die Gruppe `dispatch` in dispatch.yml verhindert Doppelstarts.
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner, repo, workflow_id: "dispatch.yml", ref: base, inputs: { dry_run: "false" },
+              });
+              started.push("dispatch");
+            } catch (e) {
+              core.warning(`Dispatcher nicht angestoßen: ${e.message}`);
+            }
+
             // 5. Issues schließen, die der PR schließen soll (Closes/Fixes/Resolves #N).
             const numbers = new Set();
             const KEYWORDS = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#(\d+)\b/gi;

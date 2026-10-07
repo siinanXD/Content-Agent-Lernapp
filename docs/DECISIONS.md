@@ -15,6 +15,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | --- | --- | --- |
 | SIN-345 | SIN-345: /start unter dem LCP-Budget | [SIN-345-start-lcp.md](decisions/SIN-345-start-lcp.md) |
 | SIN-335 | SIN-335: Gate auf main härten | [SIN-335-gate-haerten.md](decisions/SIN-335-gate-haerten.md) |
+| SIN-334 | SIN-334: Dispatcher sofort nach Merge und bei frei gewordenem Platz anstoßen | [SIN-334-dispatcher-anstossen.md](decisions/SIN-334-dispatcher-anstossen.md) |
 | SIN-333 | SIN-333: Gate-Bruch zählt nur frische Läufe, ohne Dependabot, mit Gegencheck auf main | [SIN-333-gate-bruch-frische-laeufe.md](decisions/SIN-333-gate-bruch-frische-laeufe.md) |
 | SIN-332 | SIN-332 — Production-Deploy per CLI, Smoke-Test im selben Lauf, Alarm bei Rückstand | [SIN-332-production-deploy-cli.md](decisions/SIN-332-production-deploy-cli.md) |
 | SIN-330 | SIN-330: Hostprüfung per URL-Parsing statt Teilstring/Regex | [SIN-330-codeql-hostpruefung.md](decisions/SIN-330-codeql-hostpruefung.md) |
@@ -22,6 +23,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-328 | SIN-328 — Stillstand ohne Log: Ursache `ohne-start` statt `unbekannt` | [SIN-328-stillstand-ohne-log.md](decisions/SIN-328-stillstand-ohne-log.md) |
 | SIN-327 | SIN-327: Urgent zieht vor, wartende PRs geben ihren Platz frei | [SIN-327-urgent-und-wartende-prs.md](decisions/SIN-327-urgent-und-wartende-prs.md) |
 | SIN-325 | SIN-325: Variante 2026 · 2/4: Fragetypen und Ergebnis (W5) | [SIN-325-variante-2026-fragetypen-ergebnis.md](decisions/SIN-325-variante-2026-fragetypen-ergebnis.md) |
+| SIN-324 | SIN-324: Variante 2026 · 2/4: Feedback falsch und „Warum?“-Panel | [SIN-324-feedback-und-warum-panel.md](decisions/SIN-324-feedback-und-warum-panel.md) |
 | SIN-323 | SIN-323: Variante 2026 · 2/4: Einheit (W4) und Feedback richtig (A2) | [SIN-323-variante-2026-einheit-feedback.md](decisions/SIN-323-variante-2026-einheit-feedback.md) |
 | SIN-322 | SIN-322: CI-Gates entsperren (CodeQL, Leistungsbudget) | [SIN-322-ci-gates-entsperren.md](decisions/SIN-322-ci-gates-entsperren.md) |
 | SIN-321 | SIN-321 — Skills-Test: Superpowers, Caveman, Impeccable prüfen und eine Woche messen | [SIN-321-skills-test.md](decisions/SIN-321-skills-test.md) |
