@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
+  REQUIRED_TABLES,
+  missingTables,
   TASK_IDS,
   TASKS,
   applyResult,
@@ -18,6 +20,12 @@ import {
 import { startRuns } from "../../../scripts/autonomy/planner.mjs";
 
 const now = new Date("2026-10-06T10:00:00Z");
+
+test("missingTables: meldet fehlende Pflicht-Tabellen (SIN-347)", () => {
+  assert.deepEqual(REQUIRED_TABLES, ["pipeline_run_costs", "content_factory_runs"]);
+  assert.deepEqual(missingTables(["courses", "pipeline_run_costs"]), ["content_factory_runs"]);
+  assert.deepEqual(missingTables(["pipeline_run_costs", "content_factory_runs"]), []);
+});
 
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {
   assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "cost-report", "lighthouse", "offline-check", "migrate"]);

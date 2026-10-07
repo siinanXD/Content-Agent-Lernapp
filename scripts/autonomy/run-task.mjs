@@ -179,6 +179,15 @@ export function pendingMigrations(files, { tables = new Set(), versions = new Se
     .map(({ name, sql }) => ({ name, sql, additiv: isAdditive(sql) }));
 }
 
+/** Tabellen, die nach `migrate` da sein müssen (SIN-347): Kosten-Ledger und Status der Content-Fabrik. */
+export const REQUIRED_TABLES = ["pipeline_run_costs", "content_factory_runs"];
+
+/** Welche der geforderten Tabellen fehlen? Reine Funktion über die Namen aus information_schema. */
+export const missingTables = (present, required = REQUIRED_TABLES) => {
+  const have = new Set(present);
+  return required.filter((t) => !have.has(t));
+};
+
 /** Sicherung jünger als MAX_BACKUP_AGE_H? `lastBackupAt`: ISO-Zeit des letzten erfolgreichen Backup-Laufs. */
 export const backupFresh = (lastBackupAt, now = new Date()) =>
   Boolean(lastBackupAt) && now.getTime() - new Date(lastBackupAt).getTime() <= MAX_BACKUP_AGE_H * 3600 * 1000;
@@ -221,7 +230,14 @@ async function migrate(env, { dry }) {
   }
   const after = dry ? null : await sqlQuery(env, "select table_name from information_schema.tables where table_schema = 'public'");
   lines.push(dry ? `Trockenlauf: würde anwenden: ${todo.map((p) => p.name).join(", ") || "nichts"}` : `Angewendet: ${applied.join(", ") || "nichts"} (${after.length} Tabellen)`);
-  return { ok: blocked.length === 0, ergebnis: lines.join("; "), applied, blocked: blocked.map((b) => b.name) };
+  // Beleg im Log: nur Tabellennamen, keine Werte, keine Secrets.
+  let fehlend = [];
+  if (!dry) {
+    fehlend = missingTables(after.map((r) => r.table_name));
+    for (const t of REQUIRED_TABLES) console.log(`${fehlend.includes(t) ? "FEHLT" : "ok   "} ${t}`);
+    lines.push(fehlend.length ? `Tabellen fehlen weiter: ${fehlend.join(", ")}` : `Tabellen vorhanden: ${REQUIRED_TABLES.join(", ")}`);
+  }
+  return { ok: blocked.length === 0 && fehlend.length === 0, ergebnis: lines.join("; "), applied, blocked: blocked.map((b) => b.name) };
 }
 
 // ---- Eintrag in docs/product-readiness.json ------------------------------------------------------------------
