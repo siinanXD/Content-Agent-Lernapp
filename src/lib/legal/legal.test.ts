@@ -32,10 +32,10 @@ test("Ohne Platzhalter kein Entwurf und kein noindex", () => {
   assert.deepEqual(legalMetadata({ ...doc, draft: true }).robots, { index: false, follow: false });
 });
 
-test("Rechtsseiten: alle drei Dateien laden; Impressum und Datenschutz sind Entwurf, KI-Hinweis nicht", () => {
+test("Rechtsseiten: alle drei Dateien laden; Impressum ist Entwurf, Datenschutz und KI-Hinweis ohne Platzhalter nicht", () => {
   const docs = Object.fromEntries(LEGAL_SLUGS.map((s) => [s, loadLegalDocument(s)]));
   assert.equal(docs.impressum.draft, true);
-  assert.equal(docs.datenschutz.draft, true);
+  assert.equal(docs.datenschutz.draft, false);
   assert.equal(docs["ki-hinweis"].draft, false);
   assert.equal(docs.datenschutz.toc, true);
   const sprung = docs.datenschutz.blocks.filter((b) => b.type === "heading");
@@ -73,7 +73,8 @@ test("Auftragsverarbeiter passen zur Konfiguration im Repo", () => {
   assert.equal(region("Langfuse"), "EU");
   assert.ok(vercel.includes('"regions": ["fra1"]'), "vercel.json: Region geändert, Datenschutz Abschnitt 4 anpassen");
   assert.match(region("Vercel") ?? "", /^Funktionen in Frankfurt \(fra1\)/);
-  for (const name of ["Supabase", "Sentry"]) assert.match(region(name) ?? "", /^\[Region prüfen\]$/, name);
+  assert.equal(region("Supabase"), "EU (Irland)");
+  assert.equal(region("Sentry"), "EU");
 });
 
 test("Rechts-Checkliste: offene Punkte erscheinen unter „Braucht dich“, abgehakte nicht", () => {
