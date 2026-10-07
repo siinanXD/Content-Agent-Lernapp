@@ -1,0 +1,98 @@
+# Trend-Radar (SIN-313): einmal pro Woche gründlich recherchieren, was gerade im Trend ist (GitHub, Figma Riffs/Weave,
+# Hugging Face, Anthropic/OpenAI/Vercel/Supabase, Skills und MCP). Sonntag 04:30 UTC, vor dem Planer (06:00).
+# Ablauf:
+#   1. Pause prüfen (Claude-Limit), offener Radar-PR vorhanden → Stopp (ein PR pro Woche)
+#   2. Claude (Websuche, festes Budget) schreibt docs/research/trend-radar-<JJJJ-KW>.md und /tmp/radar.json
+#   3. Skript legt höchstens 5 Linear-Issues mit Label `research` (nie `claude`) und höchstens 3 `sinan`-Aufgaben an
+#   4. Claude öffnet den PR (risk:medium). Nichts wird automatisch eingebaut, Sinan entscheidet.
+# Kosten: ein Claude-Lauf (Sonnet), höchstens 60 Runden je Woche. Secrets: CLAUDE_CODE_OAUTH_TOKEN, AGENT_WORKFLOW_TOKEN,
+# LINEAR_API_KEY; optional FIGMA_ACCESS_TOKEN (nur lesen).
+name: trend-radar
+
+on:
+  schedule:
+    - cron: "30 4 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Keine Linear-Issues anlegen, nur anzeigen"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: trend-radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+      FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
+      AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
+      DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - name: Offener Radar-PR?
+        id: offen
+        run: |
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --search "docs(research) trend-radar in:title" --json number --jq 'length')
+          echo "offen=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        if: steps.offen.outputs.offen != 'true'
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        if: steps.offen.outputs.offen != 'true'
+        with:
+          node-version: "22"
+      - name: Pause prüfen (Claude-Limit)
+        id: pause
+        if: steps.offen.outputs.offen != 'true'
+        run: node scripts/autonomy/dispatch.mjs --check-pause
+      - name: Berichtspfad
+        id: woche
+        if: steps.offen.outputs.offen != 'true' && steps.pause.outputs.paused != 'true'
+        run: |
+          echo "pfad=$(node scripts/autonomy/trend-radar.mjs --week)" >> "$GITHUB_OUTPUT"
+          if ls docs/research/trend-radar-*.md >/dev/null 2>&1; then echo "erster=false" >> "$GITHUB_OUTPUT"; else echo "erster=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Claude recherchiert
+        if: steps.offen.outputs.offen != 'true' && steps.pause.outputs.paused != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          allowed_bots: "github-actions,github-actions[bot]"
+          prompt: |
+            Trend-Radar (SIN-313). Regeln: AGENTS.md. Lies zuerst docs/LANDKARTE.md und docs/PRODUCT.md (Projekte: Lern-App, Leitstand, Beleg-/Störungs-Assistent, Release-Kit, Pipeline).
+            Aufgabe: Recherchiere gründlich mit WebSearch und WebFetch, was gerade im Trend ist und durch die Decke geht, für schönere Webseiten, bessere Agenten-Workflows und den Leitstand. Nutze nur Quellen, die du im Lauf wirklich geöffnet hast; jeder Fund hat einen Link. Nichts erfinden: Zahlen (Sterne, Nutzung) nur, wenn sie auf der Seite stehen, sonst „nicht ermittelt“. Keine Personendaten, keine Zugangsdaten.
+            Quellen, jeweils Woche und Monat:
+            - GitHub Trending (daily, weekly, monthly) zu agents, mcp, claude-code, nextjs, react, design-systems, animation, dashboards, devtools; Sterne-Zuwachs der letzten 30 Tage
+            - Figma: Riffs, Figma Weave (KI-Workflows, Modelle, veröffentlichte Tools), Figma Make (Vorlagen), Community-Dateien und -Plugins mit stark steigender Nutzung, generative Plugins, Shader, Motion
+            - Hugging Face: Trending Models und Spaces (Bild, Sprache, Embeddings, kleine Modelle)
+            - Changelogs und neue Funktionen von Anthropic/Claude, OpenAI, Vercel, Supabase
+            - Skills- und Agent-Ökosysteme: neue Claude-Skills, MCP-Server, Awesome-Listen
+            ${{ steps.woche.outputs.erster == 'true' && 'ERSTER LAUF, Schwerpunkt: (1) Figma Riffs und Weave: was hilft für (a) Startseiten mit Wow-Effekt (Release-Kit SIN-243), (b) Leitstand-Design (SIN-304), (c) Lernbilder (SVG vs. Illustration), (d) Agenten-Workflows; kann die Pipeline die Weave-Werkzeuge (weave_list_tools, weave_run_model) direkt nutzen? (2) GitHub-Trends des Monats zu Agenten-Orchestrierung, Dashboards mit Live-Graphen, Scroll- und Motion-Bibliotheken.' || 'Vergleiche mit dem letzten Bericht in docs/research/ und nenne nur Neues oder deutlich Verändertes ausführlich.' }}
+            Bewertung je Fund als Tabelle: Was ist es, warum relevant für welches Projekt, Lizenz, Sterne/Nutzung, letzter Commit/Update, Kosten, Aufwand, Risiko. OSS-Regel aus AGENTS.md (MIT/Apache, letzter Commit unter 6 Monaten, über 500 Sterne); Ausnahmen begründen.
+            Ergebnis:
+            1. Bericht `${{ steps.woche.outputs.pfad }}` (deutsch, kurz, mit Tabellen, Abrufdatum je Quelle, am Ende „Top 5“ und „Nicht gefunden oder nicht erreichbar“).
+            2. `/tmp/radar.json` (nicht committen): { "top": [{ "titel", "was", "warum", "lizenz", "aufwand", "risiko", "link" }] mit höchstens 5 Einträgen, "sinan": [{ "titel", "was", "link" }] mit höchstens 3 Klick-Aufgaben wie Figma-Community-Datei kopieren oder Weave-Workflow ausprobieren }. Nur https-Links.
+            3. PR: Branch `claude/trend-radar-<KW>`, Titel `docs(research): trend-radar ${{ steps.woche.outputs.pfad }} (SIN-313)`, Body beginnt mit "Part of SIN-313", danach `## Was ändert sich` (2–4 Zeilen) und `## Nach dem Merge` (Linear-Issues mit Label research entstehen im selben Lauf). Nur der Bericht gehört in den PR. Kein Draft, nie selbst mergen. Commit-Nachricht enthält `Part of SIN-313`.
+            Ist eine Quelle nicht erreichbar, schreibe das in den Bericht statt zu raten.
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 60
+            --allowedTools "WebSearch,WebFetch,Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(node scripts/autonomy/figma.mjs:*)"
+      - name: Linear-Issues anlegen (research, sinan)
+        if: steps.offen.outputs.offen != 'true' && steps.pause.outputs.paused != 'true'
+        run: |
+          [ -f /tmp/radar.json ] || { echo "Keine radar.json, keine Issues."; exit 0; }
+          if [ "$DRY" = "true" ]; then node scripts/autonomy/trend-radar.mjs --create /tmp/radar.json --dry-run | tee -a "$GITHUB_STEP_SUMMARY"
+          else node scripts/autonomy/trend-radar.mjs --create /tmp/radar.json | tee -a "$GITHUB_STEP_SUMMARY"; fi

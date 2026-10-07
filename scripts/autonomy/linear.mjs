@@ -74,7 +74,7 @@ const rank = (p) => (p === 0 || p == null ? 5 : p);
 /** Spuren (SIN-227), in dieser Reihenfolge abwechselnd bedient. Label je Spur = Name. */
 export const LANES = ["frontend", "content", "backend"];
 /** Issues mit diesen Labels bekommt der Dispatcher nie: Design (Figma-Sitzung), Abnahme und Blocker (Mensch). */
-export const HUMAN_LABELS = ["design", "abnahme", "needs-human"];
+export const HUMAN_LABELS = ["design", "abnahme", "needs-human", "research", "sinan"];
 
 const labelsOf = (issue) => (issue.labels?.nodes ?? []).map((l) => l.name.toLowerCase());
 export const isHumanIssue = (issue) => labelsOf(issue).some((l) => HUMAN_LABELS.includes(l));
