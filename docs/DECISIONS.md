@@ -19,6 +19,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-329 | SIN-329: Leistungsbudget (Lighthouse) stabilisieren | [SIN-329-lighthouse-aufwaermlauf.md](decisions/SIN-329-lighthouse-aufwaermlauf.md) |
 | SIN-328 | SIN-328 — Stillstand ohne Log: Ursache `ohne-start` statt `unbekannt` | [SIN-328-stillstand-ohne-log.md](decisions/SIN-328-stillstand-ohne-log.md) |
 | SIN-327 | SIN-327: Urgent zieht vor, wartende PRs geben ihren Platz frei | [SIN-327-urgent-und-wartende-prs.md](decisions/SIN-327-urgent-und-wartende-prs.md) |
+| SIN-323 | SIN-323: Variante 2026 · 2/4: Einheit (W4) und Feedback richtig (A2) | [SIN-323-variante-2026-einheit-feedback.md](decisions/SIN-323-variante-2026-einheit-feedback.md) |
 | SIN-322 | SIN-322: CI-Gates entsperren (CodeQL, Leistungsbudget) | [SIN-322-ci-gates-entsperren.md](decisions/SIN-322-ci-gates-entsperren.md) |
 | SIN-320 | SIN-320 — Sparsam bauen: Verbrauch messen, Modell und Runden nach Größe, Landkarte, Bündeln | [SIN-320-sparsam-bauen.md](decisions/SIN-320-sparsam-bauen.md) |
 | SIN-319 | SIN-319 — Live-Check nach jedem Deploy | [SIN-319-live-check.md](decisions/SIN-319-live-check.md) |
@@ -35,6 +36,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-301 | SIN-301 — Rechtsseiten: Impressum, Datenschutz, Hinweis zu KI-Inhalten | [SIN-301-rechtsseiten.md](decisions/SIN-301-rechtsseiten.md) |
 | SIN-300 | SIN-300: Frontend-Qualität und Pflege (Bildvergleich, Leistungsbudget, Aufräum-Agent, README, Changelog) | [SIN-300-frontend-qualitaet-pflege.md](decisions/SIN-300-frontend-qualitaet-pflege.md) |
 | SIN-298 | SIN-298: Worker mit Live-Updates, Reparatur vor dem Push, schnellerem Start | [SIN-298-worker-live-updates.md](decisions/SIN-298-worker-live-updates.md) |
+| SIN-299 | SIN-299: Langfuse lesbar machen | [SIN-299-langfuse-lesbar.md](decisions/SIN-299-langfuse-lesbar.md) |
 | SIN-297 | SIN-297 — Review-Agent mit zweitem Modell und Recht-und-Inhalt-Wächter | [SIN-297-review-agent.md](decisions/SIN-297-review-agent.md) |
 | SIN-296 | SIN-296 — Lehren-Datei, selbst geschriebene Skills und Laufprotokoll pro Worker | [SIN-296-lehren-skills-protokoll.md](decisions/SIN-296-lehren-skills-protokoll.md) |
 | SIN-295 | SIN-295 — CodeQL und automatische Paket-Updates | [SIN-295-codeql-updates.md](decisions/SIN-295-codeql-updates.md) |
