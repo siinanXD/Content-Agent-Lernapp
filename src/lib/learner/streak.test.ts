@@ -4,12 +4,14 @@ import {
   computeDailyGoal,
   computeStreak,
   computeWeek,
+  countLearningDays,
   dailyGoalCopy,
   dayKey,
   formatDays,
   shiftDay,
   type LearningEvent,
   type LearningSummary,
+  weekActivity,
 } from "./streak";
 
 const BERLIN = "Europe/Berlin";
@@ -241,5 +243,28 @@ describe("Wochenpunkte (SIN-315)", () => {
     const week = computeWeek([ev("2026-10-05T09:00:00Z")], sunday, BERLIN);
     assert.equal(week[0]!.learned, true);
     assert.equal(week[6]!.today, true);
+  });
+});
+
+describe("Wochen-Säulen und Lerntage (SIN-317)", () => {
+  const now = new Date("2026-10-07T10:00:00Z");
+  const events = [
+    ev("2026-10-07T07:00:00Z"),
+    ev("2026-10-07T08:00:00Z"),
+    ev("2026-10-05T08:00:00Z"),
+    ev("2026-09-20T08:00:00Z"),
+  ];
+
+  it("liefert 7 Tage bis heute, älteste zuerst, mit Anzahl je Tag", () => {
+    const week = weekActivity(events, now, BERLIN);
+    assert.equal(week.length, 7);
+    assert.equal(week[0]!.day, "2026-10-01");
+    assert.deepEqual(week.map((d) => d.count), [0, 0, 0, 0, 1, 0, 2]);
+    assert.deepEqual(week.map((d) => d.today), [false, false, false, false, false, false, true]);
+  });
+
+  it("zählt verschiedene Lerntage", () => {
+    assert.equal(countLearningDays(events), 3);
+    assert.equal(countLearningDays([]), 0);
   });
 });

@@ -18,6 +18,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-320 | SIN-320 — Sparsam bauen: Verbrauch messen, Modell und Runden nach Größe, Landkarte, Bündeln | [SIN-320-sparsam-bauen.md](decisions/SIN-320-sparsam-bauen.md) |
 | SIN-319 | SIN-319 — Live-Check nach jedem Deploy | [SIN-319-live-check.md](decisions/SIN-319-live-check.md) |
 | SIN-318 | SIN-318: Variante 2026, Teil 4: Startseite, Ausbilder, Demo/Anmelden, Rechtsseiten | [SIN-318-variante-2026-start-ausbilder.md](decisions/SIN-318-variante-2026-start-ausbilder.md) |
+| SIN-317 | SIN-317: Variante 2026 · 3/4: Wiederholung, Prüfung, Profil, Einstellungen | [SIN-317-variante-2026-teil-3.md](decisions/SIN-317-variante-2026-teil-3.md) |
 | SIN-315 | SIN-315: Variante 2026 · 1/4: Onboarding und Lernpfad (Heute) | [SIN-315-variante-2026-heute.md](decisions/SIN-315-variante-2026-heute.md) |
 | SIN-314 | SIN-314: Design-Regeln 2026 festschreiben und Tokens ergänzen | [SIN-314-design-regeln-2026.md](decisions/SIN-314-design-regeln-2026.md) |
 | SIN-312 | SIN-312: Index-Konflikte ohne KI lösen | [SIN-312-index-konflikte.md](decisions/SIN-312-index-konflikte.md) |

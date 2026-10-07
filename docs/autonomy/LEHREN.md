@@ -49,3 +49,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Grenzen in `performance-budget.json` anheben oder Barrierefreiheits-Tests abschalten, um zu mergen → verboten. Richtig: die Ursache beheben. (AGENTS.md)
 - Hex-Farben im Code → Stil E erlaubt nur Tokens. Richtig: `var(--color-*)` aus `src/app/globals.css`. (SIN-271)
 - Rote PRs in „In Progress“ halten ihren Platz ewig und blockieren den Fix → wartende PRs (Konflikt, repair:3, risk:high ohne Freigabe) zählen nicht als Platz, Urgent kommt vor der Spuren-Rotation. (SIN-327)
+- Inline-Textlinks (`text-sm`, ca. 40 px hoch) reißen das 44-px-Ziel im Tastatur-Test → `inline-flex min-h-11 items-center` setzen. (SIN-317)
