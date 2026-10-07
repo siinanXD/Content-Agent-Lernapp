@@ -91,6 +91,7 @@ for (const route of [
   "/impressum",
   "/datenschutz",
   "/ki-hinweis",
+  "/demo",
   "/quellen",
 ]) {
   test(`axe + Überschrift auf ${route}`, async ({ page }) => {
