@@ -7,7 +7,8 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 1. `docs/LANDKARTE.md` (wo liegt was, wichtigste Befehle, Konventionen; spart Suchen)
 2. `docs/PRODUCT.md` (Konzept, Arbeitspakete AP-00 bis AP-12)
 3. `docs/DECISIONS.md` (Index der bisherigen Entscheidungen; Einzeldateien in `docs/decisions/`)
-4. Das zugewiesene Linear-Issue
+4. `docs/autonomy/LEHREN.md` (Fehler, die schon passiert sind, und wie es richtig geht; SIN-296)
+5. Das zugewiesene Linear-Issue
 
 ## Grundsatz
 
@@ -92,6 +93,12 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Keine Platzhalter-Texte („Lorem“, „Text folgt“ ohne Issue), keine erfundenen Zahlen oder Kennzahlen.
 - Keine Karten in Karten; eine Hero-Komposition je Screen; Texte kurz, deutsch, konkret.
 - Zugänglichkeit vor Optik: Kontrast ≥ 4,5:1, sichtbarer Fokus, Ziele ≥ 44 px.
+
+## Lehren, Skills, Laufprotokoll (SIN-296)
+
+- Nach jedem behobenen Bug (auch im Reparatur-Lauf) ergänzt du `docs/autonomy/LEHREN.md` um **eine Zeile** im selben PR: Was nicht geht → wie es richtig geht. Erst suchen, ob es sie schon gibt. Höchstens 150 Zeilen.
+- Wiederholt sich ein Arbeitsablauf, lege `docs/skills/<name>/SKILL.md` an (Aufbau: `docs/skills/README.md`) und nutze vorhandene Skills bei passenden Issues. Neue Skills nennst du im PR unter `## Neue Skills`.
+- Das Laufprotokoll (gelesene Dateien, Entscheidungen, Prüfungen, Ergebnis, Abbruchgrund) baut der Worker-Workflow selbst aus dem Log (`scripts/autonomy/protokoll.mjs`, Artefakt `laufprotokoll`, Link im PR-Steckbrief und in Linear). Du schreibst es nicht.
 
 ## Qualität
 
