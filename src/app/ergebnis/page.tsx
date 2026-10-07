@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { StateView } from "@/components/ui/state-view";
 import { StatChip } from "@/components/ui/stat-chip";
+import { Tile } from "@/components/ui/tile";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { DailyGoal } from "@/components/ui/daily-goal";
 import {
@@ -38,62 +40,72 @@ export default function ErgebnisPage() {
   const showReminder = onboarding?.consent === true && reminder.enabled;
   const ready = summary !== "laden" && summary !== "fehler" ? summary : null;
 
+  // Kein Ergebnis gespeichert: keine Zahlen erfinden, sondern den Weg zur Einheit zeigen.
   const result = session?.lastResult;
-  const title = result?.unitTitle ?? "Elektrische Gefahren";
-  const correct = result?.correct ?? 5;
-  const total = result?.total ?? 6;
-  const points = result?.points ?? 120;
-  const kind = result?.kind ?? "unit";
   const areaResults = result?.areaResults ?? [];
 
-  const headline =
-    kind === "exam"
+  const headline = !result
+    ? "Noch kein Ergebnis"
+    : result.kind === "exam"
       ? "Prüfung ausgewertet"
-      : kind === "review"
+      : result.kind === "review"
         ? "Wiederholung geschafft"
         : "Einheit geschafft";
 
   return (
     <MobileShell>
-      <section className="bg-gradient-to-br from-[var(--color-bg-hero)] to-[var(--color-brand-primary)] px-7 pb-8 pt-14">
-        <p className="text-sm text-[var(--color-text-on-brand)]">Ergebnis</p>
-        <h1
-          className="mt-2 text-[30px] font-bold leading-9 text-[var(--color-text-on-brand)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {headline}
-        </h1>
-        <p className="mt-3 text-[15px] text-[var(--color-text-on-brand)]">
-          {result?.partTitle ? `${result.partTitle} · ` : ""}
-          {title} · {correct} von {total} richtig
-        </p>
-      </section>
+      <div className="px-6 pb-4 pt-12">
+        <Tile tone="hero" className="gap-2">
+          <p className="mono-label">Ergebnis</p>
+          <h1
+            className="text-[30px] font-bold leading-9"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {headline}
+          </h1>
+          <p className="text-[15px]">
+            {result
+              ? `${result.partTitle ? `${result.partTitle} · ` : ""}${result.unitTitle} · ${result.correct} von ${result.total} richtig`
+              : "Schließe eine Einheit ab, dann siehst du hier dein Ergebnis."}
+          </p>
+        </Tile>
+      </div>
 
-      <section
-        className="flex flex-wrap gap-2 px-6 py-6"
-        aria-label="Deine Werte"
-      >
-        <StatChip
-          kind="punkte"
-          value={`+${points}`}
-          label="Punkte heute"
-          showLabel
+      {summary === "fehler" ? (
+        <StateView
+          kind="fehler"
+          title="Serie und Tagesziel nicht lesbar"
+          text="Dein Ergebnis ist gespeichert. Lade die Seite neu, um Serie und Tagesziel zu sehen."
         />
-        {ready && ready.streak.days > 0 ? (
+      ) : null}
+
+      {result ? (
+        <section
+          className="flex flex-wrap gap-2 px-6 py-4"
+          aria-label="Deine Werte"
+        >
           <StatChip
-            kind="serie"
-            value={formatDays(ready.streak.days)}
-            label="Serie"
+            kind="punkte"
+            value={`+${result.points}`}
+            label="Punkte heute"
             showLabel
           />
-        ) : null}
-        <StatChip
-          kind="wiederholung"
-          value={`${correct}/${total}`}
-          label="richtig"
-          showLabel
-        />
-      </section>
+          {ready && ready.streak.days > 0 ? (
+            <StatChip
+              kind="serie"
+              value={formatDays(ready.streak.days)}
+              label="Serie"
+              showLabel
+            />
+          ) : null}
+          <StatChip
+            kind="wiederholung"
+            value={`${result.correct}/${result.total}`}
+            label="richtig"
+            showLabel
+          />
+        </section>
+      ) : null}
 
       {ready ? (
         <div className="px-6 pb-4">
