@@ -151,6 +151,32 @@ export function recordLearningEvent(
   return next;
 }
 
+export type WeekDay = {
+  day: string;
+  /** Lernereignisse an diesem Tag */
+  count: number;
+  /** Heute (letzte Säule) */
+  today: boolean;
+};
+
+/** Die letzten 7 Kalendertage bis heute (älteste zuerst) mit der Zahl der Lernereignisse (Figma W9, Wochen-Säulen). */
+export function weekActivity(
+  events: readonly LearningEvent[],
+  now: Date = new Date(),
+  timeZone?: string,
+): WeekDay[] {
+  const today = dayKey(now, timeZone);
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = shiftDay(today, i - 6);
+    return { day, count: events.filter((e) => e.day === day).length, today: day === today };
+  });
+}
+
+/** Anzahl verschiedener Lerntage. */
+export function countLearningDays(events: readonly LearningEvent[]): number {
+  return new Set(events.map((e) => e.day)).size;
+}
+
 export type LearningSummary = {
   streak: StreakState;
   goal: DailyGoalState;
