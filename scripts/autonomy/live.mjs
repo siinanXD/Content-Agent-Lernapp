@@ -10,8 +10,28 @@
  *
  * Fehler sind nie fatal (Exit 0): ein Linear-Ausfall darf einen Lauf nicht abbrechen.
  */
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { comment, fetchProjectIssues } from "./linear.mjs";
+import { comment, linear } from "./linear.mjs";
+
+export const MAX_FORTSCHRITT = 3;
+
+/** Zählt Fortschritts-Kommentare je Lauf in einer Datei; false, sobald die Grenze erreicht ist. */
+export function allowFortschritt(identifier, dir = process.env.RUNNER_TEMP || tmpdir(), max = MAX_FORTSCHRITT) {
+  const file = join(dir, `live-fortschritt-${identifier}.count`);
+  const n = existsSync(file) ? Number(readFileSync(file, "utf8")) || 0 : 0;
+  if (n >= max) return false;
+  writeFileSync(file, String(n + 1));
+  return true;
+}
+
+/** Issue per Kennung, unabhängig vom Status (fertig/gescheitert kommen nach dem Statuswechsel). */
+export async function findIssue(identifier, call = linear) {
+  const data = await call(`query($id: String!) { issue(id: $id) { id identifier } }`, { id: identifier });
+  return data.issue;
+}
 
 const trim = (s, n = 1500) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -51,7 +71,8 @@ export async function main(argv = process.argv.slice(2)) {
   const body = liveText(kind, { text, pr, run });
   if (!body || !identifier) return console.log("Aufruf: live.mjs gestartet|fortschritt|frage|fertig|gescheitert SIN-123 [Text] [--pr URL] [--run URL]");
   try {
-    const issue = (await fetchProjectIssues()).find((i) => i.identifier === identifier);
+    if (kind === "fortschritt" && !allowFortschritt(identifier)) return console.log(`Grenze von ${MAX_FORTSCHRITT} Fortschritts-Kommentaren erreicht, kein Kommentar`);
+    const issue = await findIssue(identifier);
     if (!issue) return console.log(`${identifier} nicht gefunden, kein Kommentar`);
     await comment(issue.id, body);
     console.log(`Kommentar in ${identifier}: ${body}`);

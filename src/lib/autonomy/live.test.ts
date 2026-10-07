@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { buildPrompt } from "../../../scripts/autonomy/linear.mjs";
-import { liveText, parseArgs } from "../../../scripts/autonomy/live.mjs";
+import { allowFortschritt, findIssue, liveText, parseArgs } from "../../../scripts/autonomy/live.mjs";
 
 test("liveText: gestartet, fertig mit PR-Link, gescheitert mit Grund", () => {
   assert.equal(liveText("gestartet", { run: "https://x/run/1" }), "Worker gestartet ([Lauf](https://x/run/1)).");
@@ -30,4 +32,22 @@ test("Prompt verlangt Live-Updates und Reparatur vor dem Push; Worker darf das S
   const wf = readFileSync(".github/workflows/worker.yml", "utf8");
   assert.match(wf, /Bash\(node scripts\/autonomy\/live\.mjs:\*\)/);
   assert.match(wf, /cache: npm/);
+});
+
+test("allowFortschritt: höchstens 3 je Lauf und Issue", () => {
+  const dir = mkdtempSync(join(tmpdir(), "live-"));
+  const r = [1, 2, 3, 4].map(() => allowFortschritt("SIN-1", dir));
+  assert.deepEqual(r, [true, true, true, false]);
+  assert.equal(allowFortschritt("SIN-2", dir), true);
+});
+
+test("findIssue: sucht per Kennung ohne Statusfilter", async () => {
+  let vars;
+  const issue = await findIssue("SIN-9", async (q: string, v: unknown) => {
+    vars = v;
+    assert.doesNotMatch(q, /state/);
+    return { issue: { id: "u", identifier: "SIN-9" } };
+  });
+  assert.deepEqual(vars, { id: "SIN-9" });
+  assert.equal(issue.id, "u");
 });
