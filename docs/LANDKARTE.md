@@ -43,6 +43,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Konflikte in erzeugten Dateien (Index, CHANGELOG) ohne KI | `scripts/autonomy/konflikt.mjs` (Wächter `status.yml`, `repair.yml`) |
 | Lehren, Skills, Laufprotokoll (SIN-296) | `docs/autonomy/LEHREN.md`, `docs/skills/`, `scripts/autonomy/protokoll.mjs` |
 | Aufgaben für Sinan als Linear-Issues, Label `sinan` (SIN-310) | `scripts/autonomy/sinan.mjs` (`create`, `sync`, `SEED`), Tages-Update und Status-Seite zeigen sie unter „Braucht dich“ |
+| Live-Kommentare des Workers in Linear (SIN-298) | `scripts/autonomy/live.mjs` (`gestartet`, `fortschritt`, `frage`, `fertig`, `gescheitert`) |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
 

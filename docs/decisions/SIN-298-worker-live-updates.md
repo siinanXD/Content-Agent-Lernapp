@@ -1,0 +1,10 @@
+# SIN-298: Worker mit Live-Updates, Reparatur vor dem Push, schnellerem Start
+
+- Links: https://linear.app/sinan-kahraman/issue/SIN-298, https://linear.app/sinan-kahraman/issue/SIN-235, `.github/workflows/worker.yml`, `scripts/autonomy/live.mjs`, https://github.com/actions/cache, https://playwright.dev/docs/ci#caching-browsers
+- Entscheidung: Cyrus nicht ersetzen, die Ideen übernehmen (Abschluss von SIN-235).
+  - Live-Updates: `live.mjs` schreibt Kommentare ins Linear-Issue. Der Workflow meldet „gestartet“ und „fertig“ (mit PR-Link) bzw. „gescheitert“ (mit Grund); Claude schreibt höchstens 3 Fortschritts-Kommentare und Rückfragen (`frage`) selbst. Linear-Fehler sind nie fatal.
+  - Tests im selben Lauf: Der Prompt verlangt, Typecheck, Lint und Tests vor dem Push auszuführen und Fehler selbst zu beheben (wie SIN-215). Reparatur-Runden nach dem PR sollen so seltener werden.
+  - Schneller Start: `setup-node` mit `cache: npm` im Worker (CI hatte es schon), Playwright-Browser per `actions/cache` in Worker und CI. Der Worker schreibt die Dauer der Vorbereitung in die Lauf-Zusammenfassung (`Start-Vorbereitung: n s`), so lässt sich vorher/nachher vergleichen. pip-Cache entfällt: Das Repo hat kein Python.
+  - Mehrere Anläufe: Es bleibt beim bestehenden zweiten Versuch mit Sonnet (SIN-320). Ein „erst Plan in Linear, dann Teile“-Anlauf ist nicht gebaut (niedrige Priorität, Kontingent knapp); die Zerlegung zu großer Aufträge in Teil-Issues deckt den Fall teilweise ab. Kein Best-of-N.
+- Annahmen: Der Playwright-Cache spart nur den Browser-Download (rund 150 MB); `install-deps` läuft immer. Die Startzeit vor der Änderung ist nicht gemessen, weil der alte Worker sie nicht ausgab; der Vergleich beginnt mit dem ersten Lauf nach dem Merge (Cache-Treffer erst ab dem zweiten Lauf). SIN-235 wird mit diesem Text als Begründung geschlossen, sobald der PR gemerged ist (Linear-Zugriff liegt beim Dispatcher).
+- Warum: Cyrus zu ersetzen bringt wenig, die eigene Kette (Dispatcher, Worker, Reparatur) läuft schon; die drei genannten Ideen sind kleine Änderungen mit klarem Nutzen: sichtbarer Fortschritt, weniger rote PRs, kürzerer Start.

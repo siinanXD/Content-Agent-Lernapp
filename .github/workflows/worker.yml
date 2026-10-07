@@ -71,9 +71,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+      # Schnellerer Start (SIN-298): Browser-Download zwischenspeichern; Systempakete installiert install-deps immer.
+      - name: Playwright-Cache
+        id: pw
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       # SIN-275: Frontend-Worker sehen ihre Änderungen (Screenshots Handy + Desktop).
       - name: Chromium für Screenshots
-        run: npm ci && npx playwright install --with-deps chromium
+        env:
+          CACHE_HIT: ${{ steps.pw.outputs.cache-hit }}
+        run: |
+          start=$(date +%s)
+          npm ci
+          if [ "$CACHE_HIT" = "true" ]; then npx playwright install-deps chromium; else npx playwright install --with-deps chromium; fi
+          echo "Start-Vorbereitung: $(( $(date +%s) - start )) s (Cache-Treffer: ${CACHE_HIT:-false})" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Live-Kommentar gestartet
+        continue-on-error: true
+        run: node scripts/autonomy/live.mjs gestartet "$IDENTIFIER" --run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Prompt für das Issue holen
         id: pick
         # Größe, Modell und Runden-Deckel (SIN-320): klein → Haiku, 30 Runden; mittel → Sonnet, 80; groß → Sonnet, 150.
@@ -91,7 +108,7 @@ jobs:
           claude_args: |
             --model ${{ steps.pick.outputs.model }}
             --max-turns ${{ steps.pick.outputs.max_turns }}
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/live.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
 
       # Messen (SIN-320): Tokens, Runden, Dauer, API-Gegenwert → PR-Steckbrief („## Verbrauch“) und Linear-Kommentar.
       - name: Verbrauch melden
@@ -135,7 +152,7 @@ jobs:
           claude_args: |
             --model ${{ steps.pick2.outputs.model }}
             --max-turns ${{ steps.pick2.outputs.max_turns }}
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/live.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
       - name: Verbrauch melden (Versuch 2)
         if: always() && (steps.claude2.outcome == 'failure' || steps.claude2.outcome == 'success')
         continue-on-error: true
@@ -191,6 +208,21 @@ jobs:
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
           n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
           echo "has_pr=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Live-Kommentar fertig oder gescheitert
+        if: always() && steps.pr.outcome == 'success'
+        continue-on-error: true
+        env:
+          HAS_PR: ${{ steps.pr.outputs.has_pr }}
+        run: |
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          if [ "$HAS_PR" = "true" ]; then
+            url=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json url --jq '.[0].url')
+            node scripts/autonomy/live.mjs fertig "$IDENTIFIER" --pr "$url" --run "$run"
+          else
+            node scripts/autonomy/live.mjs gescheitert "$IDENTIFIER" "Lauf ohne PR beendet, das Issue geht zurück auf Todo." --run "$run"
+          fi
 
       # Selbst-Anstoß: GitHubs Zeitplan ist unzuverlässig. Nach Erfolg (oder PR trotz Fehler) wählt der
       # Dispatcher das nächste Issue; findet er keins, endet die Kette.
