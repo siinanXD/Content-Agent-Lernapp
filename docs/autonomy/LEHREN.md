@@ -59,3 +59,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Gate-Bruch-Fehlalarm aus alten Läufen oder Dependabot-PRs → nur Läufe nach dem letzten Merge auf main, Dependabot ignorieren, Check auf main gegenprüfen (grün: PRs neu anstoßen). (SIN-333)
 - Dashboard-Kacheln filtern auf Scores ohne Score-Config (`capEur`, `Bestehensquote`) → jeden im Dashboard genutzten Score in `scoreConfigSpecs()` anlegen. (SIN-299)
 - `/start` springt erst nach Hydration per `router.replace` nach `/willkommen` → Lighthouse misst den Umweg mit (LCP 2756 ms). Richtig: Weiterleitung als Inline-Skript im HTML vor CSS und JS, Schlagzeile als Server-Komponente; mit `--details` prüfen, welche Seite das LCP-Element ist. (SIN-345)
+- Ergebnisseite mit Standardwerten füllen, wenn kein Ergebnis gespeichert ist (5 von 6, 120 Punkte) → erfundene Zahlen sind verboten. Richtig: „Noch kein Ergebnis“ mit Weg zur Einheit zeigen. (SIN-326)
