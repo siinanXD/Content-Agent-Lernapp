@@ -270,7 +270,7 @@ test("Planer: Pflege-Modus plant nur Backend und Content", () => {
 });
 
 test("Produktreife: Messung, Bestätigung, Tabelle, Abnahme und Pflege-Modus", () => {
-  const metrics = { bestehensquote_pct: 95, sentry_kritisch: 0 };
+  const metrics = { bestehensquote_pct: 95, sentry_kritisch: 0, content_fabrik_status: "läuft", content_fabrik: "letzter Lauf vor 2 Tagen" };
   const expected = ["01 Start", "02 Lernpfad"];
   const base = { metrics, issues: [issue("SIN-1", 2)], expected, figma: { frames: ["01 Start", "02 Lernpfad"] } };
   const rows = evaluateReadiness(base);
