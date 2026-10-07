@@ -32,6 +32,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-310 | SIN-310 — Aufgaben für Sinan als eigene Linear-Issues | [SIN-310-sinan-issues.md](decisions/SIN-310-sinan-issues.md) |
 | SIN-309 | SIN-309 — Deploy-Schleife beenden: keine Git-Deploys, ein Hook-Versuch je Commit | [SIN-309-deploy-schleife.md](decisions/SIN-309-deploy-schleife.md) |
 | SIN-308 | SIN-308 — Robuste Env-Prüfung, Smoke-Test nach Deploy, Region fra1 | [SIN-308-env-robust-smoke.md](decisions/SIN-308-env-robust-smoke.md) |
+| SIN-306 | SIN-306 Figma Community in die Recherche | [SIN-306-figma-community-recherche.md](decisions/SIN-306-figma-community-recherche.md) |
 | SIN-302 | SIN-302: Lauf-Workflow mit Secrets für Messläufe und Migrationen | [SIN-302-lauf-workflow.md](decisions/SIN-302-lauf-workflow.md) |
 | SIN-301 | SIN-301 — Rechtsseiten: Impressum, Datenschutz, Hinweis zu KI-Inhalten | [SIN-301-rechtsseiten.md](decisions/SIN-301-rechtsseiten.md) |
 | SIN-300 | SIN-300: Frontend-Qualität und Pflege (Bildvergleich, Leistungsbudget, Aufräum-Agent, README, Changelog) | [SIN-300-frontend-qualitaet-pflege.md](decisions/SIN-300-frontend-qualitaet-pflege.md) |
