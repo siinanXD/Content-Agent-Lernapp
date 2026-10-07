@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-360 | SIN-360: Linear Basic, keine Issue-Grenze | [SIN-360-linear-basic.md](decisions/SIN-360-linear-basic.md) |
+| SIN-354 | SIN-354 — Einwilligung und Demo-Zugang als gelaufen belegen | [SIN-354-einwilligung-demo-beleg.md](decisions/SIN-354-einwilligung-demo-beleg.md) |
 | SIN-353 | Entscheidung | [SIN-353-rechtsseiten-live.md](decisions/SIN-353-rechtsseiten-live.md) |
 | SIN-352 | SIN-352 und SIN-355: Sentry- und PostHog-Kennzahlen im Planer | [SIN-352-sin-355-kennzahlen-secrets.md](decisions/SIN-352-sin-355-kennzahlen-secrets.md) |
 | SIN-351 | SIN-351: Kennzahlen melden trotz SIN-347 „Tabelle fehlt“ | [SIN-351-schema-cache-neu-laden.md](decisions/SIN-351-schema-cache-neu-laden.md) |
