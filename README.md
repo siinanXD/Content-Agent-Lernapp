@@ -114,6 +114,12 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 - Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
 - Verify tables (when keys present): `npm run supabase:verify`.
 
+### Sentry und Content-Fabrik-Status (SIN-289)
+
+- Sentry EU (`NEXT_PUBLIC_SENTRY_DSN`, DSN-Host `ingest.de.sentry.io`) erfasst Fehler der App-Routen und der Pipeline (`scripts/content-grow.ts`). Ohne Personendaten (`src/lib/sentry-privacy.ts`); ohne DSN passiert nichts.
+- Der Planer liest offene kritische Fehler der letzten 7 Tage (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`); ohne Token steht „nicht verfügbar“.
+- Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migration `20261007020000`). Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
+
 ## Repo
 
 https://github.com/siinanXD/Content-Agent-Lernapp

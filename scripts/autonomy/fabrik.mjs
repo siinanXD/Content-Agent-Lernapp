@@ -1,0 +1,46 @@
+/**
+ * Content-Fabrik-Status für Planer und Produktreife (SIN-289).
+ * Die Fabrik schreibt je Lauf eine Zeile in `content_factory_runs`. Daraus wird abgeleitet:
+ * - läuft wöchentlich: jüngster Lauf höchstens 8 Tage alt
+ * - hängt: die letzten 2 Läufe brachten kein neues Modul, obwohl die Queue nicht leer war
+ * Ohne Supabase-Zugang oder ohne Tabelle: „nicht verfügbar“.
+ */
+import { fetchJson } from "./http.mjs";
+
+const NA = "nicht verfügbar";
+const DAY = 86_400_000;
+export const MAX_AGE_DAYS = 8;
+export const STUCK_AFTER_RUNS = 2;
+
+/**
+ * @param {{ created_at: string, new_module: boolean, queue_open: boolean }[]} rows neueste zuerst
+ * @returns {{ status: "läuft" | "hängt" | "steht", detail: string }}
+ */
+export function deriveFabrikStatus(rows, now = Date.now()) {
+  if (!rows.length) return { status: "steht", detail: "noch kein Lauf im Statusprotokoll" };
+  const ageDays = Math.floor((now - Date.parse(rows[0].created_at)) / DAY);
+  if (ageDays > MAX_AGE_DAYS) return { status: "steht", detail: `letzter Lauf vor ${ageDays} Tagen (erwartet: wöchentlich)` };
+  const last = rows.slice(0, STUCK_AFTER_RUNS);
+  if (last.length === STUCK_AFTER_RUNS && last.every((r) => !r.new_module && r.queue_open)) {
+    return { status: "hängt", detail: `${STUCK_AFTER_RUNS} Läufe ohne neues Modul` };
+  }
+  return { status: "läuft", detail: `letzter Lauf vor ${ageDays} Tagen` };
+}
+
+/** Kennzahlen `content_fabrik` (Text) und `content_fabrik_status` (Code). */
+export async function collectFabrikMetrics(env = process.env, http = {}) {
+  const out = { content_fabrik: NA, content_fabrik_status: NA };
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return out;
+  const headers = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
+  try {
+    const url = `${env.SUPABASE_URL}/rest/v1/content_factory_runs?select=created_at,new_module,queue_open&order=created_at.desc&limit=${STUCK_AFTER_RUNS}`;
+    const { status, detail } = deriveFabrikStatus(await fetchJson("Supabase", url, { headers }, http));
+    out.content_fabrik = detail;
+    out.content_fabrik_status = status;
+  } catch (e) {
+    out.content_fabrik = e.status === 404
+      ? "nicht messbar (Tabelle content_factory_runs fehlt in Supabase, Migration 20261007020000 anwenden)"
+      : `nicht messbar (${e.message})`;
+  }
+  return out;
+}

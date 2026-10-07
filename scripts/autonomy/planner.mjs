@@ -25,6 +25,7 @@ import { LANES, commentOnIssue, countIssues, fetchProjectIssues, fetchRecentlyDo
 import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
+import { collectFabrikMetrics } from "./fabrik.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
@@ -92,6 +93,8 @@ export async function collectMetrics(env = process.env, http = {}) {
     posthog: "nicht verfügbar",
     sentry: "nicht verfügbar",
     sentry_kritisch: "nicht verfügbar",
+    content_fabrik: "nicht verfügbar",
+    content_fabrik_status: "nicht verfügbar",
   };
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const h = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
@@ -115,6 +118,7 @@ export async function collectMetrics(env = process.env, http = {}) {
     }
   }
   Object.assign(m, await collectSentryMetrics(env, http.fetchImpl, http));
+  Object.assign(m, await collectFabrikMetrics(env, http));
   Object.assign(m, await collectPostHogMetrics(env, http.fetchImpl, http));
   m.figma_abgleich = await figmaTokenMetric(env, http.fetchImpl);
   return m;

@@ -60,6 +60,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={CIRCUMFERENCE * (1 - ratio)}
+          className="grow-ring"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
