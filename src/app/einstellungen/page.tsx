@@ -115,7 +115,7 @@ export default function EinstellungenPage() {
         {online ? null : (
           <StateView
             kind="offline"
-            text="Einstellungen bleiben auf diesem Gerät gespeichert. Die Kennung zu löschen geht erst wieder mit Verbindung."
+            text="Einstellungen bleiben auf diesem Gerät gespeichert. Nutzungsdaten löschen geht erst wieder mit Verbindung."
           />
         )}
         <Section title="Lernen">
