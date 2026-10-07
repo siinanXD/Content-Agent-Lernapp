@@ -211,6 +211,13 @@ jobs:
             node scripts/autonomy/dispatch.mjs --no-pr "$id" "$EXECUTION_FILE"
           done
           if [ -f "$EXECUTION_FILE" ]; then node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE"; fi
+      # Frei gewordener Platz (SIN-334): Ohne PR und ohne Limit-Pause 5 Min Abstand, damit dasselbe Issue
+      # (z. B. mit Label `claude`) nicht im Sekundentakt neu startet; dann wählt der Dispatcher neu.
+      - name: Dispatcher anstoßen (Platz frei)
+        if: steps.limit.outcome == 'success' && steps.limit.outputs.until == ''
+        run: |
+          sleep 300
+          gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
       - name: Pause bis Reset setzen
         if: steps.limit.outputs.until != ''
         env:
