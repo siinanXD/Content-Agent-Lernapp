@@ -19,6 +19,7 @@ import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
+import { renderSinan, syncSinan } from "./sinan.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
 import { GATE_LABEL, GATE_PREFIX, collectGateFailures, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
@@ -300,10 +301,15 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
   if (linearQ.level !== "unknown" && linearQ.level !== "ok") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
   out.push("");
-  if (decisions.length) {
-    out.push("## Braucht dich", "", "Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
-    for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
-    out.push("");
+  const sinan = snap.sinanIssues ?? [];
+  if (decisions.length || sinan.length) {
+    out.push("## Braucht dich", "");
+    if (decisions.length) {
+      out.push("Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
+      for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
+      out.push("");
+    }
+    if (sinan.length) out.push("Aufgaben mit Label `sinan` (Link, Minuten; der Loop schließt sie selbst, wenn er es erkennt):", "", renderSinan(sinan), "");
   }
   if (waiting.size) {
     out.push("Wartende PRs (belegen keinen Platz, Issue bleibt „In Progress“):", "");
@@ -647,7 +653,9 @@ export async function main(argv, env = process.env) {
     const gateFailures = await collectGateFailures(repo, env.GITHUB_TOKEN, redPrs).catch(() => []);
     const backup = await collectBackup(repo, now, gh);
     const liveCheck = await collectLiveCheck(repo, gh);
-    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures };
+    // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
+    const sinanIssues = linearOk ? (await syncSinan({ dry }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);

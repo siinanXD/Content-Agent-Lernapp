@@ -5,9 +5,9 @@
 export const TOKEN_WARN_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** `TT.MM.JJJJ` (oder `JJJJ-MM-TT`) als Date (Ende des Tages, UTC), sonst null. */
+/** `TT.MM.JJJJ` (oder `JJJJ-MM-TT`, auch mit „ca. “ davor) als Date (Ende des Tages, UTC), sonst null. */
 export function parseExpiry(text) {
-  const s = String(text ?? "").trim();
+  const s = String(text ?? "").trim().replace(/^ca\.\s*/i, "");
   const de = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const [y, m, d] = de ? [de[3], de[2], de[1]] : iso ? [iso[1], iso[2], iso[3]] : [];
