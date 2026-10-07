@@ -51,3 +51,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Rote PRs in „In Progress“ halten ihren Platz ewig und blockieren den Fix → wartende PRs (Konflikt, repair:3, risk:high ohne Freigabe) zählen nicht als Platz, Urgent kommt vor der Spuren-Rotation. (SIN-327)
 - Inline-Textlinks (`text-sm`, ca. 40 px hoch) reißen das 44-px-Ziel im Tastatur-Test → `inline-flex min-h-11 items-center` setzen. (SIN-317)
 - Leistungsbudget (Lighthouse) bricht zufällig: LCP streut bei kaltem Erstabruf und wenigen Läufen → Aufwärmlauf je Route und Median aus 7 Läufen; Grenzen nie anheben. (SIN-329)
+- Wächter meldet „Ursache nicht erkennbar“, wenn kein Lauf rot war (Logs leer) → `collectLogs` liefert auch dann eine Zeile „Kein roter Lauf: …“, Ursache `ohne-start`. (SIN-328)

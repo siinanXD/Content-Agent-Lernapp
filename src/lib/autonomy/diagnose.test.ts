@@ -152,8 +152,26 @@ test("Logs: nur der letzte Lauf je Workflow zählt, ein späterer Erfolg heilt",
   const call = async () => ({ jobs: [{ id: 77, conclusion: "failure" }] });
   const text = async (path: string) => `Log ${path}`;
   const logs = await collectLogs("o/r", runs, { call: call as never, text });
-  assert.deepEqual(logs.map((l: { workflow: string }) => l.workflow), ["worker"]);
+  assert.equal(logs[0].workflow, "worker");
   assert.match(logs[0].text, /jobs\/77\/logs/);
+  // Geheilte Workflows erscheinen nur als Hinweiszeile (SIN-328), ohne roten Log.
+  assert.match(logs.find((l: { workflow: string }) => l.workflow === "planner")?.text ?? "", /^Kein roter Lauf: planner/);
+});
+
+test("SIN-328: Stillstand ohne roten Lauf → Ursache ohne-start statt unbekannt", async () => {
+  const runs = [{ id: 5, name: "dispatch", status: "completed", conclusion: "success", created_at: "2026-10-07T01:00:00Z", html_url: "u5" }];
+  const call = (async () => ({ jobs: [] })) as never;
+  const logs = await collectLogs("o/r", runs, { call, text: async () => "" });
+  const d = diagnoseStall({ running: 0, paused: false, startable: 13, idleMin: 400, logs });
+  assert.equal(d?.cause, "ohne-start");
+  assert.match(d!.reason, /400 Min.*13 startbare/);
+  assert.equal(newStallIssue(d, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+  // Leere Schlange bleibt normal.
+  assert.equal(diagnoseStall({ running: 0, paused: false, startable: 0, idleMin: 400, logs }), null);
+  // Gar keine Läufe: ebenfalls erkannt.
+  const none = await collectLogs("o/r", [], { call, text: async () => "" });
+  assert.match(none[0].text, /Kein Lauf gefunden/);
+  assert.equal(diagnoseStall({ running: 0, paused: false, startable: 13, idleMin: 400, logs: none })?.cause, "ohne-start");
 });
 
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {

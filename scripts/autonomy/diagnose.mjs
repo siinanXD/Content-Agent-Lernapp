@@ -50,6 +50,13 @@ export const CAUSES = [
     re: /usage limit reached|hit your (?:usage )?limit|limit reached|rate[_ -]?limit|"status":\s*429|too many requests|HTTP 429|quota/i,
     fix: "Prüfen, ob AGENT_PAUSED_UNTIL gesetzt ist und der Reset-Zeitpunkt stimmt; sonst Takt oder Parallelität senken.",
   },
+  {
+    // Letzter Platz: kommt aus collectLogs, wenn kein Lauf rot war (SIN-328).
+    key: "ohne-start",
+    label: "Läufe ohne Fehler, aber kein Worker gestartet",
+    re: /Kein roter Lauf:/,
+    fix: "Dispatcher prüfen: Zeitplan (dispatch.yml) läuft, startbare Issues werden erkannt und der Worker wird ausgelöst (Blocker, Slots, Label `claude`, Pause). Schritt-Ausgabe des letzten dispatch-Laufs lesen und die Stelle beheben, die den Start verhindert.",
+  },
 ];
 
 /** Ursache aus einem Log-Auszug; `unbekannt`, wenn kein Muster passt. */
@@ -83,7 +90,8 @@ export function diagnoseStall({ running, paused, startable, idleMin, logs = [] }
   let found = null;
   for (const l of logs) {
     const c = classifyLog(l.text);
-    if (c.key !== "unbekannt") {
+    // „Ohne Start“ ist nur bei startbarer Arbeit ein Fehler; leere Schlange ist normal.
+    if (c.key !== "unbekannt" && !(c.key === "ohne-start" && !idle)) {
       found = { ...c, workflow: l.workflow, url: l.url ?? null, excerpt: logExcerpt(l.text) };
       break;
     }

@@ -421,7 +421,12 @@ export async function collectLogs(repo, runs, { call = gh, text = ghText } = {})
     const last = runs
       .filter((r) => r.name === workflow && r.status === "completed")
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
-    if (!last || last.conclusion !== "failure") continue;
+    if (!last || last.conclusion !== "failure") {
+      // Kein roter Lauf: sonst bliebe der Wächter ohne Log und meldete „Ursache nicht erkennbar“ (SIN-328).
+      const what = last ? `Letzter Lauf #${last.id} ${last.conclusion ?? last.status} am ${last.created_at}` : "Kein Lauf gefunden (Zeitplan feuert nicht?)";
+      out.push({ workflow, runId: last?.id, url: last?.html_url, text: `Kein roter Lauf: ${workflow}. ${what}`, at: last?.created_at ?? "" });
+      continue;
+    }
     try {
       const { jobs } = await call(`/repos/${repo}/actions/runs/${last.id}/jobs?per_page=20`);
       const job = jobs.find((j) => j.conclusion === "failure") ?? jobs.at(-1);
