@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { StateView } from "@/components/ui/state-view";
 import { StatChip } from "@/components/ui/stat-chip";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { DailyGoal } from "@/components/ui/daily-goal";
@@ -39,18 +40,19 @@ export default function ErgebnisPage() {
   const showReminder = onboarding?.consent === true && reminder.enabled;
   const ready = summary !== "laden" && summary !== "fehler" ? summary : null;
 
+  // Kein Ergebnis gespeichert: keine Zahlen erfinden, sondern den Weg zur Einheit zeigen.
   const result = session?.lastResult;
   const title = result?.unitTitle;
   const correct = result?.correct ?? 0;
   const total = result?.total ?? 0;
   const points = result?.points;
-  const kind = result?.kind ?? "unit";
   const areaResults = result?.areaResults ?? [];
 
-  const headline =
-    kind === "exam"
+  const headline = !result
+    ? "Noch kein Ergebnis"
+    : result.kind === "exam"
       ? "Prüfung ausgewertet"
-      : kind === "review"
+      : result.kind === "review"
         ? "Wiederholung geschafft"
         : "Einheit geschafft";
 
@@ -70,12 +72,11 @@ export default function ErgebnisPage() {
               >
                 {headline}
               </h1>
-              {result ? (
-                <p className="text-[15px] leading-6 text-[var(--color-text-soft-on-dark)]">
-                  {result.partTitle ? `${result.partTitle} · ` : ""}
-                  {title} · {correct} von {total} richtig
-                </p>
-              ) : null}
+              <p className="text-[15px] leading-6 text-[var(--color-text-soft-on-dark)]">
+                {result
+                  ? `${result.partTitle ? `${result.partTitle} · ` : ""}${title} · ${correct} von ${total} richtig`
+                  : "Schließe eine Einheit ab, dann siehst du hier dein Ergebnis."}
+              </p>
             </div>
             {result && total > 0 ? (
               <ProgressRing
@@ -131,6 +132,14 @@ export default function ErgebnisPage() {
           />
         ) : null}
       </div>
+
+      {summary === "fehler" ? (
+        <StateView
+          kind="fehler"
+          title="Serie und Tagesziel nicht lesbar"
+          text="Dein Ergebnis ist gespeichert. Lade die Seite neu, um Serie und Tagesziel zu sehen."
+        />
+      ) : null}
 
       {areaResults.length > 0 ? (
         <section className="px-6 pb-4" aria-label="Ergebnis je Prüfungsgebiet">
