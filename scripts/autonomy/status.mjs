@@ -18,7 +18,9 @@ import { fetchJson } from "./http.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
+import { sendTelegramPlain } from "./telegram.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
+import { renderSinan, syncSinan } from "./sinan.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
 import { GATE_LABEL, GATE_PREFIX, collectGateFailures, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
@@ -209,6 +211,12 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     });
   }
 
+  // Production-Alarme (SIN-332): „nicht lesbar“ und „> 3 h hinter main“ sind rot, kein grauer Zustand. Merker `deployAlarm` für das Tages-Update.
+  const deployAlarms = [];
+  if (snap.deploy?.unreadable) deployAlarms.push({ key: "deploy-unreadable", text: `Production-Stand nicht lesbar (${snap.deploy.unreadable}). Wächter und Deploy sind blind, Vercel-Token und Team-Scope prüfen.` });
+  if (snap.deploy?.behind) deployAlarms.push({ key: "deploy-behind", text: `Production liegt seit ${snap.deploy.behind.since.slice(11, 16)} UTC (${snap.deploy.behind.hours} h) hinter main: gemergter App-Code ist nicht live.` });
+  for (const a of deployAlarms) incidents.push(a);
+
   // Sicherung (SIN-293): Fehler oder überfällig = Meldung. Fehlt der Messwert (nicht lesbar), bleibt es still.
   const backup = snap.backup ?? null;
   if (backup?.incident) incidents.push(backup.incident);
@@ -280,7 +288,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, linearFull: stop, now });
   const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
-  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}) };
+  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}), ...(deployAlarms.length ? { deployAlarm: deployAlarms.map((a) => a.text) } : {}) };
   if (refill.trigger) state.refilled = refill.maxIssues;
 
   // Kick: Dispatcher anstoßen, wenn nichts läuft, aber etwas startbar ist und der letzte Lauf lange her ist.
@@ -300,10 +308,20 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
   if (linearQ.level !== "unknown" && linearQ.level !== "ok") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
   out.push("");
-  if (decisions.length) {
-    out.push("## Braucht dich", "", "Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
-    for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
+  if (deployAlarms.length) {
+    out.push("## Braucht dich (rot)", "");
+    for (const a of deployAlarms) out.push(`- 🔴 ${a.text}`);
     out.push("");
+  }
+  const sinan = snap.sinanIssues ?? [];
+  if (decisions.length || sinan.length) {
+    out.push("## Braucht dich", "");
+    if (decisions.length) {
+      out.push("Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
+      for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
+      out.push("");
+    }
+    if (sinan.length) out.push("Aufgaben mit Label `sinan` (Link, Minuten; der Loop schließt sie selbst, wenn er es erkennt):", "", renderSinan(sinan), "");
   }
   if (waiting.size) {
     out.push("Wartende PRs (belegen keinen Platz, Issue bleibt „In Progress“):", "");
@@ -631,11 +649,12 @@ export async function main(argv, env = process.env) {
     const deploy = await planDeploy({ env, now, vercelPct, call: gh, prevAttempt: parseState(statusIssue?.body).deployAttempt ?? null });
     // Auslösen vor dem Schreiben des Status, damit der Versuch (Commit, Zeit) im Merker steht (SIN-309). Nur bei Erfolg: ein Netzfehler sperrt nicht.
     if (deploy.deploy && !dry) {
-      if (!env.VERCEL_DEPLOY_HOOK_PROD) console.log("Production-Deploy fällig, aber VERCEL_DEPLOY_HOOK_PROD fehlt.");
+      const token = env.AGENT_WORKFLOW_TOKEN;
+      if (!token) console.log("Production-Deploy fällig, aber AGENT_WORKFLOW_TOKEN fehlt.");
       else {
-        const r = await triggerDeploy(env.VERCEL_DEPLOY_HOOK_PROD).catch((e) => ({ ok: false, status: e.message }));
+        const r = await triggerDeploy({ repo, token }).catch((e) => ({ ok: false, status: e.message }));
         if (r.ok && deploy.headSha) deploy.attempt = { sha: deploy.headSha, at: now.toISOString(), state: null };
-        console.log(r.ok ? "Production-Deploy ausgelöst (Deploy Hook)." : `::warning::Deploy Hook fehlgeschlagen (${r.status}), nächster Versuch beim nächsten Takt.`);
+        console.log(r.ok ? "Production-Deploy ausgelöst (Workflow production-deploy)." : `::warning::Start von production-deploy fehlgeschlagen (${r.status}), nächster Versuch beim nächsten Takt.`);
       }
     }
     // Selbst-Diagnose (SIN-291): Logs der letzten roten Läufe, offene Entscheidungen, kürzlich erledigte Bug-Issues.
@@ -647,7 +666,9 @@ export async function main(argv, env = process.env) {
     const gateFailures = await collectGateFailures(repo, env.GITHUB_TOKEN, redPrs).catch(() => []);
     const backup = await collectBackup(repo, now, gh);
     const liveCheck = await collectLiveCheck(repo, gh);
-    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures };
+    // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
+    const sinanIssues = linearOk ? (await syncSinan({ dry }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
@@ -671,6 +692,9 @@ export async function main(argv, env = process.env) {
   output("refill_bugs_only", String(res.refill.bugsOnly));
   if (!live) return res;
 
+  // Roter Deploy-Alarm (SIN-332): zusätzlich Telegram, einmal je Vorfall (wie die Erwähnung). Ohne Secrets still.
+  const redFresh = res.fresh.filter((i) => i.key === "deploy-unreadable" || i.key === "deploy-behind");
+  if (redFresh.length) await sendTelegramPlain(`Loop-Status, rot:\n${redFresh.map((i) => i.text).join("\n")}`, env).catch((e) => console.log(`::warning::Telegram: ${e.message}`));
   // Erst melden, dann den Merker speichern: schlägt die Meldung fehl, kommt sie beim nächsten Lauf noch einmal.
   if (alert) await gh(`/repos/${repo}/issues/${statusIssue.number}/comments`, { method: "POST", body: { body: alert } });
   await gh(`/repos/${repo}/issues/${statusIssue.number}`, { method: "PATCH", body: { body: res.body } });

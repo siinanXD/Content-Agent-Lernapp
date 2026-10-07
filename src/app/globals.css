@@ -236,8 +236,19 @@ html[data-consent="decided"] [data-consent-banner] {
   color: var(--color-text-muted-on-dark);
 }
 
+/* Kachelbreiten ab 768 px (SIN-315): Hauptkachel breit, Nebenkacheln schmaler. Auf dem Handy bleibt es eine Spalte. */
+@media (min-width: 768px) {
+  .bento-span-2 { grid-column: span 2; }
+  .bento-span-3 { grid-column: span 3; }
+  .bento-span-4 { grid-column: span 4; }
+  .bento-span-6 { grid-column: span 6; }
+}
+
 /* Bewegung erklärt (Regeln 2026 §5): Säulen wachsen kurz; bei reduced-motion sofort. */
 @media (prefers-reduced-motion: no-preference) {
+  .grow-ring {
+    transition: stroke-dashoffset 250ms ease-out;
+  }
   .grow-bar {
     transition: height 250ms ease-out, width 250ms ease-out;
   }

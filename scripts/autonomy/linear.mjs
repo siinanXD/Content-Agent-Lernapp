@@ -73,7 +73,7 @@ const rank = (p) => (p === 0 || p == null ? 5 : p);
 
 /** Spuren (SIN-227), in dieser Reihenfolge abwechselnd bedient. Label je Spur = Name. */
 export const LANES = ["frontend", "content", "backend"];
-/** Issues mit diesen Labels bekommt der Dispatcher nie: Design (Figma-Sitzung), Abnahme und Blocker (Mensch). */
+/** Issues mit diesen Labels bekommt der Dispatcher nie: Design (Figma-Sitzung), Abnahme, Blocker, Recherche und Aufgaben für Sinan (SIN-310). */
 export const HUMAN_LABELS = ["design", "abnahme", "needs-human", "research", "sinan"];
 
 const labelsOf = (issue) => (issue.labels?.nodes ?? []).map((l) => l.name.toLowerCase());
@@ -151,6 +151,7 @@ export function buildPrompt(issue) {
     "Frontend: Werte (Farben, Abstände, Texte) aus Figma lesen, nicht schätzen: `node scripts/autonomy/figma.mjs --node <ID>` (Datei 0SWGDO2ioBD3MyXiAnrbRz, Token FIGMA_ACCESS_TOKEN nur lesend; fehlt er, im PR „nicht verfügbar“ schreiben).",
     "Frontend-Selbstprüfung (SIN-275, Pflicht vor dem PR bei Änderungen an src/app oder Komponenten): Lies docs/skills/web-design-guidelines/SKILL.md. `npm run build`, dann `node scripts/autonomy/screenshots.mjs <geänderte Routen>` (Handy 390 px + Desktop, Chromium ist installiert; sonst `npx playwright install chromium`). Sieh dir die Bilder an, prüfe sie gegen die Checkliste und Figma, behebe Abweichungen oder nenne sie im PR. Spiele den Klickpfad aus dem Issue einmal durch. Schreibe in `## Ausprobieren` „Klickpfad geprüft“ und die Screenshot-Namen (Artefakt `screenshots` des Worker-Laufs).",
     "README (SIN-300): Ändern sich Funktion, Einrichtung, Befehle oder Umgebungsvariablen, passe `README.md` im selben PR an (CI warnt sonst). `CHANGELOG.md` nie von Hand: sie wird aus den PR-Titeln erzeugt.",
+    "Aufgaben für Sinan (SIN-310): Braucht es etwas, das nur Sinan tun kann, schreibe keine Anleitung in den PR. Lege ein Linear-Issue mit Label `sinan` an: `node scripts/autonomy/sinan.mjs create --titel … --wo … --link … --minuten … --schritt „1. …“ (mehrfach) --pruefung …` (Beschreibung im festen Block wo, link, minuten, schritte, pruefung; kopierbare Werte, nie Geheimnisse). Verlinke das Issue im PR unter `## Nach dem Merge`.",
     "Keine neuen Komponenten, Farben oder Screens im Code erfinden. Fehlt etwas in Figma, lege ein Linear-Issue mit Label `design` an, statt zu improvisieren.",
   ].join("\n");
 }

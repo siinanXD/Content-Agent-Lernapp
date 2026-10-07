@@ -77,6 +77,7 @@ A11y gates (axe über alle Routen, Tastatur, Lighthouse a11y ≥ 0.9) laufen im 
 | Paket-Updates | `.github/dependabot.yml` (Dependabot, montags) | npm und Actions: Minor/Patch als Bündel, Major einzeln. Sicherheits-Updates sofort (Repo-Einstellung). Entscheidung: [`SIN-295`](docs/decisions/SIN-295-codeql-updates.md). |
 | Review-Agent | Workflow `review.yml` · `node scripts/autonomy/review.mjs --pr <Nr>` · Secret `OPENAI_API_KEY`, Repo-Variable `REVIEW_DAILY_CAP_USD` (Standard 2) | Ein OpenAI-Modell liest jeden PR-Diff gegen den Auftrag und kommentiert mit Schwere. Schwer: Claude repariert im selben PR (zählt als Runde), leicht: nur Hinweis. Kosten je Review im Kommentar, Tagesdeckel, Label `no-review` überspringt. Entscheidung: [`SIN-297`](docs/decisions/SIN-297-review-agent.md). |
 | Recht-und-Inhalt-Wächter | `src/lib/review/` · läuft in `POST /api/courses/{id}/publish` | Blockiert die Veröffentlichung (422, `reason: content_guard`) bei fehlender Quelle oder Abrufdatum, fehlender KI-Kennzeichnung, Personendaten oder IHK-Aufgaben als Vorlage. Die Verbote aus `AGENTS.md` stehen als Liste in `regeln.ts`. |
+| Aufgaben für Sinan | `node scripts/autonomy/sinan.mjs sync\|list\|create` (braucht `LINEAR_API_KEY`) | Was nur Sinan tun kann, steht als Linear-Issue mit Label `sinan` (Link, Minuten, Schritte, Prüfung), nicht im PR-Text. Tages-Update und Status-Seite zeigen sie unter „Braucht dich“; der Loop schließt sie selbst, wo er es lesen kann. Entscheidung: [`SIN-310`](docs/decisions/SIN-310-sinan-issues.md). |
 
 Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
 
@@ -95,9 +96,9 @@ Artifacts land in `docs/ops/AP15-PHASE-A.md` and `docs/ops/ap15-runs/`.
 
 Vercel project pointed at this repo. Empty/scaffold build must succeed (AP-01).
 
-Git deploys are off (`git.deploymentEnabled: false` in `vercel.json`, SIN-309): neither `main` nor PR branches create Vercel deployments, so nothing counts against the Hobby limit of 100/day. Production is deployed through the deploy hook (`VERCEL_DEPLOY_HOOK_PROD`) by the `status` workflow: at most once per hour, only when app code changed, and only one attempt per commit (a CANCELED/ERROR attempt is reported as "Production hängt" instead of being retried).
+Git deploys are off (`git.deploymentEnabled: false` in `vercel.json`, SIN-309): neither `main` nor PR branches create Vercel deployments, so nothing counts against the Hobby limit of 100/day. Production is deployed by the `production-deploy` workflow (`vercel deploy --prod` via CLI, SIN-332; needs secret `VERCEL_TOKEN` and variable `VERCEL_PROJECT_ID`, plus `VERCEL_TEAM_ID` for team accounts). The `status` workflow starts it: at most once per hour, only when app code changed, and only one attempt per commit (a CANCELED/ERROR attempt is reported as "Production hängt" instead of being retried). If Production cannot be read from Vercel, or is more than 3 h behind `main`, the Loop-Status shows a red item under "Braucht dich" and sends Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, optional). The deploy hook from SIN-266 is retired (secret `VERCEL_DEPLOY_HOOK_PROD` is no longer used).
 
-Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). After each Production deploy the workflow `deploy-smoke` checks `/api/health` and `/api/learner/phase-a` for 200 and opens a revert PR otherwise (SIN-308). URL env vars (e.g. `LANGFUSE_BASE_URL`) are cleaned of quotes and validated in `src/lib/env.ts`; an invalid value disables the feature and logs a warning instead of crashing.
+Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). Right after each Production deploy the same `production-deploy` run checks `/api/health` and `/api/learner/phase-a` for 200 and opens a revert PR otherwise (SIN-308). URL env vars (e.g. `LANGFUSE_BASE_URL`) are cleaned of quotes and validated in `src/lib/env.ts`; an invalid value disables the feature and logs a warning instead of crashing.
 
 **Live-Check (SIN-319).** After each Production deploy (and nightly at 21:05 Berlin time) the workflow `nach-deploy` checks the live app against `docs/ops/live-checkliste.md`: API routes (`scripts/autonomy/live-check.mjs`), all pages on phone and desktop, the unit flow with all 5 question types, exam mode, offline mode, service worker, axe and a Lighthouse short run (`live/live.spec.ts`). It only reads or uses test data (write endpoints are stubbed, test id `livecheck-<time>`). Result: artifact `live-check` (checklist + screenshots) and the line "Live-Check hh:mm: n/n grün" on the status page and in the daily update. If it is red after a deploy, `revert-guard` opens a revert PR. Every new page or feature goes into the checklist (a unit test keeps list and checks in sync). Locally: `npm run build && npm start -- --port 43123`, then `npm run live:local`. Against another URL: `PLAYWRIGHT_BASE_URL=<url> npm run live:browser` and `npm run live:api -- --base <url>`, or run the workflow by hand with a URL.
 
@@ -113,6 +114,12 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 - With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
 - Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
 - Verify tables (when keys present): `npm run supabase:verify`.
+
+### Sentry und Content-Fabrik-Status (SIN-289)
+
+- Sentry EU (`NEXT_PUBLIC_SENTRY_DSN`, DSN-Host `ingest.de.sentry.io`) erfasst Fehler der App-Routen und der Pipeline (`scripts/content-grow.ts`). Ohne Personendaten (`src/lib/sentry-privacy.ts`); ohne DSN passiert nichts.
+- Der Planer liest offene kritische Fehler der letzten 7 Tage (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`); ohne Token steht „nicht verfügbar“.
+- Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migration `20261007020000`). Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
 
 ## Repo
 

@@ -31,8 +31,11 @@ import { listExamParts } from "@/lib/learner/exam";
 import {
   EMPTY_LEARNING_SUMMARY,
   formatDays,
+  loadLearningEvents,
   loadLearningSummary,
+  weekActivity,
   type LearningSummary,
+  type WeekDay,
 } from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
 import { useOnline } from "@/lib/use-online";
@@ -42,6 +45,14 @@ const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
   today: "heute",
   open: "offen",
 };
+
+const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
+
+/** Letzte 7 Tage aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
+const loadWeek = (): WeekDay[] => weekActivity(loadLearningEvents());
+
+const weekdayShort = (day: string) =>
+  new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "");
 
 /** Seitlicher Versatz der Knoten (px) für den Zickzack. */
 const ZIGZAG = [0, 64, 128, 64];
@@ -57,6 +68,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
     loadLearningSummary,
     EMPTY_LEARNING_SUMMARY,
   );
+  const week = useAfterMount<WeekDay[] | null>(loadWeek, null);
   const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
   const dueCount = useMemo(() => (stack ? dueItems(stack).length : 0), [stack]);
   const stackCount = stack ? stackSize(stack) : 0;
@@ -93,73 +105,46 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
       }`
     : PLAYABLE_TODAY.occupation;
 
+  const readiness = groups.map((mod) => {
+    const all = mod.blocks.flatMap((b) => b.units);
+    const done = all.filter((u) => u.status === "done").length;
+    return {
+      moduleId: mod.moduleId,
+      moduleTitle: mod.moduleTitle,
+      done,
+      total: all.length,
+      pct: all.length === 0 ? 0 : Math.round((done / all.length) * 100),
+    };
+  });
+
   return (
-    <MobileShell>
+    <MobileShell wide>
       <ConsentBanner />
-      <header className="px-6 pb-2 pt-12">
-        <div className="flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <h1
-              className="text-[28px] font-bold leading-9 text-[var(--color-text-primary)]"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Lernpfad
-            </h1>
-            <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
-              {subtitle}
-            </p>
-            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-              {phaseA
-                ? `Phase A · ${pathUnits.length} Einheiten (M0, LF1, LF2, PA)`
-                : "Demo-Seed Sicherheit — Phase A noch nicht veröffentlicht"}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2 pt-2">
-          <StatChip
-            kind="serie"
-            value={formatDays(summary === "fehler" ? 0 : summary.streak.days)}
-            label="Serie"
-          />
-          <StatChip
-            kind="punkte"
-            value={(session?.totalPoints ?? 0).toLocaleString("de-DE")}
-            label="Punkte"
-          />
-          <StatChip
-            kind="wiederholung"
-            value={`${dueCount} fällig`}
-            label={`Wiederholungen, Stapel mit ${stackCount} Fragen`}
-          />
-        </div>
+      <header className="px-6 pb-4 pt-12 md:px-12">
+        <p className="bento-label">Heute</p>
+        <h1
+          className="mt-1 text-[40px] font-bold leading-[44px] text-[var(--color-text-primary)]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Lernpfad
+        </h1>
+        <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">{subtitle}</p>
+        <p className="bento-label mt-1">
+          {phaseA
+            ? `Phase A · ${pathUnits.length} Einheiten (M0, LF1, LF2, PA)`
+            : "Demo-Seed Sicherheit — Phase A noch nicht veröffentlicht"}
+        </p>
       </header>
 
-      <section className="flex flex-col gap-3 px-6 pt-2">
-        {online ? null : <StateView kind="offline" />}
-        {summary === "fehler" ? (
-          <StateView
-            kind="fehler"
-            title="Serie konnte nicht geladen werden"
-            text="Dein Fortschritt ist gespeichert. Wir versuchen es gleich noch einmal."
-          />
-        ) : (
-          <DailyGoal summary={summary} dueCount={dueCount} />
+      <div className="bento px-6 md:px-12">
+        {online ? null : (
+          <div className="bento-tile bento-span-6">
+            <StateView kind="offline" />
+          </div>
         )}
-        {dueCount > 0 ? (
-          <Link
-            href="/wiederholung"
-            className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-          >
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
-              {dueCount} {dueCount === 1 ? "Wiederholung" : "Wiederholungen"} fällig
-            </span>
-            <span className="text-sm font-semibold text-[var(--color-brand-primary)]">
-              Starten
-            </span>
-          </Link>
-        ) : null}
         {nextUnit ? (
           <NextUpCard
+            className="bento-span-4"
             indexLabel={nextUnit.indexLabel}
             title={nextUnit.title}
             minutes={nextUnit.minutes}
@@ -167,23 +152,102 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
             href={`/einheit/${nextUnit.id}`}
           />
         ) : null}
-        <div className="flex flex-col gap-2 sm:flex-row">
+        {summary === "fehler" ? (
+          <div className="bento-tile bento-span-2">
+            <StateView
+              kind="fehler"
+              title="Serie konnte nicht geladen werden"
+              text="Dein Fortschritt ist gespeichert. Wir versuchen es gleich noch einmal."
+            />
+          </div>
+        ) : (
+          <DailyGoal className="bento-span-2" summary={summary} dueCount={dueCount} />
+        )}
+
+        <section aria-label="Serie" className="bento-tile bento-span-3">
+          <p className="bento-label">Serie</p>
+          <StatChip
+            kind="serie"
+            value={formatDays(summary === "fehler" ? 0 : summary.streak.days)}
+            label="Serie"
+          />
+          <ol aria-label="Letzte 7 Tage" className="mt-1 flex justify-between gap-1">
+            {(week ?? EMPTY_WEEK).map((d, i) => (
+              <li key={d?.day ?? i} className="flex flex-col items-center gap-1">
+                <span
+                  aria-hidden="true"
+                  className={`h-4 w-4 rounded-full border-2 ${
+                    d && d.count > 0
+                      ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]"
+                      : "border-[var(--color-border-subtle)] bg-transparent"
+                  } ${d?.today ? "outline outline-2 outline-offset-2 outline-[var(--color-bg-hero)]" : ""}`}
+                />
+                <span className="bento-label" aria-hidden="true">
+                  {d ? weekdayShort(d.day) : "–"}
+                </span>
+                <span className="sr-only">
+                  {d ? `${weekdayShort(d.day)}: ${d.count > 0 ? "gelernt" : "nicht gelernt"}${d.today ? " (heute)" : ""}` : "noch nicht geladen"}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section aria-label="Wiederholung" className="bento-tile bento-span-3">
+          <p className="bento-label">Wiederholung</p>
+          <h2
+            className="text-lg font-medium text-[var(--color-text-primary)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {dueCount} {dueCount === 1 ? "Frage" : "Fragen"} fällig
+          </h2>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Stapel mit {stackCount} Fragen.
+          </p>
           <Link
             href="/wiederholung"
-            className="flex min-h-11 flex-1 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-sm font-medium text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-            style={{ fontFamily: "var(--font-display)" }}
+            className="mt-auto inline-flex min-h-11 items-center self-start text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
           >
-            Wiederholung
+            {dueCount > 0 ? "Wiederholung starten" : "Zur Wiederholung"}
           </Link>
-          <Link
-            href="/pruefung"
-            className="flex min-h-11 flex-1 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 text-sm font-medium text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Prüfungsmodus
-          </Link>
-        </div>
-      </section>
+        </section>
+
+        {readiness.length > 0 ? (
+          <section aria-label="Prüfungsreife" className="bento-tile bento-span-6">
+            <p className="bento-label">Prüfungsreife je Lernfeld</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Anteil der erledigten Einheiten. Ob du zur Prüfung zugelassen wirst, entscheidet ein Mensch.
+            </p>
+            <ul className="mt-2 flex flex-col gap-4">
+              {readiness.map((r) => (
+                <li key={r.moduleId}>
+                  <div className="mb-1 flex items-baseline justify-between gap-2">
+                    <span className="text-sm text-[var(--color-text-primary)]">
+                      {r.moduleId} · {r.moduleTitle}
+                    </span>
+                    <span className="bento-label">
+                      {r.done}/{r.total}
+                    </span>
+                  </div>
+                  <div
+                    className="h-2 overflow-hidden rounded-full bg-[var(--color-border-subtle)]"
+                    role="progressbar"
+                    aria-valuenow={r.pct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Modul ${r.moduleId} Fortschritt`}
+                  >
+                    <div
+                      className="grow-bar h-full bg-[var(--color-brand-primary)]"
+                      style={{ width: `${r.pct}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
 
       {groups.length === 0 ? (
         <StateView
@@ -194,42 +258,14 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
       ) : null}
 
       {groups.map((mod) => {
-        const done = mod.blocks
-          .flatMap((b) => b.units)
-          .filter((u) => u.status === "done").length;
-        const total = mod.blocks.flatMap((b) => b.units).length;
-        const pct = total === 0 ? 0 : Math.round((done / total) * 100);
         return (
-          <section key={mod.moduleId} className="px-6 pt-5">
-            <div className="mb-2 flex items-end justify-between gap-2">
-              <div>
-                <h2
-                  className="text-lg font-medium text-[var(--color-text-primary)]"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  {mod.moduleId} · {mod.moduleTitle}
-                </h2>
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  Fortschritt {done}/{total}
-                </p>
-              </div>
-              <p className="text-sm font-medium text-[var(--color-brand-primary)]">
-                {pct}%
-              </p>
-            </div>
-            <div
-              className="mb-3 h-2 overflow-hidden rounded-full bg-[var(--color-border-subtle)]"
-              role="progressbar"
-              aria-valuenow={pct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Modul ${mod.moduleId} Fortschritt`}
+          <section key={mod.moduleId} className="px-6 pt-8 md:px-12">
+            <h2
+              className="mb-2 text-lg font-medium text-[var(--color-text-primary)]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              <div
-                className="h-full bg-[var(--color-brand-primary)]"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+              {mod.moduleId} · {mod.moduleTitle}
+            </h2>
             {mod.blocks.map((block) => (
               <div key={block.blockId} className="mb-3">
                 <p className="mb-2 text-sm text-[var(--color-text-secondary)]">
@@ -266,7 +302,8 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
         );
       })}
 
-      <section className="px-6 py-5">
+      <section className="px-6 py-8 md:px-12">
+        <p className="bento-label">Prüfung</p>
         <h2
           className="text-lg font-medium text-[var(--color-text-primary)]"
           style={{ fontFamily: "var(--font-display)" }}
@@ -278,7 +315,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
             <li key={p.id}>
               <Link
                 href={`/pruefung?part=${p.id}`}
-                className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+                className="flex min-h-11 items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
               >
                 <span className="text-sm text-[var(--color-text-primary)]">
                   {p.bereich}

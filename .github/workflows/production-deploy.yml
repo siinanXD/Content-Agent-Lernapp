@@ -1,30 +1,62 @@
-# Smoke-Test nach jedem Production-Deploy (SIN-308): /api/health und /api/learner/phase-a müssen 200 liefern.
-# Sonst öffnet dieser Lauf einen Revert-PR (wie revert-guard, SIN-252) und der Lauf wird rot (GitHub meldet das).
-# Auslöser: Vercel meldet jeden Deploy als deployment_status. Token: AGENT_WORKFLOW_TOKEN (nie github.token).
-name: deploy-smoke
+# Production-Deploy und Smoke-Test in einem Lauf (SIN-332, löst den Deploy Hook aus SIN-266/SIN-309 und deploy-smoke aus SIN-308 ab).
+# Der Hook erzeugte unter `git.deploymentEnabled: false` keinen Deploy, und `deployment_status` kommt bei Deploys ohne Git-Anbindung
+# nicht an. Darum: `vercel deploy --prod` per CLI vom Stand von main, danach direkt /api/health und /api/learner/phase-a.
+# Rot beim Smoke-Test: Revert-PR (wie revert-guard, SIN-252) und der Lauf wird rot. Grün: Live-Check (nach-deploy.yml) anstoßen.
+# Auslöser: der Status-Wächter (status.yml) per workflow_dispatch, höchstens 1× pro Stunde und nur bei neuem App-Code
+# (scripts/autonomy/deploy.mjs); von Hand möglich. Secrets: VERCEL_TOKEN, AGENT_WORKFLOW_TOKEN (nie github.token).
+# Variablen: VERCEL_PROJECT_ID, VERCEL_TEAM_ID (bei persönlichem Konto leer lassen), optional PRODUCTION_URL.
+name: production-deploy
 
 on:
-  deployment_status:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-smoke
+  group: production-deploy
   cancel-in-progress: false
 
 jobs:
-  smoke:
-    if: >-
-      github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment == 'Production'
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     env:
       GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
-      SHA: ${{ github.event.deployment.sha }}
-      URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      SHA: ${{ github.sha }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_TEAM_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      URL: ${{ vars.PRODUCTION_URL || 'https://content-agent-ashen-nu.vercel.app' }}
+    outputs:
+      fail: ${{ steps.smoke.outputs.fail }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # Baut auf Vercel und wartet bis READY; bei Fehler endet der Schritt rot (der Wächter meldet „Production hängt“).
+      # `--meta githubCommitSha` lässt den Wächter den Live-Stand (Commit, Uhrzeit) lesen.
+      - name: Production-Deploy (Vercel CLI)
+        id: deploy
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "::error::VERCEL_TOKEN oder VERCEL_PROJECT_ID fehlt."; exit 1
+          fi
+          # Ohne VERCEL_ORG_ID (persönliches Konto) liest die CLI nur .vercel/project.json: dann Projekt-ID allein reicht nicht.
+          if [ -z "${VERCEL_ORG_ID:-}" ]; then
+            org=$(curl -s -m 20 -H "Authorization: Bearer ${VERCEL_TOKEN}" https://api.vercel.com/v2/user | jq -r '.user.id // empty')
+            [ -n "$org" ] || { echo "::error::Vercel-Konto nicht lesbar (Token prüfen)."; exit 1; }
+            echo "VERCEL_ORG_ID=$org" >> "$GITHUB_ENV"
+            export VERCEL_ORG_ID="$org"
+          fi
+          url=$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" --meta "githubCommitSha=${SHA}" | tail -1)
+          echo "Deploy: ${url}"
+          echo "### Production-Deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit \`${SHA:0:7}\`, Deploy: ${url}" >> "$GITHUB_STEP_SUMMARY"
       - name: Erreichbarkeit prüfen
         id: smoke
         run: |
@@ -92,6 +124,11 @@ jobs:
           🤖 Generated with [Claude Code](https://claude.com/claude-code)"
           gh pr create --base main --head "$branch" \
             --title "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}" --body "$body"
+
+      - name: Live-Check anstoßen
+        if: steps.smoke.outputs.fail != '1'
+        continue-on-error: true
+        run: gh workflow run nach-deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
 
       - name: Lauf rot melden
         if: steps.smoke.outputs.fail == '1'

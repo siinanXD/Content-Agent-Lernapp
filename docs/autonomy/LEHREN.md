@@ -38,6 +38,8 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 ## Vercel- und Linear-Limits
 
 - Jeden Merge auf `main` deployen lassen → Vercel Hobby erlaubt 100 Deployments pro Tag, der Loop stand still. Richtig: Production gebündelt über den Deploy Hook (höchstens 1× pro Stunde), Previews nur bei UI-Änderungen oder Label `preview`. (SIN-254, SIN-266)
+- Production per Deploy Hook auslösen, solange `git.deploymentEnabled: false` gilt → es entstand 30 Merges lang kein Deploy, und der Smoke-Test an `deployment_status` blieb stumm. Richtig: `vercel deploy --prod` per CLI (`production-deploy.yml`), Smoke-Test im selben Lauf, „nicht lesbar“ und „> 3 h hinter main“ als roter Alarm. (SIN-332)
+- Den letzten READY-Deploy unter den letzten 20 Production-Deploys suchen → sind alle abgebrochen, steht „nicht lesbar“. Richtig: Vercel mit `state=READY&limit=1` fragen. (SIN-332)
 - Reine Doku-, CI- oder Test-Commits bauen lassen → verbraucht Deployments. Richtig: `scripts/vercel-ignore.sh` überspringt sie; keine Reparatur-Pushes ohne Not. (SIN-264)
 - Linear-API ohne Wiederholung aufrufen → 429 oder eine HTML-Fehlerseite statt JSON bricht den Lauf. Richtig: `fetchJson` aus `scripts/autonomy/http.mjs` (3 Versuche bei 429, 5xx, Netzfehler, Fehlerseite). (SIN-263)
 - Beliebig viele Linear-Issues anlegen → das Free-Kontingent (250 aktive Issues) läuft voll. Richtig: ab 95 % legt der Planer nichts mehr an; Duplikate vorher prüfen. (SIN-291)
@@ -53,3 +55,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Leistungsbudget (Lighthouse) bricht zufällig: LCP streut bei kaltem Erstabruf und wenigen Läufen → Aufwärmlauf je Route und Median aus 7 Läufen; Grenzen nie anheben. (SIN-329)
 - Wächter meldet „Ursache nicht erkennbar“, wenn kein Lauf rot war (Logs leer) → `collectLogs` liefert auch dann eine Zeile „Kein roter Lauf: …“, Ursache `ohne-start`. (SIN-328)
 - Hostprüfung per `includes`/Regex ohne URL-Parsing → CodeQL `js/incomplete-url-substring-sanitization` (7.8) bricht `analyze`. Richtig: `new URL(u).hostname` gegen eine Liste vergleichen. (SIN-330)
+- Einmalige Fehler im Job `gate` (gitleaks-Download, Label-API) färben `merge-gate` auf allen PRs rot → Download mit `curl --retry`, Label-Anlegen nur warnen, `merge-gate` nennt das Ergebnis von `gate`. (SIN-335)
