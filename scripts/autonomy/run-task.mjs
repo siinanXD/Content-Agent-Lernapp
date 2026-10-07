@@ -228,6 +228,8 @@ async function migrate(env, { dry }) {
     await sqlQuery(env, `begin;\n${p.sql}\ncommit;`);
     applied.push(p.name);
   }
+  // Schema-Cache von PostgREST neu laden (SIN-351): sonst antwortet die REST-Schnittstelle trotz vorhandener Tabelle mit 404.
+  if (!dry) await sqlQuery(env, "notify pgrst, 'reload schema'");
   const after = dry ? null : await sqlQuery(env, "select table_name from information_schema.tables where table_schema = 'public'");
   lines.push(dry ? `Trockenlauf: würde anwenden: ${todo.map((p) => p.name).join(", ") || "nichts"}` : `Angewendet: ${applied.join(", ") || "nichts"} (${after.length} Tabellen)`);
   // Beleg im Log: nur Tabellennamen, keine Werte, keine Secrets.

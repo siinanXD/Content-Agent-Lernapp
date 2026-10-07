@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-351 | SIN-351: Kennzahlen melden trotz SIN-347 „Tabelle fehlt“ | [SIN-351-schema-cache-neu-laden.md](decisions/SIN-351-schema-cache-neu-laden.md) |
 | SIN-350 | SIN-350: Klare Fehlermeldungen bei Sentry-, PostHog- und Fabrik-Kennzahlen | [SIN-350-kennzahlen-fehlermeldungen.md](decisions/SIN-350-kennzahlen-fehlermeldungen.md) |
 | SIN-349 | SIN-349: Figma-Abdeckung messen | [SIN-349-figma-abdeckung.md](decisions/SIN-349-figma-abdeckung.md) |
 | SIN-347 | SIN-347: Fehlende Tabellen anwenden und belegen | [SIN-347-fehlende-tabellen-anwenden.md](decisions/SIN-347-fehlende-tabellen-anwenden.md) |
