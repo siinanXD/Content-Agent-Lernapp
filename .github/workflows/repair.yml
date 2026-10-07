@@ -115,7 +115,8 @@ jobs:
             Du reparierst die rote CI im Pull Request #${{ steps.round.outputs.number }}
             (Branch `${{ github.event.workflow_run.head_branch }}`), Runde ${{ steps.round.outputs.round }} von 3.
 
-            1. Lies AGENTS.md.
+            1. Lies AGENTS.md und docs/autonomy/LEHREN.md. Nach der Reparatur ergänze LEHREN.md um eine Zeile
+               (Was nicht geht → wie es richtig geht), außer die Lehre steht schon dort (SIN-296).
             2. Lies die Logs des fehlgeschlagenen Laufs: `gh run view ${{ github.event.workflow_run.id }} --log-failed`
             3. Behebe nur die Ursache. Verboten: Tests, Lint-Regeln oder Barrierefreiheits-Tests abschalten oder abschwächen,
                Workflows unter .github/ ändern, Secrets anfassen.
