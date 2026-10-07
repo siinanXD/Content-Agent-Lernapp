@@ -82,7 +82,7 @@
     "mermaid": "^11.17.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^7"
   },
   "overrides": {
     "@opentelemetry/core": "^2.0.1",
