@@ -32,9 +32,9 @@ test("Ohne Platzhalter kein Entwurf und kein noindex", () => {
   assert.deepEqual(legalMetadata({ ...doc, draft: true }).robots, { index: false, follow: false });
 });
 
-test("Rechtsseiten: alle drei Dateien laden; Impressum und Datenschutz sind Entwurf, KI-Hinweis nicht", () => {
+test("Rechtsseiten: alle drei Dateien laden; Datenschutz ist Entwurf, Impressum und KI-Hinweis nicht", () => {
   const docs = Object.fromEntries(LEGAL_SLUGS.map((s) => [s, loadLegalDocument(s)]));
-  assert.equal(docs.impressum.draft, true);
+  assert.equal(docs.impressum.draft, false);
   assert.equal(docs.datenschutz.draft, true);
   assert.equal(docs["ki-hinweis"].draft, false);
   assert.equal(docs.datenschutz.toc, true);
