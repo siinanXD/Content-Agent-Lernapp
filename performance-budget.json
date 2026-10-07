@@ -1,5 +1,5 @@
 {
-  "runs": 5,
+  "runs": 7,
   "tolerance": 0.1,
   "routes": {
     "/": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },

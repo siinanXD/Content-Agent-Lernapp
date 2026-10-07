@@ -79,6 +79,8 @@ async function main(argv) {
   try {
     for (const [route, limit] of Object.entries(budget.routes)) {
       const lhrs = [];
+      // Aufwärmlauf (SIN-329): der erste Abruf trifft kalte Caches und Server; er zählt nicht in den Median.
+      await lighthouse(`${base}${route}`, { port: chrome.port, output: "json", onlyCategories: ["performance"] });
       for (let i = 0; i < runs; i++) {
         const result = await lighthouse(`${base}${route}`, {
           port: chrome.port,
