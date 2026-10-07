@@ -55,3 +55,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Leistungsbudget (Lighthouse) bricht zufällig: LCP streut bei kaltem Erstabruf und wenigen Läufen → Aufwärmlauf je Route und Median aus 7 Läufen; Grenzen nie anheben. (SIN-329)
 - Wächter meldet „Ursache nicht erkennbar“, wenn kein Lauf rot war (Logs leer) → `collectLogs` liefert auch dann eine Zeile „Kein roter Lauf: …“, Ursache `ohne-start`. (SIN-328)
 - Hostprüfung per `includes`/Regex ohne URL-Parsing → CodeQL `js/incomplete-url-substring-sanitization` (7.8) bricht `analyze`. Richtig: `new URL(u).hostname` gegen eine Liste vergleichen. (SIN-330)
+- Einmalige Fehler im Job `gate` (gitleaks-Download, Label-API) färben `merge-gate` auf allen PRs rot → Download mit `curl --retry`, Label-Anlegen nur warnen, `merge-gate` nennt das Ergebnis von `gate`. (SIN-335)
