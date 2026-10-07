@@ -68,6 +68,14 @@
       "datum": "2026-10-07",
       "beleg": "SIN-353: Prüfung am Code des Branches (Netzzugriff auf die Live-URL war im Lauf gesperrt, keine Messung gegen die Live-App): Build erfolgreich, 557 Tests grün; /ki-hinweis erreichbar von der Fußzeile (Startseite, Einstellungen), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), kein Platzhalter im Text. Live-Abgleich nach dem Merge offen"
     },
+    "recht-einwilligung": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-354: Playwright gegen den lokalen Produktionsbuild (e2e/einwilligung-tracking.spec.ts, e2e/onboarding.spec.ts): ohne Einwilligung auf 5 Seiten keine Anfrage an PostHog, nach Widerruf in den Einstellungen ebenfalls keine; Einwilligung ist Schalter mit Datum. Nicht belegt: PostHog lädt nach Einwilligung (im Test-Build kein NEXT_PUBLIC_POSTHOG_KEY) und Messung gegen die Live-App (Lauf ohne Live-Zugriff). Nachholen: PLAYWRIGHT_BASE_URL=<Live-URL> npx playwright test e2e/einwilligung-tracking.spec.ts (docs/decisions/SIN-354-einwilligung-demo-beleg.md)"
+    },
+    "recht-demo": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-354: Anfrage-Weg Startseite → /demo → Einwilligung Pflicht → Danke läuft lokal (e2e/demo-anfrage.spec.ts, Mock-Speicher, axe ohne Fehler); Gruppenansicht /ausbilder mit gemockter API (e2e/ausbilder.spec.ts). Befund: ein Demo-Zugang, der ohne Konto in die Gruppenansicht führt, existiert nicht; /ausbilder braucht ein von Sinan angelegtes Ausbilder-Konto und Gruppe (SIN-277), sonst Leerzustand. Nicht live belegt (Lauf ohne Live-Zugriff)"
+    },
     "design-screens": {
       "datum": "2026-10-07",
       "beleg": "SIN-349: alle 51 Frames der Figma-Datei (Live-Abgleich mit Token am 2026-10-07) einer Route oder Komponente zugeordnet, Dateien vorhanden, 3 Frames sind keine App-Screens (docs/quality/figma-abdeckung.md, Prüfung scripts/autonomy/figma-abdeckung.mjs in npm test); Namens- und Dateiabgleich, Werte-Abgleich siehe design-figma"
