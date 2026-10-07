@@ -66,7 +66,8 @@ jobs:
               return;
             }
             const labels = pr.labels.map((l) => l.name);
-            if (labels.includes("needs-human") || labels.includes("no-autorepair")) {
+            // gate-bruch (SIN-327): Gate auf main kaputt, Bug-Issue offen; der Wächter merged main ein, sobald es gemergt ist.
+            if (labels.includes("needs-human") || labels.includes("no-autorepair") || labels.includes("gate-bruch")) {
               core.setOutput("go", "false");
               return;
             }

@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-327 | SIN-327: Urgent zieht vor, wartende PRs geben ihren Platz frei | [SIN-327-urgent-und-wartende-prs.md](decisions/SIN-327-urgent-und-wartende-prs.md) |
 | SIN-322 | SIN-322: CI-Gates entsperren (CodeQL, Leistungsbudget) | [SIN-322-ci-gates-entsperren.md](decisions/SIN-322-ci-gates-entsperren.md) |
 | SIN-320 | SIN-320 — Sparsam bauen: Verbrauch messen, Modell und Runden nach Größe, Landkarte, Bündeln | [SIN-320-sparsam-bauen.md](decisions/SIN-320-sparsam-bauen.md) |
 | SIN-319 | SIN-319 — Live-Check nach jedem Deploy | [SIN-319-live-check.md](decisions/SIN-319-live-check.md) |
