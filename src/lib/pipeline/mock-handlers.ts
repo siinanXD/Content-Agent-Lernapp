@@ -4,6 +4,7 @@ import { runGenerateAgent } from "@/lib/generate/generate-agent";
 import { runPlanAgent } from "@/lib/plan/plan-agent";
 import { runEvaluateAgent } from "@/lib/quality/evaluate-agent";
 import { toQuestionEvaluationRecords } from "@/lib/quality/question-evaluations";
+import { pruefeVeroeffentlichung } from "@/lib/review/content-guard";
 import { runResearchAgent } from "@/lib/research/research-agent";
 
 function notFound(id: string) {
@@ -197,6 +198,22 @@ export async function handlePublish(id: string) {
         blocked: true,
         reason: "below_quality_threshold",
         scores: evaluation.scores,
+        mock: true,
+      },
+      { status: 422 },
+    );
+  }
+  // SIN-297: Recht-und-Inhalt-Wächter. Jeder Verstoß blockiert die Veröffentlichung.
+  const verstoesse = pruefeVeroeffentlichung(course);
+  if (verstoesse.length > 0) {
+    return Response.json(
+      {
+        courseId: id,
+        publishedUnits: 0,
+        blockedUnits: (course.generated as { units?: unknown[] } | undefined)?.units?.length ?? 0,
+        blocked: true,
+        reason: "content_guard",
+        violations: verstoesse,
         mock: true,
       },
       { status: 422 },

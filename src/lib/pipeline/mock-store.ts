@@ -1,3 +1,5 @@
+import { mitKiKennzeichnung } from "@/lib/review/content-guard";
+
 export type CourseStatus =
   | "created"
   | "researched"
@@ -70,7 +72,7 @@ export function setPlan(id: string, plan: unknown): Course | undefined {
 export function setGenerated(id: string, generated: unknown): Course | undefined {
   const course = courses.get(id);
   if (!course) return undefined;
-  course.generated = generated;
+  course.generated = mitKiKennzeichnung(generated);
   course.status = "generated";
   courses.set(id, course);
   return course;
