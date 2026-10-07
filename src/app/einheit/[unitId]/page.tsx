@@ -6,6 +6,7 @@ import { AnswerFeedback } from "@/components/ui/answer-feedback";
 import { Button } from "@/components/ui/button";
 import { StateView } from "@/components/ui/state-view";
 import { correctAnswerText } from "@/lib/learner/feedback";
+import { WhyPanel } from "@/components/learner/why-panel";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { UnitImageView } from "@/components/learner/unit-image";
 import {
@@ -33,6 +34,7 @@ import {
 } from "@/lib/learner/progress-outbox";
 import { useOnline } from "@/lib/use-online";
 import {
+  trackExplanationReported,
   trackQuestionAnswered,
   trackUnitCompleted,
   trackUnitStarted,
@@ -71,6 +73,7 @@ export default function EinheitPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
+  const [whyOpen, setWhyOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -218,6 +221,7 @@ export default function EinheitPage() {
     setRevealed(false);
     setLastCorrect(false);
     setAwaitSelfCheck(false);
+    setWhyOpen(false);
   }
 
   return (
@@ -302,10 +306,37 @@ export default function EinheitPage() {
               explanation={question.explanation}
               source={question.sourceUrl || undefined}
             >
+              {question.sourceUrl ? (
+                <Button
+                  variant="secondary"
+                  aria-expanded={whyOpen}
+                  onClick={() => setWhyOpen((o) => !o)}
+                >
+                  Warum?
+                </Button>
+              ) : null}
               <Button onClick={next}>
                 {index + 1 >= total ? "Ergebnis anzeigen" : "Weiter"}
               </Button>
             </AnswerFeedback>
+          ) : null}
+          {whyOpen && revealed && question.sourceUrl ? (
+            <>
+              <div aria-hidden className="h-[60vh]" />
+              <WhyPanel
+                explanation={question.explanation}
+                simpleExplanation={unit.explanationSimple}
+                source={question.sourceUrl}
+                readAloud={speakGerman}
+                onClose={() => setWhyOpen(false)}
+                onReport={() =>
+                  trackExplanationReported({
+                    unitId: unit.id,
+                    questionId: question.id,
+                  })
+                }
+              />
+            </>
           ) : null}
         </section>
       ) : null}

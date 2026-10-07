@@ -25,12 +25,15 @@ export function AnswerFeedback({
     : "var(--color-feedback-danger)";
   return (
     <div
-      className="flex flex-col gap-3 rounded-[var(--radius-md)] border-2 bg-[var(--color-bg-surface)] px-4 py-4"
+      className="flex flex-col gap-3 rounded-[var(--radius-lg)] border-2 bg-[var(--color-bg-surface)] px-5 py-5"
       style={{ borderColor: tone }}
       data-testid="answer-feedback"
       data-correct={correct}
     >
       <div role="status" className="flex flex-col gap-2">
+        <p className="mono-label" style={{ color: tone }}>
+          {correct ? "RICHTIG" : "FALSCH"}
+        </p>
         <div className="flex items-center gap-2.5" style={{ color: tone }}>
           <span
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-white"
