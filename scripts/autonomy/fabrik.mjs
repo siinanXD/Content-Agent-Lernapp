@@ -6,6 +6,7 @@
  * Ohne Supabase-Zugang oder ohne Tabelle: „nicht verfügbar“.
  */
 import { fetchJson } from "./http.mjs";
+import { describeTableError, queueSinanTask } from "./table-error.mjs";
 
 const NA = "nicht verfügbar";
 const DAY = 86_400_000;
@@ -42,9 +43,8 @@ export async function collectFabrikMetrics(env = process.env, http = {}) {
     out.content_fabrik = detail;
     out.content_fabrik_status = status;
   } catch (e) {
-    out.content_fabrik = e.status === 404
-      ? "nicht messbar (Tabelle content_factory_runs fehlt in Supabase, Migration 20261007020000 anwenden)"
-      : `nicht messbar (${e.message})`;
+    out.content_fabrik = describeTableError("content_factory_runs", "20261007020000", e);
+    queueSinanTask(http, "content_factory_runs", "20261007020000", e);
   }
   return out;
 }
