@@ -23,7 +23,7 @@ import { parseTokens, renderTokens } from "./tokens.mjs";
 import { renderSinan, syncSinan } from "./sinan.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
-import { GATE_LABEL, GATE_PREFIX, collectGateFailures, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
+import { GATE_LABEL, GATE_PREFIX, collectGateFailures, collectMainChecks, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
@@ -232,7 +232,9 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   if (diagnosis) incidents.push({ key: `stall:${diagnosis.cause}`, text: `Stillstand: ${diagnosis.label}. ${diagnosis.reason}` });
   const known = [...issues, ...(snap.doneTitles ?? []).map((title) => ({ title }))];
   // Gate-Bruch auf main (SIN-327): derselbe rote Schritt in 2+ PRs mit verschiedenem Code → ein Urgent-Bug, PRs nicht weiter reparieren.
-  const { breaks } = detectGateBreaks(snap.gateFailures ?? [], known);
+  // SIN-333: nur frische Läufe, keine Dependabot-PRs, Gegencheck auf main.
+  const mainSince = (snap.prs ?? []).map((p) => p.merged_at).filter(Boolean).sort().at(-1);
+  const { breaks, rerun } = detectGateBreaks(snap.gateFailures ?? [], known, { mainSince, main: snap.mainChecks });
   const gateBugOpen = issues.some((i) => String(i.title).startsWith(GATE_PREFIX));
   for (const b of breaks) {
     incidents.push({ key: `gate:${b.check}/${b.step}`, text: `Gate-Bruch: \`${b.check}\` / \`${b.step}\` scheitert in ${b.prs.map((n) => `#${n}`).join(", ")}. Urgent-Bug-Issue ${b.issue ? "angelegt" : "offen"}, Reparatur der PRs gesperrt.` });
@@ -245,7 +247,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   // --- Selbstheilung ---
   for (const issue of bugs) actions.push({ type: "create-issue", issue });
-  for (const a of gateActions(openPrs, breaks, gateBugOpen)) actions.push(/** @type {any} */ (a));
+  for (const a of gateActions(openPrs, breaks, gateBugOpen, rerun)) actions.push(/** @type {any} */ (a));
   const conflictAsks = {};
   for (const p of openPrs.filter((x) => isAgentPr(x) && !x.draft && !labelNames(x).includes("no-automerge") && x.mergeable_state === "dirty")) {
     // SIN-312: erzeugte Dateien löst konflikt.mjs ohne KI (vorher im Lauf); hier nur noch echte Code-Konflikte.
@@ -485,7 +487,7 @@ async function collectGithub(repo, now) {
   for (const p of list) {
     const pr = {
       number: p.number, title: p.title, body: p.merged_at ? p.body : undefined, head: p.head?.ref, draft: p.draft, state: p.state, merged_at: p.merged_at,
-      labels: p.labels.map((l) => l.name), created_at: p.created_at, updated_at: p.updated_at, html_url: p.html_url,
+      labels: p.labels.map((l) => l.name), created_at: p.created_at, updated_at: p.updated_at, html_url: p.html_url, author: p.user?.login,
     };
     if (p.state === "open") {
       pr.sha = p.head.sha;
@@ -662,13 +664,14 @@ export async function main(argv, env = process.env) {
     const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
     const doneTitles = linearOk ? [...(await doneTitlesSince(STALL_PREFIX, now).catch(() => [])), ...(await doneTitlesSince(GATE_PREFIX, now).catch(() => []))] : [];
     // Rote Schritte offener PRs für den Gate-Bruch (SIN-327); nur PRs mit rotem Check kosten Anfragen.
-    const redPrs = g.prs.filter((p) => p.state === "open" && g.checks[p.number]?.checkRuns?.some((c) => c.conclusion === "failure")).map((p) => ({ number: p.number, sha: p.sha, checkRuns: g.checks[p.number].checkRuns }));
+    const redPrs = g.prs.filter((p) => p.state === "open" && g.checks[p.number]?.checkRuns?.some((c) => c.conclusion === "failure")).map((p) => ({ number: p.number, sha: p.sha, author: p.author, checkRuns: g.checks[p.number].checkRuns }));
     const gateFailures = await collectGateFailures(repo, env.GITHUB_TOKEN, redPrs).catch(() => []);
+    const mainChecks = await collectMainChecks(repo, env.GITHUB_TOKEN).catch(() => ({}));
     const backup = await collectBackup(repo, now, gh);
     const liveCheck = await collectLiveCheck(repo, gh);
     // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
     const sinanIssues = linearOk ? (await syncSinan({ dry }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
-    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures };
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
@@ -709,12 +712,14 @@ export async function main(argv, env = process.env) {
       await createLinearIssues([a.issue]).catch((e) => console.log(`::warning::Bug-Issue nicht angelegt: ${e.message}`));
     }
     // Label und Branch-Update mit dem Agenten-Token: nur so läuft die CI nach dem Push neu (SIN-240).
-    if (a.type === "gate-block" || a.type === "gate-release") {
+    if (a.type === "gate-block" || a.type === "gate-release" || a.type === "gate-rerun") {
       const token = env.AGENT_WORKFLOW_TOKEN || env.GITHUB_TOKEN;
       try {
         if (a.type === "gate-block") {
           await gh(`/repos/${repo}/labels`, { method: "POST", body: { name: GATE_LABEL, color: "D93F0B", description: "Gate auf main kaputt: keine Reparatur (SIN-327)" }, token }).catch(() => {});
           await gh(`/repos/${repo}/issues/${a.pr}/labels`, { method: "POST", body: { labels: [GATE_LABEL] }, token });
+        } else if (a.type === "gate-rerun") {
+          await gh(`/repos/${repo}/pulls/${a.pr}/update-branch`, { method: "PUT", token });
         } else {
           await gh(`/repos/${repo}/issues/${a.pr}/labels/${GATE_LABEL}`, { method: "DELETE", token });
           await gh(`/repos/${repo}/pulls/${a.pr}/update-branch`, { method: "PUT", token });
