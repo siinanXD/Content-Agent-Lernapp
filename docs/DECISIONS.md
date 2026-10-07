@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-335 | SIN-335: Gate auf main härten | [SIN-335-gate-haerten.md](decisions/SIN-335-gate-haerten.md) |
+| SIN-333 | SIN-333: Gate-Bruch zählt nur frische Läufe, ohne Dependabot, mit Gegencheck auf main | [SIN-333-gate-bruch-frische-laeufe.md](decisions/SIN-333-gate-bruch-frische-laeufe.md) |
 | SIN-332 | SIN-332 — Production-Deploy per CLI, Smoke-Test im selben Lauf, Alarm bei Rückstand | [SIN-332-production-deploy-cli.md](decisions/SIN-332-production-deploy-cli.md) |
 | SIN-330 | SIN-330: Hostprüfung per URL-Parsing statt Teilstring/Regex | [SIN-330-codeql-hostpruefung.md](decisions/SIN-330-codeql-hostpruefung.md) |
 | SIN-329 | SIN-329: Leistungsbudget (Lighthouse) stabilisieren | [SIN-329-lighthouse-aufwaermlauf.md](decisions/SIN-329-lighthouse-aufwaermlauf.md) |

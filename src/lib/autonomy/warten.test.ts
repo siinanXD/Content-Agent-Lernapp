@@ -85,3 +85,34 @@ test("SIN-327: Loop-Status zeigt wartende PRs getrennt von Workern und legt das 
   const creates = (res.actions as { type: string; issue?: { title: string } }[]).filter((a) => a.type === "create-issue" && a.issue?.title.startsWith(GATE_PREFIX));
   assert.equal(creates.length, 1);
 });
+
+// SIN-333: nur frische Läufe, keine Dependabot-PRs, Gegencheck auf main
+const fresh = (number: number, sha: string, extra: Record<string, unknown> = {}) => ({ ...red(number, sha), startedAt: "2026-10-07T05:00:00Z", author: "claude[bot]", ...extra });
+const ctx = { mainSince: "2026-10-07T03:36:00Z" };
+
+test("SIN-333: Läufe älter als der letzte Merge auf main → kein Issue", () => {
+  const old = { startedAt: "2026-10-07T02:00:00Z" };
+  const res = detectGateBreaks([fresh(1, "a", old), fresh(2, "b", old)], [], { ...ctx, main: { build: "failure" } });
+  assert.deepEqual(res, { breaks: [], rerun: [] });
+});
+
+test("SIN-333: rote Dependabot-PRs → kein Issue", () => {
+  const dep = { author: "dependabot[bot]" };
+  assert.equal(detectGateBreaks([fresh(1, "a", dep), fresh(2, "b", dep)], [], { ...ctx, main: { build: "failure" } }).breaks.length, 0);
+});
+
+test("SIN-333: frische rote PRs, main grün → kein Issue, PRs werden neu angestoßen", () => {
+  const res = detectGateBreaks([fresh(1, "a"), fresh(2, "b")], [], { ...ctx, main: { build: "success" } });
+  assert.equal(res.breaks.length, 0);
+  assert.deepEqual(res.rerun, [1, 2]);
+  const open = [{ number: 1, state: "open", labels: [] }, { number: 2, state: "open", labels: [] }];
+  assert.deepEqual(gateActions(open, res.breaks, false, res.rerun), [{ type: "gate-rerun", pr: 1 }, { type: "gate-rerun", pr: 2 }]);
+});
+
+test("SIN-333: frische rote PRs, main rot → genau ein Issue, keine Dublette bei offenem Issue", () => {
+  const res = detectGateBreaks([fresh(1, "a"), fresh(2, "b")], [], { ...ctx, main: { build: "failure" } });
+  assert.equal(res.breaks.length, 1);
+  assert.ok(res.breaks[0].issue);
+  assert.deepEqual(res.rerun, []);
+  assert.equal(detectGateBreaks([fresh(1, "a"), fresh(2, "b")], [{ title: res.breaks[0].title }], { ...ctx, main: { build: "failure" } }).breaks[0].issue, null);
+});
