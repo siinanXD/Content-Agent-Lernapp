@@ -42,5 +42,14 @@ describe("Wiederholungsübersicht (SIN-317)", () => {
   it("liefert den frühesten Fälligkeitszeitpunkt, leer = null", () => {
     assert.equal(nextDueAt(stack), "2026-10-08T08:00:00Z");
     assert.equal(nextDueAt({ items: [], updatedAt: "" }), null);
+    const messy: LeitnerStack = {
+      items: [
+        { questionId: "x", stage: 1, dueAt: "" },
+        { questionId: "y", stage: 1, dueAt: "kaputt" },
+        { questionId: "z", stage: 1, dueAt: "2026-10-09T08:00:00Z" },
+      ],
+      updatedAt: "",
+    };
+    assert.equal(nextDueAt(messy), "2026-10-09T08:00:00Z");
   });
 });

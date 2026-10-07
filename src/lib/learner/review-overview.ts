@@ -33,5 +33,11 @@ export function mostMissedAreas(
 
 /** Frühester Fälligkeitszeitpunkt im Stapel (ISO) oder `null`, wenn der Stapel leer ist. */
 export function nextDueAt(stack: LeitnerStack): string | null {
-  return stack.items.map((i) => i.dueAt).sort()[0] ?? null;
+  let best: { at: string; ms: number } | null = null;
+  for (const { dueAt } of stack.items) {
+    const ms = typeof dueAt === "string" ? Date.parse(dueAt) : Number.NaN;
+    if (Number.isNaN(ms)) continue;
+    if (!best || ms < best.ms) best = { at: dueAt, ms };
+  }
+  return best?.at ?? null;
 }
