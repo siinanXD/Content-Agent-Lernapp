@@ -229,6 +229,12 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   for (const issue of bugs) actions.push({ type: "create-issue", issue });
   const conflictAsks = {};
   for (const p of openPrs.filter((x) => isAgentPr(x) && !x.draft && !labelNames(x).includes("no-automerge") && x.mergeable_state === "dirty")) {
+    // SIN-312: erzeugte Dateien löst konflikt.mjs ohne KI (vorher im Lauf); hier nur noch echte Code-Konflikte.
+    if (snap.conflictResults?.[p.number] === "resolved") continue;
+    if (paused) {
+      incidents.push({ key: `conflict-web:${p.number}`, text: `PR #${p.number} hat einen Code-Konflikt, Claude-Kontingent leer (Pause bis ${pausedUntil}). Konflikt per Web-Editor lösen: ${p.html_url} öffnen, unten „Resolve conflicts“, Markierungen <<<<<<< bis >>>>>>> bereinigen, „Mark as resolved“, „Commit merge“.` });
+      continue;
+    }
     const asks = (prev.conflictAsks ?? {})[p.number] ?? [];
     const waited = asks.length ? mins(asks[asks.length - 1], now) >= CLAUDE_RETRY_MIN : true;
     conflictAsks[p.number] = asks;
@@ -555,6 +561,15 @@ function readTokens() {
   }
 }
 
+/** Ergebnis von konflikt.mjs (KONFLIKT_FILE); fehlt die Datei, fragt der Wächter wie bisher @claude. */
+function readConflictResults(env) {
+  try {
+    return env.KONFLIKT_FILE ? JSON.parse(readFileSync(env.KONFLIKT_FILE, "utf8")) : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function main(argv, env = process.env) {
   const dry = argv.includes("--dry-run");
   const fixtureAt = argv.indexOf("--fixture");
@@ -607,7 +622,7 @@ export async function main(argv, env = process.env) {
     const doneTitles = linearOk ? await doneTitlesSince(STALL_PREFIX, now).catch(() => []) : [];
     const backup = await collectBackup(repo, now, gh);
     const liveCheck = await collectLiveCheck(repo, gh);
-    snap = { now: now.toISOString(), ...g, backup, liveCheck, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles };
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
