@@ -59,14 +59,14 @@ const label = (v, max) => text(v, max).replace(/[[\]\n\r]/g, " ");
  */
 export function buildRadarIssues(radar, week, existing = new Set()) {
   const title = radarTitle(week);
-  if (existing.has(title.toLowerCase())) return [];
+  if (existing.has(title.trim().toLowerCase())) return [];
   const top = (radar.top ?? []).filter((t) => label(t.titel, 90) && isHttps(t.link)).slice(0, MAX_TOP);
   const sinan = (radar.sinan ?? []).filter((s) => label(s.titel, 90) && isHttps(s.link)).slice(0, MAX_SINAN);
-  if (!top.length && !sinan.length) return [];
   const lines = [
     `Funde aus dem Trend-Radar ${week} (Bericht: docs/research/trend-radar-${week}.md). Sinan entscheidet; nichts wird automatisch eingebaut, kein Label \`claude\`.`,
     "",
     "## Funde",
+    ...(top.length ? [] : ["Keine belegten Funde in dieser Woche."]),
     ...top.map(
       (t) =>
         `- [ ] [${label(t.titel, 90)}](${t.link}): ${label(t.was, 300)} Warum: ${label(t.warum, 300)} (Lizenz: ${label(t.lizenz, 80) || "nicht geprüft"}, Aufwand: ${label(t.aufwand, 120) || "offen"}, Risiko: ${label(t.risiko, 200) || "offen"})`,
@@ -83,8 +83,8 @@ async function main(argv) {
   const radar = JSON.parse(readFileSync(argv[i + 1], "utf8"));
   const existing = new Set();
   if (process.env.LINEAR_API_KEY) {
-    for (const issue of await fetchProjectIssues()) if (!["completed", "canceled"].includes(issue.state.type)) existing.add(issue.title.toLowerCase());
-    for (const t of await doneTitlesSince(RADAR_PREFIX)) existing.add(t.toLowerCase());
+    for (const issue of await fetchProjectIssues()) if (!["completed", "canceled"].includes(issue.state.type)) existing.add(issue.title.trim().toLowerCase());
+    for (const t of await doneTitlesSince(RADAR_PREFIX)) existing.add(t.trim().toLowerCase());
   }
   const items = buildRadarIssues(radar, isoWeek(new Date()), existing);
   const dry = argv.includes("--dry-run");

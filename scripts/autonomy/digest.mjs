@@ -18,7 +18,7 @@ import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
-import { latestReport } from "./trend-radar.mjs";
+import { isoWeek } from "./trend-radar.mjs";
 import { renderWeekUsage, weekUsage } from "./sparen.mjs";
 import { sinanLine, sortSinan, syncSinan } from "./sinan.mjs";
 import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
@@ -209,11 +209,11 @@ export function collectDecisions(since, run = execFileSync) {
   });
 }
 
-/** Montags (Berlin) der jüngste Trend-Radar-Bericht, sonst `null`. */
+/** Montags (Berlin) der Bericht des Sonntagslaufs (Vorwoche), sonst `null`. */
 export function mondayRadar(now, files = readdirSync(new URL("../../docs/research/", import.meta.url))) {
   if (new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(now) !== "Mon") return null;
-  const f = latestReport(files);
-  return f ? `docs/research/${f}` : null;
+  const f = `trend-radar-${isoWeek(new Date(now.getTime() - 24 * 3600 * 1000))}.md`;
+  return files.includes(f) ? `docs/research/${f}` : null;
 }
 
 async function collect(repo, slot, now, since, env, dry = false) {

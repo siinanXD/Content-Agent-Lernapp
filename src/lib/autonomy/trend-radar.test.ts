@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { mondayRadar } from "../../../scripts/autonomy/digest.mjs";
 import { buildRadarIssues, isoWeek, latestReport, radarTitle, reportPath } from "../../../scripts/autonomy/trend-radar.mjs";
 
 test("isoWeek: Kalenderwoche und Jahreswechsel", () => {
@@ -30,7 +31,16 @@ test("buildRadarIssues: genau ein Issue, Checkliste, höchstens 5 Funde, https P
 test("buildRadarIssues: nichts bei vorhandenem Wochen-Issue oder ohne Funde", () => {
   const radar = { top: [{ titel: "A", was: "x", warum: "y", link: "https://example.com" }] };
   assert.deepEqual(buildRadarIssues(radar, "2026-KW41", new Set(["trend-radar kw 2026-41"])), []);
-  assert.deepEqual(buildRadarIssues({ top: [] }, "2026-KW41"), []);
+  const empty = buildRadarIssues({ top: [] }, "2026-KW41");
+  assert.equal(empty.length, 1);
+  assert.match(empty[0].description, /Keine belegten Funde/);
+});
+
+test("mondayRadar: nur der Bericht des Sonntagslaufs, nur montags", () => {
+  const files = ["trend-radar-2026-KW40.md", "trend-radar-2026-KW41.md"];
+  assert.equal(mondayRadar(new Date("2026-10-12T05:00:00Z"), files), "docs/research/trend-radar-2026-KW41.md");
+  assert.equal(mondayRadar(new Date("2026-10-19T05:00:00Z"), files), null);
+  assert.equal(mondayRadar(new Date("2026-10-13T05:00:00Z"), files), null);
 });
 
 test("Workflow: Linear-Schritt ist bei dry_run per if: gesperrt, Anlegen nur ohne dry_run", () => {
