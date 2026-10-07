@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-345 | SIN-345: /start unter dem LCP-Budget | [SIN-345-start-lcp.md](decisions/SIN-345-start-lcp.md) |
+| SIN-344 | SIN-344 — Rechtsseiten prüfen und in der Produktreife belegen | [SIN-344-rechtsseiten-produktreife.md](decisions/SIN-344-rechtsseiten-produktreife.md) |
 | SIN-335 | SIN-335: Gate auf main härten | [SIN-335-gate-haerten.md](decisions/SIN-335-gate-haerten.md) |
 | SIN-334 | SIN-334: Dispatcher sofort nach Merge und bei frei gewordenem Platz anstoßen | [SIN-334-dispatcher-anstossen.md](decisions/SIN-334-dispatcher-anstossen.md) |
 | SIN-333 | SIN-333: Gate-Bruch zählt nur frische Läufe, ohne Dependabot, mit Gegencheck auf main | [SIN-333-gate-bruch-frische-laeufe.md](decisions/SIN-333-gate-bruch-frische-laeufe.md) |

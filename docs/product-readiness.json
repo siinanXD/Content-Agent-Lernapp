@@ -31,6 +31,36 @@
       "beleg": "SIN-258/SIN-268/SIN-280: Ledger pipeline_run_costs und Deckel, nie mit Live-Lauf gemessen (docs/decisions/SIN-258-kosten-ledger.md)",
       "issues": ["SIN-258", "SIN-268", "SIN-280"],
       "lauf": "Workflow content-grow oder run-task judge-backfill schreibt Ledger-Zeilen; danach run-task cost-report (SIN-302)"
+    },
+    "recht-ki": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-301/SIN-344: /ki-hinweis erreichbar von Fußzeile, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-301", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
+    },
+    "recht-impressum": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-301/SIN-344: /impressum erreichbar von Fußzeile, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-301", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
+    },
+    "recht-datenschutz": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-301/SIN-344: /datenschutz erreichbar von Fußzeile und Onboarding, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-301", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
+    },
+    "recht-einwilligung": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-279/SIN-344: /einwilligung erreichbar vom Onboarding, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-279", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
+    },
+    "recht-demo": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-279/SIN-344: /demo erreichbar von Startseite, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-279", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
     }
   },
   "bestaetigt": {
