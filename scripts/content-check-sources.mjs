@@ -43,7 +43,7 @@ if (!offline) {
   for (const [url, entry] of Object.entries(lock.entries)) {
     try {
       const isPdf = url.toLowerCase().endsWith(".pdf");
-      if (url.includes("gesetze-im-internet.de")) {
+      if (new URL(url).hostname.replace(/^www\./, "") === "gesetze-im-internet.de") {
         const { res, text } = await get(url);
         observed[url] = { httpStatus: res.status, etag: res.headers.get("etag"), lastModified: res.headers.get("last-modified"), standLabel: watch.extractGiiStand(text), contentHash: hash(text.replace(/<[^>]+>/g, " ")) };
       } else if (url.includes("/BeruflicheBildung/rlp/") && entry.kmkName) {
