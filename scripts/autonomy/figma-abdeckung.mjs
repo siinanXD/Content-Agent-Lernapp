@@ -37,6 +37,12 @@ export function checkCoverage(map, figmaMd, liveFrames, exists = existsSync) {
   for (const name of liveFrames ?? []) {
     if (!mapped.has(name.trim())) problems.push(`Figma-Frame „${name}“ ist nicht zugeordnet (fehlt im Code)`);
   }
+  if (liveFrames) {
+    const live = new Set(liveFrames.map((n) => n.trim()));
+    for (const f of map.frames) {
+      if (!live.has(f.frame.trim())) problems.push(`Frame „${f.frame}“ ist zugeordnet, existiert aber nicht in der Figma-Datei`);
+    }
+  }
   return problems;
 }
 

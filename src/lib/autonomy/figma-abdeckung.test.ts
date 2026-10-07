@@ -15,6 +15,11 @@ test("Figma-Abdeckung: Bericht ist aktuell (npm run figma:abdeckung erzeugt ihn)
   assert.equal(md, renderReport(map, "nicht verfügbar (FIGMA_ACCESS_TOKEN fehlt)"));
 });
 
+test("Figma-Abdeckung: gemappter Frame, den Figma nicht kennt, wird gemeldet", () => {
+  const live = map.frames.map((f: { frame: string }) => f.frame).filter((n: string) => n !== "01 Start");
+  assert.ok(checkCoverage(map, figmaMd, live).some((x: string) => x.includes("existiert aber nicht")));
+});
+
 test("Figma-Abdeckung: fehlende Datei ergibt „fehlt“, unzugeordnete Frames werden gemeldet", () => {
   assert.equal(deriveStand(["a.tsx"], () => false), "fehlt");
   assert.equal(deriveStand([], () => true), "fehlt");
