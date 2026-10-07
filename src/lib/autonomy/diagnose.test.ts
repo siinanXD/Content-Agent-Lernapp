@@ -155,7 +155,7 @@ test("Logs: nur der letzte Lauf je Workflow zählt, ein späterer Erfolg heilt",
   assert.equal(logs[0].workflow, "worker");
   assert.match(logs[0].text, /jobs\/77\/logs/);
   // Geheilte Workflows erscheinen nur als Hinweiszeile (SIN-328), ohne roten Log.
-  assert.match(logs.find((l: { workflow: string }) => l.workflow === "planner")?.text, /^Kein roter Lauf: planner/);
+  assert.match(logs.find((l: { workflow: string }) => l.workflow === "planner")?.text ?? "", /^Kein roter Lauf: planner/);
 });
 
 test("SIN-328: Stillstand ohne roten Lauf → Ursache ohne-start statt unbekannt", async () => {
