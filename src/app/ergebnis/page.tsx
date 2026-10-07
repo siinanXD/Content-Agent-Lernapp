@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StateView } from "@/components/ui/state-view";
 import { StatChip } from "@/components/ui/stat-chip";
-import { Tile } from "@/components/ui/tile";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { DailyGoal } from "@/components/ui/daily-goal";
+import { ProgressRing } from "@/components/ui/progress-ring";
 import {
   DEFAULT_REMINDER,
   loadOnboarding,
@@ -42,6 +42,10 @@ export default function ErgebnisPage() {
 
   // Kein Ergebnis gespeichert: keine Zahlen erfinden, sondern den Weg zur Einheit zeigen.
   const result = session?.lastResult;
+  const title = result?.unitTitle;
+  const correct = result?.correct ?? 0;
+  const total = result?.total ?? 0;
+  const points = result?.points;
   const areaResults = result?.areaResults ?? [];
 
   const headline = !result
@@ -54,21 +58,79 @@ export default function ErgebnisPage() {
 
   return (
     <MobileShell>
-      <div className="px-6 pb-4 pt-12">
-        <Tile tone="hero" className="gap-2">
-          <p className="mono-label">Ergebnis</p>
-          <h1
-            className="text-[30px] font-bold leading-9"
-            style={{ fontFamily: "var(--font-display)" }}
+      <div className="bento px-6 pb-4 pt-12">
+        <section
+          aria-label="Ergebnis"
+          className="bento-tile bento-main bento-span-6"
+        >
+          <p className="bento-label">Ergebnis</p>
+          <div className="flex items-center gap-5">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <h1
+                className="text-[28px] font-bold leading-9 text-[var(--color-text-on-brand)]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                {headline}
+              </h1>
+              <p className="text-[15px] leading-6 text-[var(--color-text-soft-on-dark)]">
+                {result
+                  ? `${result.partTitle ? `${result.partTitle} · ` : ""}${title} · ${correct} von ${total} richtig`
+                  : "Schließe eine Einheit ab, dann siehst du hier dein Ergebnis."}
+              </p>
+            </div>
+            {result && total > 0 ? (
+              <ProgressRing
+                done={correct}
+                total={total}
+                label="richtig"
+                name="Ergebnis"
+                onDark
+                showLabel={false}
+              />
+            ) : null}
+          </div>
+          <Link
+            href="/einheit/unit-04"
+            className="mt-2 flex min-h-[50px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-base font-semibold text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
           >
-            {headline}
-          </h1>
-          <p className="text-[15px]">
-            {result
-              ? `${result.partTitle ? `${result.partTitle} · ` : ""}${result.unitTitle} · ${result.correct} von ${result.total} richtig`
-              : "Schließe eine Einheit ab, dann siehst du hier dein Ergebnis."}
-          </p>
-        </Tile>
+            Weiter lernen
+          </Link>
+        </section>
+
+        {result ? (
+          <section
+            className="bento-tile bento-span-3"
+            aria-label="Deine Werte"
+          >
+            <p className="bento-label">Heute</p>
+            <div className="flex flex-wrap gap-2">
+              {points !== undefined ? (
+                <StatChip
+                  kind="punkte"
+                  value={`+${points}`}
+                  label="Punkte heute"
+                  showLabel
+                />
+              ) : null}
+              {ready && ready.streak.days > 0 ? (
+                <StatChip
+                  kind="serie"
+                  value={formatDays(ready.streak.days)}
+                  label="Serie"
+                  showLabel
+                />
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {ready ? (
+          <DailyGoal
+            summary={ready}
+            dueCount={0}
+            className={result ? "bento-span-3" : "bento-span-6"}
+          />
+        ) : null}
       </div>
 
       {summary === "fehler" ? (
@@ -77,40 +139,6 @@ export default function ErgebnisPage() {
           title="Serie und Tagesziel nicht lesbar"
           text="Dein Ergebnis ist gespeichert. Lade die Seite neu, um Serie und Tagesziel zu sehen."
         />
-      ) : null}
-
-      {result ? (
-        <section
-          className="flex flex-wrap gap-2 px-6 py-4"
-          aria-label="Deine Werte"
-        >
-          <StatChip
-            kind="punkte"
-            value={`+${result.points}`}
-            label="Punkte heute"
-            showLabel
-          />
-          {ready && ready.streak.days > 0 ? (
-            <StatChip
-              kind="serie"
-              value={formatDays(ready.streak.days)}
-              label="Serie"
-              showLabel
-            />
-          ) : null}
-          <StatChip
-            kind="wiederholung"
-            value={`${result.correct}/${result.total}`}
-            label="richtig"
-            showLabel
-          />
-        </section>
-      ) : null}
-
-      {ready ? (
-        <div className="px-6 pb-4">
-          <DailyGoal summary={ready} dueCount={0} />
-        </div>
       ) : null}
 
       {areaResults.length > 0 ? (
@@ -151,38 +179,34 @@ export default function ErgebnisPage() {
       ) : null}
 
       <section className="flex flex-1 flex-col gap-3 px-6 pb-8">
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Morgen dran
-          </p>
+        <section aria-label="Morgen dran" className="bento-tile">
+          <p className="bento-label">Morgen dran</p>
           <p
-            className="mt-1 text-lg font-medium text-[var(--color-text-primary)]"
+            className="text-lg font-medium text-[var(--color-text-primary)]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {PLAYABLE_TODAY.nextTitle}
           </p>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+          <p className="text-sm text-[var(--color-text-secondary)]">
             Tagesziel: fällige Wiederholungen zuerst, dann neue Einheiten
           </p>
-        </div>
+        </section>
         {showReminder ? (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
+          <section aria-label="Erinnerung" className="bento-tile">
+            <p className="bento-label">Erinnerung</p>
             <p
               className="text-[15px] font-medium text-[var(--color-text-primary)]"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Erinnerung um {reminder.time}
+              Um {reminder.time}
             </p>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            <p className="text-sm text-[var(--color-text-secondary)]">
               Eine Nachricht pro Tag, nur wenn du noch nicht gelernt hast
             </p>
-          </div>
+          </section>
         ) : null}
         <Link href="/wiederholung" className="block">
           <Button variant="secondary">Zur Wiederholung</Button>
-        </Link>
-        <Link href="/einheit/unit-04" className="block">
-          <Button>Weiter lernen</Button>
         </Link>
         <Link href="/lernpfad" className="block">
           <Button variant="secondary">Für heute fertig</Button>

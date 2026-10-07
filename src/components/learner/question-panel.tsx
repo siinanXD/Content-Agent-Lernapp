@@ -115,7 +115,9 @@ function BlankQuestion({
 
   return (
     <div className="flex flex-col gap-2.5" role="group" aria-label="Lückentext">
-      <p className="text-sm text-[var(--color-text-secondary)]">Wortliste</p>
+      <p className="mono-label text-[var(--color-text-secondary)]">
+        Wortliste · wähle das passende Wort
+      </p>
       {bank.map((word) => (
         <OptionChoice
           key={word}
@@ -175,11 +177,11 @@ function PairQuestion({
       {question.image ? <UnitImageView image={question.image} /> : null}
       {pairs.map(([left], i) => (
         <label key={left} className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">
-            {left}
+          <span className="mono-label text-[var(--color-text-secondary)]">
+            {String(i + 1).padStart(2, "0")} · {left}
           </span>
           <select
-            className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 text-[15px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+            className="min-h-[52px] rounded-[var(--radius-md)] border-2 border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 text-[15px] text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
             disabled={revealed}
             value={picks[i] ?? ""}
             onChange={(e) => setPicks((p) => ({ ...p, [i]: e.target.value }))}
@@ -203,7 +205,7 @@ function PairQuestion({
           Antwort prüfen
         </Button>
       ) : (
-        <p className="text-sm text-[var(--color-text-secondary)]" role="status">
+        <p className="mono-label text-[var(--color-text-secondary)]" role="status">
           {isCorrect ? "Alle Zuordnungen stimmen." : "Mindestens eine Zuordnung war falsch."}
         </p>
       )}
@@ -241,19 +243,29 @@ function OrderQuestion({
   return (
     <div className="flex flex-col gap-2.5">
       {question.image ? <UnitImageView image={question.image} /> : null}
+      <p className="mono-label text-[var(--color-text-secondary)]">
+        Bringe die Schritte in die richtige Reihenfolge
+      </p>
       <div className="flex flex-col gap-2.5" role="list" aria-label="Reihenfolge">
       {order.map((step, i) => (
         <div
           key={`${step}-${i}`}
           role="listitem"
-          className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 py-2"
+          className="flex items-center gap-2 rounded-[var(--radius-md)] border-2 border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 py-2"
         >
+          <span
+            className="mono-label w-6 shrink-0 text-[var(--color-text-secondary)]"
+            aria-hidden="true"
+          >
+            {String(i + 1).padStart(2, "0")}
+          </span>
           <span className="flex-1 text-[15px] text-[var(--color-text-primary)]">
-            {i + 1}. {step}
+            <span className="sr-only">{i + 1}. </span>
+            {step}
           </span>
           <button
             type="button"
-            className="min-h-10 min-w-10 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+            className="min-h-11 min-w-11 rounded-[var(--radius-sm)] border-2 border-[var(--color-border-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
             aria-label={`${step} nach oben`}
             disabled={revealed || i === 0}
             onClick={() => move(i, -1)}
@@ -262,7 +274,7 @@ function OrderQuestion({
           </button>
           <button
             type="button"
-            className="min-h-10 min-w-10 rounded-[var(--radius-sm)] border border-[var(--color-border-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+            className="min-h-11 min-w-11 rounded-[var(--radius-sm)] border-2 border-[var(--color-border-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
             aria-label={`${step} nach unten`}
             disabled={revealed || i === order.length - 1}
             onClick={() => move(i, 1)}
@@ -316,6 +328,9 @@ function OpenSampleQuestion({
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="mono-label text-[var(--color-text-secondary)]">
+        Rechnen · Selbstkontrolle
+      </p>
       <TextField
         id={`open-${question.id}`}
         label="Deine Lösung (wird nicht von KI bewertet)"
@@ -332,12 +347,12 @@ function OpenSampleQuestion({
         </Button>
       ) : (
         <div
-          className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3"
+          className="rounded-[var(--radius-lg)] border-2 border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-4"
           role="region"
           aria-label="Musterlösung zur Selbstkontrolle"
         >
-          <p className="text-sm font-medium text-[var(--color-text-primary)]">
-            Musterlösung (Selbstkontrolle — keine KI-Note)
+          <p className="mono-label text-[var(--color-text-secondary)]">
+            Musterlösung · Selbstkontrolle, keine KI-Note
           </p>
           <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-primary)]">
             {question.sampleSolution}
@@ -346,10 +361,10 @@ function OpenSampleQuestion({
             <ul className="mt-3 flex flex-col gap-2">
               {checklist.map((item, i) => (
                 <li key={item}>
-                  <label className="flex items-start gap-2 text-sm text-[var(--color-text-primary)]">
+                  <label className="flex min-h-11 items-center gap-3 text-sm text-[var(--color-text-primary)]">
                     <input
                       type="checkbox"
-                      className="mt-1 h-4 w-4"
+                      className="h-5 w-5 shrink-0 accent-[var(--color-brand-primary)]"
                       checked={Boolean(checks[i])}
                       onChange={(e) =>
                         setChecks((c) => ({ ...c, [i]: e.target.checked }))
