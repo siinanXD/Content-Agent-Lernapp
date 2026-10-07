@@ -9,6 +9,7 @@ import {
   newStallIssue,
   noPrComment,
   pendingDecisions,
+  renderLinearQuota,
   splitIssue,
   stallIssue,
   summarizeExecution,
@@ -213,6 +214,9 @@ test("Worker ohne PR: zu großer Auftrag wird in 2–4 Teil-Issues zerlegt", () 
   assert.ok(!tooBig(summarizeExecution(JSON.stringify([{ type: "result", subtype: "success", num_turns: 10 }]))));
 });
 
+// Linear Free (250er-Grenze) als Fixture; die echte Datei steht seit SIN-360 auf Basic (limit: null).
+const freeLimits = { ...limits, limits: { ...limits.limits, linear_issues: { ...limits.limits.linear_issues, limit: 250 } } };
+
 test("Linear-Kontingent: ab 85 % Hinweis, ab 95 % Planer stoppt, Zeile in der Kontingent-Tabelle", () => {
   assert.equal(linearQuota(200).level, "ok");
   assert.equal(linearQuota(212).level, "ok"); // 84,8 %
@@ -223,19 +227,19 @@ test("Linear-Kontingent: ab 85 % Hinweis, ab 95 % Planer stoppt, Zeile in der Ko
   assert.equal(linearQuotaIssue(linearQuota(230)), null);
   assert.match(linearQuotaIssue(linearQuota(240))!.title, /^Linear-Kontingent:/);
 
-  const row = (n: number) => buildQuotaRows({ linear_issues: n }, limits).find((r: { key: string }) => r.key === "linear_issues")!;
+  const row = (n: number) => buildQuotaRows({ linear_issues: n }, freeLimits).find((r: { key: string }) => r.key === "linear_issues")!;
   assert.equal(row(212).over, false); // 80 % reichen hier nicht, erst 85 %
   assert.equal(row(213).over, true);
-  assert.deepEqual(limitAlerts({ linear_issues: 213 }, limits).map((a: { key: string }) => a.key), ["linear_issues"]);
+  assert.deepEqual(limitAlerts({ linear_issues: 213 }, freeLimits).map((a: { key: string }) => a.key), ["linear_issues"]);
 
   // Wächter: Hinweis ab 85 %, Issue erst ab 95 %, Planer-Anstoß stoppt.
   const snap = fixture();
   snap.usage = { linear_issues: 213 };
-  const warn = analyze(snap, limits, {});
+  const warn = analyze(snap, freeLimits, {});
   assert.ok(warn.incidents.some((i: { key: string }) => i.key === "quota:linear_issues"));
   assert.ok(!warn.actions.some((a: { type: string; issue?: { title: string } }) => a.type === "create-issue" && a.issue?.title.startsWith("Linear-Kontingent")));
   snap.usage = { linear_issues: 240 };
-  const stop = analyze(snap, limits, {});
+  const stop = analyze(snap, freeLimits, {});
   assert.ok(stop.actions.some((a: { type: string; issue?: { title: string } }) => a.type === "create-issue" && a.issue?.title.startsWith("Linear-Kontingent")));
   assert.equal(stop.refill.trigger, false);
   assert.match(stop.refill.reason, /95 %/);
@@ -267,4 +271,26 @@ test("Entscheidungen in gemergten PRs: sichtbar bis Sinan antwortet", () => {
   assert.ok(r.incidents.some((i: { key: string }) => i.key === "decision:110"));
   snap.decisions = [];
   assert.doesNotMatch(analyze(snap, limits, {}).body, /## Braucht dich/);
+});
+
+test("Linear Basic (limit: null): kein Prozent, keine Warnung, Planer bremst nicht (SIN-360)", () => {
+  assert.equal(limits.limits.linear_issues.limit, null);
+  const q = linearQuota(213, null);
+  assert.equal(q.level, "unlimited");
+  assert.equal(q.pct, null);
+  assert.equal(renderLinearQuota(q), "Linear: 213 Issues (unbegrenzt)");
+  assert.equal(linearQuotaIssue(linearQuota(9999, null)), null);
+
+  const row = buildQuotaRows({ linear_issues: 213 }, limits).find((r: { key: string }) => r.key === "linear_issues")!;
+  assert.equal(row.pct, null);
+  assert.equal(row.over, false);
+  assert.equal(row.text, "213 Issues (unbegrenzt)");
+  assert.deepEqual(limitAlerts({ linear_issues: 9999 }, limits), []);
+
+  const snap = fixture();
+  snap.usage = { linear_issues: 9999 };
+  const r = analyze(snap, limits, {});
+  assert.ok(!r.incidents.some((i: { key: string }) => i.key === "quota:linear_issues"));
+  assert.notEqual(r.refill.bugsOnly, true);
+  assert.doesNotMatch(r.refill.reason, /95 %/);
 });

@@ -80,7 +80,7 @@ const QUOTAS = [
   ["sentry_events_monat", "Sentry: Fehler im Monat"],
   ["posthog_events_monat", "PostHog: Events im Monat"],
   ["langfuse_units_monat", "Langfuse: Units im Monat"],
-  ["linear_issues", "Linear Free: Issues"],
+  ["linear_issues", "Linear: Issues"],
   ["claude_max", "Claude Max"],
   ["api_kosten_eur", "Anthropic/OpenAI API: Kosten (Ledger)"],
 ];
@@ -104,6 +104,7 @@ export function buildQuotaRows(usage = {}, limitsFile = {}) {
       row.value = u;
       row.pct = percent(u, limit);
       row.text = `${u}${lim?.einheit ? ` ${lim.einheit}` : ""}`;
+      if (key === "linear_issues" && limit === null) row.text += " (unbegrenzt)"; // SIN-360
     } else if (u?.text) row.text = u.text;
     else row.text = `nicht messbar${u?.error ? ` (${u.error})` : ""}`;
     row.over = row.pct != null && row.pct >= (WARN_PCT[key] ?? warn); // ab 80 % (SIN-251, wie der Wächter SIN-225)
@@ -239,7 +240,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   for (const b of breaks) {
     incidents.push({ key: `gate:${b.check}/${b.step}`, text: `Gate-Bruch: \`${b.check}\` / \`${b.step}\` scheitert in ${b.prs.map((n) => `#${n}`).join(", ")}. Urgent-Bug-Issue ${b.issue ? "angelegt" : "offen"}, Reparatur der PRs gesperrt.` });
   }
-  const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null);
+  const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null, limitsFile.limits?.linear_issues?.limit);
   const stop = linearQ.level === "stop";
   const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...deployBugs.filter((b) => !known.some((k) => k.title === b.title)), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
   const decisions = snap.decisions ?? [];
@@ -308,7 +309,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   out.push(`- ${backup ? `${backup.ok ? "" : "⚠️ "}${backup.line}` : "Letzte Sicherung: nicht lesbar"}`);
   if (liveCheck) out.push(`- ${liveCheck.ok ? "" : "⚠️ "}${liveCheck.line}`);
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
-  if (linearQ.level !== "unknown" && linearQ.level !== "ok") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
+  if (linearQ.level === "warn" || linearQ.level === "stop") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
   out.push("");
   if (deployAlarms.length) {
     out.push("## Braucht dich (rot)", "");
@@ -522,7 +523,7 @@ export async function collectUsage({ env = process.env, now = new Date(), runs =
     }
   };
   const bearer = (t) => ({ headers: { Authorization: `Bearer ${t}` } });
-  // Linear Free (SIN-291): Issue-Zahl gegen das Limit von 250.
+  // Linear Free (SIN-291): Issue-Zahl gegen das Limit aus free-tier-limits.json (Basic seit 2026-10-07: keins).
   await guard("linear_issues", !env.LINEAR_API_KEY && "LINEAR_API_KEY", () =>
     countIssues((q, v) => linear(q, v, { key: env.LINEAR_API_KEY, fetchImpl })),
   );

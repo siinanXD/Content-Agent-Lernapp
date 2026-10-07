@@ -219,14 +219,18 @@ export function splitIssue(issue, parts = 4) {
 /**
  * Anzahl Issues gegen das Limit. `level`: ok | warn (ab 85 %, Hinweis) | stop (ab 95 %, Planer legt nichts an).
  * @param {number | null | undefined} count
+ * @param {number | null} [limit] null = unbegrenzt (Linear Basic, SIN-360)
  */
 export function linearQuota(count, limit = LINEAR_ISSUE_LIMIT) {
+  // SIN-360: `limit: null` = Linear Basic, keine Issue-Grenze. Kein Prozent, nie warn/stop.
+  if (limit === null) return { count: typeof count === "number" ? count : null, limit: null, pct: null, level: "unlimited" };
   if (typeof count !== "number" || !(limit > 0)) return { count: null, limit, pct: null, level: "unknown" };
   const pct = Math.round((count / limit) * 1000) / 10;
   return { count, limit, pct, level: pct >= LINEAR_STOP_PCT ? "stop" : pct >= LINEAR_WARN_PCT ? "warn" : "ok" };
 }
 
 export function renderLinearQuota(q) {
+  if (q.level === "unlimited" && q.count != null) return `Linear: ${q.count} Issues (unbegrenzt)`;
   if (q.pct == null) return "Linear: Issue-Zahl nicht messbar";
   const tail = q.level === "stop" ? ": Planer legt keine neuen Issues an" : q.level === "warn" ? ": Hinweis, bald aufräumen" : "";
   return `Linear: ${q.count} von ${q.limit} Issues (${q.pct} %)${tail}`;

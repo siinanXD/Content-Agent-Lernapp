@@ -64,3 +64,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Ergebnisseite mit Standardwerten füllen, wenn kein Ergebnis gespeichert ist (5 von 6, 120 Punkte) → erfundene Zahlen sind verboten. Richtig: „Noch kein Ergebnis“ mit Weg zur Einheit zeigen. (SIN-326)
 - Kennzahl-Skript meldet bei fehlendem Secret nur „nicht verfügbar“, und ein Fehler der ersten Abfrage verdeckt die zweite → fehlende Variablen beim Namen nennen und jede Abfrage einzeln fangen. (SIN-350)
 - Migration legt Tabelle an, Kennzahl meldet trotzdem „Tabelle fehlt“ (REST 404) → PostgREST kennt sie erst nach `notify pgrst, 'reload schema'`; in jede Migration mit `create table` aufnehmen, `migrate` lädt den Cache jetzt immer neu. (SIN-351)
+- Konfigurierte Grenze ist real weg (Linear Basic, `limit: null`), der Planer bremst trotzdem → `null` ausdrücklich als „unbegrenzt“ behandeln und das Limit aus `free-tier-limits.json` lesen, nicht als Konstante im Skript. (SIN-360)
