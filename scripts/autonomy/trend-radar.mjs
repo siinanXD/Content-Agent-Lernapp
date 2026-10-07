@@ -8,8 +8,9 @@
  *
  * `radar.json`: { "top": [{ titel, was, warum, lizenz, aufwand, risiko, link }] (höchstens 5),
  *                "sinan": [{ titel, was, link }] (Klick-Aufgaben, höchstens 3) }.
- * Top-5 werden Linear-Issues mit Label `research` (nie `claude`), Klick-Aufgaben Label `sinan`. Offene oder
- * gerade erledigte Issues mit gleichem Titel werden nicht doppelt angelegt. Nichts wird automatisch eingebaut.
+ * Pro Lauf entsteht genau ein Linear-Issue `Trend-Radar KW <JJJJ-KW>` (Label `research`, nie `claude`) mit allen
+ * Funden als Checkliste (Linear Free hat eine Issue-Grenze). Gibt es das Issue schon (offen oder gerade erledigt),
+ * wird nichts angelegt. Nichts wird automatisch eingebaut.
  */
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -17,8 +18,7 @@ import { createLinearIssues, doneTitlesSince, fetchProjectIssues } from "./linea
 
 export const MAX_TOP = 5;
 export const MAX_SINAN = 3;
-export const RESEARCH_PREFIX = "Research: ";
-export const SINAN_PREFIX = "Sinan: ";
+export const RADAR_PREFIX = "Trend-Radar KW ";
 
 /** ISO-Kalenderwoche, z. B. `2026-KW41`. */
 export function isoWeek(date) {
@@ -45,40 +45,35 @@ const isHttps = (u) => {
   }
 };
 
+/** Issue-Titel der Woche, z. B. `Trend-Radar KW 2026-41`. */
+export const radarTitle = (week) => `${RADAR_PREFIX}${week.replace("-KW", "-")}`;
+
+const label = (v, max) => text(v, max).replace(/[[\]\n\r]/g, " ");
+
 /**
- * Prüft radar.json und baut die Issue-Einträge. Ohne https-Link kein Eintrag.
+ * Prüft radar.json und baut das eine Wochen-Issue mit Checkliste. Ohne https-Link kein Eintrag.
  * @param {{ top?: any[], sinan?: any[] }} radar
  * @param {string} week
  * @param {Set<string>} [existing] kleingeschriebene Titel offener oder gerade erledigter Issues
+ * @returns {{ title: string, description: string, priority: number, labels: string[] }[]} leer oder genau ein Eintrag
  */
 export function buildRadarIssues(radar, week, existing = new Set()) {
-  const seen = new Set(existing);
-  const out = [];
-  const add = (prefix, titel, description, priority, labels) => {
-    const title = `${prefix}${titel}`;
-    if (!titel || seen.has(title.toLowerCase())) return;
-    seen.add(title.toLowerCase());
-    out.push({ title, description, priority, labels });
-  };
-  for (const t of (radar.top ?? []).slice(0, MAX_TOP)) {
-    if (!isHttps(t.link)) continue;
-    const desc = [
-      `Vorschlag aus dem Trend-Radar ${week} (Bericht: docs/research/trend-radar-${week}.md). Sinan entscheidet; nichts wird automatisch eingebaut, kein Label \`claude\`.`,
-      "",
-      `- Was: ${text(t.was, 400)}`,
-      `- Warum relevant: ${text(t.warum, 400)}`,
-      `- Lizenz: ${text(t.lizenz, 80) || "nicht geprüft"}`,
-      `- Aufwand: ${text(t.aufwand, 120) || "offen"}`,
-      `- Risiko: ${text(t.risiko, 200) || "offen"}`,
-      `- Link: ${t.link}`,
-    ].join("\n");
-    add(RESEARCH_PREFIX, text(t.titel, 90), desc, 4, ["research"]);
-  }
-  for (const s of (radar.sinan ?? []).slice(0, MAX_SINAN)) {
-    if (!isHttps(s.link)) continue;
-    add(SINAN_PREFIX, text(s.titel, 90), `Aus dem Trend-Radar ${week}. Klick-Aufgabe für Sinan (SIN-310).\n\n- Was: ${text(s.was, 400)}\n- Link: ${s.link}`, 3, ["sinan"]);
-  }
-  return out;
+  const title = radarTitle(week);
+  if (existing.has(title.toLowerCase())) return [];
+  const top = (radar.top ?? []).filter((t) => label(t.titel, 90) && isHttps(t.link)).slice(0, MAX_TOP);
+  const sinan = (radar.sinan ?? []).filter((s) => label(s.titel, 90) && isHttps(s.link)).slice(0, MAX_SINAN);
+  if (!top.length && !sinan.length) return [];
+  const lines = [
+    `Funde aus dem Trend-Radar ${week} (Bericht: docs/research/trend-radar-${week}.md). Sinan entscheidet; nichts wird automatisch eingebaut, kein Label \`claude\`.`,
+    "",
+    "## Funde",
+    ...top.map(
+      (t) =>
+        `- [ ] [${label(t.titel, 90)}](${t.link}): ${label(t.was, 300)} Warum: ${label(t.warum, 300)} (Lizenz: ${label(t.lizenz, 80) || "nicht geprüft"}, Aufwand: ${label(t.aufwand, 120) || "offen"}, Risiko: ${label(t.risiko, 200) || "offen"})`,
+    ),
+  ];
+  if (sinan.length) lines.push("", "## Klick-Aufgaben", ...sinan.map((s) => `- [ ] [${label(s.titel, 90)}](${s.link}): ${label(s.was, 300)}`));
+  return [{ title, description: lines.join("\n"), priority: 4, labels: ["research"] }];
 }
 
 async function main(argv) {
@@ -89,7 +84,7 @@ async function main(argv) {
   const existing = new Set();
   if (process.env.LINEAR_API_KEY) {
     for (const issue of await fetchProjectIssues()) if (!["completed", "canceled"].includes(issue.state.type)) existing.add(issue.title.toLowerCase());
-    for (const prefix of [RESEARCH_PREFIX, SINAN_PREFIX]) for (const t of await doneTitlesSince(prefix)) existing.add(t.toLowerCase());
+    for (const t of await doneTitlesSince(RADAR_PREFIX)) existing.add(t.toLowerCase());
   }
   const items = buildRadarIssues(radar, isoWeek(new Date()), existing);
   const dry = argv.includes("--dry-run");
