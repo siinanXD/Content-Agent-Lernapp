@@ -85,9 +85,12 @@ export const laneOf = (issue) => LANES.find((l) => labelsOf(issue).includes(l)) 
  * Bis zu `slots` Issues: Status Todo, keine offenen Blocker, kein `design`/Mensch-Issue, `mayTake` (Cursor zuerst).
  * Spuren wechseln sich ab: Beginn bei der Spur nach der zuletzt gestarteten, danach reihum; innerhalb
  * einer Spur höchste Priorität, dann ältere Nummer. Eine Spur ohne Kandidat wird übersprungen (kein Hungern).
+ * Urgent (Priorität 1) kommt vor der Rotation (SIN-327). `waiting`: Kennungen von Issues mit wartendem PR,
+ * sie belegen keinen der `MAX_PARALLEL` Plätze.
  */
-export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true) {
-  const started = issues.filter((i) => i.state.type === "started");
+export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true, waiting = new Set()) {
+  // Wartende PRs (SIN-327) belegen keinen Platz: nur Issues mit Worker oder PR in Arbeit zählen.
+  const started = issues.filter((i) => i.state.type === "started" && !waiting.has(i.identifier));
   const free = Math.max(0, MAX_PARALLEL - started.length);
   const want = Math.min(slots, free);
   if (want === 0) return { issues: [], reason: `${started.length} Issues laufen schon (max. ${MAX_PARALLEL})` };
@@ -104,13 +107,15 @@ export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true) {
 export function startOrder(issues, mayTake = () => true) {
   const started = issues.filter((i) => i.state.type === "started");
   const queues = Object.fromEntries(LANES.map((l) => [l, []]));
-  issues
+  const todo = issues
     .filter((i) => i.state.name === "Todo" && !isHumanIssue(i) && !hasOpenBlockers(i) && mayTake(i))
-    .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b))
-    .forEach((i) => queues[laneOf(i)].push(i));
+    .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b));
+  // Urgent zuerst, älteste Nummer zuerst; die Rotation gilt erst ab Priorität 2 (SIN-327).
+  const urgent = todo.filter((i) => i.priority === 1);
+  todo.filter((i) => i.priority !== 1).forEach((i) => queues[laneOf(i)].push(i));
   const last = [...started].sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))[0];
   let lane = last ? (LANES.indexOf(laneOf(last)) + 1) % LANES.length : 0;
-  const ordered = [];
+  const ordered = [...urgent];
   while (LANES.some((l) => queues[l].length)) {
     const next = queues[LANES[lane]].shift();
     if (next) ordered.push(next);

@@ -315,8 +315,8 @@ test("Dispatcher: überspringt design-, abnahme- und needs-human-Issues", () => 
 
 test("Dispatcher: Spuren wechseln sich ab, keine Spur verhungert", () => {
   const lane = (id: string, name: string, p = 2) => issue(id, p, { labels: { nodes: [{ name }] } });
-  const todo = [lane("SIN-1", "backend", 1), lane("SIN-2", "backend", 1), lane("SIN-3", "frontend"), lane("SIN-4", "content")];
-  assert.deepEqual(pickMany(todo, 2).issues.map((i) => i.identifier), ["SIN-3", "SIN-4"]); // trotz niedrigerer Priorität
+  const todo = [lane("SIN-1", "backend", 2), lane("SIN-2", "backend", 2), lane("SIN-3", "frontend", 3), lane("SIN-4", "content", 3)];
+  assert.deepEqual(pickMany(todo, 2).issues.map((i) => i.identifier), ["SIN-3", "SIN-4"]); // trotz niedrigerer Priorität (ab Priorität 2 gilt die Rotation)
   // Läuft schon ein Frontend-Issue, kommt als Nächstes Content.
   const running = issue("SIN-9", 2, { state: { name: "In Progress", type: "started" }, labels: { nodes: [{ name: "frontend" }] }, updatedAt: "2026-10-05T10:00:00Z" });
   assert.deepEqual(pickMany([running, ...todo], 2).issues.map((i) => i.identifier), ["SIN-4"]);
