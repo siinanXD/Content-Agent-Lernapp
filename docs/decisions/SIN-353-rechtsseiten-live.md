@@ -7,7 +7,7 @@ metadata:
 
 ## Entscheidung
 
-Die Rechtsseiten sind live erreichbar und in der Produktreife-Tabelle bestätigt.
+Die Rechtsseiten sind am Code des Branches geprüft und in der Produktreife-Tabelle eingetragen. Annahme: Der Netzzugriff auf die Live-URL war im Lauf gesperrt, ein Abruf gegen die Live-App fand nicht statt; der Live-Abgleich ist nach dem Merge offen.
 
 ## Befunde aus der Live-Prüfung (2026-10-07)
 

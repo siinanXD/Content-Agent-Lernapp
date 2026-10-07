@@ -66,7 +66,7 @@
   "bestaetigt": {
     "recht-ki": {
       "datum": "2026-10-07",
-      "beleg": "SIN-353: Live-Prüfung gegen https://siinanxd-content-agent-lernapp.vercel.app/, Build erfolgreich mit allen 557 Tests grün; /ki-hinweis erreichbar vom Footer (Startseite, Einstellungen), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), Inhalt complete: kein Platzhalter, keine SIN-340/SIN-341 offene Arbeiten"
+      "beleg": "SIN-353: Prüfung am Code des Branches (Netzzugriff auf die Live-URL war im Lauf gesperrt, keine Messung gegen die Live-App): Build erfolgreich, 557 Tests grün; /ki-hinweis erreichbar von der Fußzeile (Startseite, Einstellungen), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), kein Platzhalter im Text. Live-Abgleich nach dem Merge offen"
     },
     "design-screens": {
       "datum": "2026-10-07",
