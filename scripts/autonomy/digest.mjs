@@ -168,7 +168,9 @@ export function buildDigest(snap) {
   const need = all.slice(0, all.length - sinan.length);
   const sinanNeed = all.slice(all.length - sinan.length);
   // Production hängt (SIN-309): Merker aus dem Loop-Status.
-  if (snap.deployStuck) need.unshift(`Production hängt seit ${String(snap.deployStuck.since).slice(11, 16)} UTC (Hook-Deploy ${String(snap.deployStuck.sha).slice(0, 7)}: ${snap.deployStuck.state})`);
+  if (snap.deployStuck) need.unshift(`Production hängt seit ${String(snap.deployStuck.since).slice(11, 16)} UTC (Deploy ${String(snap.deployStuck.sha).slice(0, 7)}: ${snap.deployStuck.state})`);
+  // Production rot (SIN-332): nicht lesbar oder > 3 h hinter main, Merker aus dem Loop-Status. Ganz oben.
+  for (const text of [...(snap.deployAlarm ?? [])].reverse()) need.unshift(`🔴 ${text}`);
   const shown = [...need.slice(0, MAX_ITEMS).map((n) => `- ${n}`), ...more(need, MAX_ITEMS), ...sinanNeed.slice(0, MAX_SINAN).map((n) => `- ${n}`), ...more(sinanNeed, MAX_SINAN)];
   lines.push("", "**Braucht dich**", ...(shown.length ? shown : ["Nichts zu tun."]));
 
@@ -296,7 +298,8 @@ export async function main(argv, env = process.env) {
     return null;
   }
   const deployStuck = parseState(found[0].body).deployStuck ?? null;
-  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env, dry)), deployStuck, force });
+  const deployAlarm = parseState(found[0].body).deployAlarm ?? [];
+  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env, dry)), deployStuck, deployAlarm, force });
   console.log(text);
   if (dry) return text;
   // Erst der Kommentar (trägt den Merker), dann Telegram: ein Fehler dort wiederholt das Update nicht.
