@@ -1,4 +1,5 @@
 import type { GeneratedLernfeld, GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
+import { mitKiKennzeichnung } from "@/lib/review/content-guard";
 import { getServiceSupabase } from "./supabase-client";
 import type {
   Course,
@@ -276,7 +277,8 @@ export const supabaseStorage: CourseStorage = {
     return loadCourse(id);
   },
 
-  async setGenerated(id, generated) {
+  async setGenerated(id, rawGenerated) {
+    const generated = mitKiKennzeichnung(rawGenerated);
     const sb = getServiceSupabase();
     const existing = await loadCourse(id);
     if (!existing) return undefined;
