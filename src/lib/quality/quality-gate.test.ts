@@ -15,7 +15,8 @@ import {
   recordEvaluationTrace,
 } from "./langfuse-client";
 import { handleEvaluate, handlePublish } from "@/lib/pipeline/mock-handlers";
-import { createCourse, setEvaluation } from "@/lib/pipeline/mock-store";
+import { createCourse, setEvaluation, setGenerated, setSources } from "@/lib/pipeline/mock-store";
+import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
 
 const qualityDir = dirname(fileURLToPath(import.meta.url));
 
@@ -87,6 +88,10 @@ describe("AP-06 quality gate", () => {
     assert.equal(body.reason, "below_quality_threshold");
 
     const okCourse = createCourse("MAF pass");
+    setSources(okCourse.id, [
+      { title: "AO", url: "https://www.gesetze-im-internet.de/maschf_ausbv/", fetchedAt: "2026-10-02T00:00:00.000Z" },
+    ]);
+    setGenerated(okCourse.id, mafSeedLernfeldSicherheit());
     setEvaluation(okCourse.id, {
       passed: true,
       scores: { sourceFidelity: 1, uniqueness: 1, niveau: 4, language: 5, safetyFlag: false },
