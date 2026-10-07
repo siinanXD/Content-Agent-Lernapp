@@ -111,7 +111,7 @@ test("Planer: optionale Dienste mit Fehlerseite → „nicht messbar“, kein Ab
   assert.match(String(m.einheiten), /^nicht messbar \(Supabase: keine JSON-Antwort/);
   assert.match(String(m.sentry), /^nicht messbar \(Sentry: keine JSON-Antwort/);
   assert.match(String(m.posthog), /^nicht messbar \(PostHog: /);
-  assert.equal(m.sentry_kritisch, "nicht verfügbar");
+  assert.match(String(m.sentry_kritisch), /^nicht messbar \(Sentry: keine JSON-Antwort/);
 });
 
 test("Planer: Linear nicht erreichbar → saubere Warnung und Ausgabe linear_ok=false", () => {
