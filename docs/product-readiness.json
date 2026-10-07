@@ -64,6 +64,10 @@
     }
   },
   "bestaetigt": {
+    "design-screens": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-349: alle 51 Frames der Figma-Datei (Live-Abgleich mit Token am 2026-10-07) einer Route oder Komponente zugeordnet, Dateien vorhanden, 3 Frames sind keine App-Screens (docs/quality/figma-abdeckung.md, Prüfung scripts/autonomy/figma-abdeckung.mjs in npm test); Namens- und Dateiabgleich, Werte-Abgleich siehe design-figma"
+    },
     "lernen-e2e": {
       "datum": "2026-10-06",
       "beleg": "SIN-269: e2e/gesamtweg.spec.ts je veröffentlichtem Kurs, Start bis Prüfungsmodus mit Wiederholung 1/3/7 Tage, CI-Stufe build des PR claude/sin-269 (docs/decisions/SIN-269-e2e-je-kurs.md)"

@@ -30,6 +30,7 @@
     "changelog": "node scripts/changelog.mjs",
     "readme:check": "node scripts/readme-check.mjs",
     "decisions:index": "node scripts/decisions-index.mjs",
+    "figma:abdeckung": "node scripts/autonomy/figma-abdeckung.mjs --write",
     "autonomy:dispatch:dry": "node scripts/autonomy/dispatch.mjs --dry-run --fixture docs/autonomy/fixture-issues.json",
     "autonomy:status:dry": "node scripts/autonomy/status.mjs --fixture docs/autonomy/fixture-status.json",
     "autonomy:digest:dry": "node scripts/autonomy/digest.mjs --slot morgen --fixture docs/autonomy/fixture-digest.json && node scripts/autonomy/digest.mjs --slot abend --fixture docs/autonomy/fixture-digest.json",
