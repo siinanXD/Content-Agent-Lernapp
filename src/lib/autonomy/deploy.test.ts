@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
-import { attemptState, changedFilesSince, decideDeploy, deployIntervalH, isAppCodePath, lastProductionDeployAt, planDeploy, renderDeploy, triggerDeploy } from "../../../scripts/autonomy/deploy.mjs";
+import { attemptState, behindAlarm, changedFilesSince, decideDeploy, deployIntervalH, isAppCodePath, lastProductionDeployAt, planDeploy, renderDeploy, triggerDeploy } from "../../../scripts/autonomy/deploy.mjs";
 
 const now = new Date("2026-10-06T12:00:00Z");
 
@@ -55,8 +55,56 @@ test("Deploy: Vercel- und GitHub-Abfrage, Hook ohne URL in der Ausgabe", async (
   const failing = await planDeploy({ env: { VERCEL_TOKEN: "t", GITHUB_REPOSITORY: "o/r" }, now, fetchImpl, call: async () => { throw new Error("down"); } });
   assert.equal(failing.deploy, false);
 
-  assert.deepEqual(await triggerDeploy("https://hook", (async () => new Response("", { status: 201 })) as unknown as typeof fetch), { ok: true });
-  assert.deepEqual(await triggerDeploy("https://hook", (async () => new Response("", { status: 429 })) as unknown as typeof fetch), { ok: false, status: 429 });
+  // Ohne Token: „nicht lesbar“ ist ein Alarm (SIN-332), kein grauer Zustand.
+  const blind = await planDeploy({ env: {}, now, fetchImpl, call });
+  assert.equal(blind.deploy, false);
+  assert.match(String(blind.unreadable), /VERCEL_TOKEN/);
+  assert.equal(plan.unreadable, null);
+  assert.match(renderDeploy(blind), /🔴 Production-Stand nicht lesbar/);
+});
+
+test("Deploy: Workflow-Start per dispatch, ohne Token in der Ausgabe (SIN-332)", async () => {
+  let seen: { url: string; init: RequestInit } | null = null;
+  const ok = (async (url: string, init: RequestInit) => ((seen = { url, init }), new Response(null, { status: 204 }))) as unknown as typeof fetch;
+  assert.deepEqual(await triggerDeploy({ repo: "o/r", token: "secret", fetchImpl: ok }), { ok: true });
+  assert.match(seen!.url, /repos\/o\/r\/actions\/workflows\/production-deploy\.yml\/dispatches$/);
+  assert.deepEqual(JSON.parse(String(seen!.init.body)), { ref: "main" });
+  const bad = (async () => new Response("", { status: 403 })) as unknown as typeof fetch;
+  const r = await triggerDeploy({ repo: "o/r", token: "secret", fetchImpl: bad });
+  assert.deepEqual(r, { ok: false, status: 403 });
+  assert.ok(!JSON.stringify(r).includes("secret"));
+});
+
+test("Deploy: Production > 3 h hinter main ist ein roter Alarm (SIN-332)", async () => {
+  const at = (h: number) => new Date(now.getTime() - h * 3600 * 1000).toISOString();
+  assert.equal(behindAlarm({ now, oldestAppAt: at(2.9), pending: 1 }), null);
+  assert.deepEqual(behindAlarm({ now, oldestAppAt: at(3.5), pending: 2 })?.hours, 3);
+  assert.equal(behindAlarm({ now, oldestAppAt: at(30), pending: 0 }), null); // nichts wartet
+  assert.equal(behindAlarm({ now, oldestAppAt: null, pending: 1 }), null);
+
+  // Der älteste Commit mit App-Code zählt, nicht ein älterer Doku-Commit.
+  const commits = [
+    { sha: "new", commit: { committer: { date: at(1) } } },
+    { sha: "app", commit: { committer: { date: at(5) } } },
+    { sha: "doc", commit: { committer: { date: at(8) } } },
+  ];
+  const call = async (path: string) => ({ files: [{ filename: path.endsWith("doc") ? "docs/x.md" : "src/app/page.tsx" }] });
+  const info: { oldestAppAt?: string } = {};
+  await changedFilesSince("o/r", at(9), call, commits, info);
+  assert.equal(info.oldestAppAt, at(5));
+
+  // planDeploy meldet den Rückstand und fragt den letzten READY-Deploy getrennt ab (state=READY).
+  const urls: string[] = [];
+  const fetchImpl = (async (url: string) => {
+    urls.push(url);
+    return new Response(JSON.stringify({ deployments: [{ createdAt: Date.parse(at(10)), readyState: "READY", meta: { githubCommitSha: "old1234" } }] }), { status: 200, headers: { "content-type": "application/json" } });
+  }) as unknown as typeof fetch;
+  const callGh = async (path: string) => (path.includes("/commits?") ? commits : path.endsWith("/main") ? { sha: "new" } : { files: [{ filename: path.endsWith("/doc") ? "docs/x.md" : "src/app/page.tsx" }] });
+  const plan = await planDeploy({ env: { VERCEL_TOKEN: "t", GITHUB_REPOSITORY: "o/r" }, now, fetchImpl, call: callGh });
+  assert.ok(urls.some((u) => u.includes("state=READY")));
+  assert.equal(plan.behind?.hours, 5);
+  assert.equal(plan.live?.sha, "old1234");
+  assert.match(renderDeploy(plan), /🔴 Production liegt seit .* \(5 h\) hinter main/);
 });
 
 test("vercel.json: keine Git-Deploys, kein Ignore-Skript, das Hook-Deploys abbrechen könnte (SIN-309)", () => {
