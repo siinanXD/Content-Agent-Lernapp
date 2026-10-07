@@ -46,6 +46,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Trend-Radar (SIN-313, wöchentlich) | `.github/workflows/trend-radar.yml`, `scripts/autonomy/trend-radar.mjs`, Berichte `docs/research/trend-radar-*.md` |
 | Aufgaben für Sinan als Linear-Issues, Label `sinan` (SIN-310) | `scripts/autonomy/sinan.mjs` (`create`, `sync`, `SEED`), Tages-Update und Status-Seite zeigen sie unter „Braucht dich“ |
 | Live-Kommentare des Workers in Linear (SIN-298) | `scripts/autonomy/live.mjs` (`gestartet`, `fortschritt`, `frage`, `fertig`, `gescheitert`) |
+| Figma-Abdeckung Frame → Route (SIN-349) | `docs/quality/figma-abdeckung.json`, Bericht `figma-abdeckung.md`, Prüfung `scripts/autonomy/figma-abdeckung.mjs` (`npm run figma:abdeckung`) |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
 
