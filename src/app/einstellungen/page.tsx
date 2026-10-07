@@ -115,7 +115,7 @@ export default function EinstellungenPage() {
         {online ? null : (
           <StateView
             kind="offline"
-            text="Einstellungen bleiben auf diesem Gerät gespeichert. Nutzungsdaten löschen geht erst wieder mit Verbindung."
+            text="Einstellungen bleiben auf diesem Gerät gespeichert. Widerruf und Löschen wirken auch ohne Verbindung."
           />
         )}
         <Section title="Lernen">
@@ -157,7 +157,7 @@ export default function EinstellungenPage() {
             Antworten (richtig/falsch), Dauer pro Einheit, Abbrüche, mit einer
             Zufalls-Kennung. Kein Name, keine E-Mail in den Nutzungsdaten.
           </p>
-          <Button variant="secondary" onClick={deleteUsageData} disabled={!online}>
+          <Button variant="secondary" onClick={deleteUsageData}>
             Meine Nutzungsdaten löschen
           </Button>
           <p className="text-[13px] text-[var(--color-text-secondary)]">
