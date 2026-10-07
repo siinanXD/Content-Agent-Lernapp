@@ -69,6 +69,8 @@ export type GeneratedLernfeld = {
   moduleId?: string;
   blockId?: string;
   units: GeneratedUnit[];
+  /** SIN-297: Kennzeichnung als KI-Inhalt; der Speicher setzt sie beim Ablegen, der Wächter verlangt sie vor `publish`. */
+  aiDisclosure?: { text: string; model: string };
 };
 
 const AO_URL = "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";

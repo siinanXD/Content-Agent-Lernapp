@@ -16,6 +16,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Seiten und API-Routen | `src/app/` (z. B. `lernpfad`, `einheit`, `pruefung`, `ausbilder`, `api/*`) |
 | Komponenten | `src/components/` (`ui` Grundbausteine, `learner`, `a11y`, `analytics`) |
 | Fachlogik | `src/lib/` (`learner`, `learning`, `plan`, `pipeline`, `generate`, `quality`, `storage`, `auth`, `legal`) |
+| Recht-und-Inhalt-Wächter, Verbotsliste | `src/lib/review/` (`content-guard.ts` vor `publish`, `regeln.ts`) |
 | Speicher | `src/lib/storage/` (Supabase EU, Mock-Fallback bei `COURSE_STORAGE=mock`) |
 | Datenbank | `supabase/migrations/` (nur hinzufügen, nie bestehende ändern) |
 | Lerninhalte | `docs/content/` (Curriculum-Maps), `content/legal/` |
@@ -37,6 +38,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Workflows | `.github/workflows/` (`dispatch`, `worker`, `repair`, `planner`, `pr-gate`, `post-merge`, `digest`, `status`, `aufraeumen`, …) |
 | Skripte der Workflows | `scripts/autonomy/` (`dispatch`, `linear`, `planner`, `risk`, `steckbrief`, `digest`, `sparen`, `verbrauch`, …) |
 | Vorlagen und Konfiguration | `docs/autonomy/` (`README.md`, `groessen.md`, `tokens.md`, Fixtures) |
+| Review-Agent (zweites Modell, SIN-297) | `.github/workflows/review.yml`, `scripts/autonomy/review.mjs` |
 | Codeanalyse, Paket-Updates | `.github/workflows/codeql.yml`, `scripts/autonomy/codeql-gate.mjs`, `.github/dependabot.yml` |
 | Lehren, Skills, Laufprotokoll (SIN-296) | `docs/autonomy/LEHREN.md`, `docs/skills/`, `scripts/autonomy/protokoll.mjs` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |

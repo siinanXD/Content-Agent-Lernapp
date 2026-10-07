@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { highFindings } from "../../../scripts/autonomy/codeql-gate.mjs";
+import { highFindings, splitFindings } from "../../../scripts/autonomy/codeql-gate.mjs";
 
 const result = (ruleId: string, extra: Record<string, unknown> = {}) => ({
   ruleId,
@@ -28,4 +28,15 @@ test("CodeQL-Tor: ohne Zahl entscheidet das Level, Hinweise bleiben frei", () =>
   const found = highFindings(sarif(rules, [result("js/err", { level: "error" }), result("js/warn", { level: "warning" })]));
   assert.deepEqual(found.map((f: { rule: string }) => f.rule), ["js/err"]);
   assert.deepEqual(highFindings({}), []);
+});
+
+test("CodeQL-Tor im PR: nur Funde in geänderten Dateien blockieren, Altfunde nicht", () => {
+  const found = [
+    { rule: "a", file: "src/a.ts", line: 1 },
+    { rule: "b", file: "src/b.ts", line: 2 },
+  ];
+  const { blocking, legacy } = splitFindings(found, ["src/a.ts"]);
+  assert.deepEqual(blocking.map((f: { rule: string }) => f.rule), ["a"]);
+  assert.deepEqual(legacy.map((f: { rule: string }) => f.rule), ["b"]);
+  assert.equal(splitFindings(found, undefined).blocking.length, 2);
 });

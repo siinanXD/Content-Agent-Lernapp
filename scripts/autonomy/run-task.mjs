@@ -264,7 +264,7 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
   if (task === "cost-report") result = await costReport(env);
   else if (task === "migrate") result = await migrate(env, { dry });
   else {
-    const steps = def.steps.map(([cmd, args]) => [cmd, args.map((a) => a.replace("{out}", out))]);
+    const steps = def.steps.map(([cmd, args]) => [cmd, args.map((a) => a.replaceAll("{out}", out))]);
     mkdirSync(RESULT_DIR, { recursive: true });
     if (dry) result = { ok: null, ergebnis: `Trockenlauf: ${steps.map(([c, a]) => `${c} ${a.join(" ")}`).join(" && ")}` };
     else {
