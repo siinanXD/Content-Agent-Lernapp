@@ -185,3 +185,19 @@ html[data-consent="decided"] [data-consent-banner] {
   0%, 67% { transform: scaleX(0); }
   78%, 100% { transform: scaleX(1); }
 }
+
+/* Mono-Label (SIN-314, Regeln 2026 §3): Kennungen und Zahlen in Geist Mono. */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-label-size);
+  line-height: var(--type-mono-label-line);
+  font-weight: var(--type-mono-label-weight);
+  letter-spacing: var(--type-mono-label-tracking);
+}
+
+/* Bewegung erklärt (Regeln 2026 §5): Säulen wachsen kurz; bei reduced-motion sofort. */
+@media (prefers-reduced-motion: no-preference) {
+  .grow-bar {
+    transition: height 250ms ease-out, width 250ms ease-out;
+  }
+}

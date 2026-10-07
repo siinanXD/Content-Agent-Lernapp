@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Bento, Tile } from "@/components/ui/tile";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import {
@@ -21,6 +22,59 @@ import { loadStack, markWrong, saveStack } from "@/lib/learner/leitner";
 import { loadSession, saveSession } from "@/lib/learner/session";
 import { recordLearningEvent } from "@/lib/learner/streak";
 
+const linkButton =
+  "inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] border-[1.5px] border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-5 py-3.5 text-base font-medium text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
+
+/** Restzeit als m:ss. */
+function formatClock(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+/** Fragen-Raster (Figma W7): aktuelle, beantwortete, markierte und offene Fragen. Nur Anzeige, die Reihenfolge bleibt fest. */
+function QuestionGrid({
+  total,
+  current,
+  answered,
+  marked,
+}: {
+  total: number;
+  current: number;
+  answered: number;
+  marked: ReadonlySet<number>;
+}) {
+  return (
+    <ol aria-label="Fragen-Übersicht" className="flex flex-wrap gap-2">
+      {Array.from({ length: total }, (_, i) => {
+        const isCurrent = i === current;
+        const isAnswered = i < answered;
+        const isMarked = marked.has(i);
+        const state = [
+          isCurrent ? "aktuell" : isAnswered ? "beantwortet" : "offen",
+          isMarked ? "markiert" : null,
+        ]
+          .filter(Boolean)
+          .join(", ");
+        return (
+          <li
+            key={i}
+            aria-current={isCurrent ? "step" : undefined}
+            aria-label={`Frage ${i + 1}: ${state}`}
+            className={`mono-label flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] ${
+              isCurrent
+                ? "bg-[var(--color-brand-primary)] text-[var(--color-text-on-brand)]"
+                : isAnswered
+                  ? "bg-[var(--color-bg-avatar)] text-[var(--color-text-primary)]"
+                  : "border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)]"
+            } ${isMarked ? "outline outline-2 outline-offset-1 outline-dashed outline-[var(--color-brand-primary)]" : ""}`}
+          >
+            <span aria-hidden="true">{i + 1}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function PruefungInner() {
   const router = useRouter();
   const search = useSearchParams();
@@ -32,6 +86,7 @@ function PruefungInner() {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [marked, setMarked] = useState<ReadonlySet<number>>(new Set());
   const [answers, setAnswers] = useState<
     Array<{
       questionId: string;
@@ -70,7 +125,16 @@ function PruefungInner() {
     setPaused(false);
     setIndex(0);
     setAnswers([]);
+    setMarked(new Set());
     setRevealed(false);
+  }
+
+  function toggleMark() {
+    setMarked((m) => {
+      const n = new Set(m);
+      if (!n.delete(index)) n.add(index);
+      return n;
+    });
   }
 
   function onChecked(result: AnswerResult) {
@@ -141,46 +205,63 @@ function PruefungInner() {
   if (!started) {
     return (
       <MobileShell>
-        <header className="px-6 pb-4 pt-12">
-          <h1
-            className="text-[28px] font-bold"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Prüfungsmodus
-          </h1>
-          <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-            {mafExamTimesSummary()}
-          </p>
-        </header>
-        <section className="flex flex-1 flex-col gap-3 px-6 pb-8">
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-[var(--color-text-primary)]">
-              Schriftlicher Teil
-            </span>
-            <select
-              className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-              value={partId}
-              onChange={(e) => setPartId(e.target.value)}
+        <main className="flex flex-1 flex-col gap-[var(--bento-gap)] px-6 pb-6 pt-12">
+          <Tile tone="hero">
+            <p className="mono-label text-[var(--color-text-muted-on-dark)]">
+              {part.durationMinutes} Min
+              {part.weightPercent != null ? ` · ${part.weightPercent} %` : ""} ·{" "}
+              {Math.min(8, part.questionTarget)} Fragen
+            </p>
+            <h1
+              className="text-[28px] font-bold leading-9"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              {parts.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.bereich} · {p.durationMinutes} Min
-                  {p.weightPercent != null ? ` · ${p.weightPercent}%` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Demo: {Math.min(8, part.questionTarget)} Fragen (Ziel laut Vorgabe{" "}
-            {part.questionTarget}). Zeit läuft sichtbar; Pause ist erlaubt.
-            Offene Aufgaben nur mit Musterlösung — keine KI-Bewertung.
-            Praktischer Teil wird nicht nachgebildet.
-          </p>
-          <Button onClick={start}>Prüfung starten</Button>
-          <Link href="/lernpfad">
-            <Button variant="secondary">Zurück zum Lernpfad</Button>
+              Prüfungsmodus
+            </h1>
+            <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
+              {mafExamTimesSummary()}
+            </p>
+            <Button
+              onClick={start}
+              className="mt-2 !bg-[var(--color-brand-accent)] !text-[var(--color-text-primary)]"
+            >
+              Prüfung starten
+            </Button>
+          </Tile>
+          <Bento>
+            <Tile as="div">
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="mono-label text-[var(--color-text-secondary)]">
+                  Schriftlicher Teil
+                </span>
+                <select
+                  className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 text-[15px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+                  value={partId}
+                  onChange={(e) => setPartId(e.target.value)}
+                >
+                  {parts.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.bereich} · {p.durationMinutes} Min
+                      {p.weightPercent != null ? ` · ${p.weightPercent}%` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </Tile>
+            <Tile tone="hint" as="div">
+              <p className="mono-label">Übung, keine IHK-Prognose</p>
+              <p className="text-sm leading-5">
+                Demo: {Math.min(8, part.questionTarget)} Fragen (Ziel laut Vorgabe{" "}
+                {part.questionTarget}). Zeit läuft sichtbar; Pause ist erlaubt.
+                Offene Aufgaben nur mit Musterlösung, keine KI-Bewertung.
+                Praktischer Teil wird nicht nachgebildet.
+              </p>
+            </Tile>
+          </Bento>
+          <Link href="/lernpfad" className={linkButton}>
+            Zurück zum Lernpfad
           </Link>
-        </section>
+        </main>
         <BottomNav />
       </MobileShell>
     );
@@ -190,32 +271,47 @@ function PruefungInner() {
 
   return (
     <MobileShell>
-      <header className="px-6 pb-2 pt-12">
+      <header className="flex flex-col gap-3 px-6 pb-2 pt-12">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-[var(--color-text-secondary)]">
+          <p className="mono-label text-[var(--color-text-secondary)]">
             {part.bereich} · Frage {index + 1}/{questions.length}
           </p>
-          <p
-            className="text-sm font-medium text-[var(--color-brand-primary)]"
-            aria-live="polite"
-          >
-            {paused ? "Pause" : `${secondsLeft} s`}
-            {overdue ? " · Zeit hinweis" : ""}
+          <p className="mono-label rounded-full bg-[var(--color-bg-hint)] px-3 py-1 text-[var(--color-text-hint)]">
+            <span className="sr-only">Restzeit </span>
+            {paused ? "Pause" : formatClock(secondsLeft)}
           </p>
         </div>
         <h1
-          className="mt-1 text-[24px] font-bold"
+          className="text-[24px] font-bold"
           style={{ fontFamily: "var(--font-display)" }}
         >
           {part.title}
         </h1>
-        <div className="mt-2 flex gap-2">
+        <QuestionGrid
+          total={questions.length}
+          current={index}
+          answered={answers.length}
+          marked={marked}
+        />
+        {overdue ? (
+          <p role="status" className="text-sm text-[var(--color-text-hint)]">
+            Die Zeit ist abgelaufen. Du kannst in Ruhe weiterarbeiten.
+          </p>
+        ) : null}
+        <div className="flex gap-2">
           <Button
             variant="secondary"
-            className="!w-auto px-3 py-2 text-sm"
+            className="!w-auto px-4 py-2 text-sm"
             onClick={() => setPaused((p) => !p)}
           >
             {paused ? "Fortsetzen" : "Pause"}
+          </Button>
+          <Button
+            variant="secondary"
+            className="!w-auto px-4 py-2 text-sm"
+            onClick={toggleMark}
+          >
+            {marked.has(index) ? "Markierung entfernen" : "Markieren"}
           </Button>
         </div>
       </header>

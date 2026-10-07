@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Tile } from "@/components/ui/tile";
 import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { BottomNav } from "@/components/learner/bottom-nav";
@@ -61,12 +62,9 @@ export default function PruefungErgebnisPage() {
 
   return (
     <MobileShell>
-      <main className="flex flex-1 flex-col">
-        <header className="flex flex-col gap-2.5 bg-[var(--color-bg-hero)] px-5 pb-6 pt-10">
-          <p
-            className="text-xs font-medium leading-4 text-[var(--color-text-muted-on-dark)]"
-            style={{ fontFamily: "var(--font-mono)" }}
-          >
+      <main className="flex flex-1 flex-col gap-[var(--bento-gap)] px-6 pb-6 pt-12">
+        <Tile as="header" tone="hero">
+          <p className="mono-label text-[var(--color-text-muted-on-dark)]">
             Probeprüfung · {result.unitTitle} · {result.total} Fragen
           </p>
           <div className="flex items-center gap-4">
@@ -125,11 +123,31 @@ export default function PruefungErgebnisPage() {
               </p>
             </div>
           </div>
-        </header>
+        </Tile>
 
-        <div className="flex flex-col gap-3 px-5 pb-6 pt-[18px]">
+        <div className="flex flex-col gap-[var(--bento-gap)]">
+          <div className="grid grid-cols-2 gap-[var(--bento-gap)]">
+            <Tile as="div">
+              <p className="mono-label text-[var(--color-text-secondary)]">Richtig</p>
+              <p
+                className="text-[28px] font-bold leading-9"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
+                {result.correct}/{result.total}
+              </p>
+            </Tile>
+            <Tile as="div">
+              <p className="mono-label text-[var(--color-text-secondary)]">Wiederholung</p>
+              <p
+                className="text-[28px] font-bold leading-9"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
+                {wrong.length}
+              </p>
+            </Tile>
+          </div>
           {areas.length > 0 ? (
-            <section aria-labelledby="lernfeld-titel" className="flex flex-col gap-3">
+            <Tile aria-labelledby="lernfeld-titel">
               <h2
                 id="lernfeld-titel"
                 className="text-[17px] font-semibold leading-[22px]"
@@ -169,13 +187,10 @@ export default function PruefungErgebnisPage() {
                   );
                 })}
               </ul>
-            </section>
+            </Tile>
           ) : null}
 
-          <section
-            aria-labelledby="schritt-titel"
-            className="flex flex-col gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-4"
-          >
+          <Tile aria-labelledby="schritt-titel">
             <h2
               id="schritt-titel"
               className="text-base font-semibold leading-[21px]"
@@ -192,7 +207,7 @@ export default function PruefungErgebnisPage() {
                 ? "Es gibt nichts zu wiederholen. Mach morgen mit dem Lernpfad weiter."
                 : `${weak.length > 0 ? `Vor allem ${weak.map((a) => a.title).join(" und ")}. ` : ""}${wrong.length === 1 ? "Sie erscheint" : "Sie erscheinen"} nach 1, 3 und 7 Tagen wieder.`}
             </p>
-          </section>
+          </Tile>
 
           {wrong.length > 0 ? (
             <Link
@@ -226,7 +241,7 @@ export default function PruefungErgebnisPage() {
                   {wrong.map((w) => (
                     <li
                       key={w.id}
-                      className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-4"
+                      className="flex flex-col gap-1 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-[var(--bento-pad)]"
                     >
                       <p className="text-[15px] font-semibold leading-5">{w.prompt}</p>
                       <p className="text-sm leading-[18px]">

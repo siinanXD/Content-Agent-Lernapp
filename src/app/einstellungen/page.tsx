@@ -6,7 +6,10 @@ import { useA11y } from "@/components/a11y/a11y-provider";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { Button } from "@/components/ui/button";
+import { StateView } from "@/components/ui/state-view";
+import { Bento, Tile } from "@/components/ui/tile";
 import { ToggleRow } from "@/components/ui/toggle-row";
+import { useOnline } from "@/lib/use-online";
 import {
   clearLocalData,
   exportLocalData,
@@ -38,6 +41,7 @@ export default function EinstellungenPage() {
   const [revoked, setRevoked] = useState(false);
   const [message, setMessage] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const online = useOnline();
 
   const shownReminder = reminder ?? storedReminder;
   const shownConsent =
@@ -98,6 +102,7 @@ export default function EinstellungenPage() {
   return (
     <MobileShell>
       <header className="px-6 pb-4 pt-12">
+        <p className="mono-label text-[var(--color-text-secondary)]">Profil</p>
         <h1
           className="text-[28px] font-bold text-[var(--color-text-primary)]"
           style={{ fontFamily: "var(--font-display)" }}
@@ -106,7 +111,13 @@ export default function EinstellungenPage() {
         </h1>
       </header>
 
-      <div className="flex flex-1 flex-col gap-5 px-6 pb-6">
+      <Bento className="flex-1 px-6 pb-6">
+        {online ? null : (
+          <StateView
+            kind="offline"
+            text="Einstellungen bleiben auf diesem Gerät gespeichert. Die Kennung zu löschen geht erst wieder mit Verbindung."
+          />
+        )}
         <Section title="Lernen">
           <ToggleRow
             id="simple-language"
@@ -130,9 +141,32 @@ export default function EinstellungenPage() {
             checked={shownConsent}
             onChange={changeConsent}
           />
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            Widerruf jederzeit: Schalter ausschalten, dann stoppt die Messung sofort.
+          </p>
           <p role="status" className="text-xs text-[var(--color-text-secondary)]">
             {consentNote}
           </p>
+          <h3
+            className="pt-1 text-[15px] font-medium text-[var(--color-text-primary)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Was gespeichert wird
+          </h3>
+          <p className="text-sm leading-5 text-[var(--color-text-secondary)]">
+            Antworten (richtig/falsch), Dauer pro Einheit, Abbrüche, mit einer
+            Zufalls-Kennung. Kein Name, keine E-Mail in den Nutzungsdaten.
+          </p>
+          <Button variant="secondary" onClick={deleteUsageData} disabled={!online}>
+            Meine Nutzungsdaten löschen
+          </Button>
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            Entfernt alle Nutzungsdaten zu dieser Kennung. Dein Lernfortschritt
+            bleibt.
+          </p>
+        </Section>
+
+        <Section title="Erinnerung">
           <ToggleRow
             id="reminder"
             label="Lern-Erinnerung"
@@ -160,23 +194,6 @@ export default function EinstellungenPage() {
               />
             </label>
           ) : null}
-          <h3
-            className="pt-1 text-[15px] font-medium text-[var(--color-text-primary)]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Was gespeichert wird
-          </h3>
-          <p className="text-sm leading-5 text-[var(--color-text-secondary)]">
-            Antworten (richtig/falsch), Dauer pro Einheit, Abbrüche, mit einer
-            Zufalls-Kennung. Kein Name, keine E-Mail in den Nutzungsdaten.
-          </p>
-          <Button variant="secondary" onClick={deleteUsageData}>
-            Meine Nutzungsdaten löschen
-          </Button>
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
-            Entfernt alle Nutzungsdaten zu dieser Kennung. Dein Lernfortschritt
-            bleibt.
-          </p>
         </Section>
 
         <Section title="Daten auf diesem Gerät">
@@ -222,7 +239,7 @@ export default function EinstellungenPage() {
             ))}
           </ul>
         </Section>
-      </div>
+      </Bento>
 
       <BottomNav />
     </MobileShell>
@@ -237,14 +254,14 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
+    <Tile className="!gap-2">
       <h2
-        className="text-base font-medium text-[var(--color-text-primary)]"
+        className="text-base font-semibold text-[var(--color-text-primary)]"
         style={{ fontFamily: "var(--font-display)" }}
       >
         {title}
       </h2>
       {children}
-    </section>
+    </Tile>
   );
 }
