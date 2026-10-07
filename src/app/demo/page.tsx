@@ -55,10 +55,10 @@ export default function DemoPage() {
 
   if (status === "fertig") {
     return (
-      <MobileShell>
-        <main className="flex flex-col gap-4 px-5 pb-8 pt-10">
+      <MobileShell wide>
+        <main className="mx-auto flex w-full flex-col gap-4 px-4 pb-8 pt-10 md:max-w-[640px]">
           <h1
-            className="text-[28px] font-bold leading-9"
+            className="text-[32px] font-bold leading-10 md:text-[44px] md:leading-[48px]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             Danke für Ihre Anfrage.
@@ -78,10 +78,10 @@ export default function DemoPage() {
   }
 
   return (
-    <MobileShell>
-      <main className="flex flex-col gap-4 px-5 pb-8 pt-10">
+    <MobileShell wide>
+      <main className="mx-auto flex w-full flex-col gap-4 px-4 pb-8 pt-10 md:max-w-[640px]">
         <h1
-          className="text-[28px] font-bold leading-9"
+          className="text-[32px] font-bold leading-10 md:text-[44px] md:leading-[48px]"
           style={{ fontFamily: "var(--font-display)" }}
         >
           Demo-Zugang anfragen
@@ -91,7 +91,7 @@ export default function DemoPage() {
           innerhalb eines Werktags.
         </p>
 
-        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+        <form onSubmit={submit} noValidate className="bento-tile !gap-4">
           <TextField
             label="Bildungsträger"
             id="organisation"

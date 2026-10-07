@@ -17,6 +17,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-322 | SIN-322: CI-Gates entsperren (CodeQL, Leistungsbudget) | [SIN-322-ci-gates-entsperren.md](decisions/SIN-322-ci-gates-entsperren.md) |
 | SIN-320 | SIN-320 — Sparsam bauen: Verbrauch messen, Modell und Runden nach Größe, Landkarte, Bündeln | [SIN-320-sparsam-bauen.md](decisions/SIN-320-sparsam-bauen.md) |
 | SIN-319 | SIN-319 — Live-Check nach jedem Deploy | [SIN-319-live-check.md](decisions/SIN-319-live-check.md) |
+| SIN-318 | SIN-318: Variante 2026, Teil 4: Startseite, Ausbilder, Demo/Anmelden, Rechtsseiten | [SIN-318-variante-2026-start-ausbilder.md](decisions/SIN-318-variante-2026-start-ausbilder.md) |
 | SIN-314 | SIN-314: Design-Regeln 2026 festschreiben und Tokens ergänzen | [SIN-314-design-regeln-2026.md](decisions/SIN-314-design-regeln-2026.md) |
 | SIN-312 | SIN-312: Index-Konflikte ohne KI lösen | [SIN-312-index-konflikte.md](decisions/SIN-312-index-konflikte.md) |
 | SIN-311 | SIN-311: Ladezeit verbessern, LCP unter 2,5 s auf Startseite und Lernpfad | [SIN-311-ladezeit-lcp.md](decisions/SIN-311-ladezeit-lcp.md) |

@@ -1,0 +1,12 @@
+# SIN-318: Variante 2026, Teil 4: Startseite, Ausbilder, Demo/Anmelden, Rechtsseiten
+
+- **Links:** Linear [SIN-318](https://linear.app/sinan-kahraman/issue/SIN-318), [SIN-314](https://linear.app/sinan-kahraman/issue/SIN-314), [SIN-307](https://linear.app/sinan-kahraman/issue/SIN-307), [SIN-311](https://linear.app/sinan-kahraman/issue/SIN-311); Figma [Lern-App](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz); [llms.txt](https://llmstxt.org/); [Schema.org FAQPage](https://schema.org/FAQPage); [Google: FAQ-Markup](https://developers.google.com/search/docs/appearance/structured-data/faqpage)
+- **Entscheidung:** Startseite (A3), Gruppenübersicht (W11), Demo, Anmelden und die drei Rechtsseiten folgen `docs/design/regeln-2026.md`: Bento-Raster (`.bento`, `.bento-tile`, `.bento-main`, `.bento-label` in `globals.css`, nur Tokens), Radius `--radius-xl`, Mono-Labels, große Schlagzeile statt Bild. `MobileShell` bekommt die Option `wide` (ab 768 px bis 1120 px). Die Scroll-Story der Startseite bleibt unverändert unter dem Bento-Teil. Maschinenlesbar: `public/llms.txt` und Schema.org (Organization, FAQPage) als JSON-LD aus `src/lib/seo/startseite.ts`; die sichtbare FAQ-Liste und das Markup kommen aus derselben Quelle. Kein neues Paket, keine neue Komponente.
+- **Annahmen:**
+  - Figma nicht verfügbar: Die Knoten-IDs von A3 und W11 sind nicht bekannt, der Lesetoken kann Seiten der „Variante 2026“ nicht auflisten (wie in SIN-314). Umgesetzt nach den Regeln; beim Abgleich anpassen.
+  - Der Bento-Beweis auf der Startseite nennt nur Fakten, die die Seite schon trug (Quelle, 1/3/7 Tage, keine IHK-Aufgaben, keine KI-Bewertung). Keine Kennzahlen erfunden. Die FAQ stützt sich auf dieselben Aussagen.
+  - Organization-Markup ohne Adresse und ohne URL: Beides ist nicht bekannt (Impressum ist noch Entwurf).
+  - „Gruppe anlegen und einladen“ und die Aktion „Teilnehmende einladen“ aus W11 sind nicht umgesetzt: Das Design-Paket SIN-307 liegt nicht vor, und es gibt keine API dafür. Die Hauptaktion der Gruppenübersicht bleibt „Erinnerung senden“.
+  - Die Tabelle der Gruppenübersicht bleibt eine Liste (`ul`/`li`) mit Grid-Spalten ab 768 px; die Tests und Screenreader-Struktur bleiben gleich.
+  - Zustände Laden, leer (Gruppe ohne Teilnehmende) und Fehler nutzen unverändert `StateView` (Screen 17).
+- **Warum:** Nur CSS-Klassen aus vorhandenen Tokens halten die Seiten frei von Hex-Werten und Eigenbau-Komponenten; JSON-LD und `llms.txt` sind ohne Abhängigkeit machbar und für KI-Suchen lesbar.
