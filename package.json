@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "COURSE_STORAGE=mock node --import tsx --test $(find src -name \"*.test.ts\")",
     "typecheck": "tsc --noEmit",
+    "langfuse:setup": "node --import tsx scripts/langfuse-setup.ts",
     "quality:sync-goldset": "node --import tsx scripts/ap06-sync-goldset.ts",
     "quality:calibrate": "node --import tsx scripts/ap06-calibrate.ts",
     "quality:judge-backfill": "node --import tsx scripts/sin260-judge-backfill.ts",

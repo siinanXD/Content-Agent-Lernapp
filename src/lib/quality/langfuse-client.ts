@@ -25,6 +25,13 @@ import {
   ensureLangfuseOtel,
   flushLangfuseOtel,
 } from "./langfuse-otel";
+import {
+  traceMetadata,
+  traceTags,
+  umgebungsName,
+  type PruefpunktScore,
+  type TraceKontext,
+} from "./langfuse-names";
 
 export const LANGFUSE_EU_HOST = ["https://", "cloud.", "langfuse.com"].join("");
 
@@ -89,6 +96,13 @@ export async function recordEvaluationTrace(payload: {
   passed: boolean;
   scores: Record<string, number | boolean>;
   metadata?: Record<string, unknown>;
+  /** SIN-299: Kurslauf-Session (kurslaufSessionId), Tags und Metadaten nach Beruf, Modul, Schritt, Modell. */
+  sessionId?: string;
+  kontext?: TraceKontext;
+  /** Prompt aus Langfuse Prompt Management (Name und Version), mit dem Trace verknüpft. */
+  prompt?: { name: string; version: number };
+  /** Zusätzliche Scores mit Begründung (z. B. Prüfpunkte des Richters). */
+  extraScores?: PruefpunktScore[];
 }): Promise<string | null> {
   const cfg = getLangfuseConfig();
   if (!cfg) return null;
@@ -102,11 +116,17 @@ export async function recordEvaluationTrace(payload: {
     await propagateAttributes(
       {
         traceName: payload.name,
-        tags: ["quality-gate", "course-evaluate", "ap-06"],
+        ...(payload.sessionId ? { sessionId: payload.sessionId } : {}),
+        ...(payload.prompt ? { prompt: payload.prompt } : {}),
+        environment: payload.kontext?.umgebung ?? umgebungsName(),
+        tags: payload.kontext
+          ? traceTags(payload.kontext)
+          : ["quality-gate", "course-evaluate", "ap-06"],
         metadata: stringMetadata({
           courseId: payload.courseId,
           dataset: LANGFUSE_DATASET_NAME,
           passed: payload.passed,
+          ...(payload.kontext ? traceMetadata(payload.kontext) : {}),
           ...(payload.metadata ?? {}),
         }),
       },
@@ -153,6 +173,19 @@ export async function recordEvaluationTrace(payload: {
                 },
               );
             }
+
+            for (const extra of payload.extraScores ?? []) {
+              client.score.observation(
+                { otelSpan: observation.otelSpan },
+                {
+                  name: extra.name,
+                  value: extra.value,
+                  dataType: "NUMERIC",
+                  comment: extra.comment,
+                  metadata: { courseId: payload.courseId },
+                },
+              );
+            }
           },
           { asType: "evaluator" },
         );
@@ -192,6 +225,9 @@ export async function recordClaudeUsageTrace(payload: {
 /** SIN-258: Token und Euro eines Pipeline-Laufs als Trace (nur Zahlen und Kennungen). */
 export async function recordRunCostTrace(payload: {
   name: string;
+  /** SIN-299: Session und Kontext des Kurslaufs. */
+  sessionId?: string;
+  kontext?: TraceKontext;
   record: {
     runId: string;
     courseId: string;
@@ -212,6 +248,8 @@ export async function recordRunCostTrace(payload: {
   return recordEvaluationTrace({
     name: payload.name,
     courseId: r.courseId,
+    sessionId: payload.sessionId,
+    kontext: payload.kontext,
     passed: !r.stopped,
     scores: {
       costEur: r.costEur,

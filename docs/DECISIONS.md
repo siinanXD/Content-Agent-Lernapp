@@ -35,6 +35,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-302 | SIN-302: Lauf-Workflow mit Secrets für Messläufe und Migrationen | [SIN-302-lauf-workflow.md](decisions/SIN-302-lauf-workflow.md) |
 | SIN-301 | SIN-301 — Rechtsseiten: Impressum, Datenschutz, Hinweis zu KI-Inhalten | [SIN-301-rechtsseiten.md](decisions/SIN-301-rechtsseiten.md) |
 | SIN-300 | SIN-300: Frontend-Qualität und Pflege (Bildvergleich, Leistungsbudget, Aufräum-Agent, README, Changelog) | [SIN-300-frontend-qualitaet-pflege.md](decisions/SIN-300-frontend-qualitaet-pflege.md) |
+| SIN-299 | SIN-299: Langfuse lesbar machen | [SIN-299-langfuse-lesbar.md](decisions/SIN-299-langfuse-lesbar.md) |
 | SIN-297 | SIN-297 — Review-Agent mit zweitem Modell und Recht-und-Inhalt-Wächter | [SIN-297-review-agent.md](decisions/SIN-297-review-agent.md) |
 | SIN-296 | SIN-296 — Lehren-Datei, selbst geschriebene Skills und Laufprotokoll pro Worker | [SIN-296-lehren-skills-protokoll.md](decisions/SIN-296-lehren-skills-protokoll.md) |
 | SIN-295 | SIN-295 — CodeQL und automatische Paket-Updates | [SIN-295-codeql-updates.md](decisions/SIN-295-codeql-updates.md) |
