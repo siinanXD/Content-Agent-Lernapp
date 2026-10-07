@@ -14,13 +14,16 @@ import { pathToFileURL } from "node:url";
 
 const MEDIAN = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
 
+const allowed = (key, limit, tolerance) => (key === "lcpMs" || key === "tbtMs" ? Math.round(limit * (1 + tolerance)) : limit);
+
 /**
  * Vergleicht Messwerte mit der Grenze einer Route.
  * @param {{ lcpMs: number, cls: number, tbtMs: number, jsKb: number }} measured
  * @param {{ lcpMs: number, cls: number, tbtMs: number, jsKb: number }} limit
+ * @param {number} [tolerance] Toleranz auf die Zeitgrenzen LCP und TBT (SIN-322, Messrauschen im CI); CLS und JS-Größe sind exakt
  * @returns {string[]} eine Zeile je überschrittener Grenze (leer = im Budget)
  */
-export function violations(measured, limit) {
+export function violations(measured, limit, tolerance = 0) {
   const rows = [
     ["LCP", "lcpMs", "ms"],
     ["CLS", "cls", ""],
@@ -28,8 +31,8 @@ export function violations(measured, limit) {
     ["JS", "jsKb", "KB"],
   ];
   return rows
-    .filter(([, key]) => limit[key] !== undefined && measured[key] >= limit[key])
-    .map(([name, key, unit]) => `${name} ${measured[key]}${unit && ` ${unit}`} (Grenze ${limit[key]}${unit && ` ${unit}`})`);
+    .filter(([, key]) => limit[key] !== undefined && measured[key] >= allowed(key, limit[key], tolerance))
+    .map(([name, key, unit]) => `${name} ${measured[key]}${unit && ` ${unit}`} (Grenze ${limit[key]}${unit && ` ${unit}`}${allowed(key, limit[key], tolerance) !== limit[key] ? `, mit Toleranz ${allowed(key, limit[key], tolerance)}` : ""})`);
 }
 
 /** Messwerte aus Lighthouse-Berichten (lhr) einer Route: Median je Größe. */
@@ -87,7 +90,7 @@ async function main(argv) {
         if (result?.lhr) lhrs.push(result.lhr);
       }
       const measured = measure(lhrs);
-      const over = violations(measured, limit);
+      const over = violations(measured, limit, budget.tolerance ?? 0);
       rows.push({ route, measured, limit, over });
       console.log(`${over.length ? "✗" : "✓"} ${route.padEnd(18)} LCP ${measured.lcpMs} ms, CLS ${measured.cls}, TBT ${measured.tbtMs} ms, JS ${measured.jsKb} KB`);
       for (const line of over) console.error(`  - ${line}`);

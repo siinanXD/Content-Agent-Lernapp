@@ -111,11 +111,12 @@ describe("AP-16 weekly alerts from source-check report", () => {
       fetchImpl: async (input, init) => {
         const url = String(input);
         calls.push(url);
-        if (url.includes("api.telegram.org")) {
+        const host = new URL(url).hostname;
+        if (host === "api.telegram.org") {
           assert.equal(init?.method, "POST");
           return new Response(JSON.stringify({ ok: true }), { status: 200 });
         }
-        if (url.includes("api.linear.app")) {
+        if (host === "api.linear.app") {
           return new Response(
             JSON.stringify({ data: { issueCreate: { success: true, issue: { url: "https://linear.app/x/issue/SIN-999" } } } }),
             { status: 200 },
@@ -126,8 +127,8 @@ describe("AP-16 weekly alerts from source-check report", () => {
     });
     assert.equal(result.telegram.sent, true);
     assert.equal(result.linear.length, 2);
-    assert.ok(result.linear.every((l) => l.created && l.url?.includes("linear.app")));
-    assert.ok(calls.some((u) => u.includes("api.telegram.org")));
-    assert.ok(calls.some((u) => u.includes("api.linear.app")));
+    assert.ok(result.linear.every((l) => l.created && l.url && new URL(l.url).hostname === "linear.app"));
+    assert.ok(calls.some((u) => new URL(u).hostname === "api.telegram.org"));
+    assert.ok(calls.some((u) => new URL(u).hostname === "api.linear.app"));
   });
 });
