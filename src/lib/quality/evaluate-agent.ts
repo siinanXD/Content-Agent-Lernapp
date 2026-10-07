@@ -10,6 +10,7 @@ import {
   langfuseConfigured,
   recordEvaluationTrace,
 } from "./langfuse-client";
+import { pruefpunktScores, traceTitel } from "./langfuse-names";
 import {
   aggregateScores,
   scoresPass,
@@ -25,6 +26,17 @@ export const JUDGE_MODEL = "gpt-5.4-mini";
 /** Bump when the judge system prompt in liveJudgeChunkWithUsage changes. */
 export const JUDGE_PROMPT_VERSION = "2026-10-v1";
 const JUDGE_CHUNK = 10;
+
+/** System-Prompt des Richters; auch in Langfuse Prompt Management (SIN-299). */
+export const JUDGE_SYSTEM_PROMPT =
+  "Du bist Richter für Lernfragen zum Maschinen- und Anlagenführer (Ausbildungsordnung, keine IHK-Originale, keine Personendaten). " +
+  "Bewerte jede Frage unabhängig gegen das Modul-Niveau (Jahr 1 = Zwischenprüfung, Jahr 2+ = Abschlussprüfung) — nicht gegen einen Kurs-Mittelwert. " +
+  "Skalen: sourceFidelity 0 oder 1 (1 = Antwort folgt aus der zitierten amtlichen Quelle/Erklärung). " +
+  "uniqueness 0 oder 1 (1 = genau eine richtige Antwort). " +
+  "niveau ganze Zahl 1,2,3,4 oder 5 — 4 = angemessen für das angegebene Modul-Jahr/Niveau, 5 schwerer; Unterstufe 1–3 nur bei offensichtlichen Fehlern. " +
+  "language ganze Zahl 1,2,3,4 oder 5 — 4 verständliches Deutsch, 5 sehr klar. " +
+  "safetyFlag true bei Maschinen-/Elektrosicherheit oder wenn safety=true vorgegeben ist. " +
+  "Antworte ausschließlich als JSON {\"items\":[{\"id\":\"g01\",\"sourceFidelity\":1,\"uniqueness\":1,\"niveau\":4,\"language\":5,\"safetyFlag\":false,\"reasons\":[\"kurz\"]}]}";
 
 export type EvalItem = {
   id: string;
@@ -88,17 +100,15 @@ export async function runEvaluateAgent(opts: {
 
   let langfuseTraceId: string | undefined;
   if (langfuseConfigured()) {
+    // SIN-299: fachlicher Name, Prüfpunkte mit Begründung des Richters.
+    const kontext = { schritt: "pruefen" as const, modell: modelId, promptVersion: JUDGE_PROMPT_VERSION };
     const tid = await recordEvaluationTrace({
-      name: "course-evaluate",
+      name: traceTitel(kontext),
       courseId: opts.courseId,
+      kontext,
       passed,
-      scores: {
-        sourceFidelity: scores.sourceFidelity,
-        uniqueness: scores.uniqueness,
-        niveau: scores.niveau,
-        language: scores.language,
-        safetyFlag: scores.safetyFlag,
-      },
+      scores: { safetyFlag: scores.safetyFlag },
+      extraScores: pruefpunktScores(questions),
       metadata: {
         mode,
         modelId,
@@ -214,15 +224,7 @@ export async function liveJudgeChunkWithUsage(
       messages: [
         {
           role: "system",
-          content:
-            "Du bist Richter für Lernfragen zum Maschinen- und Anlagenführer (Ausbildungsordnung, keine IHK-Originale, keine Personendaten). " +
-            "Bewerte jede Frage unabhängig gegen das Modul-Niveau (Jahr 1 = Zwischenprüfung, Jahr 2+ = Abschlussprüfung) — nicht gegen einen Kurs-Mittelwert. " +
-            "Skalen: sourceFidelity 0 oder 1 (1 = Antwort folgt aus der zitierten amtlichen Quelle/Erklärung). " +
-            "uniqueness 0 oder 1 (1 = genau eine richtige Antwort). " +
-            "niveau ganze Zahl 1,2,3,4 oder 5 — 4 = angemessen für das angegebene Modul-Jahr/Niveau, 5 schwerer; Unterstufe 1–3 nur bei offensichtlichen Fehlern. " +
-            "language ganze Zahl 1,2,3,4 oder 5 — 4 verständliches Deutsch, 5 sehr klar. " +
-            "safetyFlag true bei Maschinen-/Elektrosicherheit oder wenn safety=true vorgegeben ist. " +
-            "Antworte ausschließlich als JSON {\"items\":[{\"id\":\"g01\",\"sourceFidelity\":1,\"uniqueness\":1,\"niveau\":4,\"language\":5,\"safetyFlag\":false,\"reasons\":[\"kurz\"]}]}",
+          content: JUDGE_SYSTEM_PROMPT,
         },
         {
           role: "user",

@@ -13,13 +13,17 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-345 | SIN-345: /start unter dem LCP-Budget | [SIN-345-start-lcp.md](decisions/SIN-345-start-lcp.md) |
 | SIN-335 | SIN-335: Gate auf main härten | [SIN-335-gate-haerten.md](decisions/SIN-335-gate-haerten.md) |
+| SIN-333 | SIN-333: Gate-Bruch zählt nur frische Läufe, ohne Dependabot, mit Gegencheck auf main | [SIN-333-gate-bruch-frische-laeufe.md](decisions/SIN-333-gate-bruch-frische-laeufe.md) |
 | SIN-332 | SIN-332 — Production-Deploy per CLI, Smoke-Test im selben Lauf, Alarm bei Rückstand | [SIN-332-production-deploy-cli.md](decisions/SIN-332-production-deploy-cli.md) |
 | SIN-330 | SIN-330: Hostprüfung per URL-Parsing statt Teilstring/Regex | [SIN-330-codeql-hostpruefung.md](decisions/SIN-330-codeql-hostpruefung.md) |
 | SIN-329 | SIN-329: Leistungsbudget (Lighthouse) stabilisieren | [SIN-329-lighthouse-aufwaermlauf.md](decisions/SIN-329-lighthouse-aufwaermlauf.md) |
 | SIN-328 | SIN-328 — Stillstand ohne Log: Ursache `ohne-start` statt `unbekannt` | [SIN-328-stillstand-ohne-log.md](decisions/SIN-328-stillstand-ohne-log.md) |
 | SIN-327 | SIN-327: Urgent zieht vor, wartende PRs geben ihren Platz frei | [SIN-327-urgent-und-wartende-prs.md](decisions/SIN-327-urgent-und-wartende-prs.md) |
+| SIN-323 | SIN-323: Variante 2026 · 2/4: Einheit (W4) und Feedback richtig (A2) | [SIN-323-variante-2026-einheit-feedback.md](decisions/SIN-323-variante-2026-einheit-feedback.md) |
 | SIN-322 | SIN-322: CI-Gates entsperren (CodeQL, Leistungsbudget) | [SIN-322-ci-gates-entsperren.md](decisions/SIN-322-ci-gates-entsperren.md) |
+| SIN-321 | SIN-321 — Skills-Test: Superpowers, Caveman, Impeccable prüfen und eine Woche messen | [SIN-321-skills-test.md](decisions/SIN-321-skills-test.md) |
 | SIN-320 | SIN-320 — Sparsam bauen: Verbrauch messen, Modell und Runden nach Größe, Landkarte, Bündeln | [SIN-320-sparsam-bauen.md](decisions/SIN-320-sparsam-bauen.md) |
 | SIN-319 | SIN-319 — Live-Check nach jedem Deploy | [SIN-319-live-check.md](decisions/SIN-319-live-check.md) |
 | SIN-318 | SIN-318: Variante 2026, Teil 4: Startseite, Ausbilder, Demo/Anmelden, Rechtsseiten | [SIN-318-variante-2026-start-ausbilder.md](decisions/SIN-318-variante-2026-start-ausbilder.md) |
@@ -32,9 +36,11 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-310 | SIN-310 — Aufgaben für Sinan als eigene Linear-Issues | [SIN-310-sinan-issues.md](decisions/SIN-310-sinan-issues.md) |
 | SIN-309 | SIN-309 — Deploy-Schleife beenden: keine Git-Deploys, ein Hook-Versuch je Commit | [SIN-309-deploy-schleife.md](decisions/SIN-309-deploy-schleife.md) |
 | SIN-308 | SIN-308 — Robuste Env-Prüfung, Smoke-Test nach Deploy, Region fra1 | [SIN-308-env-robust-smoke.md](decisions/SIN-308-env-robust-smoke.md) |
+| SIN-306 | SIN-306 Figma Community in die Recherche | [SIN-306-figma-community-recherche.md](decisions/SIN-306-figma-community-recherche.md) |
 | SIN-302 | SIN-302: Lauf-Workflow mit Secrets für Messläufe und Migrationen | [SIN-302-lauf-workflow.md](decisions/SIN-302-lauf-workflow.md) |
 | SIN-301 | SIN-301 — Rechtsseiten: Impressum, Datenschutz, Hinweis zu KI-Inhalten | [SIN-301-rechtsseiten.md](decisions/SIN-301-rechtsseiten.md) |
 | SIN-300 | SIN-300: Frontend-Qualität und Pflege (Bildvergleich, Leistungsbudget, Aufräum-Agent, README, Changelog) | [SIN-300-frontend-qualitaet-pflege.md](decisions/SIN-300-frontend-qualitaet-pflege.md) |
+| SIN-299 | SIN-299: Langfuse lesbar machen | [SIN-299-langfuse-lesbar.md](decisions/SIN-299-langfuse-lesbar.md) |
 | SIN-297 | SIN-297 — Review-Agent mit zweitem Modell und Recht-und-Inhalt-Wächter | [SIN-297-review-agent.md](decisions/SIN-297-review-agent.md) |
 | SIN-296 | SIN-296 — Lehren-Datei, selbst geschriebene Skills und Laufprotokoll pro Worker | [SIN-296-lehren-skills-protokoll.md](decisions/SIN-296-lehren-skills-protokoll.md) |
 | SIN-295 | SIN-295 — CodeQL und automatische Paket-Updates | [SIN-295-codeql-updates.md](decisions/SIN-295-codeql-updates.md) |

@@ -4,7 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnswerFeedback } from "@/components/ui/answer-feedback";
 import { Button } from "@/components/ui/button";
+import { SourceChip } from "@/components/ui/source-chip";
 import { StateView } from "@/components/ui/state-view";
+import { Tile } from "@/components/ui/tile";
 import { correctAnswerText } from "@/lib/learner/feedback";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { UnitImageView } from "@/components/learner/unit-image";
@@ -244,7 +246,7 @@ export default function EinheitPage() {
       )}
 
       <section className="px-6 py-2">
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
+        <Tile as="div">
           {unit.sections ? (
             <div className="flex flex-col gap-3">
               <SectionBlock label="Einstieg" text={unit.sections.einstieg} />
@@ -254,7 +256,7 @@ export default function EinheitPage() {
             </div>
           ) : (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+              <p className="mono-label text-[var(--color-text-secondary)]">
                 Erklärung
               </p>
               <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-primary)]">
@@ -263,9 +265,9 @@ export default function EinheitPage() {
             </>
           )}
           {unit.image ? <UnitImageView image={unit.image} /> : null}
-          <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
-            {unit.sourceLabel}
-          </p>
+          <div className="mt-1">
+            <SourceChip source={unit.sourceLabel} />
+          </div>
           {prefs.readAloud ? (
             <Button
               variant="secondary"
@@ -275,7 +277,7 @@ export default function EinheitPage() {
               Erklärung vorlesen
             </Button>
           ) : null}
-        </div>
+        </Tile>
       </section>
 
       {question ? (
@@ -316,9 +318,7 @@ export default function EinheitPage() {
 function SectionBlock({ label, text }: { label: string; text: string }) {
   return (
     <div>
-      <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-        {label}
-      </p>
+      <p className="mono-label text-[var(--color-text-secondary)]">{label}</p>
       <p className="mt-1 text-[15px] leading-6 text-[var(--color-text-primary)]">
         {text}
       </p>

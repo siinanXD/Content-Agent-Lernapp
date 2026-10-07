@@ -84,3 +84,9 @@ Keine IHK-Originalprüfungen, keine Personendaten. Nur JSON.`;
 export function variantRules(): Record<UnitVariant, string> {
   return { ...VARIANT_RULES };
 }
+
+/** System-Prompt des Kurslaufs (gleicher Präfix für alle Anfragen, Prompt-Caching). Auch in Langfuse Prompt Management (SIN-299). */
+export function generatorSystemText(): string {
+  const rules = Object.values(variantRules()).join("\n");
+  return `Du erzeugst Lerneinheiten als reines JSON. Didaktik-Regeln:\n${rules}\n${didaktikSchemaHint()}`;
+}

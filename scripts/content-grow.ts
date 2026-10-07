@@ -42,7 +42,7 @@ import {
   trimTargets,
   type RunReport,
 } from "../src/lib/generate/content-grow";
-import { didaktikSchemaHint, variantRules } from "../src/lib/generate/didaktik-prompts";
+import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { MAX_QUESTIONS, MIN_PASSED_QUESTIONS, planFromEvals } from "../src/lib/generate/repair-questions";
 import {
@@ -54,6 +54,14 @@ import {
 } from "../src/lib/quality/cost-guard";
 import { JUDGE_MODEL, JUDGE_PROMPT_VERSION, liveJudgeWithUsage } from "../src/lib/quality/evaluate-agent";
 import { recordEvaluationTrace } from "../src/lib/quality/langfuse-client";
+import {
+  DEFAULT_BERUF,
+  kurslaufSessionId,
+  pruefpunktScores,
+  PROMPT_NAMEN,
+  traceTitel,
+} from "../src/lib/quality/langfuse-names";
+import { promptLink } from "../src/lib/quality/langfuse-verwaltung";
 import { toQuestionEvaluationRecords } from "../src/lib/quality/question-evaluations";
 import { assertWithinRunCap, RunBudgetExceededError, recordRunCost } from "../src/lib/quality/run-ledger";
 import {
@@ -88,11 +96,10 @@ function loadHistory(): RunReport[] {
 
 /** Gleicher Präfix für alle Anfragen; cache_control schaltet Prompt-Caching an (D-41). */
 function cachedSystem() {
-  const rules = Object.values(variantRules()).join("\n");
   return [
     {
       type: "text" as const,
-      text: `Du erzeugst Lerneinheiten als reines JSON. Didaktik-Regeln:\n${rules}\n${didaktikSchemaHint()}`,
+      text: generatorSystemText(),
       cache_control: { type: "ephemeral" as const },
     },
   ];
@@ -390,35 +397,59 @@ async function main() {
       ledger,
       totalEur: report.costEur,
       capEur: RUN_CAP_EUR,
+      kontext: { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined, modell: GENERATOR_MODEL },
     });
     if (cost.stopped && !report.stopReason) report.stopReason = cost.stopReason ?? "Deckel erreicht";
   } catch (e) {
     console.error("::warning::Kosten-Ledger nicht geschrieben:", e instanceof Error ? e.message : e);
   }
 
-  const scores = aggregateScores(allEvals);
+  // SIN-299: Schritte des Kurslaufs als fachlich benannte Traces in einer Session.
+  const sessionId = kurslaufSessionId(runId);
+  const traceBase = { courseId: COURSE, sessionId, passed: live.length > 0, scores: {} };
+  const common = { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined };
+  const erzeugerLink = await promptLink(PROMPT_NAMEN.erzeuger);
+  const richterLink = await promptLink(PROMPT_NAMEN.richter);
+  const erzeugenKontext = { ...common, schritt: "erzeugen" as const, modell: GENERATOR_MODEL, promptVersion: erzeugerLink ? `v${erzeugerLink.version}` : undefined };
+  const pruefenKontext = { ...common, schritt: "pruefen" as const, modell: JUDGE_MODEL, promptVersion: richterLink ? `v${richterLink.version}` : JUDGE_PROMPT_VERSION };
+  const publishKontext = { ...common, schritt: "veroeffentlichen" as const, modell: GENERATOR_MODEL };
+  const publishedQuestions = live.reduce((n, u) => n + u.questions.length, 0);
+  const publishScores: Record<string, number> = { "Fragen veröffentlicht": publishedQuestions };
+  if (publishedQuestions > 0) publishScores["Kosten je Frage (EUR)"] = Math.round((report.costEur / publishedQuestions) * 10000) / 10000;
+  const zaehler = {
+    generated: report.generated,
+    passed: report.passed,
+    discarded: report.discarded,
+    costEur: report.costEur,
+    batchIds: report.batchIds.join("+"),
+  };
+  await recordEvaluationTrace({
+    ...traceBase,
+    name: traceTitel(erzeugenKontext),
+    kontext: erzeugenKontext,
+    prompt: erzeugerLink,
+    metadata: zaehler,
+  });
   report.langfuseTraceId =
     (await recordEvaluationTrace({
-      name: "ap23-content-grow",
-      courseId: COURSE,
-      passed: live.length > 0,
+      ...traceBase,
+      name: traceTitel(pruefenKontext),
+      kontext: pruefenKontext,
+      prompt: richterLink,
       scores: {
-        sourceFidelity: scores.sourceFidelity,
-        uniqueness: scores.uniqueness,
-        niveau: scores.niveau,
-        language: scores.language,
-        safetyFlag: scores.safetyFlag,
+        safetyFlag: aggregateScores(allEvals).safetyFlag,
+        ...(allEvals.length > 0 ? { Bestehensquote: Math.round((allEvals.filter((e) => e.passed).length / allEvals.length) * 100) / 100 } : {}),
       },
-      metadata: {
-        moduleId: report.moduleId,
-        generated: report.generated,
-        passed: report.passed,
-        discarded: report.discarded,
-        costEur: report.costEur,
-        model: GENERATOR_MODEL,
-        batchIds: report.batchIds.join("+"),
-      },
+      extraScores: pruefpunktScores(allEvals),
+      metadata: zaehler,
     })) ?? undefined;
+  await recordEvaluationTrace({
+    ...traceBase,
+    name: traceTitel(publishKontext),
+    kontext: publishKontext,
+    scores: publishScores,
+    metadata: zaehler,
+  });
 
   finish(0);
 }
