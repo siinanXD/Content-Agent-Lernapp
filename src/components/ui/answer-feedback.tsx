@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CheckIcon, CrossIcon } from "@/components/ui/icons";
+import { SourceChip } from "@/components/ui/source-chip";
 
 /**
  * AnswerFeedback (Figma 16:153): Richtig/Falsch direkt nach jeder Antwort.
@@ -58,9 +59,9 @@ export function AnswerFeedback({
           {explanation}
         </p>
         {source ? (
-          <p className="break-words text-xs text-[var(--color-text-secondary)]">
-            Quelle: {source}
-          </p>
+          <div>
+            <SourceChip source={source} />
+          </div>
         ) : null}
       </div>
       {children}
