@@ -30,7 +30,11 @@ export function deriveFabrikStatus(rows, now = Date.now()) {
 /** Kennzahlen `content_fabrik` (Text) und `content_fabrik_status` (Code). */
 export async function collectFabrikMetrics(env = process.env, http = {}) {
   const out = { content_fabrik: NA, content_fabrik_status: NA };
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return out;
+  const missing = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter((k) => !env[k]);
+  if (missing.length) {
+    out.content_fabrik = `${NA} (Secret fehlt im Workflow: ${missing.join(", ")})`;
+    return out;
+  }
   const headers = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
   try {
     const url = `${env.SUPABASE_URL}/rest/v1/content_factory_runs?select=created_at,new_module,queue_open&order=created_at.desc&limit=${STUCK_AFTER_RUNS}`;

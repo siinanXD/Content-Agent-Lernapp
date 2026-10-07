@@ -11,10 +11,10 @@ const ok = (body: unknown, status = 200) => ({
   text: async () => JSON.stringify(body),
 });
 
-test("PostHog: ohne Schlüssel „nicht verfügbar“ und kein Netzaufruf", async () => {
+test("PostHog: ohne Schluessel nicht verfuegbar und kein Netzaufruf", async () => {
   let calls = 0;
   const m = await collectPostHogMetrics({} as never, (async () => (calls++, ok({}))) as never);
-  assert.deepEqual(m, { posthog: "nicht verfügbar" });
+  assert.equal(m.posthog, "nicht verfügbar (Secret fehlt im Workflow: POSTHOG_PERSONAL_API_KEY, POSTHOG_PROJECT_ID)");
   assert.equal(calls, 0);
 });
 
@@ -30,7 +30,15 @@ test("PostHog: fragt EU-Host mit Bearer-Token ab und liefert die Ergebnisse", as
   assert.equal(seen!.auth, "Bearer k");
 });
 
-test("PostHog: HTTP-Fehler → „nicht messbar“", async () => {
+test("PostHog: HTTP-Fehler - nicht messbar mit Statuscode", async () => {
   const m = await collectPostHogMetrics(env as never, (async () => ok({}, 401)) as never, { delays: [] } as never);
   assert.match(String(m.posthog), /^nicht messbar \(PostHog: HTTP 401/);
+});
+
+test("PostHog: Netzfehler - nicht messbar mit Fehlermeldung", async () => {
+  const fetchMock = async () => {
+    throw new Error("ECONNREFUSED");
+  };
+  const m = await collectPostHogMetrics(env as never, fetchMock as never, { delays: [] } as never);
+  assert.match(String(m.posthog), /^nicht messbar \(PostHog: nicht erreichbar/);
 });

@@ -9,14 +9,15 @@ function res(items: unknown[], link = "", status = 200) {
   return { ok: status < 400, status, json: async () => items, headers: new Headers(link ? { link } : {}) };
 }
 
-test("Sentry: ohne Token „nicht verfügbar“ und kein Netzaufruf", async () => {
+test("Sentry: ohne Token nicht verfuegbar und kein Netzaufruf", async () => {
   let calls = 0;
   const m = await collectSentryMetrics({} as never,(async () => (calls++, res([]))) as never);
-  assert.deepEqual(m, { sentry: "nicht verfügbar", sentry_kritisch: "nicht verfügbar" });
+  assert.equal(m.sentry, "nicht verfügbar (Secret fehlt im Workflow: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT)");
+  assert.equal(m.sentry_kritisch, m.sentry);
   assert.equal(calls, 0);
 });
 
-test("Sentry: zählt über Seiten, Abfrage mit Token und Level-Filter", async () => {
+test("Sentry: zaehlt ueber Seiten, Abfrage mit Token und Level-Filter", async () => {
   const urls: string[] = [];
   const next = '<https://de.sentry.io/api/0/p2>; rel="next"; results="true"';
   const fetchMock = async (url: string, init: { headers: { Authorization: string } }) => {
@@ -32,10 +33,10 @@ test("Sentry: zählt über Seiten, Abfrage mit Token und Level-Filter", async ()
   assert.ok(urls.some((u) => u.includes("p2")));
 });
 
-test("Sentry: HTTP-Fehler bleibt „nicht verfügbar“ für die Kritisch-Zahl", async () => {
+test("Sentry: HTTP-Fehler - beide Abfragen liefern konkrete Fehlermeldung", async () => {
   const m = await collectSentryMetrics(env as never, (async () => res([], "", 401)) as never);
   assert.equal(m.sentry, "nicht messbar (Sentry: HTTP 401)");
-  assert.equal(m.sentry_kritisch, "nicht verfügbar");
+  assert.match(String(m.sentry_kritisch), /^nicht messbar \(Sentry: HTTP 401\)/);
 });
 
 test("Sentry: Personendaten werden entfernt", () => {
@@ -51,13 +52,25 @@ test("Sentry: Personendaten werden entfernt", () => {
   assert.equal(e.message, "boom");
 });
 
-test("Sentry: Abfrage zählt nur Issues der letzten 7 Tage (lastSeen) mit Level error/fatal", async () => {
+test("Sentry: Abfrage zaehlt nur Issues der letzten 7 Tage (lastSeen) mit Level error/fatal", async () => {
   const urls: string[] = [];
   const m = await collectSentryMetrics(env as never, (async (url: string) => (urls.push(url), res([{}, {}]))) as never);
   assert.equal(m.sentry_kritisch, 2);
   const q = decodeURIComponent(urls[1].replace(/\+/g, " "));
   assert.match(q, /is:unresolved level:\[error,fatal\] lastSeen:-7d/);
   assert.match(q, /statsPeriod=7d/);
+});
+
+test("Sentry: wenn erste Abfrage erfolgreich ist, aber zweite fehlschlaegt - sentry_kritisch liefert Fehler", async () => {
+  let callCount = 0;
+  const fetchMock = async () => {
+    callCount++;
+    if (callCount === 1) return res([{}, {}]); // erste Abfrage erfolgreich
+    return res([], "", 401); // zweite Abfrage fehlgeschlagen
+  };
+  const m = await collectSentryMetrics(env as never, fetchMock as never);
+  assert.equal(m.sentry, "2 ungelöste Fehler (7 Tage)");
+  assert.match(String(m.sentry_kritisch), /^nicht messbar \(Sentry: HTTP 401\)/);
 });
 
 test("Sentry: Browser-Fehler nur mit Einwilligung", () => {
