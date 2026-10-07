@@ -23,7 +23,7 @@ const labelsOf = (issue) => (issue.labels?.nodes ?? []).map((l) => l.name.toLowe
 /** Größe aus dem Label `groesse:<x>`; ohne Label `mittel`. Bei mehreren Labels zählt das größte. */
 export function sizeOf(issue) {
   const found = labelsOf(issue)
-    .map((l) => l.match(/^gr(?:oe|ö)sse:(klein|mittel|gro(?:ss|ß))$/)?.[1]?.replace("ß", "ss"))
+    .map((l) => l.match(/^gr(?:oe|ö)sse:(klein|mittel|gro(?:ss|ß))$/)?.[1]?.replaceAll("ß", "ss"))
     .filter(Boolean);
   return SIZES.slice().reverse().find((s) => found.includes(s)) ?? DEFAULT_SIZE;
 }
@@ -125,7 +125,7 @@ export function usageLine(u, label = "Lauf", model = "") {
     u.turns != null ? `${u.turns} Runden` : null,
     u.durationMs != null ? fmtDur(u.durationMs) : null,
     `Eingabe ${fmtInt(u.input)} · Ausgabe ${fmtInt(u.output)} · Cache ${fmtInt(u.cacheRead)} gelesen / ${fmtInt(u.cacheWrite)} geschrieben`,
-    u.costUsd != null ? `API-Gegenwert ${fmtUsd(u.costUsd).replace(".", ",")}` : null,
+    u.costUsd != null ? `API-Gegenwert ${fmtUsd(u.costUsd).replaceAll(".", ",")}` : null,
   ].filter(Boolean);
   return `${label}${model ? ` (${model})` : ""}: ${parts.join(", ")}`;
 }
@@ -203,7 +203,7 @@ export function weekUsage(prs) {
 /** Zeilen für das Tages-Update (leer, wenn nichts gemessen wurde). */
 export function renderWeekUsage(w) {
   if (!w) return ["- Verbrauch (7 Tage): noch keine Messwerte"];
-  const usd = (x) => x.toFixed(2).replace(".", ",");
+  const usd = (x) => x.toFixed(2).replaceAll(".", ",");
   return [
     `- Verbrauch (7 Tage): ${fmtInt(w.total.tokens)} Tokens, ${fmtInt(w.total.turns)} Runden, API-Gegenwert ${usd(w.total.usd)} $ (${w.withUsage} von ${w.prs} PRs gemessen)`,
     `- Pro gemergtem PR: ${fmtInt(w.perPr.tokens)} Tokens, ${usd(w.perPr.usd)} $`,

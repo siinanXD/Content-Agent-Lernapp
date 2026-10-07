@@ -16,6 +16,13 @@ test("jede überschrittene Grenze wird genannt", () => {
   assert.match(over[2], /^JS 251 KB/);
 });
 
+test("Toleranz gilt für LCP und TBT, nicht für CLS und JS", () => {
+  assert.deepEqual(violations({ lcpMs: 2672, cls: 0.05, tbtMs: 320, jsKb: 200 }, limit, 0.1), []);
+  const over = violations({ lcpMs: 2750, cls: 0.1, tbtMs: 330, jsKb: 251 }, limit, 0.1);
+  assert.equal(over.length, 4);
+  assert.match(over[0], /mit Toleranz 2750/);
+});
+
 test("measure nimmt den Median und rechnet JS in KB", () => {
   const lhr = (lcp: number, bytes: number) => ({
     audits: {

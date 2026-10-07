@@ -69,7 +69,7 @@ describe("AP-06 quality gate", () => {
     assert.ok(GOLDSET_TARGET.language >= 4);
     assert.equal(GOLDSET_TARGET.sampleSize, 70);
     assert.ok(LANGFUSE_EU_HOST.startsWith("https://"));
-    assert.ok(LANGFUSE_EU_HOST.includes("langfuse.com"));
+    assert.ok(new URL(LANGFUSE_EU_HOST).hostname === "cloud.langfuse.com");
   });
 
   it("publish returns 409 without evaluate and 422 below threshold", async () => {

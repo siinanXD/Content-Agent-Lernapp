@@ -23,7 +23,7 @@ export function planPause(aktion, stunden, now = new Date()) {
   if (aktion === "fortsetzen") return { until: "" };
   if (aktion !== "pausieren") throw new Error(`Unbekannte Aktion „${aktion}“ (erlaubt: pausieren, fortsetzen)`);
   const raw = String(stunden ?? "").trim();
-  const hours = raw === "" ? DEFAULT_PAUSE_HOURS : Number(raw.replace(",", "."));
+  const hours = raw === "" ? DEFAULT_PAUSE_HOURS : Number(raw.replaceAll(",", "."));
   if (!Number.isFinite(hours) || hours <= 0 || hours > MAX_PAUSE_HOURS) {
     throw new Error(`Dauer „${raw}“ ungültig: Stunden zwischen 0 und ${MAX_PAUSE_HOURS} angeben`);
   }
