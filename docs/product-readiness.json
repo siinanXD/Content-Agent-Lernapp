@@ -40,13 +40,13 @@
     },
     "recht-impressum": {
       "datum": "2026-10-07",
-      "beleg": "SIN-301/SIN-344/SIN-353: /impressum erreichbar von Fußzeile (Startseite, Einstellungen) und als Link in /ki-hinweis, axe ohne Fehler (e2e/rechtsseiten-reachable.spec.ts); Build erfolgreich. Befund: 7 Platzhalter bleiben offen (SIN-340): [Vor- und Nachname], [Straße Hausnummer], [PLZ], [kontakt@sjcode.de], [optional], [USt-IdNr.], [Verantwortlich]. Keine Personendaten im Beleg.",
+      "beleg": "SIN-301/SIN-344/SIN-353: /impressum erreichbar von Fußzeile (Startseite, Einstellungen) und als Link in /ki-hinweis, axe ohne Fehler (e2e/rechtsseiten-reachable.spec.ts); Build erfolgreich. Befund am Code: 7 Platzhalter offen (SIN-340); Abgleich gegen die laufende App offen.",
       "issues": ["SIN-301", "SIN-344", "SIN-340"],
       "lauf": "Lokaler Build mit npm ci && npm run build && npm test (557 Tests grün)"
     },
     "recht-datenschutz": {
       "datum": "2026-10-07",
-      "beleg": "SIN-301/SIN-344/SIN-353: /datenschutz erreichbar von Fußzeile (Startseite, Einstellungen), Onboarding (/einwilligung), Einwilligung (/demo) und Datenschutz (/demo), axe ohne Fehler (e2e/rechtsseiten-reachable.spec.ts); Build erfolgreich. Befund: 5 Platzhalter bleiben offen (SIN-341): [Name, Anschrift, E-Mail], [Auslieferung statischer Dateien prüfen], [Region prüfen] (2×), [Ort prüfen], [Speicherdauer je Kategorie]. Struktur vollständig per Figma Screen 28. Keine Personendaten im Beleg.",
+      "beleg": "SIN-301/SIN-344/SIN-353: /datenschutz erreichbar von Fußzeile (Startseite, Einstellungen), Onboarding (/einwilligung), Einwilligung (/demo) und Datenschutz (/demo), axe ohne Fehler (e2e/rechtsseiten-reachable.spec.ts); Build erfolgreich. Befund am Code: 5 Platzhalter offen (SIN-341); Abgleich gegen die laufende App offen.",
       "issues": ["SIN-301", "SIN-344", "SIN-341"],
       "lauf": "Lokaler Build mit npm ci && npm run build && npm test (557 Tests grün)"
     },
