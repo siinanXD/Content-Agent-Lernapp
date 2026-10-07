@@ -66,3 +66,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Migration legt Tabelle an, Kennzahl meldet trotzdem „Tabelle fehlt“ (REST 404) → PostgREST kennt sie erst nach `notify pgrst, 'reload schema'`; in jede Migration mit `create table` aufnehmen, `migrate` lädt den Cache jetzt immer neu. (SIN-351)
 - Konfigurierte Grenze ist real weg (Linear Basic, `limit: null`), der Planer bremst trotzdem → `null` ausdrücklich als „unbegrenzt“ behandeln und das Limit aus `free-tier-limits.json` lesen, nicht als Konstante im Skript. (SIN-360)
 - Rechtsseite ohne Platzhalter ausgefüllt, Test erwartet noch „Entwurf“ und „[Region prüfen]“ → `draft` folgt nur den Platzhaltern (nicht `entwurf:`); Test im selben PR an den Inhalt anpassen. (SIN-341)
+- Test erwartet das Impressum als Entwurf, nachdem die Platzhalter ersetzt wurden → beim Eintragen echter Rechtsdaten die Entwurf-Erwartung in `src/lib/legal/legal.test.ts` im selben PR anpassen. (SIN-340)
