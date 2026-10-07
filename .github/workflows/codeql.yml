@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: github/codeql-action/init@v4
         with:
@@ -32,8 +34,18 @@ jobs:
           upload: never
           output: codeql-results
 
+      # SIN-322: im PR blockieren nur Funde in geänderten Dateien, Altfunde auf main sind Warnungen.
       - name: Funde hoher Schwere prüfen
-        run: node scripts/autonomy/codeql-gate.mjs codeql-results
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            git diff --name-only "origin/$BASE_REF...HEAD" > changed.txt
+            node scripts/autonomy/codeql-gate.mjs codeql-results --changed changed.txt
+          else
+            node scripts/autonomy/codeql-gate.mjs codeql-results
+          fi
 
       - uses: actions/upload-artifact@v4
         if: always()

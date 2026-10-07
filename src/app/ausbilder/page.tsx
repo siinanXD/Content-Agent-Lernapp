@@ -72,7 +72,7 @@ export default function AusbilderPage() {
 
   if (load.kind !== "bereit") {
     return (
-      <MobileShell>
+      <MobileShell wide>
         <main className="flex flex-1 flex-col justify-center">
           <h1 className="sr-only">Gruppenübersicht</h1>
           {load.kind === "laden" ? <StateView kind="laden" /> : null}
@@ -138,29 +138,24 @@ function Ansicht({
   }
 
   return (
-    <MobileShell>
-      <main className="flex flex-col gap-[18px] px-5 pb-8 pt-10">
-        <header className="flex flex-col gap-1">
-          <p
-            className="text-[13px] font-medium leading-[17px] text-[var(--color-text-secondary)]"
-            style={{ fontFamily: "var(--font-mono)" }}
-          >
-            {group.name}
-          </p>
+    <MobileShell wide>
+      <main className="flex flex-col gap-[var(--bento-gap)] px-4 pb-8 pt-10 md:gap-[var(--bento-gap-wide)] md:px-8">
+        <header className="bento-tile bento-main !gap-1">
+          <p className="bento-label">{group.name}</p>
           <h1
-            className="text-[28px] font-bold leading-9"
+            className="text-[28px] font-bold leading-9 md:text-[48px] md:leading-[52px]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             Gruppenübersicht
           </h1>
-          <p className="text-sm leading-[18px] text-[var(--color-text-secondary)]">
+          <p className="text-sm leading-[18px] text-[var(--color-text-soft-on-dark)]">
             {group.schwerpunkt}
             {group.examDate ? ` · Prüfung am ${formatDate(group.examDate)}` : ""}
           </p>
         </header>
 
         <section aria-label="Kennzahlen">
-          <ul className="flex gap-2">
+          <ul className="bento">
             <Kennzahl wert={String(stats.count)} label="Teilnehmende" />
             <Kennzahl wert={`${stats.avgPercent} %`} label="Ø Fortschritt" />
             <Kennzahl
@@ -200,7 +195,7 @@ function Ansicht({
               }
             />
           ) : (
-            <ul className="overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-bg-surface)]">
+            <ul className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
               {visible.map((m, i) => (
                 <Zeile key={m.id} m={m} now={now} erste={i === 0} />
               ))}
@@ -208,12 +203,12 @@ function Ansicht({
           )}
         </section>
 
-        <p className="rounded-[var(--radius-lg)] bg-[var(--color-bg-hint)] px-3 py-2.5 text-[13px] leading-[17px] text-[var(--color-text-hint)]">
+        <p className="rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] px-4 py-3 text-[13px] leading-[17px] text-[var(--color-text-hint)]">
           Die App bewertet keine Personen. Sie zeigt nur Fortschritt und
           Lernzeit. Entscheidungen treffen Sie.
         </p>
 
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 md:max-w-[420px]">
           <a
             href={reminderMailto(group)}
             className={`inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 py-3.5 text-base font-semibold text-[var(--color-text-on-brand)] hover:opacity-95 ${focusRing}`}
@@ -246,14 +241,14 @@ function Ansicht({
 
 function Kennzahl({ wert, label }: { wert: string; label: string }) {
   return (
-    <li className="flex flex-1 flex-col gap-0.5 rounded-[var(--radius-lg)] bg-[var(--color-bg-surface)] px-3 py-2.5">
+    <li className="bento-tile !gap-0.5 md:col-span-2">
       <span
-        className="text-xl font-bold leading-[26px]"
-        style={{ fontFamily: "var(--font-display)" }}
+        className="text-[32px] font-bold leading-10"
+        style={{ fontFamily: "var(--font-mono)" }}
       >
         {wert}
       </span>
-      <span className="text-xs leading-4 text-[var(--color-text-secondary)]">{label}</span>
+      <span className="bento-label">{label}</span>
     </li>
   );
 }
@@ -262,7 +257,7 @@ function Zeile({ m, now, erste }: { m: MemberRow; now: Date; erste: boolean }) {
   const inaktiv = isInactive(m, now);
   return (
     <li
-      className={`flex gap-3 px-3.5 py-3 ${erste ? "" : "border-t border-[var(--color-border-subtle)]"}`}
+      className={`flex gap-3 px-4 py-3 md:items-center md:gap-6 md:px-6 ${erste ? "" : "border-t border-[var(--color-border-subtle)]"}`}
     >
       <span
         aria-hidden="true"
@@ -270,8 +265,8 @@ function Zeile({ m, now, erste }: { m: MemberRow; now: Date; erste: boolean }) {
       >
         {initials(m.name)}
       </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
-        <div className="flex items-baseline justify-between gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-[5px] md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1.4fr)_4rem] md:items-center md:gap-6">
+        <div className="flex items-baseline justify-between gap-2 md:contents">
           <span
             className="truncate text-[15px] font-semibold leading-5"
             style={{ fontFamily: "var(--font-display)" }}
@@ -279,7 +274,7 @@ function Zeile({ m, now, erste }: { m: MemberRow; now: Date; erste: boolean }) {
             {m.name}
           </span>
           <span
-            className="text-[13px] font-medium leading-[17px] text-[var(--color-text-secondary)]"
+            className="text-[13px] font-medium leading-[17px] text-[var(--color-text-secondary)] md:order-last md:text-right"
             style={{ fontFamily: "var(--font-mono)" }}
           >
             {m.progressPercent} %

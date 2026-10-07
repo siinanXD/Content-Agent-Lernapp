@@ -171,7 +171,7 @@ export function buildDigest(snap) {
   const r = snap.readiness;
   const b = snap.backup;
   const live = snap.liveCheck ? ` · ${snap.liveCheck.ok ? "" : "⚠️ "}${snap.liveCheck.line}` : " · Live-Check: nicht verfügbar";
-  lines.push("", `Sicherung: ${b ? (b.ok ? b.line.replace("Letzte Sicherung ", "zuletzt ") : `⚠️ ${b.line}`) : "nicht verfügbar"}${live}`);
+  lines.push("", `Sicherung: ${b ? (b.ok ? b.line.replaceAll("Letzte Sicherung ", "zuletzt ") : `⚠️ ${b.line}`) : "nicht verfügbar"}${live}`);
   lines.push("", r ? `Phase: ${r.green === r.total ? "beobachten" : "bauen"} · Produktreife ${r.green} von ${r.total} Punkten` : "Phase und Produktreife: nicht verfügbar");
   lines.push("", markOf(day, snap.slot, snap.now, snap.force));
   return { text: lines.join("\n"), day };

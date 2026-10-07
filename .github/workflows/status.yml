@@ -66,8 +66,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Konflikte nur in erzeugten Dateien (Entscheidungs-Index, CHANGELOG) ohne KI lösen (SIN-312).
+      # Das Ergebnis liest status.mjs: gelöste PRs bekommen keine @claude-Bitte.
+      - name: Konflikte in erzeugten Dateien lösen
+        if: env.DRY != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          KONFLIKT_FILE: ${{ runner.temp }}/konflikt.json
+        run: node scripts/autonomy/konflikt.mjs
       - name: Status schreiben und Wächter
         id: status
+        env:
+          KONFLIKT_FILE: ${{ runner.temp }}/konflikt.json
         run: |
           if [ "$DRY" = "true" ]; then node scripts/autonomy/status.mjs --dry-run
           else node scripts/autonomy/status.mjs; fi

@@ -1,7 +1,8 @@
 /**
  * CodeQL-Tor (SIN-295): liest die SARIF-Dateien eines Ordners und scheitert bei Funden hoher Schwere.
  * Hoch heißt: `security-severity` >= 7.0 (GitHubs Stufen "high" und "critical"); ohne Zahl zählt Level `error`.
- * Aufruf: node scripts/autonomy/codeql-gate.mjs <Ordner>
+ * Im Pull Request blockieren nur neue Funde (SIN-322): `--changed <Datei>` mit den geänderten Pfaden, Altfunde sind Warnungen.
+ * Aufruf: node scripts/autonomy/codeql-gate.mjs <Ordner> [--changed <Datei>]
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -36,17 +37,33 @@ export function highFindings(sarif) {
   return out;
 }
 
+/**
+ * Teilt Funde in blockierende und Altfunde. Ohne `changed` (Push auf main, Zeitplan) blockiert jeder Fund;
+ * mit `changed` (Pull Request) blockieren nur Funde in geänderten Dateien, alle anderen sind Altfunde (Warnung).
+ */
+export function splitFindings(findings, changed) {
+  if (!changed) return { blocking: findings, legacy: [] };
+  const set = new Set(changed);
+  return { blocking: findings.filter((f) => set.has(f.file)), legacy: findings.filter((f) => !set.has(f.file)) };
+}
+
 function main() {
-  const dir = process.argv[2];
+  const args = process.argv.slice(2);
+  const ci = args.indexOf("--changed");
+  const changedFile = ci === -1 ? undefined : args.splice(ci, 2)[1];
+  const dir = args[0];
   if (!dir) throw new Error("Ordner mit SARIF-Dateien fehlt.");
   const files = readdirSync(dir).filter((f) => f.endsWith(".sarif"));
   if (files.length === 0) throw new Error(`Keine SARIF-Datei in ${dir}.`);
   const findings = files.flatMap((f) => highFindings(JSON.parse(readFileSync(join(dir, f), "utf8"))));
-  for (const f of findings) {
-    console.log(`::error file=${f.file},line=${f.line}::${f.rule} (${f.severity ?? "error"}): ${f.message}`);
-  }
-  console.log(`CodeQL: ${findings.length} Fund(e) hoher Schwere in ${files.length} Datei(en).`);
-  if (findings.length > 0) process.exit(1);
+  const changed = changedFile ? readFileSync(changedFile, "utf8").split("\n").map((l) => l.trim()).filter(Boolean) : undefined;
+  const { blocking, legacy } = splitFindings(findings, changed);
+  for (const f of blocking) console.log(`::error file=${f.file},line=${f.line}::${f.rule} (${f.severity ?? "error"}): ${f.message}`);
+  for (const f of legacy) console.log(`::warning file=${f.file},line=${f.line}::Altfund ${f.rule} (${f.severity ?? "error"}): ${f.message}`);
+  const sources = new Set(findings.map((f) => f.file)).size;
+  console.log(`CodeQL: ${blocking.length} neue Fund(e) hoher Schwere, ${legacy.length} Altfund(e) (Warnung), in ${sources} Quelldatei(en).`);
+  for (const f of findings) console.log(`  ${f.file}:${f.line} ${f.rule}`);
+  if (blocking.length > 0) process.exit(1);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) main();

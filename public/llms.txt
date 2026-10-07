@@ -1,0 +1,23 @@
+# Lernpfad MAF
+
+> Lern-App für die Abschlussprüfung Maschinen- und Anlagenführer (MAF), für Bildungsträger. Teilnehmende lernen täglich 5–10 Minuten. Jede Frage ist aus Ausbildungsordnung (MaschAnlFAusbV) und KMK-Rahmenlehrplan abgeleitet und zeigt ihre Quelle mit Abrufdatum. Inhalte erzeugt eine KI, Bewertung und Zulassung macht ein Mensch. Es werden keine IHK-Prüfungsaufgaben kopiert.
+
+## Seiten
+
+- [Startseite](/): Überblick, Ablauf „So entsteht eine Frage“, häufige Fragen
+- [Demo-Zugang anfragen](/demo): bis zu 10 Teilnehmende, zwei Wochen kostenlos
+- [Anmelden](/anmelden): Anmeldung für Ausbilder per Link, ohne Passwort
+
+## Rechtliches
+
+- [Impressum](/impressum)
+- [Datenschutz](/datenschutz)
+- [Hinweis zu KI-Inhalten](/ki-hinweis)
+
+## Angebot
+
+- Alle fünf MAF-Schwerpunkte: Metall, Druck, Textil, Veredelung, Lebensmittel
+- Gruppenübersicht für Ausbilder: Fortschritt und Lernzeit, keine KI-Bewertung von Personen
+- Wiederholung falsch beantworteter Fragen nach 1, 3 und 7 Tagen
+- Läuft auf alten Handys, auch offline
+- Lizenz pro Teilnehmenden, Preis auf Anfrage

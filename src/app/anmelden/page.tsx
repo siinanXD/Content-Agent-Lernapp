@@ -41,10 +41,10 @@ export default function AnmeldenPage() {
   }
 
   return (
-    <MobileShell>
-      <main className="flex flex-col gap-4 px-5 pb-8 pt-10">
+    <MobileShell wide>
+      <main className="mx-auto flex w-full flex-col gap-4 px-4 pb-8 pt-10 md:max-w-[640px]">
         <h1
-          className="text-[28px] font-bold leading-9"
+          className="text-[32px] font-bold leading-10 md:text-[44px] md:leading-[48px]"
           style={{ fontFamily: "var(--font-display)" }}
         >
           Anmelden
@@ -68,7 +68,7 @@ export default function AnmeldenPage() {
             text="Bitte später erneut versuchen."
           />
         ) : (
-          <form onSubmit={submit} className="flex flex-col gap-4">
+          <form onSubmit={submit} className="bento-tile !gap-4">
             <TextField
               label="E-Mail"
               id="email"

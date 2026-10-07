@@ -154,6 +154,36 @@ jobs:
           path: screenshots/
           if-no-files-found: ignore
 
+      # Laufprotokoll (SIN-296): gelesene Dateien, Entscheidungen, Prüfungen, Ergebnis, Abbruchgrund aus dem Log
+      # beider Versuche → Artefakt `laufprotokoll`, Link im PR-Steckbrief und als Linear-Kommentar.
+      - name: Laufprotokoll schreiben
+        if: always() && (steps.claude.outcome == 'failure' || steps.claude.outcome == 'success')
+        continue-on-error: true
+        env:
+          FILE1: ${{ steps.claude.outputs.execution_file }}
+          FILE2: ${{ steps.claude2.outputs.execution_file }}
+        run: |
+          args=(--file "$FILE1")
+          if [ -n "$FILE2" ]; then args+=(--file "$FILE2"); fi
+          node scripts/autonomy/protokoll.mjs write --out laufprotokoll/protokoll.md --label "Worker" --run "$GITHUB_RUN_ID" --issues "$IDENTIFIER $BUNDLE" "${args[@]}"
+      - name: Laufprotokoll als Artefakt
+        id: protokoll
+        if: always() && (steps.claude.outcome == 'failure' || steps.claude.outcome == 'success')
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: laufprotokoll
+          path: laufprotokoll/
+          if-no-files-found: ignore
+      - name: Laufprotokoll verlinken
+        if: always() && steps.protokoll.outcome == 'success'
+        continue-on-error: true
+        env:
+          LINK: ${{ steps.protokoll.outputs.artifact-url }}
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          node scripts/autonomy/protokoll.mjs link --link "$LINK" --branch "$branch" --run "$GITHUB_RUN_ID" --issues "$IDENTIFIER $BUNDLE"
+
       - name: PR vorhanden?
         id: pr
         if: steps.claude.outcome == 'failure' || steps.claude.outcome == 'success' || steps.claude2.outcome == 'failure' || steps.claude2.outcome == 'success'

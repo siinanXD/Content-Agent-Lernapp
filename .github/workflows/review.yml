@@ -1,0 +1,131 @@
+# Review-Agent (SIN-297): Ein OpenAI-Modell (andere Modellfamilie als der Worker) liest bei jedem PR den Diff gegen
+# den Auftrag und schreibt einen Kommentar mit Schwere (scripts/autonomy/review.mjs).
+#   schwer → Job `repair`: Claude repariert im selben PR (zählt als Reparatur-Runde, Labels repair:1..3 wie in repair.yml)
+#   leicht → nur Hinweis im Kommentar
+# Kosten je Review stehen als Ledger im Kommentar; REVIEW_DAILY_CAP_USD (Repo-Variable, Standard 2) ist der Tagesdeckel.
+# Skripte kommen aus main, nie aus dem PR-Branch. Nur PRs aus diesem Repo (Forks haben keine Secrets).
+# Label `no-review` überspringt das Review. Secrets: OPENAI_API_KEY, AGENT_WORKFLOW_TOKEN, CLAUDE_CODE_OAUTH_TOKEN.
+name: review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+# Ein neuer Commit ersetzt das laufende Review.
+concurrency:
+  group: review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      severe: ${{ steps.review.outputs.severe }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Diff prüfen und Kommentar schreiben
+        id: review
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          REVIEW_DAILY_CAP_USD: ${{ vars.REVIEW_DAILY_CAP_USD }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/autonomy/review.mjs --pr "$PR_NUMBER"
+
+  repair:
+    needs: review
+    if: needs.review.outputs.severe == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Agenten-Token prüfen
+        env:
+          AGENT_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+        run: |
+          if [ -z "$AGENT_TOKEN" ]; then
+            echo "::error::Secret AGENT_WORKFLOW_TOKEN fehlt: Pushes mit github.token lösen keine Folge-Workflows aus."
+            exit 1
+          fi
+      - name: Runde zählen
+        id: round
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const number = context.payload.pull_request.number;
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+            if (pr.state !== "open" || pr.head.sha !== context.payload.pull_request.head.sha) {
+              core.info("PR geschlossen oder schon neuer Commit da: nichts zu tun.");
+              core.setOutput("go", "false");
+              return;
+            }
+            const labels = pr.labels.map((l) => l.name);
+            if (labels.includes("needs-human") || labels.includes("no-autorepair")) {
+              core.setOutput("go", "false");
+              return;
+            }
+            const done = [1, 2, 3].filter((n) => labels.includes(`repair:${n}`)).length;
+            if (done >= 3) {
+              try { await github.rest.issues.createLabel({ owner, repo, name: "needs-human", color: "D93F0B", description: "Automatische Reparatur gestoppt" }); }
+              catch (e) { if (e.status !== 422) throw e; }
+              await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: ["needs-human"] });
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: number,
+                body: `**Reparatur gestoppt:** 3 automatische Runden, das Review meldet weiter schwere Funde. Bitte schau drauf, @${owner}.`,
+              });
+              core.setOutput("go", "false");
+              return;
+            }
+            const next = done + 1;
+            try { await github.rest.issues.createLabel({ owner, repo, name: `repair:${next}`, color: "C5DEF5", description: "Automatische CI-Reparatur" }); }
+            catch (e) { if (e.status !== 422) throw e; }
+            await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: [`repair:${next}`] });
+            core.setOutput("go", "true");
+            core.setOutput("round", String(next));
+            core.setOutput("title", pr.title);
+
+      - uses: actions/checkout@v4
+        if: steps.round.outputs.go == 'true'
+        with:
+          token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Claude behebt die schweren Funde
+        id: fix
+        if: steps.round.outputs.go == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          claude_args: >-
+            --model claude-sonnet-5-5
+            --max-turns 40
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(gh pr view:*)"
+          prompt: |
+            Das Review (zweites Modell) hat im Pull Request #${{ github.event.pull_request.number }}
+            (Branch `${{ github.event.pull_request.head.ref }}`) schwere Funde gemeldet. Runde ${{ steps.round.outputs.round }} von 3.
+
+            1. Lies AGENTS.md.
+            2. Lies den Kommentar mit der Überschrift „Review (zweites Modell)“: `gh pr view ${{ github.event.pull_request.number }} --comments`.
+            3. Behebe nur die schweren Funde, soweit sie im Diff wirklich stimmen. Ist ein Fund falsch, ändere nichts dafür und
+               erkläre es in der Commit-Nachricht. Leichte Funde ignorierst du.
+            4. Verboten: Tests, Lint-Regeln oder Barrierefreiheits-Tests abschalten oder abschwächen, Workflows unter .github/ ändern, Secrets anfassen.
+            5. Prüfe lokal (`npm ci`, dann lint, typecheck, test). Vor dem Push `git fetch origin main && git merge origin/main`, danach die Tests erneut.
+            6. Ein Commit, Conventional Commit mit derselben Linear-ID wie der PR-Titel („${{ steps.round.outputs.title }}“),
+               z. B. `fix(review): … (SIN-123)`. Dann auf den Branch pushen.
+            7. Kannst du die Funde nicht beheben: nichts pushen, den Blocker kurz im PR beschreiben.
