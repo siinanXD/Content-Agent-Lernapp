@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 /**
- * NextUpCard (Figma, Stil E): dunkle Karte „Als Nächstes“ mit Frage-Vorschau
- * und Start-Knopf. Text auf Hero hell (Token text-on-brand, ≥ 4,5:1),
+ * NextUpCard (Variante 2026, A1): Hauptkachel „Als Nächstes“ mit genau einer Aktion.
+ * Dunkle Fläche (`bento-main`), Text hell (Token text-on-brand, ≥ 4,5:1),
  * Knopf weißer Text auf brand-primary.
  */
 export function NextUpCard({
@@ -11,38 +11,34 @@ export function NextUpCard({
   minutes,
   preview,
   href,
+  className = "",
 }: {
   indexLabel: string;
   title: string;
   minutes: number;
   preview?: string;
   href: string;
+  className?: string;
 }) {
   return (
-    <section
-      aria-label="Als Nächstes"
-      className="flex flex-col gap-2.5 rounded-[var(--radius-lg)] bg-[var(--color-bg-hero)] p-[18px]"
-    >
-      <div className="flex items-center justify-between gap-2 text-[var(--color-text-on-brand)]">
-        <p
-          className="text-[11px] font-medium uppercase tracking-wide"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          Als Nächstes · {indexLabel}
-        </p>
-        <p className="text-xs">{minutes} Min</p>
-      </div>
-      <h2 className="text-[22px] font-bold leading-[1.3] text-[var(--color-text-on-brand)]">
+    <section aria-label="Als Nächstes" className={`bento-tile bento-main ${className}`}>
+      <p className="bento-label">
+        Als Nächstes · {indexLabel} · {minutes} Min
+      </p>
+      <h2
+        className="text-[28px] font-bold leading-9 text-[var(--color-text-on-brand)]"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
         {title}
       </h2>
       {preview ? (
-        <p className="line-clamp-2 text-sm leading-[1.3] text-[var(--color-text-on-brand)]">
+        <p className="line-clamp-2 text-[15px] leading-6 text-[var(--color-text-soft-on-dark)]">
           {preview}
         </p>
       ) : null}
       <Link
         href={href}
-        className="mt-1 flex min-h-[50px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-base font-semibold text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
+        className="mt-2 flex min-h-[50px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-base font-semibold text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
       >
         Einheit starten
       </Link>

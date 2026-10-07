@@ -23,6 +23,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-319 | SIN-319 — Live-Check nach jedem Deploy | [SIN-319-live-check.md](decisions/SIN-319-live-check.md) |
 | SIN-318 | SIN-318: Variante 2026, Teil 4: Startseite, Ausbilder, Demo/Anmelden, Rechtsseiten | [SIN-318-variante-2026-start-ausbilder.md](decisions/SIN-318-variante-2026-start-ausbilder.md) |
 | SIN-317 | SIN-317: Variante 2026 · 3/4: Wiederholung, Prüfung, Profil, Einstellungen | [SIN-317-variante-2026-teil-3.md](decisions/SIN-317-variante-2026-teil-3.md) |
+| SIN-315 | SIN-315: Variante 2026, Teil 1: Onboarding und Lernpfad (Heute) | [SIN-315-variante-2026-onboarding-lernpfad.md](decisions/SIN-315-variante-2026-onboarding-lernpfad.md) |
 | SIN-314 | SIN-314: Design-Regeln 2026 festschreiben und Tokens ergänzen | [SIN-314-design-regeln-2026.md](decisions/SIN-314-design-regeln-2026.md) |
 | SIN-312 | SIN-312: Index-Konflikte ohne KI lösen | [SIN-312-index-konflikte.md](decisions/SIN-312-index-konflikte.md) |
 | SIN-311 | SIN-311: Ladezeit verbessern, LCP unter 2,5 s auf Startseite und Lernpfad | [SIN-311-ladezeit-lcp.md](decisions/SIN-311-ladezeit-lcp.md) |
