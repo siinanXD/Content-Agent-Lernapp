@@ -48,8 +48,10 @@ test("Notbremse: Status-Seite zeigt „Pausiert bis …“", () => {
 test("Token-Liste: enthält cron-takt und Figma agents-read mit 03.01.2027, ohne Werte", () => {
   const tokens = parseTokens(tokenMd);
   const byName = Object.fromEntries(tokens.map((t: { name: string; ablauf: string }) => [t.name, t]));
-  assert.equal(byName["cron-takt"].ablauf, "03.01.2027");
+  assert.equal(byName["cron-takt"].ablauf, "ca. 03.01.2027");
   assert.equal(byName["Figma agents-read"].ablauf, "03.01.2027");
+  assert.equal(byName["agent-workflows"].ablauf, "03.01.2027");
+  assert.equal(byName["AGENT_VARIABLES_TOKEN"].ablauf, "ca. 03.01.2027");
   for (const t of tokens) assert.ok(t.name && t.ort && t.ablauf && t.rechte, `Zeile unvollständig: ${t.name}`);
   assert.doesNotMatch(tokenMd, /ghp_|github_pat_|sk-ant|figd_/);
 });
@@ -74,7 +76,8 @@ test("Token-Ablauf: Status-Seite zeigt „läuft in X Tagen ab“", () => {
   snap.tokens = parseTokens(tokenMd);
   const body = analyze(snap, limits, {}).body;
   assert.match(body, /## Token-Ablauf/);
-  assert.match(body, /cron-takt: läuft in 90 Tagen ab \(03\.01\.2027\)/);
+  assert.match(body, /cron-takt: läuft in 90 Tagen ab \(ca\. 03\.01\.2027\)/);
+  assert.match(body, /agent-workflows: läuft in 90 Tagen ab \(03\.01\.2027\)/);
   assert.match(renderTokens([], NOW), /nicht lesbar/);
 });
 

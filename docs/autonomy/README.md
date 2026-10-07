@@ -24,6 +24,12 @@ Die Route liefert nur Dienstname, Speicher-Art und DB-Zustand, keine Geheimnisse
 
 ---
 
+## SIN-310: Aufgaben für Sinan als Linear-Issues
+
+Alles, was nur Sinan tun kann, steht als Linear-Issue mit Label `sinan` (kein `claude`, der Dispatcher nimmt es nie), nicht im PR-Text. Beschreibung im festen Block `wo`, `link`, `minuten`, `schritte`, `pruefung`. Neu anlegen: `node scripts/autonomy/sinan.mjs create --titel … --wo … --link … --minuten 10 --schritt "…" --pruefung … [--faellig 2026-12-20]` (braucht `LINEAR_API_KEY`). `sync` trägt die Standard-Aufgaben nach (Erreichbarkeits-Job, Wiederherstellungs-Test, Sicherheits-Stichprobe, AV-Verträge, Impressum, Datenschutztext, Pro-Tarife, Token-Erneuerung) und schließt erledigte; er läuft bei jedem Lauf von Status-Seite und Tages-Update. Der Loop erkennt „erledigt“ nur dort, wo er es lesen kann: abgehakte Punkte in `docs/legal/checkliste-demo-zugang.md`, neue Ablaufdaten in `docs/autonomy/tokens.md`, entfernter Hinweis in `docs/ops/BACKUP.md`. Alles andere (cron-job.org, Abrechnung, Stichprobe) schließt Sinan selbst. Entscheidung: `docs/decisions/SIN-310-sinan-issues.md`.
+
+---
+
 ## SIN-246: Tages-Update um 10:00 und 20:00
 
 `digest.yml` schreibt zweimal täglich einen kurzen Kommentar mit @siinanXD ins Issue „Loop-Status“ (Push über GitHub Mobile): gebaut seit dem letzten Update (nach Spur), neue Entscheidungen, Plan, „Braucht dich“, Kennzahlen, Phase und Produktreife. Ein Lauf pro Tag + Slot; der Merker steht als HTML-Kommentar im Kommentar, nicht löschen. Entscheidung: `docs/decisions/SIN-246-tages-update.md`.

@@ -67,6 +67,12 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.
 - Workflows: In github-script@v7 nie `getOctokit` verwenden (nicht definiert). Stattdessen `new github.constructor({ auth: process.env.AGENT_TOKEN })`.
 
+## Aufgaben für Sinan (SIN-310)
+
+- Braucht ein Worker, der Wächter oder der Planer etwas, das nur Sinan tun kann (Konto, Vertrag, Token, Einstellung), steht die Anleitung **nicht** im PR-Text. Es entsteht ein Linear-Issue mit Label `sinan` (nie `claude`, der Dispatcher nimmt es nie): `node scripts/autonomy/sinan.mjs create --titel … --wo … --link … --minuten … --schritt "…" (mehrfach) --pruefung …`. Der PR verlinkt das Issue unter `## Nach dem Merge`.
+- Beschreibung im festen Block: `wo`, `link`, `minuten`, `schritte` (nummeriert, mit kopierbaren Werten, nie Geheimnisse), `pruefung` (wie der Loop erkennt, dass es erledigt ist).
+- Tages-Update und Status-Seite zeigen offene `sinan`-Issues unter „Braucht dich“ mit Link und Minuten. Der Loop schließt sie selbst, wenn die Prüfung greift (`scripts/autonomy/sinan.mjs`, Standard-Aufgaben in `SEED`).
+
 ## Technik (siehe DECISIONS.md)
 
 - App: Next.js auf Vercel
