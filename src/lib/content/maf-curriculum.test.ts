@@ -70,7 +70,9 @@ describe("AP-13 MAF curriculum map", () => {
   it("uses only official sources with https links and a fetch date", () => {
     assert.ok(c.sources.length >= 8);
     for (const s of c.sources) {
-      assert.match(s.url, /^https:\/\/(www\.)?(gesetze-im-internet\.de|kmk\.org|bibb\.de)\//, s.id);
+      const u = new URL(s.url);
+      assert.equal(u.protocol, "https:", s.id);
+      assert.ok(["gesetze-im-internet.de", "kmk.org", "bibb.de"].includes(u.hostname.replace(/^www\./, "")), s.id);
       assert.match(s.fetchedAt, /^\d{4}-\d{2}-\d{2}$/, s.id);
     }
     for (const m of c.modules) {
