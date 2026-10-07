@@ -15,6 +15,8 @@ const TABLES = [
   // SIN-268: Kosten-Ledger und Bewertungslauf (Migration 20261006020000 holt beide nach)
   "pipeline_run_costs",
   "judge_runs",
+  // SIN-289/SIN-347: Status je Lauf der Content-Fabrik
+  "content_factory_runs",
   // SIN-277: Demo-Anfragen und Gruppenübersicht
   "demo_requests",
   "trainer_groups",
