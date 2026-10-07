@@ -98,7 +98,7 @@ export async function fetchDependencyInfo(names, fetchFn = fetch, githubToken = 
   const out = {};
   for (const name of names) {
     try {
-      const res = await fetchFn(`https://registry.npmjs.org/${name.replace("/", "%2F")}/latest`);
+      const res = await fetchFn(`https://registry.npmjs.org/${name.replaceAll("/", "%2F")}/latest`);
       if (!res.ok) {
         out[name] = null;
         continue;
