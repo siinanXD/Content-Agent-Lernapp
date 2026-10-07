@@ -16,6 +16,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 
 - Einen Worker oder Dispatcher mit `github.token` starten → der Folge-Lauf startet nicht oder ohne Rechte. Richtig: `gh workflow run` mit `AGENT_WORKFLOW_TOKEN`. (SIN-240)
 - Auf die Zeitpläne (`schedule`) von GitHub verlassen → sie sind unzuverlässig. Richtig: Selbst-Anstoß am Ende des Workers (`gh workflow run dispatch.yml`). (SIN-234)
+- Frei gewordenen Platz erst beim 30-Min-Zeitplan füllen → bis 45 Min Leerlauf. Richtig: nach Merge (`post-merge`) und nach Worker ohne PR `dispatch.yml` anstoßen; die Gruppe `dispatch` verhindert Doppelstarts. (SIN-334)
 - Als Agent selbst Labels `risk:*`, `freigegeben` oder `repair:*` setzen → nicht erlaubt, die Freigabe hängt daran, dass nur Sinan sie setzt. Richtig: den Gate-Workflow setzen lassen. (SIN-240)
 - Ein Issue „In Progress“ lassen, obwohl weder PR noch Worker existieren → blockiert einen Slot. Richtig: der Abgleich setzt es nach 60 Min zurück auf Todo; Worker ohne PR setzen es selbst zurück. (SIN-237, SIN-291)
 
