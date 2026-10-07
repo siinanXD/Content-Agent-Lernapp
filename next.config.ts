@@ -7,6 +7,8 @@ const buildId =
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BUILD_ID: buildId },
+  // Tailwind-CSS (32 KB) steht im HTML statt in einer render-blockierenden Datei: kein Abruf vor dem ersten Bild (SIN-315, LCP).
+  experimental: { inlineCss: true },
   async headers() {
     return [
       {
