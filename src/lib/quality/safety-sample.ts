@@ -147,6 +147,18 @@ export function buildSafetySample(
   };
 }
 
+/** Nur Anzahlen für den Lauf-Bericht (SIN-404): keine Einheiten-Inhalte, keine Personendaten. */
+export function sampleCounts(r: SafetySampleResult) {
+  return {
+    seed: r.seed,
+    angefragt: r.requested,
+    veroeffentlicht: r.publishedUnits,
+    sicherheitsrelevant: r.safetyUnits,
+    gezogen: r.checks.length,
+    befunde: r.checks.filter((c) => c.problems.length > 0).length,
+  };
+}
+
 const PROBLEM_TEXT: Record<SourceProblem, string> = {
   "quelle-fehlt": "Quelle fehlt",
   "quelle-keine-url": "Quelle ist keine URL",

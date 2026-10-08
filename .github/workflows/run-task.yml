@@ -22,6 +22,7 @@ on:
           - cost-report
           - lighthouse
           - offline-check
+          - safety-sample
           - migrate
       dry_run:
         description: "Nur anzeigen, was laufen würde (kostet nichts)"

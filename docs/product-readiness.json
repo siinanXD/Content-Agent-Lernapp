@@ -12,7 +12,7 @@
       "datum": "2026-10-06",
       "beleg": "SIN-272: scripts/safety-sample.mjs, Bericht nie erzeugt (docs/decisions/SIN-272-sicherheits-stichprobe.md)",
       "issues": ["SIN-272"],
-      "lauf": "node scripts/safety-sample.mjs --url <App-URL>; Mensch prüft den Bericht"
+      "lauf": "Workflow run-task, Aufgabe safety-sample (SIN-404; App-URL aus docs/autonomy/config.json); Mensch prüft den Bericht (SIN-338). Warum der Lauf aus der Agenten-Sandbox nicht möglich war: docs/decisions/SIN-404-sicherheits-lauf.md"
     },
     "betrieb-sentry": {
       "datum": "2026-10-07",

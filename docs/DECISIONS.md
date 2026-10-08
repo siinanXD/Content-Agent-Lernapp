@@ -15,6 +15,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | --- | --- | --- |
 | SIN-407 | SIN-407: Abbruchstellen im Kennzahlen-Bericht | [SIN-407-abbruchstellen.md](decisions/SIN-407-abbruchstellen.md) |
 | SIN-406 | SIN-406 — Content-Fabrik: Durchsatz je Lauf erhöhen | [SIN-406-fabrik-durchsatz.md](decisions/SIN-406-fabrik-durchsatz.md) |
+| SIN-404 | SIN-404: Sicherheits-Stichprobe als Lauf-Auftrag | [SIN-404-sicherheits-lauf.md](decisions/SIN-404-sicherheits-lauf.md) |
 | SIN-403 | SIN-403 Fehler-, Leer- und Ladezustände für alle Routen | [SIN-403-zustaende-routen.md](decisions/SIN-403-zustaende-routen.md) |
 | SIN-402 | SIN-402: Kennzahlen aus einheitlicher Quelle | [SIN-402-kennzahlen-abfrage.md](decisions/SIN-402-kennzahlen-abfrage.md) |
 | SIN-398 | SIN-398: Goldset-Vergleich auf Haiku 5.5 statt Haiku 4.5 | [SIN-398-generator-haiku-5-5.md](decisions/SIN-398-generator-haiku-5-5.md) |

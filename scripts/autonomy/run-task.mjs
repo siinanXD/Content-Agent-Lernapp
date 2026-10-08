@@ -8,7 +8,7 @@
  * Der Exit-Code ist 0 nur, wenn der Lauf durchlief (Messwert unter Ziel ist ein Ergebnis, kein Fehler).
  */
 import { spawnSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { RUN_CAP_EUR } from "./duplicates.mjs";
 import { fetchJson } from "./http.mjs";
@@ -16,6 +16,8 @@ import { fetchJson } from "./http.mjs";
 export const RESULT_DIR = "docs/quality/runs";
 export const READINESS_FILE = "docs/product-readiness.json";
 export const MIGRATIONS_DIR = "supabase/migrations";
+/** Bericht der Sicherheits-Stichprobe (SIN-272/SIN-404), wird vom Lauf geschrieben und mit dem Ergebnis-PR abgelegt. */
+export const SAFETY_REPORT = "docs/quality/sicherheits-stichprobe-maf-metall.md";
 /** Sicherung darf höchstens so alt sein, bevor `migrate` schreibt (SIN-293: täglich). */
 export const MAX_BACKUP_AGE_H = 36;
 
@@ -24,6 +26,7 @@ const LIVE = need("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "LANGFUSE_PUBLIC_KEY", 
 
 /**
  * Feste Liste. `check`: Produktreife-Punkt, den das Ergebnis belegt. `paid`: kostet API-Geld (höchstens 1 Lauf je Task und Tag).
+ * `mensch`: Der Lauf liefert nur Messwerte; die Bestätigung setzt ein Mensch (SIN-338), daher nur `gelaufen`, nie `bestaetigt`.
  * `steps`: Befehle ohne Shell.
  */
 export const TASKS = {
@@ -61,6 +64,14 @@ export const TASKS = {
   migrate: {
     label: "Fehlende additive Migrationen anwenden (nach Sicherung)",
     secrets: need("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"),
+    steps: [],
+  },
+  // SIN-404: Stichprobe gegen die Live-App (SIN-272/SIN-278). Liest nur die öffentliche Route /api/learner/phase-a, kein Secret nötig.
+  "safety-sample": {
+    label: "Sicherheits-Stichprobe MAF Metall gegen die Live-App (Quelle und Abrufdatum)",
+    check: "content-safety",
+    mensch: true,
+    secrets: [],
     steps: [],
   },
 };
@@ -259,9 +270,16 @@ async function migrate(env, { dry }) {
  * Ohne `check` oder ohne Messwert (`ok` nicht boolesch) bleibt die Datei unverändert.
  */
 export function applyResult(file, task, result, { datum, beleg }) {
-  const check = TASKS[task]?.check;
-  if (!check || typeof result.ok !== "boolean") return file;
+  const def = TASKS[task];
+  const check = def?.check;
+  if (!check) return file;
   const next = structuredClone(file);
+  if (def.mensch) {
+    // Messwert ohne Bestätigung: „gelaufen“ (Stufe unter Ziel), nie „bestaetigt“.
+    next.gelaufen = { ...next.gelaufen, [check]: { datum, beleg, ergebnis: result.ergebnis } };
+    return next;
+  }
+  if (typeof result.ok !== "boolean") return file;
   if (result.ok) {
     next.bestaetigt = { ...next.bestaetigt, [check]: { datum, beleg: `${beleg}: ${result.ergebnis}` } };
     if (next.gelaufen) delete next.gelaufen[check];
@@ -278,6 +296,29 @@ function sh(cmd, args) {
   return r.status === 0;
 }
 
+/**
+ * Sicherheits-Stichprobe (SIN-404): startet scripts/safety-sample.mjs gegen die Live-App (URL aus docs/autonomy/config.json).
+ * Befunde sind ein Ergebnis, kein Fehler: Der Lauf gilt als durchgelaufen, sobald die Anzahlen geschrieben sind.
+ * Ohne Anzahlen (App nicht erreichbar, Skriptfehler) steht der Grund im Ergebnis.
+ */
+export function safetySample(datum, { dry = false } = {}) {
+  const zahlen = `${RESULT_DIR}/safety-sample-${datum}-zahlen.json`;
+  if (dry) return { ok: null, ergebnis: `Trockenlauf: node --import tsx scripts/safety-sample.mjs --live --json ${zahlen}` };
+  mkdirSync(RESULT_DIR, { recursive: true });
+  rmSync(zahlen, { force: true });
+  spawnSync("node", ["--import", "tsx", "scripts/safety-sample.mjs", "--live", "--json", zahlen], { stdio: "inherit", env: process.env });
+  if (!existsSync(zahlen)) {
+    return { ok: null, durchgelaufen: false, ergebnis: "Nicht gelaufen: die Stichprobe hat keine Anzahlen geschrieben (App nicht erreichbar oder Skriptfehler, siehe Log)" };
+  }
+  const z = JSON.parse(readFileSync(zahlen, "utf8"));
+  return {
+    ok: null,
+    durchgelaufen: true,
+    zahlen: z,
+    ergebnis: `${z.gezogen} von ${z.sicherheitsrelevant} sicherheitsrelevanten Einheiten geprüft (Seed ${z.seed}), ${z.befunde} mit Befund (Quelle oder Abrufdatum). Bestätigung durch einen Menschen offen (SIN-338)`,
+  };
+}
+
 /** @returns {Promise<Record<string, any>>} */
 export async function runTask(task, /** @type {{ env?: Record<string, string | undefined>, dry?: boolean, now?: Date }} */ { env = process.env, dry = false, now = new Date() } = {}) {
   const def = TASKS[task];
@@ -291,6 +332,7 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
   let result;
   if (task === "cost-report") result = await costReport(env);
   else if (task === "migrate") result = await migrate(env, { dry });
+  else if (task === "safety-sample") result = safetySample(datum, { dry });
   else {
     const steps = def.steps.map(([cmd, args]) => [cmd, args.map((a) => a.replaceAll("{out}", out))]);
     mkdirSync(RESULT_DIR, { recursive: true });
@@ -305,7 +347,7 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
 }
 
 /** Pfade, die der Lauf ablegen darf (SIN-397). */
-export const RESULT_PATHS = [RESULT_DIR, "docs/ops/ap22-runs", READINESS_FILE];
+export const RESULT_PATHS = [RESULT_DIR, "docs/ops/ap22-runs", READINESS_FILE, SAFETY_REPORT];
 
 /**
  * Ergebnisdateien vormerken. `git add a b c` bricht komplett ab, sobald ein Pfad fehlt (SIN-397: `docs/ops/ap22-runs`
@@ -347,7 +389,7 @@ async function main(argv) {
   const line = `**${result.label}** (${result.datum}): ${result.ergebnis}`;
   console.log(line);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${line}\n\n${result.lauf}\n`);
-  if (!dry && result.ok !== null && TASKS[task].check) {
+  if (!dry && TASKS[task].check && (result.ok !== null || TASKS[task].mensch)) {
     const next = applyResult(JSON.parse(readFileSync(READINESS_FILE, "utf8")), task, result, { datum: result.datum, beleg: `Lauf ${result.lauf}${file ? `, Rohdaten ${file}` : ""}` });
     writeFileSync(READINESS_FILE, `${JSON.stringify(next, null, 2)}\n`);
   }
