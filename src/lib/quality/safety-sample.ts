@@ -168,7 +168,7 @@ const PROBLEM_TEXT: Record<SourceProblem, string> = {
   "quelle-nicht-in-lehrplan": "Quelle steht nicht in der Quellenliste der Lehrplan-Karte",
 };
 
-const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
+const cell = (s: string) => s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
 
 /** Markdown-Bericht. Spalte „Mensch“ bleibt leer, bis eine Person geprüft hat. */
 export function renderReport(r: SafetySampleResult, meta: { date: string; source: string }): string {
