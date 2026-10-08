@@ -15,7 +15,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | --- | --- |
 | Seiten und API-Routen | `src/app/` (z. B. `lernpfad`, `einheit`, `pruefung`, `ausbilder`, `api/*`) |
 | Komponenten | `src/components/` (`ui` Grundbausteine, `learner`, `a11y`, `analytics`) |
-| Fachlogik | `src/lib/` (`learner`, `learning`, `plan`, `pipeline`, `generate`, `quality`, `storage`, `auth`, `legal`) |
+| Fachlogik | `src/lib/` (`learner` inkl. Filter verworfener Fragen `discarded.ts`, `learning`, `plan`, `pipeline`, `generate`, `quality`, `storage`, `auth`, `legal`) |
 | Recht-und-Inhalt-Wächter, Verbotsliste | `src/lib/review/` (`content-guard.ts` vor `publish`, `regeln.ts`) |
 | Speicher | `src/lib/storage/` (Supabase EU, Mock-Fallback bei `COURSE_STORAGE=mock`) |
 | Datenbank | `supabase/migrations/` (nur hinzufügen, nie bestehende ändern) |

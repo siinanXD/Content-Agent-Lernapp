@@ -3,10 +3,12 @@ import { test } from "node:test";
 import {
   computeCoverage,
   contentRuleHints,
+  discardedByModuleAndType,
   loadMaps,
   passRateByModule,
   ratedQuestions,
   renderCoverage,
+  renderDiscarded,
   summarizeRuns,
   weakestUnits,
 } from "../../../scripts/autonomy/content-metrics.mjs";
@@ -94,6 +96,31 @@ test("Planer-Prompt enthält Content-Regeln und Abdeckungstabelle", () => {
   const prompt = buildPlannerPrompt({ definition: "", issues: [], metrics: {}, content: "| Beruf/Map |" });
   assert.match(prompt, /Content-Fabrik \(AP-23\) selbst/);
   assert.match(prompt, /## Content \(Abdeckung je Beruf\/Modul\)\n\| Beruf\/Map \|/);
+});
+
+test("SIN-395: Verwerfungsgründe nach Modul und Fragetyp, häufigste zuerst", () => {
+  const questions = [
+    { course_id: "c1", unit_id: "M0-1-u1", id: "q1", type: "single" },
+    { course_id: "c1", unit_id: "M0-1-u1", id: "q2", type: "single" },
+    { course_id: "c1", unit_id: "LF1-1-u1", id: "q3", type: "order" },
+    { course_id: "c1", unit_id: "LF1-1-u1", id: "q4", type: "order" },
+  ];
+  const base = { course_id: "c1", quellentreue: 1, eindeutigkeit: 1, niveau: 4, sprache: 4 };
+  const evaluations = [
+    { ...base, unit_id: "M0-1-u1", question_id: "q1", passed: false, quellentreue: 0 },
+    { ...base, unit_id: "M0-1-u1", question_id: "q2", passed: false, quellentreue: 0, niveau: 3 },
+    { ...base, unit_id: "LF1-1-u1", question_id: "q3", passed: false, sprache: 3 },
+    { ...base, unit_id: "LF1-1-u1", question_id: "q4", passed: true },
+  ];
+  const { bewertet } = ratedQuestions(questions, evaluations);
+  const rows = discardedByModuleAndType(maps, bewertet, { c1: "maf-metall" });
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows[0], { mapId: "maf-metall", moduleId: "M0", type: "single", count: 2, reasons: { Quellentreue: 2, Niveau: 1 } });
+  assert.equal(rows[1]!.moduleId, "LF1");
+  assert.equal(rows[1]!.count, 1);
+  const text = renderDiscarded(rows);
+  assert.match(text, /maf-metall\/M0 · single: 2 \(Quellentreue 2, Niveau 1\)/);
+  assert.equal(renderDiscarded([]), "(keine verworfenen Fragen)");
 });
 
 test("SIN-394: ratedQuestions zählt Mehrfachbewertungen einmal und ignoriert gelöschte Fragen", () => {

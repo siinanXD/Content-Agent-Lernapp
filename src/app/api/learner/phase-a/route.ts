@@ -1,5 +1,6 @@
 import { getStorage } from "@/lib/storage";
 import type { GeneratedLernfeld } from "@/lib/generate/maf-lernfeld-seed";
+import { dropDiscardedQuestions } from "@/lib/learner/discarded";
 import phaseAIndex from "@/lib/learner/phase-a-index.json";
 
 /**
@@ -19,7 +20,11 @@ export async function GET() {
   try {
     const course = await storage.getCourse(courseId);
     const generated = course?.generated as GeneratedLernfeld | undefined;
-    const units = generated?.units ?? [];
+    // SIN-395: verworfene Fragen nie ausspielen.
+    const units = dropDiscardedQuestions(
+      generated?.units ?? [],
+      await storage.listQuestionEvaluations(courseId),
+    );
     return Response.json({
       courseId,
       keyword: course?.keyword ?? phaseAIndex.keyword,

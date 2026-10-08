@@ -202,12 +202,56 @@ async function fetchAll(base, table, query, headers) {
 export function ratedQuestions(questions, evaluations) {
   const key = (c, u, q) => `${c}:${u}:${q}`;
   const existing = new Set(questions.map((q) => key(q.course_id, q.unit_id, q.id)));
+  const typeOf = new Map(questions.map((q) => [key(q.course_id, q.unit_id, q.id), q.type]));
   const seen = new Map();
   for (const e of evaluations) {
     const k = key(e.course_id, e.unit_id, e.question_id);
-    if (existing.has(k)) seen.set(k, e);
+    if (existing.has(k)) seen.set(k, { ...e, type: typeOf.get(k) });
   }
   return { gesamt: existing.size, bewertet: [...seen.values()] };
+}
+
+/** SIN-395: Verwerfungsgründe aus den strukturierten Wertungen (Schwellen wie scoresPass), kein Freitext. */
+export function discardReasons(e) {
+  const r = [];
+  if (Number(e.quellentreue) < 1) r.push("Quellentreue");
+  if (Number(e.eindeutigkeit) < 1) r.push("Eindeutigkeit");
+  if (Number(e.niveau) < 4) r.push("Niveau");
+  if (Number(e.sprache) < 4) r.push("Sprache");
+  return r.length ? r : ["sonstiger Grund"];
+}
+
+/** Verworfene Fragen (letzte Bewertung nicht bestanden) je Modul und Fragetyp mit gezählten Gründen, häufigste zuerst. */
+export function discardedByModuleAndType(maps, evaluations, mapOfCourse) {
+  const moduleOf = new Map();
+  for (const map of maps) for (const m of map.modules) for (const s of slotIds(m)) moduleOf.set(`${map.id}:${s}`, m.id);
+  const acc = new Map();
+  for (const e of evaluations) {
+    if (e.passed) continue;
+    const mapId = mapOfCourse[e.course_id] ?? "unbekannt";
+    const moduleId = moduleOf.get(`${mapId}:${e.unit_id}`) ?? "unbekannt";
+    const type = e.type ?? "unbekannt";
+    const k = `${mapId}/${moduleId}/${type}`;
+    const a = acc.get(k) ?? { mapId, moduleId, type, count: 0, reasons: {} };
+    a.count++;
+    for (const r of discardReasons(e)) a.reasons[r] = (a.reasons[r] ?? 0) + 1;
+    acc.set(k, a);
+  }
+  const name = (a) => `${a.mapId}/${a.moduleId}/${a.type}`;
+  return [...acc.values()].sort((a, b) => b.count - a.count || name(a).localeCompare(name(b)));
+}
+
+export function renderDiscarded(rows, limit = 10) {
+  if (!rows?.length) return "(keine verworfenen Fragen)";
+  const lines = rows.slice(0, limit).map((r) => {
+    const why = Object.entries(r.reasons)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([k, n]) => `${k} ${n}`)
+      .join(", ");
+    return `- ${r.mapId}/${r.moduleId} · ${r.type}: ${r.count} (${why})`;
+  });
+  if (rows.length > limit) lines.push(`- … und ${rows.length - limit} weitere Gruppen`);
+  return lines.join("\n");
 }
 
 /** Liest Supabase und baut alle Content-Kennzahlen. Ohne Zugang: `{ verfuegbar: false }` (Abdeckung dann 0 %). */
@@ -238,8 +282,8 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
     }
     // Geteilte Einheiten liegen im Quellkurs (Metall) und stehen dort schon in `published`.
     // SIN-394: Nur Bewertungen zählen, deren Fragen noch existieren (append-only evaluations können auf gelöschte Fragen verweisen).
-    const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id", h);
-    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed", h);
+    const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id,type", h);
+    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed,quellentreue,eindeutigkeit,niveau,sprache", h);
     const { gesamt: fragenGesamt, bewertet: evaluationsWithExisting } = ratedQuestions(questions, evaluations);
     const progressRows = await fetchAll(env.SUPABASE_URL, "learning_progress", "select=anonymous_id,course_id,unit_id,correct", h);
     const progress = {};
@@ -249,6 +293,7 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
       coverage: computeCoverage(maps, published),
       passRates: passRateByModule(maps, evaluationsWithExisting, mapOfCourse),
       offeneVerworfene: evaluationsWithExisting.filter((e) => !e.passed).length,
+      verworfenNachModulTyp: discardedByModuleAndType(maps, evaluationsWithExisting, mapOfCourse),
       fragenGesamt,
       fragenBewertet: evaluationsWithExisting.length,
       runs: runSummary,
@@ -271,6 +316,8 @@ export function renderContentSection(m, { sourceIssues = [], fabrik = {} } = {})
     `Bestehensquote je Modul (schwächste): ${lowest.length ? lowest.map((p) => `${p.mapId}/${p.moduleId} ${p.pct} % (${p.total})`).join(", ") : "nicht verfügbar"}`,
     `Fragen bewertet: ${m.fragenBewertet ?? "nicht verfügbar"} von ${m.fragenGesamt ?? "nicht verfügbar"} (Bewertungslauf: npm run quality:judge-backfill)`,
     `Verworfene Fragen (letzte Bewertung nicht bestanden): ${m.offeneVerworfene}`,
+    "Verwerfungsgründe nach Modul und Fragetyp (häufigste zuerst):",
+    m.verworfenNachModulTyp ? renderDiscarded(m.verworfenNachModulTyp) : "nicht verfügbar",
     `Kosten der letzten Läufe: ${m.runs.kostenLetzteLaeufe.length ? m.runs.kostenLetzteLaeufe.map((r) => `${r.runId} ${Number(r.costEur ?? 0).toFixed(2)} € (${r.passed ?? 0} bestanden)`).join("; ") : "keine Berichte"}`,
     `Quellen-Monitor: ${sourceIssues.length ? sourceIssues.map((i) => `${i.identifier} ${i.title}`).join("; ") : "keine offene Meldung"}`,
     `Content-Fabrik hängt: ${m.runs.fabrikHaengt ? "ja" : "nein"}`,

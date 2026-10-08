@@ -1,5 +1,6 @@
 import type { GeneratedLernfeld } from "@/lib/generate/maf-lernfeld-seed";
 import { getStorage } from "@/lib/storage";
+import { dropDiscardedQuestions } from "./discarded";
 import phaseAIndex from "./phase-a-index.json";
 import { mapGeneratedToPathUnits, phaseAPathUnits, slimPathUnits } from "./phase-a-path";
 import type { PathUnit } from "./playable-path";
@@ -12,7 +13,10 @@ export async function loadPathUnitsServer(): Promise<PathUnit[]> {
   try {
     if (phaseAIndex.courseId) {
       const course = await getStorage().getCourse(phaseAIndex.courseId);
-      const units = (course?.generated as GeneratedLernfeld | undefined)?.units ?? [];
+      const units = dropDiscardedQuestions(
+        (course?.generated as GeneratedLernfeld | undefined)?.units ?? [],
+        await getStorage().listQuestionEvaluations(phaseAIndex.courseId),
+      );
       const mapped = mapGeneratedToPathUnits(units);
       if (mapped.length) return slimPathUnits(mapped);
     }
