@@ -1,0 +1,14 @@
+# SIN-388: Loop-Worker `groesse:klein` auf Haiku 5.5
+
+- **Links:** Linear [SIN-388](https://linear.app/sinan-kahraman/issue/SIN-388/haiku-45-durch-haiku-55-ersetzen-und-wirkung-messen); verwandt [SIN-320](SIN-320-sparsam-bauen.md) (Größen), [SIN-398](SIN-398-generator-haiku-5-5.md) (Generator/Goldset); Anthropic: [Pricing](https://platform.claude.com/docs/en/about-claude/pricing), [Model deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations), [Modellübersicht](https://platform.claude.com/docs/en/models/overview). Fertige Lösung nicht nötig: reiner Konfigurationswert.
+- **Entscheidung:**
+  1. `MODEL_HAIKU` in `scripts/autonomy/sparen.mjs` ist jetzt `claude-haiku-5-5` (vorher `claude-haiku-4-5-20251001`). Tests und `docs/autonomy/groessen.md` angepasst. Sonnet-Läufe und der zweite Versuch mit Sonnet bleiben unverändert.
+  2. Preise je 1 Mio. Token, am 2026-10-08 auf der Pricing-Seite gelesen (Standard, ohne Batch): Haiku 5.5 **0,10 $ Eingabe / 0,50 $ Ausgabe** (Prompts bis 100.000 Token; darüber 0,50 $ / 2,50 $), Cache-Schreiben 5 min 0,125 $, Cache-Lesen 0,01 $. Sonnet 5.5 **2 $ / 10 $**, Cache-Lesen 0,10 $ (0,05×). Haiku 4.5 1 $ / 5 $. Haiku 5.5 ist damit ca. 20-mal günstiger als Sonnet 5.5 und 10-mal günstiger als Haiku 4.5.
+  3. Status laut Deprecations-Seite (2026-10-08): `claude-haiku-4-5-20251001` ist **Active**, nicht deprecated, Retirement „nicht vor 15. Oktober 2026“. `claude-haiku-5-5` ist Active, Retirement nicht vor 7. Oktober 2027. Der Wechsel ist also Kostenersparnis und Vorsorge, keine Pflicht.
+  4. Übrige Fundstellen von `claude-haiku-4-5`: `GENERATOR_MODEL`/`KNOWN_GENERATOR_MODELS`, `CLAUDE_BATCH_PRICES`, `cost-guard.ts`, `.env.example`, `ap22-ab.ts` und `ab-haiku-sonnet` gehören zur Inhalts-Pipeline, nicht zum Loop-Worker; Haiku 5.5 ist dort seit SIN-398 bekannt, Haiku 4.5 bleibt für alte Berichte und Preise. Absichtlich nicht geändert (Scope).
+- **Annahmen:**
+  1. Haiku 5.5 trägt die `claude-code-action` mit denselben Werkzeugen und 30 Runden; belegt ist das erst durch die Messung.
+  2. Der neue Tokenizer (ab Claude 4.7, ca. 30 % mehr Token) hebt den Preisvorteil nur teilweise auf: bleibt grob 15-mal günstiger.
+  3. Ausweitung auf einfache `groesse:mittel`-Issues (Schritt 4 des Issues) wird **nicht vorgeschlagen**: Der Goldset-Vergleich `ab-haiku-sonnet` hat laut SIN-398 noch keinen Messwert, die Qualitäts-Schwelle ist damit nicht belegt. Sobald der Lauf vorliegt und Haiku 5.5 die Schwelle besteht, kommt der Vorschlag in einem Folge-Issue.
+  4. Messung: Nach einer Woche zeigt das Tages-Update „Tokens je gemergtem PR“ für Haiku 5.5. Ausgangswerte (68 Läufe seit Montag): Haiku-Worker Ø 0,34 $, Sonnet-Worker Ø 0,85 $; bis zu 3 von 6 Haiku-Läufen brauchten einen zweiten Versuch mit Sonnet.
+- **Warum:** Haiku 5.5 kostet nur ein Zehntel von Haiku 4.5 bei gleicher Qualitäts-Schwelle; der Wechsel ist eine Konstante, und die Wirkung misst das Tages-Update.

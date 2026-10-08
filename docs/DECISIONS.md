@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-407 | SIN-407: Abbruchstellen im Kennzahlen-Bericht | [SIN-407-abbruchstellen.md](decisions/SIN-407-abbruchstellen.md) |
 | SIN-406 | SIN-406 — Content-Fabrik: Durchsatz je Lauf erhöhen | [SIN-406-fabrik-durchsatz.md](decisions/SIN-406-fabrik-durchsatz.md) |
 | SIN-403 | SIN-403 Fehler-, Leer- und Ladezustände für alle Routen | [SIN-403-zustaende-routen.md](decisions/SIN-403-zustaende-routen.md) |
+| SIN-399 | SIN-399: OpenAI als Content-Generator prüfen (Preis, Qualität, Aufwand) | [SIN-399-openai-generator.md](decisions/SIN-399-openai-generator.md) |
 | SIN-398 | SIN-398: Goldset-Vergleich auf Haiku 5.5 statt Haiku 4.5 | [SIN-398-generator-haiku-5-5.md](decisions/SIN-398-generator-haiku-5-5.md) |
 | SIN-397 | SIN-397: Lauf-PR bleibt aus | [SIN-397-run-task-pr.md](decisions/SIN-397-run-task-pr.md) |
 | SIN-396 | SIN-396: Test-UUID für Live-Check und Validierung | [SIN-396-live-check-uuid.md](decisions/SIN-396-live-check-uuid.md) |
@@ -23,6 +24,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-394 | SIN-394: Kennzahl „Fragen bewertet" — Nenner und Zähler aus demselben Stand | [SIN-394-fragen-bewertet.md](decisions/SIN-394-fragen-bewertet.md) |
 | SIN-392 | SIN-392 — Sentry speichert IP und Standort trotz sendDefaultPii false | [SIN-392-sentry-ip.md](decisions/SIN-392-sentry-ip.md) |
 | SIN-391 | SIN-391 — Live-Check rot: fehlgeschlagene Prüfungen nennen | [SIN-391-live-check-kennungen.md](decisions/SIN-391-live-check-kennungen.md) |
+| SIN-388 | SIN-388: Loop-Worker `groesse:klein` auf Haiku 5.5 | [SIN-388-haiku-5-5.md](decisions/SIN-388-haiku-5-5.md) |
 | SIN-387 | SIN-387 — PostHog lädt nach Einwilligung, Abbruch-Ereignisse | [SIN-387-posthog-laden-nach-einwilligung.md](decisions/SIN-387-posthog-laden-nach-einwilligung.md) |
 | SIN-386 | SIN-386 — Bewertungslauf fortsetzen: 376 von 1852 Fragen bewertet | [SIN-386-bewertungslauf-fortsetzen.md](decisions/SIN-386-bewertungslauf-fortsetzen.md) |
 | SIN-385 | SIN-385 — Demo-Gruppenansicht mit Beispieldaten ohne Konto | [SIN-385-demo-gruppenansicht.md](decisions/SIN-385-demo-gruppenansicht.md) |

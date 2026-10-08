@@ -11,7 +11,7 @@
 export const SIZES = ["klein", "mittel", "gross"];
 export const DEFAULT_SIZE = "mittel";
 /** Modelle aus der Anthropic-Modellübersicht (Stand 06.10.2026), nie aus dem Gedächtnis ändern. */
-export const MODEL_HAIKU = "claude-haiku-4-5-20251001";
+export const MODEL_HAIKU = "claude-haiku-5-5";
 export const MODEL_SONNET = "claude-sonnet-5-5";
 /** Runden-Deckel (`--max-turns`) je Größe. */
 export const MAX_TURNS = { klein: 30, mittel: 80, gross: 150 };
