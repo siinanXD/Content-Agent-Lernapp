@@ -88,7 +88,10 @@ export function sameFinding(a, b) {
   return common / min >= 0.5;
 }
 
-const CI_CLAIM = /schl(ä|ae)gt fehl|schlägt.{0,20}fehl|fehlschl|fehlgeschlagen|bricht|\bfails?\b|\bfailing\b|(test|build).{0,30}\brot\b/i;
+const CI_FAIL = "schl(?:ä|ae)gt.{0,20}fehl|fehlschl|fehlgeschlagen|bricht|\\bfails?\\b|\\bfailing\\b|\\brot\\b";
+const CI_SUBJECT = "\\b(?:tests?|builds?|ci|lint|typecheck)\\b";
+// Nur mit Bezug auf Test/Build/CI; „bricht die Abwärtskompatibilität“ ist keine CI-Behauptung.
+const CI_CLAIM = new RegExp(`${CI_SUBJECT}.{0,40}(?:${CI_FAIL})|(?:${CI_FAIL}).{0,40}${CI_SUBJECT}`, "i");
 
 /** Behauptet der Fund „Test schlägt fehl“ oder „Build bricht“? */
 export const claimsCiFailure = (f) => CI_CLAIM.test(f.text);
