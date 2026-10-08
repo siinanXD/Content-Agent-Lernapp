@@ -38,12 +38,6 @@
       "issues": ["SIN-301", "SIN-344"],
       "lauf": "PR claude/sin-344 mit Playwright-Test"
     },
-    "recht-datenschutz": {
-      "datum": "2026-10-07",
-      "beleg": "SIN-301/SIN-344/SIN-353: /datenschutz erreichbar von Fußzeile (Startseite, Einstellungen), Onboarding (/einwilligung), Einwilligung (/demo) und Datenschutz (/demo), axe ohne Fehler (e2e/rechtsseiten-reachable.spec.ts); Build erfolgreich. Befund am Code: 5 Platzhalter offen (SIN-341); Abgleich gegen die laufende App offen.",
-      "issues": ["SIN-301", "SIN-344", "SIN-341"],
-      "lauf": "Lokaler Build mit npm ci && npm run build && npm test (557 Tests grün)"
-    },
     "recht-einwilligung": {
       "datum": "2026-10-07",
       "beleg": "SIN-279/SIN-344: /einwilligung erreichbar vom Onboarding, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
@@ -89,6 +83,10 @@
     "qual-wcag": {
       "datum": "2026-10-06",
       "beleg": "SIN-286: axe WCAG 2.2 AA (inkl. Kontrast 4,5:1, Zielgröße), e2e/tastatur.spec.ts (Fokus sichtbar, Ziele ≥ 44 px je Route) und e2e/tastatur-lernweg.spec.ts (Lernweg ohne Maus); automatische Prüfung, manueller Screenreader-Test steht aus (docs/quality/SIN-286-bericht.md)"
+    },
+    "recht-datenschutz": {
+      "datum": "2026-10-08",
+      "beleg": "SIN-372: Lokaler Build mit npm ci && npm run build && npm test (570 Tests grün); /datenschutz erreichbar von Fußzeile (Startseite, Einstellungen), Onboarding (/einwilligung), Einwilligung (/demo) und Datenschutz (/demo), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), Build erfolgreich"
     },
     "recht-impressum": {
       "datum": "2026-10-08",
