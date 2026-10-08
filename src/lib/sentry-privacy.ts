@@ -43,4 +43,6 @@ export const SENTRY_PRIVACY_OPTIONS = {
   sendDefaultPii: false,
   environment: SENTRY_ENVIRONMENT,
   beforeSend: scrubEvent,
+  // Transaktionen laufen nicht durch beforeSend (SIN-392).
+  beforeSendTransaction: scrubEvent,
 } as const;

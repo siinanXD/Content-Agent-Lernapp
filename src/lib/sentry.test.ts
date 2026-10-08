@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { collectSentryMetrics } from "../../scripts/autonomy/sentry.mjs";
-import { scrubEvent, shouldSendClientEvent } from "./sentry-privacy";
+import { SENTRY_PRIVACY_OPTIONS, scrubEvent, shouldSendClientEvent } from "./sentry-privacy";
 
 const env = { SENTRY_AUTH_TOKEN: "t", SENTRY_ORG: "org", SENTRY_PROJECT: "proj" };
 
@@ -77,4 +77,17 @@ test("Sentry: Browser-Fehler nur mit Einwilligung", () => {
   assert.equal(shouldSendClientEvent(true), true);
   assert.equal(shouldSendClientEvent(false), false);
   assert.equal(shouldSendClientEvent(null), false);
+});
+
+test("Sentry: IP, Standort und Header fliegen raus (SIN-392), auch bei Transaktionen", () => {
+  const mk = () => ({
+    user: { ip_address: "1.2.3.4", geo: { country_code: "DE", city: "Berlin" } },
+    request: { url: "https://x.de/a?b=1", headers: { "x-forwarded-for": "1.2.3.4" } },
+  });
+  for (const hook of [SENTRY_PRIVACY_OPTIONS.beforeSend, SENTRY_PRIVACY_OPTIONS.beforeSendTransaction]) {
+    const e = hook(mk());
+    assert.equal(e.user, undefined);
+    assert.deepEqual(e.request, { url: "https://x.de/a" });
+    assert.ok(!JSON.stringify(e).includes("1.2.3.4"));
+  }
 });
