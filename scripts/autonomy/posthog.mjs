@@ -20,7 +20,8 @@ const EVENTS = [
   "review_completed",
   "review_abandoned",
 ];
-const QUERY = `select event, count() from events where timestamp > now() - interval 7 day and event in (${EVENTS.map((e) => `'${e}'`).join(",")}) group by event`;
+// Je Ereignis zählen wir Besucher (distinct_id), nicht Ereignisse: onboarding_step kann mehrfach feuern.
+const QUERY = `select event, count(distinct distinct_id) from events where timestamp > now() - interval 7 day and event in (${EVENTS.map((e) => `'${e}'`).join(",")}) group by event`;
 
 // Schritte des Lernwegs: Name, Start-Ereignis, Ende-Ereignis. Abbruchquote = 1 - Ende/Start.
 export const SCHRITTE = [

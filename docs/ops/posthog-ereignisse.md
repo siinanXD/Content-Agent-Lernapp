@@ -21,7 +21,7 @@ Dazu `$pageview` und `$pageleave` von PostHog selbst.
 
 ## Kennzahl `posthog`
 
-`scripts/autonomy/posthog.mjs` fragt die letzten 7 Tage ab und nennt die Abbruchquote je Schritt: Onboarding (`onboarding_step` → `onboarding_completed`), Einheit (`unit_started` → `unit_completed`), Wiederholung (`review_started` → `review_completed`). Quote = 1 − beendet / gestartet.
+`scripts/autonomy/posthog.mjs` fragt die letzten 7 Tage ab und nennt die Abbruchquote je Schritt: Onboarding (`onboarding_step` → `onboarding_completed`), Einheit (`unit_started` → `unit_completed`), Wiederholung (`review_started` → `review_completed`). Gezählt werden Besucher je Ereignis, nicht Ereignisse. Quote = 1 − beendet / gestartet.
 
 Ist die Liste leer, steht der Grund da: keine Einwilligung, kein `NEXT_PUBLIC_POSTHOG_KEY` im Build oder noch keine Nutzung. Fehlen die Secrets, steht „nicht verfügbar“.
 
