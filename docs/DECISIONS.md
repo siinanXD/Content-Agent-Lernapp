@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-381 | SIN-381: Review-Fehlalarme verbrauchen keine Reparatur-Runden | [SIN-381-review-fehlalarme.md](decisions/SIN-381-review-fehlalarme.md) |
 | SIN-380 | SIN-380: Content-Fabrik schreibt Langfuse-Traces je Schritt | [SIN-380-langfuse-traces-je-schritt.md](decisions/SIN-380-langfuse-traces-je-schritt.md) |
 | SIN-379 | SIN-379 — Hugging Face Pro: Richter-Vorprüfung und Dubletten-Erkennung | [SIN-379-hugging-face-pro.md](decisions/SIN-379-hugging-face-pro.md) |
 | SIN-378 | SIN-378 — Fabrik-Lauf im Statusprotokoll nachweisen, Ausbleiben melden | [SIN-378-fabrik-lauf-nachweis.md](decisions/SIN-378-fabrik-lauf-nachweis.md) |

@@ -18,6 +18,7 @@ test("Digest morgen: Spuren, Entscheidung, Plan, Braucht dich, Kennzahlen, Phase
   assert.match(text, /Design SIN-252/);
   assert.match(text, /Kontingente über 50 %: GitHub Actions: Läufe heute 62.5 %/);
   assert.match(text, /Phase: bauen · Produktreife 6 von 19 Punkten/);
+  assert.match(text, /Review-Funde \(schwer, 7 Tage\): nicht verfügbar/);
   assert.ok(text.split("\n").length <= 30);
 });
 

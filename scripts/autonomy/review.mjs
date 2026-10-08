@@ -55,7 +55,80 @@ export function buildDiff(files, max = MAX_DIFF_CHARS) {
   return cut ? `${out}\n[${cut} weitere Datei(en) gekürzt]\n` : out;
 }
 
-export function reviewMessages({ title, body, diff }) {
+export const WIDERLEGT_PREFIX = "Fund geprüft, keine Änderung nötig";
+
+/**
+ * Begründungen der Reparatur (SIN-381) aus den Commit-Nachrichten des PR. Format: eine Zeile
+ * „Fund geprüft, keine Änderung nötig“, danach je Fund eine Zeile `- <datei>: <Aussage> (<Begründung>)`.
+ */
+export function parseWiderlegt(messages = []) {
+  const out = [];
+  for (const m of messages) {
+    const lines = String(m).split("\n").map((l) => l.trim());
+    if (!lines.some((l) => l.includes(WIDERLEGT_PREFIX))) continue;
+    for (const l of lines) {
+      const hit = /^[-*]\s+`?([^`:\s]+)`?:\s+(.+)$/.exec(l);
+      if (hit) out.push({ datei: hit[1], text: hit[2] });
+    }
+  }
+  return out;
+}
+
+const words = (t) => new Set(String(t).toLowerCase().match(/[a-zäöüß0-9_.]{4,}/g) ?? []);
+
+/** Gleiche Datei und gleiche Aussage (Wortüberlappung ≥ 60 % der Vereinigung beider Aussagen). */
+export function sameFinding(a, b) {
+  if (a.datei !== b.datei) return false;
+  // Die Begründung am Ende („ (…)“) gehört nicht zur Aussage des Funds.
+  const claim = (t) => String(t).replace(/\s\(.*\)\s*$/, "");
+  const wa = words(claim(a.text));
+  const wb = words(claim(b.text));
+  if (!wa.size || !wb.size) return a.text.trim() === b.text.trim();
+  let common = 0;
+  for (const w of wa) if (wb.has(w)) common++;
+  return common / (wa.size + wb.size - common) >= 0.6;
+}
+
+const CI_FAIL = "schl(?:ä|ae)gt.{0,20}fehl|fehlschl|fehlgeschlagen|bricht|\\bfails?\\b|\\bfailing\\b|\\brot\\b";
+const CI_SUBJECT = "\\b(?:tests?|builds?|ci|lint|typecheck)\\b";
+// Nur mit Bezug auf Test/Build/CI; „bricht die Abwärtskompatibilität“ ist keine CI-Behauptung.
+const CI_CLAIM = new RegExp(`${CI_SUBJECT}.{0,40}(?:${CI_FAIL})|(?:${CI_FAIL}).{0,40}${CI_SUBJECT}`, "i");
+
+/** Behauptet der Fund „Test schlägt fehl“ oder „Build bricht“? */
+export const claimsCiFailure = (f) => CI_CLAIM.test(f.text);
+
+/**
+ * SIN-381: Schwere Funde werden `widerlegt` (zählen nicht, lösen keine Reparatur aus), wenn
+ * (1) sie CI-Versagen behaupten, aber `build` für denselben Commit grün ist, oder
+ * (2) die Reparatur denselben Fund schon begründet verworfen hat.
+ */
+export function applyRefutations(funde, { buildGreen = false, widerlegt = /** @type {Array<{ datei: string, text: string }>} */ ([]) } = {}) {
+  return funde.map((f) => {
+    if (f.schwere !== "schwer") return f;
+    if (buildGreen && claimsCiFailure(f)) return { ...f, schwere: "widerlegt", grund: "Build und Tests sind für diesen Commit grün." };
+    const prior = widerlegt.find((w) => sameFinding(w, f));
+    if (prior) return { ...f, schwere: "widerlegt", grund: `Schon geprüft: ${prior.text}` };
+    return f;
+  });
+}
+
+/** Zahlen für die Kennzahl im Tages-Update: schwere Funde gesamt / davon widerlegt. */
+export const countStats = (funde) => ({
+  gesamt: funde.filter((f) => f.schwere === "schwer" || f.schwere === "widerlegt").length,
+  widerlegt: funde.filter((f) => f.schwere === "widerlegt").length,
+});
+
+/** Summe aus den Ledger-Einträgen mehrerer Kommentare. */
+export function sumStats(commentBodies) {
+  const all = commentBodies.flatMap((b) => (b.includes(MARKER) ? readLedger(b) : []));
+  return { gesamt: all.reduce((s, e) => s + (e.gesamt ?? 0), 0), widerlegt: all.reduce((s, e) => s + (e.widerlegt ?? 0), 0) };
+}
+
+export function reviewMessages({ title, body, diff, widerlegt = [] }) {
+  const bekannt = widerlegt.length
+    ? "\nDiese Funde wurden schon geprüft und mit Begründung widerlegt. Melde sie nicht erneut als schwer:\n" +
+      widerlegt.map((w) => `- ${w.datei}: ${w.text}`).join("\n")
+    : "";
   return [
     {
       role: "system",
@@ -65,7 +138,9 @@ export function reviewMessages({ title, body, diff }) {
         REGELN.map((r) => `- ${r}`).join("\n") +
         "\nSchwere: `schwer` nur bei echten Fehlern, Sicherheitslücken, Regelverstößen oder klarer Abweichung vom Auftrag, die vor dem Merge behoben werden müssen. " +
         "Alles andere (Stil, Namen, Kleinigkeiten, Vorschläge) ist `leicht`. Erfinde nichts: melde nur, was im Diff belegt ist, mit Datei. " +
-        'Antworte ausschließlich als JSON {"zusammenfassung":"ein Satz","funde":[{"schwere":"schwer|leicht","datei":"pfad","text":"kurz, deutsch"}]}. Keine Funde: leere Liste.',
+        'Antworte ausschließlich als JSON {"zusammenfassung":"ein Satz","funde":[{"schwere":"schwer|leicht","datei":"pfad","text":"kurz, deutsch"}]}. Keine Funde: leere Liste. ' +
+        "Behaupte nie, ein Test oder der Build schlage fehl, wenn du das nicht am Diff zeigen kannst." +
+        bekannt,
     },
     { role: "user", content: `Auftrag (PR-Titel und Beschreibung):\n${title}\n${body ?? ""}\n\nDiff:\n${diff}` },
   ];
@@ -124,7 +199,8 @@ export function daySpend(commentBodies, day) {
 
 export function formatComment({ result, funde, ledger, model = REVIEW_MODEL, note = "" }) {
   const schwer = funde.filter((f) => f.schwere === "schwer");
-  const leicht = funde.filter((f) => f.schwere !== "schwer");
+  const widerlegt = funde.filter((f) => f.schwere === "widerlegt");
+  const leicht = funde.filter((f) => f.schwere !== "schwer" && f.schwere !== "widerlegt");
   const fmt = (f) => `- ${f.datei ? `\`${f.datei}\`: ` : ""}${f.text}`;
   const last = ledger.at(-1);
   return [
@@ -135,6 +211,7 @@ export function formatComment({ result, funde, ledger, model = REVIEW_MODEL, not
     "",
     schwer.length ? `**Schwer (${schwer.length}):** wird im selben PR repariert.\n${schwer.map(fmt).join("\n")}\n` : "**Keine schweren Funde.**\n",
     leicht.length ? `**Leicht (${leicht.length}):** nur Hinweis.\n${leicht.map(fmt).join("\n")}\n` : "",
+    widerlegt.length ? `**Widerlegt (${widerlegt.length}):** startet keine Reparatur.\n${widerlegt.map((f) => `${fmt(f)} (${f.grund})`).join("\n")}\n` : "",
     `<sub>Modell ${model}${last ? `, Kosten ${last.usd.toFixed(4)} USD, Stand ${last.sha.slice(0, 7)}` : ""}. Das Ergebnis ersetzt keine Freigabe von Sinan.</sub>`,
     `<!-- review-ledger: ${JSON.stringify(ledger)} -->`,
     `<!-- review-severe: ${schwer.length ? "true" : "false"} -->`,
@@ -170,6 +247,17 @@ async function askModel(messages, env) {
   return { text: data.choices?.[0]?.message?.content ?? "{}", usage: data.usage ?? {} };
 }
 
+/** `build` (inkl. Tests) für den Commit grün? Wartet bis `waitMs`, solange der Lauf noch nicht fertig ist. */
+export async function buildIsGreen(repo, sha, env = process.env, { waitMs = 8 * 60 * 1000, stepMs = 30000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  for (let waited = 0; ; waited += stepMs) {
+    const res = await gh(`/repos/${repo}/commits/${sha}/check-runs?per_page=100`, {}, env);
+    const build = (res.check_runs ?? []).find((c) => c.name === "build");
+    if (build?.status === "completed") return build.conclusion === "success";
+    if (waited >= waitMs) return false;
+    await sleep(stepMs);
+  }
+}
+
 function output(env, kv) {
   console.log(Object.entries(kv).map(([k, v]) => `${k}=${v}`).join(" "));
   if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, Object.entries(kv).map(([k, v]) => `${k}=${v}\n`).join(""));
@@ -191,6 +279,8 @@ export async function main(argv, env = process.env, now = new Date()) {
   const ledger = readLedger(mine?.body);
   if (ledger.some((e) => e.sha === sha)) return output(env, { severe: /review-severe: true/.test(mine.body), skipped: "schon-geprueft" });
 
+  const commits = await paged(`/repos/${repo}/pulls/${pr}/commits`, env);
+  const widerlegt = parseWiderlegt(commits.map((c) => c.commit?.message ?? ""));
   const feste = diffChecks(files);
   let result = null;
   let funde = [...feste];
@@ -201,11 +291,19 @@ export async function main(argv, env = process.env, now = new Date()) {
   if (!env.OPENAI_API_KEY) note = "Kein OPENAI_API_KEY: nur die festen Prüfungen liefen.";
   else if (daySpend(today.map((c) => c.body ?? ""), day) >= cap) note = `Tagesdeckel von ${cap} USD erreicht: nur die festen Prüfungen liefen.`;
   else {
-    const { text, usage } = await askModel(reviewMessages({ title: data.title, body: data.body, diff: buildDiff(files) }), env);
+    const { text, usage } = await askModel(reviewMessages({ title: data.title, body: data.body, diff: buildDiff(files), widerlegt }), env);
     entry = { d: day, usd: costUsd(usage), sha };
     result = parseReview(text);
     funde = [...feste, ...result.funde];
   }
+
+  // SIN-381: Behauptet ein schwerer Fund rote CI, zählt der grüne Build desselben Commits.
+  let buildGreen = false;
+  if (funde.some((f) => f.schwere === "schwer" && claimsCiFailure(f) && !widerlegt.some((w) => sameFinding(w, f)))) {
+    buildGreen = await buildIsGreen(repo, sha, env);
+  }
+  funde = applyRefutations(funde, { buildGreen, widerlegt });
+  entry = { ...entry, ...countStats(funde) };
 
   const body = formatComment({ result, funde, ledger: [...ledger, entry], note });
   if (mine) await gh(`/repos/${repo}/issues/comments/${mine.id}`, { method: "PATCH", body: { body } }, env);

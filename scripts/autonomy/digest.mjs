@@ -16,6 +16,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
+import { sumStats } from "./review.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { isoWeek } from "./trend-radar.mjs";
@@ -180,7 +181,7 @@ export function buildDigest(snap) {
     ? `Content: ${c.einheitenNeuWoche ?? 0} neue Einheiten, Bestehensquote ${c.bestehensquote == null ? "nicht verfügbar" : `${c.bestehensquote} %`}, Kosten Fabrik ${Number(c.kostenWocheEur ?? 0).toFixed(2)} € (je 7 Tage)`
     : "Content: nicht verfügbar";
   const high = (snap.quotas ?? []).filter((q) => q.pct != null && q.pct > QUOTA_MIN_PCT);
-  lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"}`, ...renderWeekUsage(snap.usageWeek ?? null));
+  lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"} · Review-Funde (schwer, 7 Tage): ${snap.reviewStats ? `${snap.reviewStats.gesamt} gesamt / ${snap.reviewStats.widerlegt} widerlegt` : "nicht verfügbar"}`, ...renderWeekUsage(snap.usageWeek ?? null));
 
   // SIN-376: Diagramme geändert, FigJam in der nächsten Claude-Sitzung nachziehen.
   if (snap.diagramme?.length) lines.push("", `**Diagramme geändert:** ${snap.diagramme.join(", ")} (FigJam nachziehen)`);
@@ -284,9 +285,20 @@ async function collect(repo, slot, now, since, env, dry = false) {
   } catch (e) {
     console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`);
   }
+  // SIN-381: Review-Funde der letzten 7 Tage aus den Kommentaren der PRs (gesamt / widerlegt).
+  let reviewStats = null;
+  try {
+    const bodies = [];
+    for (const p of prs.filter((x) => x.updated_at > weekAgo).slice(0, 30)) {
+      bodies.push(...(await gh(`/repos/${repo}/issues/${p.number}/comments?per_page=100`)).map((c) => c.body ?? ""));
+    }
+    reviewStats = sumStats(bodies);
+  } catch (e) {
+    console.log(`Review-Kennzahl nicht lesbar: ${e.message}`);
+  }
   const backup = await collectBackup(repo, now, gh);
   const liveCheck = await collectLiveCheck(repo, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, openPrs, issues, decisions, diagramme, decisionsOpen, legalOpen, sinanIssues, tokens, content, quotas, readiness, backup, liveCheck, trendRadar: mondayRadar(now) };
+  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, reviewStats, openPrs, issues, decisions, diagramme, decisionsOpen, legalOpen, sinanIssues, tokens, content, quotas, readiness, backup, liveCheck, trendRadar: mondayRadar(now) };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {
