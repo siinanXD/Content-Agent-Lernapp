@@ -48,4 +48,4 @@ Hilft der Revert nicht (zweiter Lauf rot), meldet der Status-Wächter es an Sina
 ## Ergebnis
 
 - Artefakt `live-check` des Laufs: `bericht.md` (Häkchen-Liste) und Screenshots je Seite (Handy und Desktop)
-- Status-Seite und Tages-Update: „Live-Check 21:05: 42/42 grün“
+- Status-Seite und Tages-Update: „Live-Check 21:05: 42/42 grün“; bei Rot mit den roten Kennungen: „Live-Check 21:05: 40/42 ROT (UI-12, API-03)“ (höchstens 5, danach „+N weitere“)
