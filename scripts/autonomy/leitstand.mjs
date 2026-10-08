@@ -125,9 +125,13 @@ export async function main(argv, env = process.env, http = {}) {
   try {
     const files = argv.flatMap((a, i) => (a === "--file" && argv[i + 1] ? [argv[i + 1]] : []));
     const usage = sumUsage(files.filter((f) => existsSync(f)).map((f) => usageFromExecution(readFileSync(f, "utf8"))));
-    const event = buildEvent({ schritt: arg("--schritt"), status: arg("--status"), issue: arg("--issue"), pr: arg("--pr"), seit: arg("--seit"), usage }, env);
-    const r = await sendEvent(event, env, http);
-    console.log(r.ok ? `Leitstand: ${event.step} ${event.status}${event.issue ? ` (${event.issue})` : ""} gespeichert` : `::warning::Leitstand: Ereignis nicht gespeichert (${r.grund})`);
+    // Der Dispatcher übergibt mehrere Issues („SIN-1 SIN-2+SIN-3“): je Issue ein Ereignis, damit jedes einzeln zuordenbar bleibt.
+    const issues = arg("--issue").split(/[\s+,]+/).filter(Boolean);
+    for (const issue of issues.length ? issues : [""]) {
+      const event = buildEvent({ schritt: arg("--schritt"), status: arg("--status"), issue, pr: arg("--pr"), seit: arg("--seit"), usage }, env);
+      const r = await sendEvent(event, env, http);
+      console.log(r.ok ? `Leitstand: ${event.step} ${event.status}${event.issue ? ` (${event.issue})` : ""} gespeichert` : `::warning::Leitstand: Ereignis nicht gespeichert (${r.grund})`);
+    }
   } catch (e) {
     console.log(`::warning::Leitstand: ${e.message}`);
   }

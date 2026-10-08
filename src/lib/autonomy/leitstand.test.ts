@@ -119,6 +119,24 @@ test("CLI: schreibt ein Ereignis, ein Tippfehler im Schritt wird nur gewarnt", a
   assert.match(logs[1], /::warning::Leitstand: Unbekannter Schritt/);
 });
 
+test("CLI: mehrere Issues des Dispatchers werden je Issue als eigenes Ereignis gespeichert", async () => {
+  const bodies: string[] = [];
+  const orig = console.log;
+  console.log = () => {};
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (_u: string, init: RequestInit) => {
+    bodies.push(String(init.body));
+    return new Response("[{}]", { status: 201 });
+  }) as typeof fetch;
+  try {
+    await main(["ereignis", "--schritt", "dispatch", "--status", "ok", "--issue", "SIN-1+SIN-2 SIN-3"], ENV);
+  } finally {
+    console.log = orig;
+    globalThis.fetch = realFetch;
+  }
+  assert.deepEqual(bodies.map((b) => JSON.parse(b).issue), ["SIN-1", "SIN-2", "SIN-3"]);
+});
+
 test("Status liefert Schlange und offene PRs für den Schnappschuss", () => {
   const res = analyze({ now: "2026-10-08T10:00:00Z", runs: [], prs: [{ number: 7, title: "feat(x): y (SIN-1)", head: "claude/sin-1", state: "open", labels: [{ name: "risk:medium" }], draft: false }], issues: [], usage: {} }, {}, {});
   assert.deepEqual(Object.keys(res.queue).sort(), ["in_progress", "paused", "running", "startable", "todo", "waiting"]);
