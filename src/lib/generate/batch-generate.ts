@@ -315,13 +315,15 @@ const rowText = (row: BatchResultRow): string =>
 /** AP-21: Batch nur für Ersatzfragen. Je Einheit ein Request: Einheit + durchgefallene Fragen + Grund. */
 export async function submitQuestionRepairBatch(opts: {
   items: Array<{ unit: GeneratedUnit; plan: RepairPlan }>;
+  /** Default: GENERATOR_MODEL (Config). */
+  model?: string;
 }): Promise<BatchSubmitResult> {
   const requests = opts.items
     .filter((i) => i.plan.replacements > 0)
     .map(({ unit, plan }) => ({
       custom_id: `repair-${unit.id}`,
       params: {
-        model: GENERATOR_MODEL,
+        model: opts.model ?? GENERATOR_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
         messages: [{ role: "user", content: buildRepairPrompt(unit, plan) }],
       },

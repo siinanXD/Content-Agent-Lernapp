@@ -35,7 +35,7 @@ export const TASKS = {
     steps: [["npm", ["run", "quality:judge-backfill"]]],
   },
   "ab-haiku-sonnet": {
-    label: "Goldset-Vergleich Haiku gegen Sonnet",
+    label: "Goldset-Vergleich Haiku 5.5 gegen Sonnet 5.5 (20 LF3-Einheiten, inkl. Reparatur, unter 3 €)",
     paid: true,
     secrets: need("ANTHROPIC_API_KEY", "OPENAI_API_KEY"),
     steps: [["npm", ["run", "ap22:ab"]]],
