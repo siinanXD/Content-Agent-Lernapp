@@ -78,7 +78,7 @@ describe("Langfuse lesbar (SIN-299)", () => {
   it("hat 4 Kacheln, die auf Scores zeigen, die der Kurslauf schreibt", () => {
     const widgets = dashboardWidgetSpecs();
     assert.equal(widgets.length, 4);
-    const src = readFileSync("scripts/content-grow.ts", "utf8");
+    const src = readFileSync("scripts/content-grow.ts", "utf8") + readFileSync("src/lib/quality/grow-traces.ts", "utf8");
     const names = widgets.flatMap((w) =>
       (w.filters ?? []).flatMap((f) => (Array.isArray(f.value) ? (f.value as string[]) : [])),
     );
