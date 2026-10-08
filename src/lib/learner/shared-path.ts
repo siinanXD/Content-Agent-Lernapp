@@ -4,6 +4,7 @@
  */
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import type { CourseStorage, SharedModuleLink } from "@/lib/storage/types";
+import { dropDiscardedQuestions } from "./discarded";
 
 export type SharedPathModule = { link: SharedModuleLink; units: GeneratedUnit[] };
 
@@ -32,15 +33,20 @@ export async function loadCoursePath(
 ): Promise<{ units: GeneratedUnit[]; sharedModules: string[] } | undefined> {
   const course = await storage.getCourse(courseId);
   if (!course) return undefined;
-  const own = (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [];
+  // SIN-395: verworfene Fragen nie ausspielen (eigene und geteilte Einheiten).
+  const own = dropDiscardedQuestions(
+    (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [],
+    await storage.listQuestionEvaluations(courseId),
+  );
   const links = await storage.listSharedModuleLinks(courseId);
   const shared: SharedPathModule[] = [];
   for (const link of links) {
     // Das Modul im eigenen Kurs gilt als Quelle, wenn der Kurs selbst die Quelle ist.
     const source =
       link.sourceCourseId === courseId ? course : await storage.getCourse(link.sourceCourseId);
-    const units = (
-      (source?.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? []
+    const units = dropDiscardedQuestions(
+      (source?.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [],
+      await storage.listQuestionEvaluations(link.sourceCourseId),
     ).filter((u) => u.moduleId === link.moduleId);
     shared.push({ link, units });
   }

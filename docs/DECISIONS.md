@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-395 | SIN-395: Verworfene Fragen nie ausspielen, Verwerfungsgründe im Kennzahlen-Bericht | [SIN-395-verworfene-fragen.md](decisions/SIN-395-verworfene-fragen.md) |
 | SIN-394 | SIN-394: Kennzahl „Fragen bewertet" — Nenner und Zähler aus demselben Stand | [SIN-394-fragen-bewertet.md](decisions/SIN-394-fragen-bewertet.md) |
 | SIN-392 | SIN-392 — Sentry speichert IP und Standort trotz sendDefaultPii false | [SIN-392-sentry-ip.md](decisions/SIN-392-sentry-ip.md) |
 | SIN-391 | SIN-391 — Live-Check rot: fehlgeschlagene Prüfungen nennen | [SIN-391-live-check-kennungen.md](decisions/SIN-391-live-check-kennungen.md) |
