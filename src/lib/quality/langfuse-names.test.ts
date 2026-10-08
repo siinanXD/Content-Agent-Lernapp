@@ -75,10 +75,13 @@ describe("Langfuse lesbar (SIN-299)", () => {
     assert.deepEqual(pruefpunktScores([]), []);
   });
 
-  it("hat 4 Kacheln, die auf Scores zeigen, die der Kurslauf schreibt", () => {
+  it("hat 5 Kacheln, die auf Scores zeigen, die der Kurslauf schreibt", () => {
     const widgets = dashboardWidgetSpecs();
-    assert.equal(widgets.length, 4);
-    const src = readFileSync("scripts/content-grow.ts", "utf8") + readFileSync("src/lib/quality/grow-traces.ts", "utf8");
+    assert.equal(widgets.length, 5);
+    const src =
+      readFileSync("scripts/content-grow.ts", "utf8") +
+      readFileSync("src/lib/quality/unit-traces.ts", "utf8") +
+      readFileSync("src/lib/quality/langfuse-names.ts", "utf8");
     const names = widgets.flatMap((w) =>
       (w.filters ?? []).flatMap((f) => (Array.isArray(f.value) ? (f.value as string[]) : [])),
     );
@@ -89,12 +92,12 @@ describe("Langfuse lesbar (SIN-299)", () => {
     const specs = scoreConfigSpecs();
     assert.deepEqual(
       specs.map((s) => s.name),
-      ["Quellentreue", "Eindeutigkeit", "Niveau", "Sprache", "Bestehensquote", "Fragen veröffentlicht", "Kosten je Frage (EUR)", "costEur", "capEur", "Stichprobe Sicherheit"],
+      ["Quellentreue", "Eindeutigkeit", "Niveau", "Sprache", "Sicherheit", "bestanden", "Fragen veröffentlicht", "Kosten je Frage (EUR)", "costEur", "capEur", "Stichprobe Sicherheit"],
     );
     assert.ok(scoreNamesValid(specs.map((s) => s.name)));
     const stich = specs.at(-1)!;
     assert.deepEqual(
-      "categories" in stich ? stich.categories.map((c) => c.label) : [],
+      "categories" in stich ? (stich.categories ?? []).map((c) => c.label) : [],
       ["passt", "unklar", "falsch"],
     );
   });

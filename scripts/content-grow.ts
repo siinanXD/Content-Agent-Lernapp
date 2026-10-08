@@ -274,7 +274,6 @@ async function main() {
 
   // SIN-380: Traces je Schritt, sofort gesendet (nicht erst am Laufende).
   const erzeugerLink = await promptLink(PROMPT_NAMEN.erzeuger);
-  const richterLink = await promptLink(PROMPT_NAMEN.richter);
   const common = { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined };
   const tracer = createGrowTracer({
     runId,
@@ -282,9 +281,8 @@ async function main() {
     common,
     generatorModel: GENERATOR_MODEL,
     judgeModel: JUDGE_MODEL,
-    judgePromptVersion: JUDGE_PROMPT_VERSION,
     generatorPrompt: erzeugerLink,
-    judgePrompt: richterLink,
+    minBestanden: MIN_PASSED_QUESTIONS,
   });
   let lastJudgeTraceId: string | undefined;
 
@@ -295,8 +293,9 @@ async function main() {
     );
     ledger = addOpenAIUsage(ledger, judged.usage.prompt_tokens, judged.usage.completion_tokens);
     allEvals.push(...judged.questions);
-    const traceId = (await tracer.pruefen(judged.questions, label)) ?? undefined;
-    if (traceId) lastJudgeTraceId = traceId;
+    // SIN-383: ein Trace je Einheit; die Trace-ID gehört zu den Zeilen der jeweiligen Einheit.
+    const traceIds = await tracer.einheiten(units, judged.questions);
+    for (const id of traceIds.values()) lastJudgeTraceId = id;
     const result: EvaluateResult = {
       courseId: COURSE,
       passed: judged.questions.every((q) => q.passed),
@@ -307,9 +306,10 @@ async function main() {
       modelId: JUDGE_MODEL,
       runId: `${runId}-${label}`,
       promptVersion: JUDGE_PROMPT_VERSION,
-      langfuseTraceId: traceId,
     };
-    await storage.appendQuestionEvaluations(toQuestionEvaluationRecords(result));
+    await storage.appendQuestionEvaluations(
+      toQuestionEvaluationRecords(result).map((r) => ({ ...r, langfuseTraceId: traceIds.get(r.unitId) })),
+    );
     return judged.questions;
   }
 
@@ -364,12 +364,10 @@ async function main() {
     });
     const sub = await submitRegenBatch({ keyword: KEYWORD, unitSpecs: specs });
     report.batchIds.push(sub.batchId);
-    const refreshBatch = { batchId: sub.batchId, units: specs.length, label: "refresh" };
-    await tracer.batchGestartet(refreshBatch);
     await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
     const got = await collectBatchUnits(sub.batchId);
     ledger = addClaudeLedger(ledger, got.ledger);
-    await tracer.batchFertig({ ...refreshBatch, ledger: got.ledger, geliefert: got.units.length });
+    tracer.batchFertig(got.units, got.ledger, "reparatur");
     if (got.units.length > 0) {
       const { ok } = keepPassing(got.units, await judge(got.units, "refresh"));
       live.push(...ok);
@@ -401,12 +399,10 @@ async function main() {
       const sub = await submitChunkTargets({ keyword: KEYWORD, targets, system: cachedSystem() });
       report.batchIds.push(sub.batchId);
       console.log("Batch", sub.batchId, "Einheiten", units, "Modell", GENERATOR_MODEL);
-      const growBatch = { batchId: sub.batchId, units, label: "grow" };
-      await tracer.batchGestartet(growBatch);
       await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
       const got = await collectBatchUnits(sub.batchId);
       ledger = addClaudeLedger(ledger, got.ledger);
-      await tracer.batchFertig({ ...growBatch, ledger: got.ledger, geliefert: got.units.length });
+      tracer.batchFertig(got.units, got.ledger, "neuesModul");
       // Nur Einheiten, die zum Modul gehören und noch offen sind.
       const wanted = new Set(next.pending);
       generatedUnits.push(...got.units.filter((u) => wanted.has(u.id)));
@@ -454,7 +450,7 @@ async function main() {
   await recordCosts();
 
   // SIN-299: Schritte des Kurslaufs als fachlich benannte Traces in einer Session.
-  // SIN-380: „erzeugen“ und „prüfen“ entstehen schon während des Laufs (tracer).
+  // SIN-383: „erzeugen“ und „prüfen“ stehen je Einheit im Einheiten-Trace (tracer).
   const sessionId = kurslaufSessionId(runId);
   const traceBase = { courseId: COURSE, sessionId, passed: live.length > 0, scores: {} };
   const publishKontext = { ...common, schritt: "veroeffentlichen" as const, modell: GENERATOR_MODEL };

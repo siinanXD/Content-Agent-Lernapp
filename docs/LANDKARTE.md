@@ -28,6 +28,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | --- | --- |
 | Erzeugen, Prüfen, Richter | `src/lib/generate/`, `src/lib/quality/`, `src/lib/anthropic/` |
 | Langfuse: Namen, Session, Scores, Queue, Dashboard (SIN-299) | `src/lib/quality/langfuse-names.ts`, `langfuse-verwaltung.ts`, `scripts/langfuse-setup.ts`, `docs/ops/langfuse-dashboard.md` |
+| Langfuse: ein Trace je Einheit mit Fragen und Bewertung (SIN-383) | `src/lib/quality/unit-traces.ts`, `grow-traces.ts`, Test `grow-traces.test.ts` |
 | Hermes (Quellen-Monitor) | `src/lib/hermes/`, `docs/ops/HERMES.md` |
 | Skripte (Kurslauf, Goldset, Pilot) | `scripts/*.ts`, `scripts/*.mjs` |
 | API-Vertrag | `docs/api/openapi.yaml`, `docs/api/postman-collection.json` |
@@ -79,6 +80,12 @@ npm run decisions:index     # Entscheidungs-Index neu erzeugen (committen)
 npm run changelog           # nie von Hand: CHANGELOG.md ist erzeugt
 npm run autonomy:dispatch:dry   # Dispatcher mit Fixture, ohne Linear
 ```
+
+## So liest du Langfuse
+
+1. Langfuse → Sessions → `kurslauf-…` öffnen: das ist ein Kurslauf; jede Zeile darin ist eine Einheit (`M3 · 02 Spannmittel`), Tags zeigen Modul und Lauf-Art.
+2. Eine Einheit anklicken: „Erzeugen“ zeigt Modell, Tokens, Kosten und die erzeugten Fragen; „Ergebnis“ sagt veröffentlicht oder verworfen mit Grund.
+3. „Prüfen · Frage n“ anklicken: Fragetext, richtige Antwort, Begründung des Richters und die Scores je Prüfpunkt (`bestanden` ja/nein). Zusammenfassung: Dashboard „Kurslauf: Kosten und Qualität“ (`docs/ops/langfuse-dashboard.md`).
 
 ## Konventionen
 

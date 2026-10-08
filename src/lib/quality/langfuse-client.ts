@@ -25,6 +25,7 @@ import {
   ensureLangfuseOtel,
   flushLangfuseOtel,
 } from "./langfuse-otel";
+import { schreibeEinheitTrace, type EinheitTraceInput } from "./unit-traces";
 import {
   traceMetadata,
   traceTags,
@@ -195,6 +196,29 @@ export async function recordEvaluationTrace(payload: {
     await client.score.flush();
     await flushLangfuseOtel();
     return traceId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** SIN-383: Einheiten-Trace mit Fragen und Scores; ohne Zugangsdaten oder bei Fehlern null. */
+export async function recordUnitTrace(payload: Omit<EinheitTraceInput, "score">): Promise<string | null> {
+  const cfg = getLangfuseConfig();
+  if (!cfg) return null;
+  try {
+    ensureLangfuseOtel();
+    const client = createClient(cfg);
+    const id = await schreibeEinheitTrace({
+      ...payload,
+      score: (span, sc) =>
+        client.score.observation(
+          { otelSpan: span },
+          { name: sc.name, value: sc.value, dataType: sc.dataType, comment: sc.comment, metadata: { courseId: payload.courseId } },
+        ),
+    });
+    await client.score.flush();
+    await flushLangfuseOtel();
+    return id;
   } catch {
     return null;
   }

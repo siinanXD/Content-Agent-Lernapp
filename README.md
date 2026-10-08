@@ -152,7 +152,7 @@ Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). Right after e
 
 Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.
 
-Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`docs/quality/README.md`). Course runs appear as one Langfuse session with readable German trace names (SIN-299); `npm run langfuse:setup` creates score configs, the safety-sample annotation queue, prompts and the dashboard (`docs/ops/langfuse-dashboard.md`).
+Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`docs/quality/README.md`). Course runs appear as one Langfuse session with one trace per unit (`M3 · 02 Spannmittel`), containing the generation and every judged question with answer, reason and scores (SIN-299, SIN-383); `npm run langfuse:setup` creates score configs, the safety-sample annotation queue, prompts and the dashboard (`docs/ops/langfuse-dashboard.md`).
 
 ### Supabase persistence (AP-17)
 

@@ -11,7 +11,8 @@ Das legt Score-Configs, die Warteschlange „Sicherheits-Stichprobe“, die Prom
 | Kachel | Ansicht | Filter (Score-Name) | Gruppierung | Wert | Diagramm |
 | --- | --- | --- | --- | --- | --- |
 | Kosten je Kurslauf gegen den 20-Euro-Deckel | Scores numeric | `costEur`, `capEur` | Name | max | Linie über Zeit |
-| Bestehensquote je Modul | Scores numeric | `Bestehensquote` | Trace-Name (enthält das Modul) | Mittel | Balken |
+| Bestehensquote je Lauf | Scores numeric | `bestanden` | Session | Mittel | Balken |
+| Schwächster Prüfpunkt | Scores numeric | `Quellentreue`, `Eindeutigkeit`, `Niveau`, `Sprache` | Name | Mittel | Balken |
 | Kosten je veröffentlichter Frage | Scores numeric | `Kosten je Frage (EUR)` | keine | Mittel | Zahl |
 | Haiku gegen Sonnet | Scores numeric | `Kosten je Frage (EUR)` | Tags (`modell:…`) | Mittel | Balken |
 
@@ -19,7 +20,7 @@ Quelle der Scores: Kurslauf `scripts/content-grow.ts`, Namen in `src/lib/quality
 
 ## Kurslauf lesen
 
-Sessions → `kurslauf-<Zeitstempel>`: alle Schritte stehen untereinander (Fragen erzeugen, Fragen prüfen, Veröffentlichen, Kosten). Filtern über Tags `modul:`, `modell:`, `schritt:`, `umgebung:`. Die Scores `Quellentreue`, `Eindeutigkeit`, `Niveau`, `Sprache` am Schritt „Fragen prüfen“ tragen die Begründung des Richter-Modells als Kommentar.
+Sessions → `kurslauf-<Zeitstempel>`: ein Trace je Einheit (`M3 · 02 Spannmittel`), dazu „Veröffentlichen“ und „Kosten“. Im Einheiten-Trace stehen „Erzeugen“ (Modell, Tokens, Kosten, Prompt-Auszug, erzeugte Fragen), je Frage „Prüfen · Frage n“ und „Ergebnis“. Filtern über Tags `modul:`, `lauf:`, `modell:`, `umgebung:`. Die Scores `Quellentreue`, `Eindeutigkeit`, `Niveau`, `Sprache`, `Sicherheit`, `bestanden` hängen an der Frage und tragen die Begründung des Richter-Modells als Kommentar (SIN-383).
 
 ## Sicherheits-Stichprobe
 
