@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-403 | SIN-403 Fehler-, Leer- und Ladezustände für alle Routen | [SIN-403-zustaende-routen.md](decisions/SIN-403-zustaende-routen.md) |
 | SIN-402 | SIN-402: Kennzahlen aus einheitlicher Quelle | [SIN-402-kennzahlen-abfrage.md](decisions/SIN-402-kennzahlen-abfrage.md) |
 | SIN-398 | SIN-398: Goldset-Vergleich auf Haiku 5.5 statt Haiku 4.5 | [SIN-398-generator-haiku-5-5.md](decisions/SIN-398-generator-haiku-5-5.md) |
 | SIN-397 | SIN-397: Lauf-PR bleibt aus | [SIN-397-run-task-pr.md](decisions/SIN-397-run-task-pr.md) |
