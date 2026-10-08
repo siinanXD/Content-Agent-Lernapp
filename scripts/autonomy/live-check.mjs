@@ -16,13 +16,16 @@ import { dirname } from "node:path";
 /** Kennungen, deren Rot nur ein Hinweis ist: kein Revert (Messwerte schwanken, Sentry kennt Altfehler). */
 export const NOTICE_ONLY = new Set(["LH-01", "SE-01"]);
 
+/** Test-UUID für den Live-Check. Muss eine gültige UUID sein (Supabase erkennt nur UUIDs). */
+export const LIVECHECK_ANON_ID = "f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0";
+
 const hhmm = (d) => new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
 
 /**
  * Prüft die API der laufenden App. `fetchImpl` ist austauschbar (Tests).
  * @returns {Promise<{ id: string, name: string, ok: boolean, detail: string }[]>}
  */
-export async function runApiChecks(base, fetchImpl = fetch, now = Date.now()) {
+export async function runApiChecks(base, fetchImpl = fetch) {
   const url = (p) => `${base.replace(/\/$/, "")}${p}`;
   const call = async (path, init = {}) => {
     try {
@@ -56,9 +59,8 @@ export async function runApiChecks(base, fetchImpl = fetch, now = Date.now()) {
   // Mock-Speicher (kein Supabase) liefert leere Listen; dann zählt nur, dass die Antwort stimmt.
   check("API-04", "Einheiten enthalten Quelle und Abrufdatum", !Array.isArray(units) || units.length === 0 || units.slice(0, 5).every((u) => (u.sourceUrl || u.questions?.[0]?.sourceUrl) && (u.sourceFetchedAt || u.questions?.[0]?.sourceFetchedAt || phaseA.json?.publishedAt)), "Einheit ohne Quelle");
 
-  const id = `livecheck-${now}`;
-  const saved = await post("/api/progress", { anonymousId: id, questionId: "live-check", correct: true });
-  check("API-05", "Fortschritt speichern (Test-Kennung)", saved.status === 201, `HTTP ${saved.status}: ${saved.text.slice(0, 80)}`);
+  const saved = await post("/api/progress", { anonymousId: LIVECHECK_ANON_ID, questionId: "live-check", correct: true });
+  check("API-05", "Fortschritt speichern (Test-UUID)", saved.status === 201, `HTTP ${saved.status}: ${saved.text.slice(0, 80)}`);
   const bad = await post("/api/progress", {});
   check("API-06", "Fortschritt ohne Kennung wird abgelehnt (400)", bad.status === 400, `HTTP ${bad.status}`);
 
