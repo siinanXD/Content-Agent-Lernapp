@@ -26,6 +26,8 @@ import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { readLimits, runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
 import { collectFabrikMetrics } from "./fabrik.mjs";
+import { describeTableError, queueSinanTask } from "./table-error.mjs";
+import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
@@ -115,9 +117,8 @@ export async function collectMetrics(env = process.env, http = {}) {
         const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
         m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
       } catch (e) {
-        m.kosten_pro_lauf = e.status === 404
-          ? "nicht messbar (Tabelle pipeline_run_costs fehlt in Supabase, Migration 20261006020000 anwenden)"
-          : notMeasurable(e);
+        m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", e);
+        queueSinanTask(http, "pipeline_run_costs", "20261006020000", e);
       }
       m.fragen_bewertet = total;
       m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";
@@ -429,7 +430,12 @@ export async function main(argv) {
   }
 
   if (argv.includes("--context")) {
-    const metrics = await collectMetrics();
+    const sinanTasks = [];
+    const metrics = await collectMetrics(process.env, { sinanTasks });
+    if (sinanTasks.length && issues) {
+      // Ursache nur durch Sinan behebbar (SIN-359): Aufgabe mit Label sinan anlegen, Doppelte überspringt createSinanIssues.
+      await createSinanIssues(sinanTasks, await fetchSinanIssues(), linear).catch((e) => console.log(`::warning::Sinan-Aufgabe nicht angelegt: ${e.message}`));
+    }
     const { rows, abnahme } = await assessReadiness({ metrics, issues });
     const sourceIssues = (issues ?? []).filter((i) => /quellen-monitor/i.test(i.title));
     const content = renderContentSection(await collectContentMetrics(), { sourceIssues });

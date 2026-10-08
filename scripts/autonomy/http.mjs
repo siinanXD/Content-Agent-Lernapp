@@ -10,9 +10,11 @@ const MAX_RETRY_AFTER_MS = 30000;
 const sleepReal = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class ServiceError extends Error {
-  /** @param {string} service @param {string} message @param {{ status?: number | null, retryable?: boolean, retryAfter?: string | null }} [info] */
-  constructor(service, message, { status = null, retryable = false, retryAfter = null } = {}) {
+  /** @param {string} service @param {string} message @param {{ status?: number | null, retryable?: boolean, retryAfter?: string | null, body?: string }} [info] */
+  constructor(service, message, { status = null, retryable = false, retryAfter = null, body = "" } = {}) {
     super(`${service}: ${message}`);
+    /** Antworttext, bis 500 Zeichen (SIN-359: PostgREST-Fehlercode lesen). */
+    this.body = body;
     this.name = "ServiceError";
     this.service = service;
     this.status = status;
@@ -54,6 +56,7 @@ async function once(service, url, init, fetchImpl) {
       status: res.status,
       retryable: res.status === 429 || res.status >= 500,
       retryAfter: res.headers?.get?.("retry-after") ?? null,
+      body: body.slice(0, 500),
     });
   }
   if (res.status === 204) return { data: null, res };

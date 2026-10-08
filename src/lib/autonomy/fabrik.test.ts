@@ -78,7 +78,7 @@ test("Fabrik: HTTP-Fehler - nicht messbar mit konkrete Ursache", async () => {
   const fetchImpl = async () => ({ ok: false, status: 401, headers: new Headers(), text: async () => "", json: async () => ({}) });
   const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
   const m = await collectFabrikMetrics(env as never, { fetchImpl: fetchImpl as never, delays: [] } as never);
-  assert.match(String(m.content_fabrik), /^nicht messbar \(Supabase: HTTP 401/);
+  assert.match(String(m.content_fabrik), /^nicht messbar \[Zugriff verweigert\]/);
   assert.equal(m.content_fabrik_status, "nicht verfügbar");
 });
 
