@@ -440,7 +440,9 @@ export async function collectLogs(repo, runs, { call = gh, text = ghText } = {})
   const out = [];
   for (const workflow of DIAG_WORKFLOWS) {
     const last = runs
-      .filter((r) => r.name === workflow && r.status === "completed")
+      // SIN-361: Läufe, die nur durch ein PR-Ereignis entstehen (dispatch.yml: Merge/Label), überspringen den Dispatcher-Job
+      // und stehen dann als „skipped“ vorn. Sie sagen nichts über den Zeitplan und verdecken den echten letzten Lauf.
+      .filter((r) => r.name === workflow && r.status === "completed" && r.conclusion !== "skipped" && r.event !== "pull_request")
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
     if (!last || last.conclusion !== "failure") {
       // Kein roter Lauf: sonst bliebe der Wächter ohne Log und meldete „Ursache nicht erkennbar“ (SIN-328).

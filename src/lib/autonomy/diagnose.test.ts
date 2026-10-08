@@ -175,6 +175,24 @@ test("SIN-328: Stillstand ohne roten Lauf → Ursache ohne-start statt unbekannt
   assert.equal(diagnoseStall({ running: 0, paused: false, startable: 13, idleMin: 400, logs: none })?.cause, "ohne-start");
 });
 
+test("SIN-361: übersprungener PR-Ereignis-Lauf von dispatch verdeckt den echten letzten Lauf nicht", async () => {
+  const runs = [
+    { id: 37704492311, name: "dispatch", status: "completed", conclusion: "skipped", event: "pull_request", created_at: "2026-10-07T23:50:16Z", html_url: "u2" },
+    { id: 7, name: "dispatch", status: "completed", conclusion: "success", event: "schedule", created_at: "2026-10-07T23:30:00Z", html_url: "u1" },
+  ];
+  const call = (async () => ({ jobs: [] })) as never;
+  const logs = await collectLogs("o/r", runs, { call, text: async () => "" });
+  assert.match(logs.find((l: { workflow: string }) => l.workflow === "dispatch")?.text ?? "", /Letzter Lauf #7 success am 2026-10-07T23:30:00Z/);
+  // Nur PR-Ereignis-Läufe: wie „kein Lauf“ melden, damit der Zeitplan geprüft wird.
+  const only = await collectLogs("o/r", runs.slice(0, 1), { call, text: async () => "" });
+  assert.match(only.find((l: { workflow: string }) => l.workflow === "dispatch")?.text ?? "", /Kein Lauf gefunden/);
+  // Fixture aus SIN-361: Log-Auszug → Ursache ohne-start → Bug-Issue
+  const text = "Kein roter Lauf: dispatch. Letzter Lauf #37704492311 skipped am 2026-10-07T23:50:16Z";
+  const diag = diagnoseStall({ running: 0, paused: false, startable: 1, idleMin: 183, logs: [{ workflow: "dispatch", text }] });
+  assert.equal(diag?.cause, "ohne-start");
+  assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+});
+
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
   const raw = JSON.stringify([
     { type: "assistant", message: { content: [{ type: "text", text: "Ich mache jetzt den PR." }] } },
