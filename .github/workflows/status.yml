@@ -57,6 +57,9 @@ jobs:
       VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || vars.SUPABASE_PROJECT_REF }}
+      # Leitstand (SIN-303): Ereignisse und Schnappschuss nach Supabase (vorhandene Secrets, nur schreiben in loop_*)
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_ORG: ${{ vars.SENTRY_ORG }}
       LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
@@ -68,6 +71,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Leitstand Start
+        if: env.DRY != 'true'
+        continue-on-error: true
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt status --status start
       # Konflikte nur in erzeugten Dateien (Entscheidungs-Index, CHANGELOG) ohne KI lösen (SIN-312).
       # Das Ergebnis liest status.mjs: gelöste PRs bekommen keine @claude-Bitte.
       - name: Konflikte in erzeugten Dateien lösen
@@ -96,3 +105,11 @@ jobs:
         run: gh workflow run planner.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false -f max_issues="${{ steps.status.outputs.refill_max }}" -f bugs_only="${{ steps.status.outputs.refill_bugs_only }}"
         env:
           GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      - name: Leitstand Ende
+        if: always() && env.DRY != 'true'
+        continue-on-error: true
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          status=$([ "$JOB_STATUS" = "success" ] && echo ok || echo fehler)
+          node scripts/autonomy/leitstand.mjs ereignis --schritt status --status "$status" --seit "$LEITSTAND_SEIT"

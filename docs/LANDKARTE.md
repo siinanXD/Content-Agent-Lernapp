@@ -50,6 +50,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Migrationen automatisch anwenden, Wächter „n/n“ (SIN-374) | `.github/workflows/migrate.yml`, `scripts/autonomy/migrationen.mjs`, Aufgabe `migrate` in `run-task.mjs` |
 | Live-Kommentare des Workers in Linear (SIN-298) | `scripts/autonomy/live.mjs` (`gestartet`, `fortschritt`, `frage`, `fertig`, `gescheitert`) |
 | Figma-Abdeckung Frame → Route (SIN-349) | `docs/quality/figma-abdeckung.json`, Bericht `figma-abdeckung.md`, Prüfung `scripts/autonomy/figma-abdeckung.mjs` (`npm run figma:abdeckung`) |
+| Leitstand: Ereignisse und Schnappschuss nach Supabase `loop_events`, `loop_snapshot` (SIN-303) | `scripts/autonomy/leitstand.mjs` (`ereignis`, `sendSnapshot`), Migration `20261011010000_sin303_leitstand.sql`, Schritte „Leitstand Start/Ende“ in den Workflows |
 | Projekt-Starter, nur Plan (SIN-202) | `scripts/autonomy/starter.mjs` (`plan`, `sql`), Entscheidung `docs/decisions/SIN-202-projekt-starter.md` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |

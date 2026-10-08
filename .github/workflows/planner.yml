@@ -71,6 +71,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase (nie ein Fehlerabbruch).
+      - name: Leitstand Start
+        if: env.DRY != 'true'
+        continue-on-error: true
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt planner --status start
       - name: Pause prüfen (Claude-Limit)
         id: pause
         run: node scripts/autonomy/dispatch.mjs --check-pause
@@ -94,3 +101,13 @@ jobs:
         run: |
           if [ "$DRY" = "true" ]; then node scripts/autonomy/planner.mjs --create plan.json --dry-run | tee -a "$GITHUB_STEP_SUMMARY"
           else node scripts/autonomy/planner.mjs --create plan.json | tee -a "$GITHUB_STEP_SUMMARY"; fi
+      - name: Leitstand Ende
+        if: always() && env.DRY != 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          status=$([ "$JOB_STATUS" = "success" ] && echo ok || echo fehler)
+          node scripts/autonomy/leitstand.mjs ereignis --schritt planner --status "$status" --seit "$LEITSTAND_SEIT"

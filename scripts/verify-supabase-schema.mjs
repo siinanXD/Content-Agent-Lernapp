@@ -21,6 +21,10 @@ const TABLES = [
   "demo_requests",
   "trainer_groups",
   "group_members",
+  // SIN-303: Leitstand (Ereignisse und Schnappschuss des Loops)
+  "loop_events",
+  "loop_snapshot",
+  "leitstand_nutzer",
 ];
 
 const url = process.env.SUPABASE_URL?.trim();

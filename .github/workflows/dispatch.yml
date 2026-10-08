@@ -49,6 +49,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase (nie ein Fehlerabbruch; ohne Secrets nur Warnung).
+      - name: Leitstand Start
+        if: env.DRY != 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt dispatch --status start
       - name: Issues wählen (max. 2, Spuren abwechselnd)
         id: pick
         env:
@@ -70,6 +80,17 @@ jobs:
             [ "$entry" != "$id" ] && rest="$(printf '%s' "${entry#*+}" | tr '+' ' ')"
             gh workflow run worker.yml --repo "$GITHUB_REPOSITORY" --ref main -f identifier="$id" -f bundle="$rest"
           done
+      - name: Leitstand Ende
+        if: always() && env.DRY != 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_STATUS: ${{ job.status }}
+          IDENTIFIERS: ${{ steps.pick.outputs.identifiers }}
+        run: |
+          status=$([ "$JOB_STATUS" = "success" ] && echo ok || echo fehler)
+          node scripts/autonomy/leitstand.mjs ereignis --schritt dispatch --status "$status" --seit "$LEITSTAND_SEIT" --issue "$IDENTIFIERS"
 
   linear-done:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
