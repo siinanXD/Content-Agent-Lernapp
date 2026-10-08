@@ -55,6 +55,8 @@ Komponenten 2026: `Bento/Kachel` (72:399, Ton = Hauptkachel · Kachel · Hinweis
 
 Nutzerwege (FigJam): Board `Qru6d3ves8YPyjJUzwsp8a` („Nutzerwege & Journey Map“) mit Screen-Nummern je Schritt.
 
+Pipeline-Ablauf (FigJam, für alle Projekte): Board `hFbCzMGNVpkoUAwJ9JXg8W` („Agenten-Pipeline: Ablauf“), Stand 08.10.2026.
+
 ## Screens Stil E (Archiv, 390×844)
 
 | # | Frame | Inhalt |
