@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { buildSteckbrief, laneFromFiles, parseBody } from "../../../scripts/autonomy/steckbrief.mjs";
+import { buildSteckbrief, diagrammHinweis, laneFromFiles, parseBody } from "../../../scripts/autonomy/steckbrief.mjs";
 
 const green = { build: "ok", tests: "ok", a11y: "ok", prTitle: "ok" };
 const base = {
@@ -72,4 +73,21 @@ test("Body-Abschnitte und Spuren", () => {
   assert.equal(laneFromFiles([{ filename: ".github/workflows/a.yml" }, { filename: "docs/x.md" }]), "Infra");
   assert.equal(laneFromFiles([{ filename: "docs/content/MAF.md" }]), "Content");
   assert.equal(laneFromFiles([{ filename: "src/lib/a.ts" }]), "Backend");
+});
+
+test("Diagramme (SIN-376): Hinweis, wenn Workflow ohne pipeline.mmd geändert wird", () => {
+  const r = buildSteckbrief({ ...base, files: [{ filename: ".github/workflows/dispatch.yml" }] });
+  assert.match(r.body, /\*\*Diagramme:\*\* Hinweis, kein Blocker: docs\/diagramme\/pipeline\.mmd/);
+  const ok = buildSteckbrief({
+    ...base,
+    files: [{ filename: ".github/workflows/dispatch.yml" }, { filename: "docs/diagramme/pipeline.mmd" }],
+  });
+  assert.ok(!ok.body.includes("**Diagramme:**"));
+  assert.deepEqual(diagrammHinweis([{ filename: "src/app/ergebnis/page.tsx" }]), ["docs/diagramme/nutzerwege.mmd"]);
+  assert.deepEqual(diagrammHinweis([{ filename: "src/lib/x.ts" }]), []);
+});
+
+test("Diagramme (SIN-376): README enthält pipeline.mmd unverändert", () => {
+  const mmd = readFileSync("docs/diagramme/pipeline.mmd", "utf8");
+  assert.ok(readFileSync("README.md", "utf8").includes("```mermaid\n" + mmd + "```"));
 });

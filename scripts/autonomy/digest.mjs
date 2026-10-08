@@ -182,6 +182,9 @@ export function buildDigest(snap) {
   const high = (snap.quotas ?? []).filter((q) => q.pct != null && q.pct > QUOTA_MIN_PCT);
   lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"}`, ...renderWeekUsage(snap.usageWeek ?? null));
 
+  // SIN-376: Diagramme geändert, FigJam in der nächsten Claude-Sitzung nachziehen.
+  if (snap.diagramme?.length) lines.push("", `**Diagramme geändert:** ${snap.diagramme.join(", ")} (FigJam nachziehen)`);
+
   // SIN-313: montags der Link auf den Trend-Radar der Woche.
   if (snap.trendRadar) lines.push("", `**Trend-Radar:** ${snap.trendRadar}`);
 
@@ -207,6 +210,12 @@ export function collectDecisions(since, run = execFileSync) {
       return [];
     }
   });
+}
+
+/** SIN-376: Diagramme seit `since` geändert (Git-Historie), damit Claude die FigJam-Boards nachzieht. */
+export function collectDiagramme(since, run = execFileSync) {
+  const out = String(run("git", ["log", `--since=${since}`, "--name-only", "--format=", "origin/main", "--", "docs/diagramme"], { encoding: "utf8" }));
+  return [...new Set(out.split("\n").filter((f) => /^docs\/diagramme\/.+\.mmd$/.test(f)))];
 }
 
 /** Montags (Berlin) der Bericht des Sonntagslaufs (Vorwoche), sonst `null`. */
@@ -249,6 +258,12 @@ async function collect(repo, slot, now, since, env, dry = false) {
   } catch (e) {
     console.log(`Entscheidungen nicht lesbar: ${e.message}`);
   }
+  let diagramme = [];
+  try {
+    diagramme = collectDiagramme(since ?? new Date(now.getTime() - FALLBACK_SINCE_MS).toISOString());
+  } catch (e) {
+    console.log(`Diagramme nicht lesbar: ${e.message}`);
+  }
   const decisionsOpen = await collectOpenDecisions(repo, prs.map((p) => ({ ...p, labels: p.labels.map((l) => l.name) })), now).catch(() => []);
   let legalOpen = [];
   try {
@@ -271,7 +286,7 @@ async function collect(repo, slot, now, since, env, dry = false) {
   }
   const backup = await collectBackup(repo, now, gh);
   const liveCheck = await collectLiveCheck(repo, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, openPrs, issues, decisions, decisionsOpen, legalOpen, sinanIssues, tokens, content, quotas, readiness, backup, liveCheck, trendRadar: mondayRadar(now) };
+  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, openPrs, issues, decisions, diagramme, decisionsOpen, legalOpen, sinanIssues, tokens, content, quotas, readiness, backup, liveCheck, trendRadar: mondayRadar(now) };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {

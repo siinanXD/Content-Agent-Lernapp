@@ -63,6 +63,52 @@ npm run lint
 
 A11y gates (axe über alle Routen, Tastatur, Lighthouse a11y ≥ 0.9) laufen im CI-Job `build` (`.github/workflows/ci.yml`) und dürfen nicht abgeschaltet werden.
 
+## Pipeline-Ablauf (SIN-376)
+
+Quelle: [`docs/diagramme/pipeline.mmd`](docs/diagramme/pipeline.mmd), Nutzerwege: [`docs/diagramme/nutzerwege.mmd`](docs/diagramme/nutzerwege.mmd). Der Block unten ist eine Kopie von `pipeline.mmd` (ein Test prüft das). FigJam wird in einer Claude-Sitzung aus den `.mmd` nachgezogen, das Tages-Update meldet „Diagramme geändert“.
+
+```mermaid
+%% Pipeline-Ablauf des Loops, Stand main 08.10. (SIN-376). Quelle für das FigJam-Board „Pipeline-Ablauf“.
+%% Ändern sich .github/workflows/ oder scripts/autonomy/, diese Datei im selben PR anpassen.
+flowchart TD
+  subgraph Planung
+    Radar["Trend-Radar (sonntags)"] --> Planer
+    Planer["Planer (planner.yml, sonntags)"] --> Schlange["Linear-Schlange"]
+  end
+  Schlange --> Dispatcher["Dispatcher (dispatch.yml): Urgent zuerst, sofort nach Merge, höchstens 2 parallel"]
+  Dispatcher --> Worker["Worker (worker.yml, Claude)"]
+  Worker --> PR["Pull Request"]
+  subgraph Prüfung
+    PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Lighthouse, Leistungsbudget"]
+    PR --> CodeQL["CodeQL"]
+    PR --> Review["Review-Agent (zweites Modell)"]
+    CI --> Gate{"pr-gate: Risiko"}
+    CodeQL --> Gate
+    Review --> Gate
+  end
+  CI -- rot --> Repair["repair.yml: bis 3 Runden"]
+  Repair --> CI
+  Repair -- "nach Runde 3" --> Mensch["needs-human, Stopp"]
+  Gate -- "risk:high" --> Freigabe["Label freigegeben (Sinan)"]
+  Freigabe --> Merge
+  Gate -- "risk:medium" --> Merge["Auto-Merge (Squash)"]
+  Merge --> Dispatcher
+  Merge --> Migr["Migrationen anwenden (SIN-374)"]
+  Merge --> Bruch{"gate-bruch-Erkennung"}
+  Bruch -- "CI auf main rot" --> Revert["revert-guard: Revert-PR"]
+  Migr --> Deploy["production-deploy (höchstens 1× pro Stunde)"]
+  Deploy --> Smoke["Smoke-Test"]
+  Smoke -- rot --> Revert
+  Smoke -- grün --> Live["Live-Check (nach-deploy.yml)"]
+  Live --> Waechter["Wächter / Loop-Status (status.yml)"]
+  Waechter -- "neuer App-Code" --> Deploy
+  Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
+  subgraph Inhalte
+    Fabrik["Content-Fabrik (content-grow.yml, montags)"] --> Bewertung["Bewertungslauf"]
+    Bewertung --> Update
+  end
+```
+
 ## Qualität und Pflege (SIN-300)
 
 | Was | Befehl / Workflow | Wirkung |

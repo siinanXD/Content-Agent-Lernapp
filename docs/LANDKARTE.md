@@ -38,6 +38,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | --- | --- |
 | Workflows | `.github/workflows/` (`dispatch`, `worker`, `repair`, `planner`, `pr-gate`, `post-merge`, `digest`, `status`, `aufraeumen`, …) |
 | Skripte der Workflows | `scripts/autonomy/` (`dispatch`, `linear`, `planner`, `risk`, `steckbrief`, `digest`, `sparen`, `verbrauch`, …) |
+| Diagramme als Mermaid (SIN-376, Quelle für FigJam) | `docs/diagramme/pipeline.mmd`, `nutzerwege.mmd`; Hinweis im PR-Steckbrief (`diagrammHinweis`) |
 | Vorlagen und Konfiguration | `docs/autonomy/` (`README.md`, `groessen.md`, `tokens.md`, Fixtures) |
 | Review-Agent (zweites Modell, SIN-297) | `.github/workflows/review.yml`, `scripts/autonomy/review.mjs` |
 | Codeanalyse, Paket-Updates | `.github/workflows/codeql.yml`, `scripts/autonomy/codeql-gate.mjs`, `.github/dependabot.yml` |

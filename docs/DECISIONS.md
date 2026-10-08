@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-377 | SIN-377: Sentry stats_period auf erlaubten Wert korrigieren | [SIN-377-sentry-stats-period.md](decisions/SIN-377-sentry-stats-period.md) |
+| SIN-376 | SIN-376: Diagramme als Mermaid im Repo | [SIN-376-diagramme-mermaid.md](decisions/SIN-376-diagramme-mermaid.md) |
 | SIN-373 | SIN-373: PostHog-Ereignisse für Abbrüche im Lernweg | [SIN-373-posthog-abbrueche.md](decisions/SIN-373-posthog-abbrueche.md) |
 | SIN-371 | SIN-371 — Bewertungslauf: 0 von 1745 Fragen bewertet | [SIN-371-bewertungslauf-null.md](decisions/SIN-371-bewertungslauf-null.md) |
 | SIN-370 | SIN-370 Screenreader-Prüfliste und Code-Befunde | [SIN-370-screenreader-pruefliste.md](decisions/SIN-370-screenreader-pruefliste.md) |
