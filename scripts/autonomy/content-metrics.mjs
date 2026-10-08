@@ -4,7 +4,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fetchJson, fetchJsonFull } from "./http.mjs";
+import { fetchJson } from "./http.mjs";
 
 export const MAPS_DIR = "docs/content";
 export const RUNS_DIR = "docs/ops/content-runs";
@@ -198,9 +198,16 @@ async function fetchAll(base, table, query, headers) {
   }
 }
 
-async function countRows(base, table, headers) {
-  const { res } = await fetchJsonFull("Supabase", `${base}/rest/v1/${table}?select=id`, { headers: { ...headers, Prefer: "count=exact", Range: "0-0" } });
-  return Number(res.headers.get("content-range")?.split("/")[1]);
+/** SIN-394: Bewertungen auf aktuell vorhandene Fragen beschränken, je Frage höchstens eine; bewertet ≤ gesamt. */
+export function ratedQuestions(questions, evaluations) {
+  const key = (c, u, q) => `${c}:${u}:${q}`;
+  const existing = new Set(questions.map((q) => key(q.course_id, q.unit_id, q.id)));
+  const seen = new Map();
+  for (const e of evaluations) {
+    const k = key(e.course_id, e.unit_id, e.question_id);
+    if (existing.has(k)) seen.set(k, e);
+  }
+  return { gesamt: existing.size, bewertet: [...seen.values()] };
 }
 
 /** Liest Supabase und baut alle Content-Kennzahlen. Ohne Zugang: `{ verfuegbar: false }` (Abdeckung dann 0 %). */
@@ -230,18 +237,20 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
       if (mapId) (published[mapId] ??= new Set()).add(u.id);
     }
     // Geteilte Einheiten liegen im Quellkurs (Metall) und stehen dort schon in `published`.
-    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,passed", h);
-    const fragenGesamt = await countRows(env.SUPABASE_URL, "questions", h);
+    // SIN-394: Nur Bewertungen zählen, deren Fragen noch existieren (append-only evaluations können auf gelöschte Fragen verweisen).
+    const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id", h);
+    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed", h);
+    const { gesamt: fragenGesamt, bewertet: evaluationsWithExisting } = ratedQuestions(questions, evaluations);
     const progressRows = await fetchAll(env.SUPABASE_URL, "learning_progress", "select=anonymous_id,course_id,unit_id,correct", h);
     const progress = {};
     for (const [mapId, courseId] of Object.entries(courseOfMap)) progress[mapId] = weakestUnits(progressRows, courseId);
     return {
       verfuegbar: true,
       coverage: computeCoverage(maps, published),
-      passRates: passRateByModule(maps, evaluations, mapOfCourse),
-      offeneVerworfene: evaluations.filter((e) => !e.passed).length,
+      passRates: passRateByModule(maps, evaluationsWithExisting, mapOfCourse),
+      offeneVerworfene: evaluationsWithExisting.filter((e) => !e.passed).length,
       fragenGesamt,
-      fragenBewertet: evaluations.length,
+      fragenBewertet: evaluationsWithExisting.length,
       runs: runSummary,
       progress,
     };

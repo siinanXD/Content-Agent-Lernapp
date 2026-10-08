@@ -5,6 +5,7 @@ import {
   contentRuleHints,
   loadMaps,
   passRateByModule,
+  ratedQuestions,
   renderCoverage,
   summarizeRuns,
   weakestUnits,
@@ -93,4 +94,22 @@ test("Planer-Prompt enthält Content-Regeln und Abdeckungstabelle", () => {
   const prompt = buildPlannerPrompt({ definition: "", issues: [], metrics: {}, content: "| Beruf/Map |" });
   assert.match(prompt, /Content-Fabrik \(AP-23\) selbst/);
   assert.match(prompt, /## Content \(Abdeckung je Beruf\/Modul\)\n\| Beruf\/Map \|/);
+});
+
+test("SIN-394: ratedQuestions zählt Mehrfachbewertungen einmal und ignoriert gelöschte Fragen", () => {
+  const questions = [
+    { course_id: "c1", unit_id: "u1", id: "q1" },
+    { course_id: "c1", unit_id: "u1", id: "q2" },
+    { course_id: "c1", unit_id: "u1", id: "q4" },
+  ];
+  const evaluations = [
+    { course_id: "c1", unit_id: "u1", question_id: "q1", passed: false },
+    { course_id: "c1", unit_id: "u1", question_id: "q1", passed: true },
+    { course_id: "c1", unit_id: "u1", question_id: "q2", passed: false },
+    { course_id: "c1", unit_id: "u2", question_id: "q3", passed: true }, // Frage gelöscht
+  ];
+  const r = ratedQuestions(questions, evaluations);
+  assert.equal(r.gesamt, 3);
+  assert.equal(r.bewertet.length, 2);
+  assert.ok(r.bewertet.length <= r.gesamt);
 });
