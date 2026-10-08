@@ -105,3 +105,9 @@ test("Digest SIN-267: Doppel-Lauf 10:00 + 10:05 sendet nur einmal", () => {
   assert.equal(lastDigest(first, new Date("2026-10-06T08:05:00Z"), "morgen").already, true);
   assert.equal(lastDigest(first, new Date("2026-10-06T08:05:00Z"), "abend").already, false);
 });
+
+test("Tages-Update nennt geänderte Diagramme (SIN-376)", () => {
+  const mit = buildDigest({ ...fixture(), slot: "morgen", diagramme: ["docs/diagramme/pipeline.mmd"] }).text;
+  assert.match(mit, /\*\*Diagramme geändert:\*\* docs\/diagramme\/pipeline\.mmd/);
+  assert.ok(!buildDigest({ ...fixture(), slot: "morgen" }).text.includes("Diagramme geändert"));
+});
