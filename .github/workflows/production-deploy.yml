@@ -37,6 +37,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Migrationen zuerst (SIN-374): migrate.yml wendet sie nach dem Merge an. Fehlen additive noch, kein Deploy
+      # (rot, der Wächter startet beim nächsten Takt neu). Ohne Supabase-Zugang meldet das Skript nur „nicht lesbar“.
+      - name: Migrationen angewendet?
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || vars.SUPABASE_PROJECT_REF }}
+        run: node scripts/autonomy/migrationen.mjs --check
       # Baut auf Vercel und wartet bis READY; bei Fehler endet der Schritt rot (der Wächter meldet „Production hängt“).
       # `--meta githubCommitSha` lässt den Wächter den Live-Stand (Commit, Uhrzeit) lesen.
       - name: Production-Deploy (Vercel CLI)
