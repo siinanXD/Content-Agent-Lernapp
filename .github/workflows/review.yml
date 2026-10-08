@@ -122,10 +122,34 @@ jobs:
 
             1. Lies AGENTS.md.
             2. Lies den Kommentar mit der Überschrift „Review (zweites Modell)“: `gh pr view ${{ github.event.pull_request.number }} --comments`.
-            3. Behebe nur die schweren Funde, soweit sie im Diff wirklich stimmen. Ist ein Fund falsch, ändere nichts dafür und
-               erkläre es in der Commit-Nachricht. Leichte Funde ignorierst du.
+            3. Behebe nur die schweren Funde, soweit sie im Diff wirklich stimmen. Leichte Funde ignorierst du.
+               Sind alle schweren Funde falsch (SIN-381): ändere nichts und mache einen leeren Commit
+               (`git commit --allow-empty`) mit der ersten Zeile `Fund geprüft, keine Änderung nötig` und danach je Fund
+               einer Zeile `- <datei>: <Aussage des Funds> (<Begründung>)`. Diese Runde zählt dann nicht, und das Review
+               meldet denselben Fund nicht erneut als schwer. Stimmt ein Teil, behebe ihn (Commit wie in Schritt 6) und
+               nenne die falschen Funde im Commit-Text hinter einer Zeile `Fund geprüft, keine Änderung nötig für:` im selben Format.
             4. Verboten: Tests, Lint-Regeln oder Barrierefreiheits-Tests abschalten oder abschwächen, Workflows unter .github/ ändern, Secrets anfassen.
             5. Prüfe lokal (`npm ci`, dann lint, typecheck, test). Vor dem Push `git fetch origin main && git merge origin/main`, danach die Tests erneut.
             6. Ein Commit, Conventional Commit mit derselben Linear-ID wie der PR-Titel („${{ steps.round.outputs.title }}“),
                z. B. `fix(review): … (SIN-123)`. Dann auf den Branch pushen.
             7. Kannst du die Funde nicht beheben: nichts pushen, den Blocker kurz im PR beschreiben.
+
+      # SIN-381: Hat die Reparatur alle Funde begründet verworfen (leerer Commit mit fester erster Zeile), zählt die Runde nicht.
+      - name: Runde zurücknehmen, wenn nur Fehlalarme
+        if: steps.round.outputs.go == 'true' && steps.fix.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          ROUND: ${{ steps.round.outputs.round }}
+          OLD_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const number = context.payload.pull_request.number;
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+            if (pr.head.sha === process.env.OLD_SHA) return;
+            const { data: commit } = await github.rest.repos.getCommit({ owner, repo, ref: pr.head.sha });
+            if (!commit.commit.message.startsWith("Fund geprüft, keine Änderung nötig")) return;
+            try { await github.rest.issues.removeLabel({ owner, repo, issue_number: number, name: `repair:${process.env.ROUND}` }); }
+            catch (e) { if (e.status !== 404) throw e; }
+            core.info("Nur Fehlalarme: Reparatur-Runde zählt nicht.");

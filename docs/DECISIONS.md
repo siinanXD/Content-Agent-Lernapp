@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-381 | SIN-381: Review-Fehlalarme verbrauchen keine Reparatur-Runden | [SIN-381-review-fehlalarme.md](decisions/SIN-381-review-fehlalarme.md) |
 | SIN-380 | SIN-380: Content-Fabrik schreibt Langfuse-Traces je Schritt | [SIN-380-langfuse-traces-je-schritt.md](decisions/SIN-380-langfuse-traces-je-schritt.md) |
 | SIN-377 | SIN-377: Sentry stats_period auf erlaubten Wert korrigieren | [SIN-377-sentry-stats-period.md](decisions/SIN-377-sentry-stats-period.md) |
 | SIN-376 | SIN-376: Diagramme als Mermaid im Repo | [SIN-376-diagramme-mermaid.md](decisions/SIN-376-diagramme-mermaid.md) |

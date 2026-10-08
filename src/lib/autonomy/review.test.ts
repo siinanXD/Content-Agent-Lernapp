@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   MARKER,
+  applyRefutations,
+  parseWiderlegt,
+  sameFinding,
+  sumStats,
   buildDiff,
   costUsd,
   daySpend,
@@ -62,6 +66,7 @@ test("Review: schwerer Fund → Kommentar mit Schwere und Ausgabe severe=true (T
   globalThis.fetch = (async (url: string, init: { method?: string; body?: string } = {}) => {
     calls.push({ url, method: init.method ?? "GET", body: init.body });
     if (url.includes("/pulls/7/files")) return json([{ filename: "src/a.ts", status: "modified", patch: "+const x = null.y;" }]);
+    if (url.includes("/pulls/7/commits")) return json([]);
     if (url.includes("/pulls/7")) return json({ title: "feat: a (SIN-1)", body: "Part of SIN-1", head: { sha: "abc1234" }, labels: [] });
     if (url.includes("/issues/comments") || url.includes("/issues/7/comments")) {
       return (init.method ?? "GET") === "POST" ? json({}) : json([]);
@@ -85,4 +90,93 @@ test("Review: schwerer Fund → Kommentar mit Schwere und Ausgabe severe=true (T
   assert.match(body, /\*\*Schwer \(1\)/);
   assert.match(body, /review-severe: true/);
   assert.equal(readLedger(body)[0].d, "2026-10-07");
+});
+
+// ---------- SIN-381: Fehlalarme verbrauchen keine Reparatur-Runden ----------
+
+const jsonRes = (data: unknown) => new Response(JSON.stringify(data), { status: 200, headers: { "content-type": "application/json" } });
+
+async function runReview(opts: { buildConclusion: string | null; commits?: string[]; finding: { datei: string; text: string } }) {
+  const calls: Array<{ url: string; method: string; body?: string }> = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (url: string, init: { method?: string; body?: string } = {}) => {
+    calls.push({ url, method: init.method ?? "GET", body: init.body });
+    if (url.includes("/pulls/9/files")) return jsonRes([{ filename: "src/lib/m.ts", status: "modified", patch: "+x" }]);
+    if (url.includes("/pulls/9/commits")) return jsonRes((opts.commits ?? []).map((message) => ({ commit: { message } })));
+    if (url.includes("/pulls/9")) return jsonRes({ title: "feat: m (SIN-9)", body: "Part of SIN-9", head: { sha: "abc1234" }, labels: [] });
+    if (url.includes("/check-runs")) {
+      return jsonRes({ check_runs: opts.buildConclusion ? [{ name: "build", status: "completed", conclusion: opts.buildConclusion }] : [] });
+    }
+    if (url.includes("/issues/comments") || url.includes("/issues/9/comments")) return (init.method ?? "GET") === "POST" ? jsonRes({}) : jsonRes([]);
+    if (url.includes("api.openai.com")) {
+      return jsonRes({
+        choices: [{ message: { content: JSON.stringify({ zusammenfassung: "x", funde: [{ schwere: "schwer", ...opts.finding }] }) } }],
+        usage: { prompt_tokens: 10, completion_tokens: 10 },
+      });
+    }
+    return new Response("unerwartet", { status: 500 });
+  }) as typeof fetch;
+  try {
+    await main(["--pr", "9"], { GITHUB_REPOSITORY: "o/r", GH_TOKEN: "t", OPENAI_API_KEY: "sk" } as unknown as NodeJS.ProcessEnv, new Date("2026-10-08T10:00:00Z"));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  const post = calls.find((c) => c.method === "POST" && c.url.includes("/issues/9/comments"));
+  const body: string = JSON.parse(post!.body!).body;
+  const prompt = JSON.stringify(JSON.parse(calls.find((c) => c.url.includes("api.openai.com"))!.body!).messages);
+  return { body, prompt };
+}
+
+test("Review (SIN-381): „Test schlägt fehl“ bei grünem Build gilt als widerlegt, keine Reparatur", async () => {
+  const { body } = await runReview({
+    buildConclusion: "success",
+    finding: { datei: "src/lib/autonomy/migrationen.test.ts", text: "Der Test schlägt fehl, weil applied === 1 nicht stimmt." },
+  });
+  assert.match(body, /review-severe: false/);
+  assert.match(body, /\*\*Widerlegt \(1\)/);
+  assert.deepEqual([readLedger(body)[0].gesamt, readLedger(body)[0].widerlegt], [1, 1]);
+});
+
+test("Review (SIN-381): gleiche Behauptung bei rotem Build bleibt schwer", async () => {
+  const { body } = await runReview({
+    buildConclusion: "failure",
+    finding: { datei: "src/lib/autonomy/migrationen.test.ts", text: "Der Test schlägt fehl, weil applied === 1 nicht stimmt." },
+  });
+  assert.match(body, /review-severe: true/);
+  assert.equal(readLedger(body)[0].widerlegt, 0);
+});
+
+test("Review (SIN-381): Fund ohne CI-Behauptung wird vom grünen Build nicht widerlegt", () => {
+  const r = applyRefutations([{ schwere: "schwer", datei: "src/a.ts", text: "Nullzugriff in load()" }], { buildGreen: true });
+  assert.equal(r[0].schwere, "schwer");
+});
+
+test("Review (SIN-381): wiederholter, begründet verworfener Fund zählt nicht noch einmal", async () => {
+  const commit = [
+    "Fund geprüft, keine Änderung nötig",
+    "",
+    "- src/lib/storage/x.ts: Nullzugriff in load() wirft (load() prüft vorher auf null, siehe Zeile 12)",
+  ].join("\n");
+  const { body, prompt } = await runReview({
+    buildConclusion: null,
+    commits: [commit],
+    finding: { datei: "src/lib/storage/x.ts", text: "load() wirft bei Nullzugriff" },
+  });
+  assert.match(body, /review-severe: false/);
+  assert.match(body, /Schon geprüft/);
+  assert.match(prompt, /schon geprüft und mit Begründung widerlegt/);
+  assert.match(prompt, /Nullzugriff in load\(\)/);
+});
+
+test("Review (SIN-381): anderer Fund in derselben Datei bleibt schwer", () => {
+  const widerlegt = parseWiderlegt(["Fund geprüft, keine Änderung nötig\n- src/a.ts: Nullzugriff in load() wirft"]);
+  const r = applyRefutations([{ schwere: "schwer", datei: "src/a.ts", text: "SQL-Injection im Suchparameter" }], { widerlegt });
+  assert.equal(r[0].schwere, "schwer");
+  assert.equal(sameFinding(widerlegt[0], { datei: "src/b.ts", text: "Nullzugriff in load() wirft" }), false);
+});
+
+test("Review (SIN-381): Kennzahl gesamt / widerlegt aus dem Ledger", () => {
+  const a = formatComment({ result: null, funde: [], ledger: [{ d: "2026-10-08", usd: 0, sha: "aaaaaaa", gesamt: 2, widerlegt: 1 }] });
+  const b = formatComment({ result: null, funde: [], ledger: [{ d: "2026-10-08", usd: 0, sha: "bbbbbbb", gesamt: 1, widerlegt: 1 }] });
+  assert.deepEqual(sumStats([a, b, "fremd"]), { gesamt: 3, widerlegt: 2 });
 });
