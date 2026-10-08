@@ -52,6 +52,10 @@
     }
   },
   "bestaetigt": {
+    "betrieb-fabrik": {
+      "datum": "2026-10-08",
+      "beleg": "SIN-357: Erster Live-Lauf content-grow.yml (https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/37754302148, grün): Modul maf-metall/ZP 20 Einheiten erzeugt, 16 bestanden, 4 verworfen; Kosten 2,43 € von 20 €; Eintrag in content_factory_runs vorhanden; Bericht PR #200 (docs/ops/content-runs/2026-10-08T09-08-54-902Z.json)"
+    },
     "recht-ki": {
       "datum": "2026-10-07",
       "beleg": "SIN-353: Prüfung am Code des Branches (Netzzugriff auf die Live-URL war im Lauf gesperrt, keine Messung gegen die Live-App): Build erfolgreich, 557 Tests grün; /ki-hinweis erreichbar von der Fußzeile (Startseite, Einstellungen), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), kein Platzhalter im Text. Live-Abgleich nach dem Merge offen"
