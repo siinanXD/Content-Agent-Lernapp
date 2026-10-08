@@ -27,6 +27,7 @@ import {
   stackSize,
   type LeitnerStack,
 } from "@/lib/learner/leitner";
+import { nextDueAt, reviewTileCopy } from "@/lib/learner/review-overview";
 import { listExamParts } from "@/lib/learner/exam";
 import {
   EMPTY_LEARNING_SUMMARY,
@@ -72,6 +73,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
   const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
   const dueCount = useMemo(() => (stack ? dueItems(stack).length : 0), [stack]);
   const stackCount = stack ? stackSize(stack) : 0;
+  const reviewCopy = reviewTileCopy(dueCount, stackCount, stack ? nextDueAt(stack) : null);
   const [pathUnits, setPathUnits] = useState(initialUnits);
   const groups = groupUnitsByModule(pathUnits);
   const examParts = listExamParts().filter((p) => p.simulated);
@@ -199,11 +201,9 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
             className="text-lg font-medium text-[var(--color-text-primary)]"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {dueCount} {dueCount === 1 ? "Frage" : "Fragen"} fällig
+            {reviewCopy.title}
           </h2>
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Stapel mit {stackCount} Fragen.
-          </p>
+          <p className="text-sm text-[var(--color-text-secondary)]">{reviewCopy.text}</p>
           <Link
             href="/wiederholung"
             className="mt-auto inline-flex min-h-11 items-center self-start text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"

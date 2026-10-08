@@ -41,3 +41,31 @@ export function nextDueAt(stack: LeitnerStack): string | null {
   }
   return best?.at ?? null;
 }
+
+/** „16.10.“ aus einem ISO-Zeitpunkt (Kalendertag des Geräts). */
+export function formatDueDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+}
+
+export type ReviewTileCopy = { title: string; text: string };
+
+/**
+ * Texte der Wiederholungs-Kachel im Lernpfad (SIN-368). Ohne fällige Fragen steht
+ * „Heute nichts fällig“ mit dem nächsten echten Termin, nie mit einer erfundenen Zahl.
+ */
+export function reviewTileCopy(
+  dueCount: number,
+  stackCount: number,
+  nextDue: string | null,
+): ReviewTileCopy {
+  if (dueCount > 0) {
+    return {
+      title: `${dueCount} ${dueCount === 1 ? "Frage" : "Fragen"} fällig`,
+      text: `Stapel mit ${stackCount} ${stackCount === 1 ? "Frage" : "Fragen"}.`,
+    };
+  }
+  if (stackCount === 0 || !nextDue) {
+    return { title: "Heute nichts fällig", text: "Falsche Antworten und Anwenden-Fragen landen hier." };
+  }
+  return { title: "Heute nichts fällig", text: `Die nächsten Fragen kommen am ${formatDueDate(nextDue)}.` };
+}
