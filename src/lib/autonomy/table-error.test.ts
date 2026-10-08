@@ -16,20 +16,25 @@ test("Tabellenfehler: alle vier Klassen", () => {
   assert.equal(classifyTableError(err(404, "")), "fehlt");
   assert.equal(classifyTableError(ZUGRIFF), "zugriff");
   assert.equal(classifyTableError(err(403, { code: "42501", message: "permission denied for table x" })), "zugriff");
-  assert.equal(classifyTableError(CACHE), "schema-cache");
+  // PGRST205 allein beweist nichts (SIN-374): fehlende Tabelle und veralteter Cache sehen gleich aus.
+  assert.equal(classifyTableError(CACHE), "cache-oder-fehlt");
+  assert.equal(classifyTableError(CACHE, true), "schema-cache");
+  assert.equal(classifyTableError(CACHE, false), "fehlt");
   assert.equal(classifyTableError(UNBEKANNT), "unbekannt");
 });
 
 test("Tabellenfehler: Bericht nennt Klasse und Tabelle", () => {
   assert.match(describeTableError("t", "1", FEHLT), /\[fehlt\].*Migration 1 anwenden/);
   assert.match(describeTableError("t", "1", ZUGRIFF), /\[Zugriff verweigert\]/);
-  assert.match(describeTableError("t", "1", CACHE), /\[Schema-Cache\]/);
+  assert.match(describeTableError("t", "1", CACHE, true), /\[Schema-Cache\]/);
+  assert.match(describeTableError("t", "1", CACHE), /\[Tabelle oder Schema-Cache\].*Migrationsstand/);
+  assert.match(describeTableError("t", "1", CACHE, false), /\[fehlt\].*Migration 1 anwenden/);
   assert.match(describeTableError("t", "1", { ...UNBEKANNT, message: "Supabase: HTTP 500" }), /\[unbekannt\].*HTTP 500/);
 });
 
 test("Tabellenfehler: Sinan-Aufgabe nur bei Zugriff und Schema-Cache", () => {
   assert.ok(sinanTaskForTableError("t", "1", ZUGRIFF)?.titel.includes("Zugriff"));
-  assert.ok(sinanTaskForTableError("t", "1", CACHE)?.schritte.some((s: string) => s.includes("reload schema")));
+  assert.ok(sinanTaskForTableError("t", "1", CACHE, true)?.schritte.some((s: string) => s.includes("reload schema")));
   assert.equal(sinanTaskForTableError("t", "1", FEHLT), null);
   assert.equal(sinanTaskForTableError("t", "1", UNBEKANNT), null);
 });
@@ -81,9 +86,9 @@ test("Fabrik: Schema-Cache-Fehler bleibt auch nach Wiederholung → Bericht nenn
     String(url).includes("content_factory_runs") ? reply(404, body) : reply(200, "[]")) as never;
   const sinanTasks: unknown[] = [];
   const f = await collectFabrikMetrics(env as never, { fetchImpl, sinanTasks, ...quick } as never);
-  assert.match(String(f.content_fabrik), /\[Schema-Cache\]/);
+  assert.match(String(f.content_fabrik), /\[Tabelle oder Schema-Cache\]/);
   assert.match(String(f.content_fabrik), /content_factory_runs/);
-  assert.equal(sinanTasks.length, 1, "Sinan-Aufgabe nur nach Wiederholung");
+  assert.equal(sinanTasks.length, 0, "ohne bekannte Existenz keine Aufgabe „Cache neu laden“ (SIN-374)");
 });
 
 test("Planer: kosten_pro_lauf Schema-Cache-Fehler beim ersten Versuch → einmalige Wiederholung", async () => {

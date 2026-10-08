@@ -202,6 +202,13 @@ async function sqlQuery(env, query, fetchImpl = fetch) {
   );
 }
 
+/** SQL, das eine angewendete Migration in die Versionstabelle einträgt (doppelte Version: ignorieren). Name nur aus [a-z0-9_]. */
+export function recordVersionSql(fileName) {
+  const [version, ...rest] = fileName.replace(/\.sql$/, "").split("_");
+  if (!/^\d{14}$/.test(version) || !/^[a-z0-9_]*$/.test(rest.join("_"))) throw new Error(`Ungültiger Migrationsname: ${fileName}`);
+  return `insert into supabase_migrations.schema_migrations (version, name) values ('${version}', '${rest.join("_")}') on conflict (version) do nothing`;
+}
+
 async function migrate(env, { dry }) {
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.endsWith(".sql"))
@@ -227,6 +234,8 @@ async function migrate(env, { dry }) {
     // Jede Migration in einer Transaktion; schlägt sie fehl, bleibt die Datenbank unverändert und der Lauf bricht ab.
     await sqlQuery(env, `begin;\n${p.sql}\ncommit;`);
     applied.push(p.name);
+    // Version eintragen (SIN-374), damit `supabase_migrations.schema_migrations` und der Wächter den Stand kennen.
+    await sqlQuery(env, recordVersionSql(p.name)).catch((e) => console.log(`::warning::Version von ${p.name} nicht eingetragen: ${e.message}`));
   }
   // Schema-Cache von PostgREST neu laden (SIN-351): sonst antwortet die REST-Schnittstelle trotz vorhandener Tabelle mit 404.
   if (!dry) await sqlQuery(env, "notify pgrst, 'reload schema'");
