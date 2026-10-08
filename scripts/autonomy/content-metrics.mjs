@@ -144,12 +144,16 @@ export function weakestUnits(progress, courseId, { limit = WEAKEST_UNITS, minAns
  * Planer-Regeln (SIN-226) als Hinweise für den Prompt. Gibt Issue-Vorschläge zurück; legt nichts an.
  * @param {{ coverage: any[], passRates?: any[], runs?: any, progress?: Record<string, any>, lastNewProfessionAt?: string | null, now?: Date }} f
  */
-export function contentRuleHints({ coverage, passRates = [], runs, progress = {}, now = new Date(), lastNewProfessionAt = null }) {
+export function contentRuleHints({ coverage, passRates = [], runs, progress = {}, now = new Date(), lastNewProfessionAt = null, fabrikUeberfaelligTage = null }) {
   const hints = [];
   for (const p of passRates) {
     if (p.total > 0 && p.pct < PASS_RATE_MIN) {
       hints.push({ rule: "bestehensquote", title: `Prompt/Didaktik für Modul ${p.moduleId} (${p.mapId}) verbessern`, detail: `Bestehensquote ${p.pct} % (${p.passed}/${p.total}), Schwelle ${PASS_RATE_MIN} %.` });
     }
+  }
+  // SIN-378: Über 8 Tage ohne Lauf im Statusprotokoll ist ein Stillstand; gleiche Regel, kein neuer Meldeweg.
+  if (Number(fabrikUeberfaelligTage) > 0 && !runs?.fabrikHaengt) {
+    hints.push({ rule: "fabrik-haengt", title: "Content-Fabrik hängt: Ursache finden und beheben", detail: `Kein Lauf im Statusprotokoll, überfällig seit ${fabrikUeberfaelligTage} Tagen (erwartet: wöchentlich). Zeitplan content-grow.yml und letzten Lauf prüfen.` });
   }
   if (runs?.fabrikHaengt) {
     hints.push({ rule: "fabrik-haengt", title: "Content-Fabrik hängt: Ursache finden und beheben", detail: `Die letzten ${STUCK_RUNS} Läufe haben keine neue Einheit veröffentlicht. Nur dann legt der Planer Content-Issues für Lücken an.` });
@@ -247,8 +251,8 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
 }
 
 /** Abschnitt „Content“ für den Planer-Prompt. */
-export function renderContentSection(m, { sourceIssues = [] } = {}) {
-  const hints = contentRuleHints({ coverage: m.coverage, passRates: m.passRates, runs: m.runs, progress: m.progress });
+export function renderContentSection(m, { sourceIssues = [], fabrik = {} } = {}) {
+  const hints = contentRuleHints({ coverage: m.coverage, passRates: m.passRates, runs: m.runs, progress: m.progress, fabrikUeberfaelligTage: fabrik.ueberfaelligTage });
   const lowest = [...m.passRates].sort((a, b) => a.pct - b.pct).slice(0, 5);
   return [
     m.verfuegbar ? "Abdeckung und Bewertungen aus Supabase." : `Supabase nicht verfügbar${m.fehler ? ` (${m.fehler})` : ""}: Abdeckung zeigt 0 %, nicht als Lücke werten.`,
@@ -261,6 +265,7 @@ export function renderContentSection(m, { sourceIssues = [] } = {}) {
     `Kosten der letzten Läufe: ${m.runs.kostenLetzteLaeufe.length ? m.runs.kostenLetzteLaeufe.map((r) => `${r.runId} ${Number(r.costEur ?? 0).toFixed(2)} € (${r.passed ?? 0} bestanden)`).join("; ") : "keine Berichte"}`,
     `Quellen-Monitor: ${sourceIssues.length ? sourceIssues.map((i) => `${i.identifier} ${i.title}`).join("; ") : "keine offene Meldung"}`,
     `Content-Fabrik hängt: ${m.runs.fabrikHaengt ? "ja" : "nein"}`,
+    `Content-Fabrik letzter Lauf (Statusprotokoll): ${fabrik.detail ?? "nicht verfügbar"}`,
     "",
     "Regeln aus den Kennzahlen (Vorschläge, nur diese Issues anlegen):",
     renderHints(hints),

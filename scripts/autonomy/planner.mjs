@@ -106,6 +106,7 @@ export async function collectMetrics(env = process.env, http = {}) {
     sentry_kritisch: "nicht verfügbar",
     content_fabrik: "nicht verfügbar",
     content_fabrik_status: "nicht verfügbar",
+    content_fabrik_ueberfaellig_tage: "nicht verfügbar",
   };
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const h = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
@@ -449,7 +450,10 @@ export async function main(argv) {
     }
     const { rows, abnahme } = await assessReadiness({ metrics, issues });
     const sourceIssues = (issues ?? []).filter((i) => /quellen-monitor/i.test(i.title));
-    const content = renderContentSection(await collectContentMetrics(), { sourceIssues });
+    const content = renderContentSection(await collectContentMetrics(), {
+      sourceIssues,
+      fabrik: { detail: metrics.content_fabrik, ueberfaelligTage: Number(metrics.content_fabrik_ueberfaellig_tage) || null },
+    });
     const definition = extractSection(readFileSync("docs/PRODUCT.md", "utf8"), "Definition fertig");
     const phase = await resolvePhase(argv, issues);
     const recentDone = issues ? await fetchRecentlyDone(linear).catch(() => []) : [];

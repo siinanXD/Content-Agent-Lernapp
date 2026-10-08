@@ -34,6 +34,6 @@ flowchart TD
   Waechter -- "neuer App-Code" --> Deploy
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
   subgraph Inhalte
-    Fabrik["Content-Fabrik (content-grow.yml, montags)"] --> Bewertung["Bewertungslauf"]
+    Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
   end
