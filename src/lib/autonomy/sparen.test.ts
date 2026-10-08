@@ -95,8 +95,8 @@ const execution = JSON.stringify([
 test("Verbrauch: liest Tokens, Runden, Dauer und Kosten aus der Execution-Datei", () => {
   const u = usageFromExecution(execution);
   assert.deepEqual(u, { input: 1200, output: 800, cacheRead: 5000, cacheWrite: 900, turns: 12, durationMs: 185000, costUsd: 0.4567 });
-  const line = usageLine(u, "Worker", "claude-haiku-4-5-20251001");
-  assert.match(line, /Worker \(claude-haiku-4-5-20251001\): 12 Runden, 3 Min 5 s/);
+  const line = usageLine(u, "Worker", "claude-haiku-5-5");
+  assert.match(line, /Worker \(claude-haiku-5-5\): 12 Runden, 3 Min 5 s/);
   assert.match(line, /Eingabe 1\.200 · Ausgabe 800 · Cache 5\.000 gelesen \/ 900 geschrieben/);
   assert.match(line, /API-Gegenwert 0,46 \$/);
 });
