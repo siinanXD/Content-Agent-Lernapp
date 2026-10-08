@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-391 | SIN-391 — Live-Check rot: fehlgeschlagene Prüfungen nennen | [SIN-391-live-check-kennungen.md](decisions/SIN-391-live-check-kennungen.md) |
 | SIN-387 | SIN-387 — PostHog lädt nach Einwilligung, Abbruch-Ereignisse | [SIN-387-posthog-laden-nach-einwilligung.md](decisions/SIN-387-posthog-laden-nach-einwilligung.md) |
 | SIN-386 | SIN-386 — Bewertungslauf fortsetzen: 376 von 1852 Fragen bewertet | [SIN-386-bewertungslauf-fortsetzen.md](decisions/SIN-386-bewertungslauf-fortsetzen.md) |
 | SIN-385 | SIN-385 — Demo-Gruppenansicht mit Beispieldaten ohne Konto | [SIN-385-demo-gruppenansicht.md](decisions/SIN-385-demo-gruppenansicht.md) |

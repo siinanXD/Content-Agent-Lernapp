@@ -32,7 +32,7 @@ test("Live-Check API: kaputter Deploy (alle Routen 500, wie SIN-308) wird erkann
   assert.deepEqual(failed, ["API-01", "API-02", "API-03", "API-05", "API-06", "API-07", "API-08"]);
   const report = buildReport({ now: new Date("2026-10-06T19:05:00Z"), base: "https://app.test", api: res, pw: [] });
   assert.equal(report.ok, false);
-  assert.match(report.summary, /^Live-Check 21:05: 1\/8 ROT$/);
+  assert.match(report.summary, /^Live-Check 21:05: 1\/8 ROT \(API-01, API-02, API-03, API-05, API-06 \+2 weitere\)$/);
 });
 
 test("Live-Check API: Datenbank nicht erreichbar ist rot", async () => {
@@ -86,6 +86,23 @@ test("Live-Check Status: Zeile aus der Annotation, Meldung erst beim zweiten rot
   assert.match(twice.incident!.text, /zweimal rot/);
   assert.match(twice.line, /ROT/);
   assert.equal(analyzeLiveCheck({ runs: [] }).line, "Live-Check: noch keiner gelaufen");
+});
+
+test("Live-Check Bericht: rote Kennungen stehen in der Zusammenfassung und im Loop-Status (SIN-391)", () => {
+  const api = [
+    { id: "API-01", name: "a", ok: true, detail: "" },
+    { id: "API-02", name: "b", ok: false, detail: "x" },
+  ];
+  const pw = [
+    { id: "UI-12", name: "c", project: "mobil", status: "fail", detail: "y" },
+    { id: "UI-12", name: "c", project: "desktop", status: "fail", detail: "y" },
+  ];
+  const now = new Date("2026-10-08T12:14:00Z");
+  const report = buildReport({ now, base: "https://app.test", api, pw });
+  assert.equal(report.summary, "Live-Check 14:14: 1/4 ROT (API-02, UI-12)");
+  assert.equal(buildReport({ now, base: "https://app.test", api: [api[0]], pw: [] }).summary, "Live-Check 14:14: 1/1 grün");
+  const run = { status: "completed", conclusion: "failure", updated_at: "2026-10-08T12:20:00Z", html_url: "https://run/1" };
+  assert.match(analyzeLiveCheck({ runs: [run], note: report.summary }).line, /^Live-Check 14:14: 1\/4 ROT \(API-02, UI-12\) \(\[Lauf\]/);
 });
 
 test("Checkliste und Prüfungen gehören zusammen: jede Kennung steht an beiden Orten", () => {

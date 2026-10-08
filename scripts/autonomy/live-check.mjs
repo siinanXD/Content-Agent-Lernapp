@@ -118,7 +118,10 @@ export function buildReport({ now, base, api, pw, lighthouse = "skipped", sentry
   const failed = items.filter((i) => !i.ok);
   const red = failed.filter((i) => !NOTICE_ONLY.has(i.id));
   const green = items.length - failed.length;
-  const summary = `Live-Check ${hhmm(now)}: ${green}/${items.length} ${red.length ? "ROT" : "grün"}`;
+  // Rote Kennungen (je Kennung einmal, höchstens 5) gehören in die Annotation, damit Status-Seite und Agenten sie sehen (SIN-391).
+  const ids = [...new Set(red.map((i) => i.id))];
+  const named = ids.length ? ` (${ids.slice(0, 5).join(", ")}${ids.length > 5 ? ` +${ids.length - 5} weitere` : ""})` : "";
+  const summary = `Live-Check ${hhmm(now)}: ${green}/${items.length} ${red.length ? "ROT" : "grün"}${named}`;
   const lines = [
     `# ${summary}`,
     "",
@@ -133,7 +136,7 @@ export function buildReport({ now, base, api, pw, lighthouse = "skipped", sentry
 
 // ---------- Status-Seite und Tages-Update ----------
 
-const NOTE_RE = /^Live-Check (\d{2}:\d{2}): (\d+)\/(\d+) (grün|ROT)/;
+const NOTE_RE = /^Live-Check (\d{2}:\d{2}): (\d+)\/(\d+) (grün|ROT)(?: \((.+)\))?/;
 
 /**
  * Letzter Live-Check für Status-Seite und Tages-Update. Quelle: Läufe von `nach-deploy.yml`; der Lauf schreibt das
@@ -145,7 +148,7 @@ export function analyzeLiveCheck({ runs, note = "" }) {
   const last = done[0];
   if (!last) return { line: "Live-Check: noch keiner gelaufen", ok: true, incident: null };
   const m = NOTE_RE.exec(String(note));
-  const text = m ? `Live-Check ${m[1]}: ${m[2]}/${m[3]} ${m[4]}` : `Live-Check ${last.updated_at.slice(11, 16)} UTC: ${last.conclusion === "success" ? "grün" : "ROT"}`;
+  const text = m ? `Live-Check ${m[1]}: ${m[2]}/${m[3]} ${m[4]}${m[5] ? ` (${m[5]})` : ""}` : `Live-Check ${last.updated_at.slice(11, 16)} UTC: ${last.conclusion === "success" ? "grün" : "ROT"}`;
   const ok = last.conclusion === "success";
   // Eine Aufgabe für Sinan nur, wenn der Revert nicht geholfen hat: der Lauf davor war schon rot.
   const twice = !ok && done[1] && done[1].conclusion !== "success";
