@@ -189,7 +189,7 @@ export function renderWeeklyReport({ coverage, runs }) {
   ].join("\n");
 }
 
-export async function fetchAll(base, table, query, headers) {
+async function fetchAll(base, table, query, headers) {
   const out = [];
   for (let from = 0; ; from += 1000) {
     const page = await fetchJson("Supabase", `${base}/rest/v1/${table}?${query}`, { headers: { ...headers, Range: `${from}-${from + 999}` } });
@@ -282,8 +282,8 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
     }
     // Geteilte Einheiten liegen im Quellkurs (Metall) und stehen dort schon in `published`.
     // SIN-394: Nur Bewertungen zählen, deren Fragen noch existieren (append-only evaluations können auf gelöschte Fragen verweisen).
-    const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id,type&order=course_id,unit_id,id", h);
-    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed,quellentreue,eindeutigkeit,niveau,sprache&order=course_id,unit_id,question_id", h);
+    const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id,type", h);
+    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed,quellentreue,eindeutigkeit,niveau,sprache", h);
     const { gesamt: fragenGesamt, bewertet: evaluationsWithExisting } = ratedQuestions(questions, evaluations);
     const progressRows = await fetchAll(env.SUPABASE_URL, "learning_progress", "select=anonymous_id,course_id,unit_id,correct", h);
     const progress = {};

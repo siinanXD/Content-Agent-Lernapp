@@ -30,7 +30,7 @@ import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error
 import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
-import { collectContentMetrics, renderContentSection, ratedQuestions, fetchAll } from "./content-metrics.mjs";
+import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
 import { DEFAULT_SIZE, SIZES } from "./sparen.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
@@ -112,24 +112,8 @@ export async function collectMetrics(env = process.env, http = {}) {
     const h = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
     try {
       m.einheiten = await supabaseCount("units?select=id", h, env.SUPABASE_URL, http);
-    } catch (e) {
-      m.einheiten = notMeasurable(e);
-    }
-    // SIN-402: Nur Bewertungen für existierende Fragen zählen (wie in collectContentMetrics).
-    try {
-      const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id&order=course_id,unit_id,id", h);
-      const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed&order=course_id,unit_id,question_id", h);
-      const { bewertet } = ratedQuestions(questions, evaluations);
-      const passedCount = bewertet.filter((e) => e.passed).length;
-      m.fragen_bewertet = bewertet.length;
-      m.bestehensquote = bewertet.length ? `${Math.round((passedCount / bewertet.length) * 100)} %` : "keine Bewertungen";
-      if (bewertet.length) m.bestehensquote_pct = Math.round((passedCount / bewertet.length) * 100);
-    } catch (e) {
-      m.fragen_bewertet = notMeasurable(e);
-      m.bestehensquote = notMeasurable(e);
-    }
-    // Kosten separat mit Retry-Logik
-    if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+      const total = await supabaseCount("question_quality_latest?select=question_id", h, env.SUPABASE_URL, http);
+      const passed = await supabaseCount("question_quality_latest?select=question_id&passed=eq.true", h, env.SUPABASE_URL, http);
       const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
       try {
         m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
@@ -148,6 +132,11 @@ export async function collectMetrics(env = process.env, http = {}) {
           queueSinanTask(http, "pipeline_run_costs", "20261006020000", e);
         }
       }
+      m.fragen_bewertet = total;
+      m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";
+      if (total) m.bestehensquote_pct = Math.round((passed / total) * 100);
+    } catch (e) {
+      m.einheiten = notMeasurable(e);
     }
   }
   Object.assign(m, await collectSentryMetrics(env, http.fetchImpl, http));
