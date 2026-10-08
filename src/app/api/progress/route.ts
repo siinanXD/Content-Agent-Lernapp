@@ -1,5 +1,11 @@
 import { getStorage } from "@/lib/storage";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(value: string): boolean {
+  return UUID_REGEX.test(value);
+}
+
 /**
  * Record anonymous learning progress (Zufalls-Kennung only — no PII).
  * POST body: { anonymousId, courseId?, unitId?, questionId?, correct?, durationMs?, abandoned? }
@@ -18,6 +24,13 @@ export async function POST(req: Request) {
   if (!body.anonymousId?.trim()) {
     return Response.json(
       { error: "anonymousId_required", mock: true },
+      { status: 400 },
+    );
+  }
+
+  if (!isValidUUID(body.anonymousId.trim())) {
+    return Response.json(
+      { error: "anonymousId_invalid", mock: true },
       { status: 400 },
     );
   }
@@ -69,6 +82,14 @@ export async function GET(req: Request) {
       { status: 400 },
     );
   }
+
+  if (!isValidUUID(anonymousId)) {
+    return Response.json(
+      { error: "anonymousId_invalid", mock: true },
+      { status: 400 },
+    );
+  }
+
   const storage = getStorage();
   const events = await storage.listProgress(anonymousId);
   return Response.json({
