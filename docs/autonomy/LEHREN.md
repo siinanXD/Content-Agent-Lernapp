@@ -75,3 +75,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Kennzahl-Abfrage meldet „nicht im Schema-Cache“, obwohl der Cache Sekunden später geladen ist → bei PGRST205 genau einmal nach kurzer Pause wiederholen, erst danach Tabelle und Migration nennen. (SIN-367)
 - Bewertungslauf zeigt „0 bewertet”, das Log nur „OpenAI 400” oder nichts → Fehlertext der API und Fehler je Kurs ausgeben, Exit 1 bei Fehlern; `migrate` prüft auch `question_evaluations` und `judge_runs`. (SIN-371)
 - Sentry-Kennzahlen-Abfrage meldet HTTP 400 „Invalid stats_period” → nur `''`, `'24h'`, `'14d'` sind erlaubt; `7d` nicht. Das 7-Tage-Fenster über `lastSeen:-7d` im Query bilden, nicht über `statsPeriod`. (SIN-377)
+- axe meldet Kontrast 3,3:1 an einem Knopf, der gerade von `disabled` (opacity 50) auf aktiv wechselt → `transition` blendet 150 ms ein. Im E2E vor axe auf `toHaveCSS("opacity", "1")` warten, nie die Farbe ändern. (SIN-356)
