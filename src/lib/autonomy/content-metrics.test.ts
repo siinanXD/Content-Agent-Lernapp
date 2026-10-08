@@ -141,6 +141,21 @@ test("SIN-394: ratedQuestions zählt Mehrfachbewertungen einmal und ignoriert ge
   assert.ok(r.bewertet.length <= r.gesamt);
 });
 
+test("SIN-409: ratedQuestions erkennt question_id mit Einheiten-Präfix aus dem Bewertungslauf", () => {
+  const questions = [
+    { course_id: "c1", unit_id: "LF1-1-u1", id: "q1" },
+    { course_id: "c1", unit_id: "LF1-1-u1", id: "q2" },
+  ];
+  const evaluations = [
+    { course_id: "c1", unit_id: "LF1-1-u1", question_id: "LF1-1-u1-q1", passed: true },
+    { course_id: "c1", unit_id: "LF1-1-u1", question_id: "LF1-1-u1-q1", passed: false },
+    { course_id: "c1", unit_id: "LF1-1-u1", question_id: "q2", passed: true },
+  ];
+  const r = ratedQuestions(questions, evaluations);
+  assert.equal(r.gesamt, 2);
+  assert.equal(r.bewertet.length, 2);
+});
+
 test("SIN-402: passRateByModule nutzt nur gefilterte Bewertungen", () => {
   const questions = [
     { course_id: "c1", unit_id: "LF1-1-u1", id: "q1" },
