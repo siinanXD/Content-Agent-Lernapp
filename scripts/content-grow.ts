@@ -34,6 +34,7 @@ import {
   linearSummary,
   missingSecrets,
   nextOpenItem,
+  nextOpenItems,
   overBudget,
   pickSafetySample,
   reportFileName,
@@ -43,6 +44,7 @@ import {
   type RunReport,
 } from "../src/lib/generate/content-grow";
 import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
+import type { BatchChunkTarget } from "../src/lib/generate/batch-generate";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { MAX_QUESTIONS, MIN_PASSED_QUESTIONS, planFromEvals } from "../src/lib/generate/repair-questions";
 import {
@@ -184,6 +186,19 @@ async function main() {
     : null;
   const affected = affectedUnitIds(sourceReport, MAP_ID, priorUnits, handledChanges);
   const next = nextOpenItem(queue, published, discarded, resumeModuleId);
+  // SIN-406: statt eines Moduls so viele, wie der Deckel bezahlbar macht (Obergrenze vor der Reparatur).
+  const plan = nextOpenItems(queue, published, discarded, resumeModuleId, affordableUnits(0, perUnit));
+  const planPending = new Set(plan.flatMap((x) => x.pending));
+  const planTargets = () => plan.flatMap((x) => moduleChunks(x.item.module));
+  /** Erstes Modul des Plans, in dem nach dem Abschneiden noch Einheiten offen sind (Fortsetzung). */
+  const resumeFor = (selected: BatchChunkTarget[]) => {
+    const done = new Set(
+      selected.flatMap((t) =>
+        Array.from({ length: t.unitCount }, (_, i) => `${t.block.id}-u${t.unitOffset + i + 1}`),
+      ),
+    );
+    return plan.find((x) => x.pending.some((id) => !done.has(id)))?.item.module.id ?? null;
+  };
 
   const report: RunReport = {
     runId,
@@ -191,6 +206,7 @@ async function main() {
     startedAt: STARTED_AT,
     mapId: next?.item.mapId ?? null,
     moduleId: next?.item.module.id ?? null,
+    moduleIds: plan.map((x) => x.item.module.id),
     nextModuleId: null,
     resumeModuleId: null,
     generated: 0,
@@ -217,7 +233,8 @@ async function main() {
       resumeModuleId,
       sourceRefreshUnits: affected.unitIds.length,
       nextModule: next ? `${next.item.mapId}/${next.item.module.id}` : null,
-      pendingUnits: next?.pending.length ?? 0,
+      modules: plan.map((x) => x.item.module.id),
+      pendingUnits: planPending.size,
     }),
   );
 
@@ -254,13 +271,11 @@ async function main() {
 
   if (dry) {
     const cap = affordableUnits(spent, perUnit);
-    const trimmed = next
-      ? trimTargets(moduleChunks(next.item.module), new Set(next.pending), cap)
-      : null;
+    const trimmed = next ? trimTargets(planTargets(), planPending, cap) : null;
     report.generated = trimmed?.units ?? 0;
     report.deferred = trimmed?.leftOver ?? 0;
     report.nextModuleId = next?.item.module.id ?? null;
-    report.resumeModuleId = report.deferred > 0 ? (next?.item.module.id ?? null) : null;
+    report.resumeModuleId = report.deferred > 0 && trimmed ? resumeFor(trimmed.targets) : null;
     report.stopReason = "dry-run: kein API-Aufruf, nichts veröffentlicht";
     return finish(0);
   }
@@ -382,16 +397,21 @@ async function main() {
 
   // Stufe c: nächstes Modul, so viel der Deckel erlaubt.
   const generatedUnits: GeneratedUnit[] = [];
+  let deferredResume: string | null = null;
   try {
   if (report.stopReason) {
-    report.deferred = next?.pending.length ?? 0;
+    report.deferred = planPending.size;
   } else if (next && !overBudget(spentTotal())) {
     const { targets, units, leftOver } = trimTargets(
-      moduleChunks(next.item.module),
-      new Set(next.pending),
+      planTargets(),
+      planPending,
       affordableUnits(spentTotal(), perUnit),
     );
     report.deferred = leftOver;
+    deferredResume = leftOver > 0 ? resumeFor(targets) : null;
+    report.moduleIds = plan
+      .map((x) => x.item.module.id)
+      .filter((id) => targets.some((t) => t.module.id === id));
     if (targets.length === 0) {
       report.stopReason = "Deckel: keine Einheit mehr bezahlbar; Rest im nächsten Lauf";
     } else {
@@ -404,7 +424,7 @@ async function main() {
       ledger = addClaudeLedger(ledger, got.ledger);
       tracer.batchFertig(got.units, got.ledger, "neuesModul");
       // Nur Einheiten, die zum Modul gehören und noch offen sind.
-      const wanted = new Set(next.pending);
+      const wanted = planPending;
       generatedUnits.push(...got.units.filter((u) => wanted.has(u.id)));
       const evals = generatedUnits.length > 0 ? await judge(generatedUnits, "grow") : [];
       const { ok, dropped } = keepPassing(generatedUnits, evals);
@@ -421,7 +441,8 @@ async function main() {
     }
   } else if (next) {
     report.stopReason = "Deckel erreicht; Modul kommt im nächsten Lauf";
-    report.deferred = next.pending.length;
+    report.deferred = planPending.size;
+    deferredResume = next.item.module.id;
   }
   } catch (e) {
     await capStop(e);
@@ -443,9 +464,9 @@ async function main() {
   // Nach dem Lauf: wie geht es weiter?
   const publishedAfter = new Set([...published, ...liveIds]);
   const discardedAfter = new Set([...discarded, ...report.discardedUnitIds]);
-  const after = nextOpenItem(queue, publishedAfter, discardedAfter, report.deferred > 0 ? next?.item.module.id : null);
+  const after = nextOpenItem(queue, publishedAfter, discardedAfter, report.deferred > 0 ? deferredResume : null);
   report.nextModuleId = after?.item.module.id ?? null;
-  report.resumeModuleId = report.deferred > 0 ? (next?.item.module.id ?? null) : null;
+  report.resumeModuleId = report.deferred > 0 ? (deferredResume ?? next?.item.module.id ?? null) : null;
 
   await recordCosts();
 

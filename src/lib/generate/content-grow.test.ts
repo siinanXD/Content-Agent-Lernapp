@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Curriculum, CurriculumModule } from "@/lib/content/curriculum";
+import { BUDGET_EUR } from "@/lib/quality/cost-guard";
+import { QUALITY_THRESHOLDS } from "@/lib/quality/schemas";
 import type { BatchChunkTarget } from "./batch-generate";
+import { MIN_PASSED_QUESTIONS } from "./repair-questions";
 import {
   affectedUnitIds,
   affordableUnits,
@@ -9,9 +12,12 @@ import {
   changeKey,
   eurPerUnit,
   missingSecrets,
+  COST_MARGIN,
   nextOpenItem,
+  nextOpenItems,
   pendingSlots,
   pickSafetySample,
+  RUN_CAP_EUR,
   RUN_STOP_EUR,
   slotIds,
   trimTargets,
@@ -89,6 +95,36 @@ test("trimTargets: nur offene Einheiten, höchstens maxUnits, Rest wird gemeldet
   assert.equal(r.targets.length, 1);
   assert.equal(r.units, 2);
   assert.equal(r.leftOver, 1);
+});
+
+test("SIN-406: mehrere Module je Lauf, solange der Deckel Einheiten hergibt", () => {
+  const none = new Set<string>();
+  const ids = (n: number) => nextOpenItems(queue, none, none, null, n).map((x) => x.item.module.id);
+  assert.deepEqual(ids(1), ["M0"]);
+  assert.deepEqual(ids(3), ["M0", "LF1"]);
+  assert.deepEqual(ids(100), ["M0", "LF1", "LF3"]);
+  assert.deepEqual(ids(0), ["M0"]);
+});
+
+test("SIN-406: Fortsetzung bleibt vorn, begonnene und nicht unterstützte Module fehlen", () => {
+  const none = new Set<string>();
+  const published = new Set(["M0-1-u1"]);
+  const plan = nextOpenItems(queue, published, none, "LF3", 100);
+  assert.deepEqual(plan.map((x) => x.item.module.id), ["LF3", "LF1"]);
+  assert.ok(plan.every((x) => x.item.supported));
+});
+
+test("SIN-406: Kostendeckel und Qualitäts-Schwelle bleiben unverändert", () => {
+  assert.equal(RUN_CAP_EUR, 20);
+  assert.equal(RUN_STOP_EUR, 19);
+  assert.equal(BUDGET_EUR, 20);
+  assert.equal(MIN_PASSED_QUESTIONS, 5);
+  assert.deepEqual(QUALITY_THRESHOLDS, { sourceFidelity: 1, uniqueness: 1, niveauMin: 4, languageMin: 4 });
+  // Auch mit vielen Modulen bleibt die Vorab-Rechnung unter dem Stopp-Wert.
+  for (const spent of [0, 1.62, 10]) {
+    const n = affordableUnits(spent, 0.04);
+    assert.ok(spent + n * 0.04 * COST_MARGIN <= RUN_STOP_EUR);
+  }
 });
 
 test("Deckel: Einheiten passen nur unter den Stopp-Wert", () => {
