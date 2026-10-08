@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { SCHWERPUNKTE } from "@/lib/learner/onboarding";
+import { DEMO_HREF } from "@/lib/ausbilder/demo";
 import type { DemoField } from "@/lib/demo/demo-request";
 
 type Status = "offen" | "sendet" | "fertig" | "fehler";
@@ -89,6 +90,16 @@ export default function DemoPage() {
         <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
           Für bis zu 10 Teilnehmende, zwei Wochen kostenlos. Wir melden uns
           innerhalb eines Werktags.
+        </p>
+
+        <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
+          Erst ansehen? Die Gruppenansicht gibt es mit Beispieldaten, ohne Konto.{" "}
+          <Link
+            href={DEMO_HREF}
+            className="inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-primary)] underline underline-offset-2"
+          >
+            Beispielansicht öffnen
+          </Link>
         </p>
 
         <form onSubmit={submit} noValidate className="bento-tile !gap-4">
