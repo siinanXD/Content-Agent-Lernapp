@@ -119,6 +119,35 @@ export function nextOpenItem(
   );
 }
 
+/**
+ * SIN-406: Mehrere Module je Lauf. Das erste Modul wie bei `nextOpenItem` (Fortsetzung zuerst),
+ * danach weitere unberührte Module in Queue-Reihenfolge, solange `maxUnits` reicht. Das letzte
+ * Modul darf teilweise laufen; der Rest bleibt für den nächsten Lauf (`resumeModuleId`).
+ * Der Deckel kommt nur über `maxUnits` (affordableUnits) herein, hier wird nichts gelockert.
+ */
+export function nextOpenItems(
+  queue: QueueItem[],
+  published: ReadonlySet<string>,
+  discarded: ReadonlySet<string>,
+  resumeModuleId: string | null | undefined,
+  maxUnits: number,
+): Array<{ item: QueueItem; pending: string[] }> {
+  const first = nextOpenItem(queue, published, discarded, resumeModuleId);
+  if (!first) return [];
+  const out = [first];
+  let units = first.pending.length;
+  for (const item of queue) {
+    if (units >= maxUnits) break;
+    if (!item.supported || out.some((x) => x.item === item)) continue;
+    if (slotIds(item.module).some((id) => published.has(id))) continue;
+    const pending = pendingSlots(item.module, published, discarded);
+    if (pending.length === 0) continue;
+    out.push({ item, pending });
+    units += pending.length;
+  }
+  return out;
+}
+
 /** Chunk-Ziele (2 Einheiten je Request) nur für offene Einheiten, höchstens `maxUnits`. */
 export function trimTargets(
   targets: BatchChunkTarget[],
@@ -234,6 +263,8 @@ export type RunReport = {
   startedAt: string;
   mapId: string | null;
   moduleId: string | null;
+  /** SIN-406: alle Module dieses Laufs (moduleId = erstes). */
+  moduleIds?: string[];
   nextModuleId: string | null;
   /** Gesetzt, wenn der Deckel das Modul unterbrochen hat; der nächste Lauf macht dort weiter. */
   resumeModuleId: string | null;
@@ -264,7 +295,7 @@ export function linearSummary(r: RunReport): string {
   const next = r.nextModuleId ?? "keins (Queue leer oder nicht unterstützt)";
   return [
     `**Content-Lauf ${r.runId}** (${r.mode})`,
-    `- Modul: ${r.mapId ?? "–"} / ${r.moduleId ?? "–"}`,
+    `- Modul: ${r.mapId ?? "–"} / ${r.moduleIds?.length ? r.moduleIds.join(", ") : (r.moduleId ?? "–")}`,
     `- Erzeugt: ${r.generated}, bestanden: ${r.passed}, verworfen: ${r.discarded}, zurückgestellt: ${r.deferred}`,
     `- Reparatur (AP-21): ${r.repair.ran ? `€${r.repair.costEur.toFixed(2)}` : "nicht gelaufen"}; Quellen-Neuerzeugung: ${r.sourceRefresh.replaced}/${r.sourceRefresh.units}`,
     `- Kosten: €${r.costEur.toFixed(2)} von €${r.capEur} (Modell ${r.model})`,

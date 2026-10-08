@@ -169,6 +169,7 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 
 - Sentry EU (`NEXT_PUBLIC_SENTRY_DSN`, DSN-Host `ingest.de.sentry.io`) erfasst Fehler der App-Routen und der Pipeline (`scripts/content-grow.ts`). Ohne Personendaten (`src/lib/sentry-privacy.ts`); ohne DSN passiert nichts.
 - Der Planer liest offene kritische Fehler der letzten 7 Tage (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`); ohne Token steht „nicht verfügbar“.
+- Die Content-Fabrik nimmt je Lauf so viele Module in einen Batch, wie der Deckel (Stopp bei 19 €) zulässt, und bewertet bis zu 4 Richter-Chunks gleichzeitig (SIN-406, `docs/decisions/SIN-406-fabrik-durchsatz.md`). Deckel und Qualitäts-Schwelle sind unverändert.
 - Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migrationen `20261007020000`, `20261010010000`), mit Start, Ende und Ergebnis. Auch ein Abbruch (fehlende Secrets, fehlender Kurs, Absturz) hinterlässt eine Zeile mit `stop_reason`. Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
 - Der Kennzahlen-Bericht nennt die Verwerfungsgründe verworfener Fragen je Modul und Fragetyp (SIN-395). Verworfene Fragen werden in Lernpfad, Wiederholung und Prüfung nie ausgespielt.
 - Der Kennzahlen-Bericht nennt das Datum des letzten Laufs. Nach 8 Tagen ohne Lauf steht dort „überfällig seit N Tagen“, und der Planer erhält die bestehende Stillstand-Regel `fabrik-haengt`.
