@@ -22,9 +22,9 @@ import { startRuns } from "../../../scripts/autonomy/planner.mjs";
 const now = new Date("2026-10-06T10:00:00Z");
 
 test("missingTables: meldet fehlende Pflicht-Tabellen (SIN-347)", () => {
-  assert.deepEqual(REQUIRED_TABLES, ["pipeline_run_costs", "content_factory_runs"]);
-  assert.deepEqual(missingTables(["courses", "pipeline_run_costs"]), ["content_factory_runs"]);
-  assert.deepEqual(missingTables(["pipeline_run_costs", "content_factory_runs"]), []);
+  assert.deepEqual(REQUIRED_TABLES, ["pipeline_run_costs", "content_factory_runs", "question_evaluations", "judge_runs"]);
+  assert.deepEqual(missingTables(["courses", "pipeline_run_costs", "question_evaluations", "judge_runs"]), ["content_factory_runs"]);
+  assert.deepEqual(missingTables(REQUIRED_TABLES), []);
 });
 
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {

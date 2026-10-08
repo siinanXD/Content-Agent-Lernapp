@@ -247,7 +247,9 @@ export async function liveJudgeChunkWithUsage(
     }),
   });
   if (!res.ok) {
-    throw new Error(`OpenAI ${res.status}`);
+    // Fehlertext von OpenAI mitgeben (Modellname, Parameter, Kontingent); nie den Schlüssel.
+    const body = await res.text().catch(() => "");
+    throw new Error(`OpenAI ${res.status} (${JUDGE_MODEL}): ${body.slice(0, 300)}`);
   }
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string } }>;
