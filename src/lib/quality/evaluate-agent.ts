@@ -26,6 +26,8 @@ export const JUDGE_MODEL = "gpt-5.4-mini";
 /** Bump when the judge system prompt in liveJudgeChunkWithUsage changes. */
 export const JUDGE_PROMPT_VERSION = "2026-10-v1";
 const JUDGE_CHUNK = 10;
+/** Gleichzeitige Richter-Anfragen (SIN-406). */
+const JUDGE_CONCURRENCY = 4;
 
 /** System-Prompt des Richters; auch in Langfuse Prompt Management (SIN-299). */
 export const JUDGE_SYSTEM_PROMPT =
@@ -185,17 +187,25 @@ export async function liveJudgeWithUsage(
   key: string,
   items: EvalItem[],
 ): Promise<{ questions: QuestionEval[]; usage: { prompt_tokens: number; completion_tokens: number } }> {
-  const out: QuestionEval[] = [];
-  let prompt_tokens = 0;
-  let completion_tokens = 0;
-  for (let i = 0; i < items.length; i += JUDGE_CHUNK) {
-    const chunk = items.slice(i, i + JUDGE_CHUNK);
-    const judged = await liveJudgeChunkWithUsage(key, chunk);
-    out.push(...judged.questions);
-    prompt_tokens += judged.usage.prompt_tokens;
-    completion_tokens += judged.usage.completion_tokens;
-  }
-  return { questions: out, usage: { prompt_tokens, completion_tokens } };
+  // SIN-406: Chunks mit begrenzter Parallelität statt nacheinander; die Reihenfolge der Ergebnisse bleibt.
+  const chunks: EvalItem[][] = [];
+  for (let i = 0; i < items.length; i += JUDGE_CHUNK) chunks.push(items.slice(i, i + JUDGE_CHUNK));
+  const results: JudgeChunkResult[] = new Array(chunks.length);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < chunks.length) {
+      const i = cursor++;
+      results[i] = await liveJudgeChunkWithUsage(key, chunks[i]!);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(JUDGE_CONCURRENCY, chunks.length) }, worker));
+  return {
+    questions: results.flatMap((r) => r.questions),
+    usage: {
+      prompt_tokens: results.reduce((n, r) => n + r.usage.prompt_tokens, 0),
+      completion_tokens: results.reduce((n, r) => n + r.usage.completion_tokens, 0),
+    },
+  };
 }
 
 export type JudgeChunkResult = {
