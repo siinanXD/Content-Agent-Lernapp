@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-370 | SIN-370 Screenreader-Prüfliste und Code-Befunde | [SIN-370-screenreader-pruefliste.md](decisions/SIN-370-screenreader-pruefliste.md) |
 | SIN-369 | SIN-369 — Bewertungslauf-Trockenlauf: Voraussetzungen für SIN-348 prüfen | [SIN-369-bewertungslauf-voraussetzungen.md](decisions/SIN-369-bewertungslauf-voraussetzungen.md) |
 | SIN-368 | SIN-368 — Fertig-Zustände: Tagesziel erreicht, heute nichts fällig | [SIN-368-fertig-zustaende.md](decisions/SIN-368-fertig-zustaende.md) |
 | SIN-365 | SIN-365 — Produktreife Sentry: Lauf mit echten Daten | [SIN-365-sentry-lauf.md](decisions/SIN-365-sentry-lauf.md) |
