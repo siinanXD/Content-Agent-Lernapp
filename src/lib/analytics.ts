@@ -69,3 +69,45 @@ export function trackQuestionAnswered(properties: {
 }): void {
   capture("question_answered", properties);
 }
+
+/** Fired when a learner reports that an AI explanation does not fit ("Passt nicht? Melden"). */
+export function trackExplanationReported(properties: {
+  unitId: string;
+  questionId: string;
+}): void {
+  capture("explanation_reported", properties);
+}
+
+/** Onboarding: Schritt angezeigt (nur Schrittname, keine Auswahl). */
+export function trackOnboardingStep(properties: { step: "schwerpunkt" }): void {
+  capture("onboarding_step", properties);
+}
+
+/** Onboarding abgeschlossen. Der Schwerpunkt ist eine amtliche Kennung, keine Personendaten. */
+export function trackOnboardingCompleted(properties: { schwerpunktId: string }): void {
+  capture("onboarding_completed", properties);
+}
+
+/** Einheit verlassen, ohne sie zu beenden. Nur Zahlen, keine Antworten. */
+export function trackUnitAbandoned(properties: {
+  unitId: string;
+  answered: number;
+  total: number;
+}): void {
+  capture("unit_abandoned", properties);
+}
+
+/** Wiederholungsrunde gestartet. */
+export function trackReviewStarted(properties: { total: number }): void {
+  capture("review_started", properties);
+}
+
+/** Wiederholungsrunde beendet. */
+export function trackReviewCompleted(properties: { correct: number; total: number }): void {
+  capture("review_completed", properties);
+}
+
+/** Wiederholungsrunde verlassen, ohne sie zu beenden. */
+export function trackReviewAbandoned(properties: { answered: number; total: number }): void {
+  capture("review_abandoned", properties);
+}

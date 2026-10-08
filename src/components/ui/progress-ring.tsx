@@ -13,6 +13,7 @@ export function ProgressRing({
   label = "heute",
   onDark = false,
   showLabel = true,
+  name = "Tagesziel",
 }: {
   done: number;
   total: number;
@@ -21,6 +22,8 @@ export function ProgressRing({
   onDark?: boolean;
   /** Beschriftung unter dem Wert sichtbar; für Screenreader bleibt sie erhalten */
   showLabel?: boolean;
+  /** Name für Screenreader, z. B. „Richtig“ im Ergebnis */
+  name?: string;
 }) {
   const ratio = total <= 0 ? 0 : Math.max(0, Math.min(1, done / total));
   return (
@@ -28,7 +31,7 @@ export function ProgressRing({
       className="relative shrink-0"
       style={{ width: SIZE, height: SIZE }}
       role="progressbar"
-      aria-label={`Tagesziel ${label}`}
+      aria-label={`${name} ${label}`}
       aria-valuemin={0}
       aria-valuemax={total}
       aria-valuenow={Math.min(done, total)}
@@ -60,6 +63,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={CIRCUMFERENCE * (1 - ratio)}
+          className="grow-ring"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">

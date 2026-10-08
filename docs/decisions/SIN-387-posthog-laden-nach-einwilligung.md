@@ -1,0 +1,7 @@
+# SIN-387 — PostHog lädt nach Einwilligung, Abbruch-Ereignisse
+
+- **Links:** Linear [SIN-387](https://linear.app/sinan-kahraman/issue/SIN-387/einwilligung-und-posthog-laden-nach-einwilligung-live-belegen); Vorarbeit [SIN-354](SIN-354-einwilligung-demo-beleg.md). Keine externen Docs genutzt, der Test misst nur das Verhalten des eigenen Codes.
+- **Entscheidung:** `src/lib/analytics.test.ts` belegt mit gemocktem Key: vor und ohne Einwilligung kein Laden, nach Einwilligung genau ein Laden, nach Widerruf Stopp (`syncPostHogConsent`). Außerdem senden `trackUnitAbandoned` und `trackReviewAbandoned` nur bei gesetztem Key und geladenem Client, also nur nach Einwilligung.
+- **Befund Key im Produktionsbuild:** Der Wert ist aus dem Repo nicht lesbar; `docs/ENV.md` führt `NEXT_PUBLIC_POSTHOG_KEY` als „fehlt“, und die Kennzahl `posthog` meldet seit 7 Tagen keine Ereignisse. Das passt zu einem fehlenden Key in Vercel. Der Lauf hatte keinen Zugriff auf Vercel, deshalb ist das eine Annahme, keine Messung. Es wurde kein Wert gelesen oder notiert.
+- **Annahmen:** Der Key fehlt in Vercel (Production). Das `sinan`-Issue dafür konnte der Lauf nicht anlegen (`sinan.mjs create` brauchte eine Freigabe); es muss nachgeholt werden: Titel „PostHog-Key in Vercel setzen“, Variable `NEXT_PUBLIC_POSTHOG_KEY` (Production, danach neu deployen), Prüfung: Anfrage an `eu.i.posthog.com` nach Einwilligung.
+- **Warum:** Ohne Key ist die Einwilligungslogik nicht live belegbar; der Unit-Test schließt die Lücke im Code, die Live-Messung bleibt bis zum Key offen.

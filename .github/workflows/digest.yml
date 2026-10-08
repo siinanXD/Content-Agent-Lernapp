@@ -27,6 +27,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: read
+  actions: read
 
 jobs:
   digest:
@@ -48,7 +49,7 @@ jobs:
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || vars.SUPABASE_PROJECT_REF }}
       LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
       LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
       LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
@@ -62,9 +63,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase (nie ein Fehlerabbruch).
+      - name: Leitstand Start
+        if: env.DRY != 'true'
+        continue-on-error: true
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt digest --status start
       - name: Update senden
         run: |
           args=(--slot "$SLOT")
           if [ "$DRY" = "true" ]; then args+=(--dry-run); fi
           if [ "$FORCE" = "true" ]; then args+=(--force); fi
           node scripts/autonomy/digest.mjs "${args[@]}"
+      - name: Leitstand Ende
+        if: always() && env.DRY != 'true'
+        continue-on-error: true
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          status=$([ "$JOB_STATUS" = "success" ] && echo ok || echo fehler)
+          node scripts/autonomy/leitstand.mjs ereignis --schritt digest --status "$status" --seit "$LEITSTAND_SEIT"

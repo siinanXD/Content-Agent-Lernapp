@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import {
+  REQUIRED_TABLES,
+  missingTables,
   TASK_IDS,
   TASKS,
   applyResult,
@@ -13,11 +18,18 @@ import {
   missingSecrets,
   pendingMigrations,
   runTask,
+  stageResult,
   taskForCheck,
 } from "../../../scripts/autonomy/run-task.mjs";
 import { startRuns } from "../../../scripts/autonomy/planner.mjs";
 
 const now = new Date("2026-10-06T10:00:00Z");
+
+test("missingTables: meldet fehlende Pflicht-Tabellen (SIN-347)", () => {
+  assert.deepEqual(REQUIRED_TABLES, ["pipeline_run_costs", "content_factory_runs", "question_evaluations", "judge_runs"]);
+  assert.deepEqual(missingTables(["courses", "pipeline_run_costs", "question_evaluations", "judge_runs"]), ["content_factory_runs"]);
+  assert.deepEqual(missingTables(REQUIRED_TABLES), []);
+});
 
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {
   assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "cost-report", "lighthouse", "offline-check", "migrate"]);
@@ -126,4 +138,32 @@ test("Ergebnis → Produktreife-Datei: erfüllt oder gelaufen, ohne Messwert nic
   assert.deepEqual(applyResult(file, "cost-report", { ok: null, ergebnis: "leer" }, { datum: "x", beleg: "y" }), file);
   assert.deepEqual(applyResult(file, "judge-backfill", { ok: true, ergebnis: "x" }, { datum: "x", beleg: "y" }), file);
   assert.ok(TASKS.migrate.secrets.includes("SUPABASE_ACCESS_TOKEN"));
+});
+
+test("stageResult: fehlender Pfad (ap22-runs) verwirft die übrigen nicht (SIN-397)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stage-"));
+  const git = (...a: string[]) => spawnSync("git", a, { cwd: dir, encoding: "utf8" });
+  git("init", "-q");
+  git("config", "user.email", "t@t");
+  git("config", "user.name", "t");
+  mkdirSync(join(dir, "docs"), { recursive: true });
+  writeFileSync(join(dir, "docs/product-readiness.json"), "{}\n");
+  git("add", "-A");
+  git("commit", "-qm", "init");
+  assert.equal(stageResult({ cwd: dir }).changed, false);
+  writeFileSync(join(dir, "docs/product-readiness.json"), "[1]\n");
+  mkdirSync(join(dir, "docs/quality/runs"), { recursive: true });
+  writeFileSync(join(dir, "docs/quality/runs/cost-report.json"), "{}\n");
+  const r = stageResult({ cwd: dir });
+  assert.equal(r.changed, true);
+  assert.match(r.grund, /product-readiness\.json/);
+  assert.match(git("diff", "--cached", "--name-only").stdout, /quality\/runs\/cost-report\.json/);
+});
+
+test("stageResult: ohne Ergebnisdatei nennt den Grund", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stage-"));
+  spawnSync("git", ["init", "-q"], { cwd: dir });
+  const r = stageResult({ cwd: dir });
+  assert.equal(r.changed, false);
+  assert.match(r.grund, /nichts geschrieben/);
 });

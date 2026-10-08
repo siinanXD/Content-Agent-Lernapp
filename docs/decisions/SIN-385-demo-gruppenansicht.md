@@ -1,0 +1,6 @@
+# SIN-385 — Demo-Gruppenansicht mit Beispieldaten ohne Konto
+
+- **Links:** Linear [SIN-385](https://linear.app/sinan-kahraman/issue/SIN-385/demo-zugang-fur-bildungstrager-gruppenansicht-mit-beispieldaten-ohne); Befund aus `docs/decisions/SIN-354-einwilligung-demo-beleg.md`. Eigenbau, weil es nur eine feste Beispieldatei und einen Schalter braucht; keine externe Lösung nötig.
+- **Entscheidung:** `/ausbilder?demo=1` zeigt die vorhandene Gruppenansicht mit erfundenen Daten (`src/lib/ausbilder/demo.ts`), ohne Anfrage an die API. Einstieg: Link „Beispielansicht öffnen“ auf `/demo`. Ein Hinweis (vorhandenes Hinweis-Token) kennzeichnet die Daten als Beispiel; Einladen und Abmelden entfallen, stattdessen Link zur Demo-Anfrage. Ohne `?demo=1` bleibt alles wie vorher, auch der Leerzustand.
+- **Annahmen:** Keine neue Route und keine neue Komponente, nur Zustände und Texte bestehender Screens 19/20 (laut AGENTS.md ohne Design-Issue erlaubt). Namen sind „Beispiel A.“ bis „Beispiel E.“, Zeiten relativ zu heute, damit der Filter „Inaktiv“ Treffer hat. Die Demo schreibt nichts und braucht keine Rechte.
+- **Warum:** So sehen Bildungsträger die Gruppenansicht, ohne dass Sinan vorher ein Konto anlegen muss, und es gelangen keine Personendaten ins Spiel.

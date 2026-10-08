@@ -16,10 +16,16 @@ import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
 import { collectBackup } from "./backup.mjs";
+import { collectMigrations, migrationIncident } from "./migrationen.mjs";
+import { collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
+import { buildSnapshot, sendSnapshot } from "./leitstand.mjs";
+import { sendTelegramPlain } from "./telegram.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
+import { renderSinan, syncSinan } from "./sinan.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
+import { GATE_LABEL, GATE_PREFIX, collectGateFailures, collectMainChecks, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
@@ -46,6 +52,7 @@ export const IDLE_MIN = 45;
 export const STUCK_MIN = 15;
 export const APPROVAL_MIN = 120;
 export const KICK_MIN = 10;
+export const VERCEL_WARN = 70;
 /** So lange wartet der Wächter nach einer @claude-Bitte, bevor er sie wiederholt oder an Sinan eskaliert. */
 export const CLAUDE_RETRY_MIN = 45;
 export const MAX_CLAUDE_ASKS = 2;
@@ -75,7 +82,7 @@ const QUOTAS = [
   ["sentry_events_monat", "Sentry: Fehler im Monat"],
   ["posthog_events_monat", "PostHog: Events im Monat"],
   ["langfuse_units_monat", "Langfuse: Units im Monat"],
-  ["linear_issues", "Linear Free: Issues"],
+  ["linear_issues", "Linear: Issues"],
   ["claude_max", "Claude Max"],
   ["api_kosten_eur", "Anthropic/OpenAI API: Kosten (Ledger)"],
 ];
@@ -99,6 +106,7 @@ export function buildQuotaRows(usage = {}, limitsFile = {}) {
       row.value = u;
       row.pct = percent(u, limit);
       row.text = `${u}${lim?.einheit ? ` ${lim.einheit}` : ""}`;
+      if (key === "linear_issues" && limit === null) row.text += " (unbegrenzt)"; // SIN-360
     } else if (u?.text) row.text = u.text;
     else row.text = `nicht messbar${u?.error ? ` (${u.error})` : ""}`;
     row.over = row.pct != null && row.pct >= (WARN_PCT[key] ?? warn); // ab 80 % (SIN-251, wie der Wächter SIN-225)
@@ -147,6 +155,9 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const mayTake = (i) => phaseAllowsIssue(phase.phase, i) && claudeMayTake(i, { now, openPrs: prLite });
   const order = startOrder(issues, mayTake);
   const started = issues.filter((i) => i.state?.type === "started");
+  // Wartende PRs (SIN-327): Issue bleibt „In Progress“, belegt aber keinen Platz; getrennt von laufenden Workern.
+  const waiting = waitingIssues(issues, prs.map((p) => ({ ...p, ci: checks[p.number]?.ci })), running.map((r) => idOf(r.display_title)).filter(Boolean));
+  const active = started.filter((i) => !waiting.has(i.identifier));
   const todo = issues.filter((i) => i.state?.name === "Todo");
 
   const needsApproval = (p) => labelNames(p).includes("risk:high") && !APPROVAL_LABELS.some((l) => labelNames(p).includes(l));
@@ -163,7 +174,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       text: `Worker ${id} fehlgeschlagen: ${failures[r.id] || "kein Fehlertext lesbar"} ([Lauf](${r.html_url}))`,
     });
   }
-  const startable = order.length > 0 && started.length < MAX_PARALLEL;
+  const startable = order.length > 0 && active.length < MAX_PARALLEL;
   const lastWorkerEnd = workers.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), "");
   const idleSince = [lastWorkerEnd, ...order.map((i) => i.updatedAt)].filter(Boolean).sort().pop();
   if (!running.length && startable && !paused && mins(idleSince, now) > IDLE_MIN) {
@@ -187,27 +198,71 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     incidents.push({ key: `quota:${q.key}`, text: `Kontingent ${q.name} bei ${q.pct} % (${q.text} von ${q.limit}).` });
   }
 
+  // Production hängt (SIN-309): Hook-Deploy CANCELED/ERROR → Meldung und Bug-Issue, kein zweiter Versuch für denselben Commit.
+  const stuckDeploy = snap.deploy?.stuck ?? null;
+  const deployBugs = [];
+  if (stuckDeploy) {
+    const at = stuckDeploy.since.slice(11, 16);
+    const short = stuckDeploy.sha.slice(0, 7);
+    incidents.push({ key: `deploy-stuck:${stuckDeploy.sha}`, text: `Production hängt seit ${at} UTC: Hook-Deploy für ${short} ist ${stuckDeploy.state}. Kein neuer Versuch für diesen Commit, der nächste kommt mit einem neuen Commit auf main.` });
+    deployBugs.push({
+      lane: "backend",
+      priority: 1,
+      labels: ["claude", "Bug"],
+      title: `Bug: Production-Deploy ${stuckDeploy.state} (${short})`,
+      description: `Der Hook-Deploy für Commit ${stuckDeploy.sha} (ausgelöst ${stuckDeploy.since}) endete mit ${stuckDeploy.state}. Production hängt seit ${at} UTC. Der Wächter versucht diesen Commit nicht erneut (SIN-309). Bitte das Build-Log in Vercel lesen, die Ursache beheben und per Merge einen neuen Commit auslösen.`,
+    });
+  }
+
+  // Production-Alarme (SIN-332): „nicht lesbar“ und „> 3 h hinter main“ sind rot, kein grauer Zustand. Merker `deployAlarm` für das Tages-Update.
+  const deployAlarms = [];
+  if (snap.deploy?.unreadable) deployAlarms.push({ key: "deploy-unreadable", text: `Production-Stand nicht lesbar (${snap.deploy.unreadable}). Wächter und Deploy sind blind, Vercel-Token und Team-Scope prüfen.` });
+  if (snap.deploy?.behind) deployAlarms.push({ key: "deploy-behind", text: `Production liegt seit ${snap.deploy.behind.since.slice(11, 16)} UTC (${snap.deploy.behind.hours} h) hinter main: gemergter App-Code ist nicht live.` });
+  for (const a of deployAlarms) incidents.push(a);
+
   // Sicherung (SIN-293): Fehler oder überfällig = Meldung. Fehlt der Messwert (nicht lesbar), bleibt es still.
   const backup = snap.backup ?? null;
   if (backup?.incident) incidents.push(backup.incident);
+  // Migrationen (SIN-374): fehlt eine Datei in Supabase → roter Punkt und Bug-Issue (ohne Duplikat).
+  const migrations = snap.migrations ?? null;
+  const migr = migrationIncident(migrations);
+  if (migr.incident) incidents.push(migr.incident);
+  // Live-Check nach dem Deploy (SIN-319): Meldung erst, wenn er nach dem Revert noch rot ist.
+  const liveCheck = snap.liveCheck ?? null;
+  if (liveCheck?.incident) incidents.push(liveCheck.incident);
 
   // --- Selbst-Diagnose (SIN-291): Ursache aus den letzten Logs, Bug-Issue ohne Duplikat ---
   const diagnosis =
-    started.length < MAX_PARALLEL
+    active.length < MAX_PARALLEL
       ? diagnoseStall({ running: running.length, paused, startable: order.length, idleMin: mins(idleSince, now), logs: snap.logs ?? [] })
       : null;
   if (diagnosis) incidents.push({ key: `stall:${diagnosis.cause}`, text: `Stillstand: ${diagnosis.label}. ${diagnosis.reason}` });
   const known = [...issues, ...(snap.doneTitles ?? []).map((title) => ({ title }))];
-  const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null);
+  // Gate-Bruch auf main (SIN-327): derselbe rote Schritt in 2+ PRs mit verschiedenem Code → ein Urgent-Bug, PRs nicht weiter reparieren.
+  // SIN-333: nur frische Läufe, keine Dependabot-PRs, Gegencheck auf main.
+  const mainSince = (snap.prs ?? []).map((p) => p.merged_at).filter(Boolean).sort().at(-1);
+  const { breaks, rerun } = detectGateBreaks(snap.gateFailures ?? [], known, { mainSince, main: snap.mainChecks });
+  const gateBugOpen = issues.some((i) => String(i.title).startsWith(GATE_PREFIX));
+  for (const b of breaks) {
+    incidents.push({ key: `gate:${b.check}/${b.step}`, text: `Gate-Bruch: \`${b.check}\` / \`${b.step}\` scheitert in ${b.prs.map((n) => `#${n}`).join(", ")}. Urgent-Bug-Issue ${b.issue ? "angelegt" : "offen"}, Reparatur der PRs gesperrt.` });
+  }
+  const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null, limitsFile.limits?.linear_issues?.limit);
   const stop = linearQ.level === "stop";
-  const bugs = [newStallIssue(diagnosis, known), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
+  const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...[...deployBugs, migr.bug].filter((b) => b && !known.some((k) => k.title === b.title)),...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
   const decisions = snap.decisions ?? [];
   for (const d of decisions) incidents.push({ key: `decision:${d.number}`, text: `Entscheidung nötig in gemergtem PR #${d.number} (${cell(d.title)}): ${d.question}` });
 
   // --- Selbstheilung ---
   for (const issue of bugs) actions.push({ type: "create-issue", issue });
+  for (const a of gateActions(openPrs, breaks, gateBugOpen, rerun)) actions.push(/** @type {any} */ (a));
   const conflictAsks = {};
   for (const p of openPrs.filter((x) => isAgentPr(x) && !x.draft && !labelNames(x).includes("no-automerge") && x.mergeable_state === "dirty")) {
+    // SIN-312: erzeugte Dateien löst konflikt.mjs ohne KI (vorher im Lauf); hier nur noch echte Code-Konflikte.
+    if (snap.conflictResults?.[p.number] === "resolved") continue;
+    if (paused) {
+      incidents.push({ key: `conflict-web:${p.number}`, text: `PR #${p.number} hat einen Code-Konflikt, Claude-Kontingent leer (Pause bis ${pausedUntil}). Konflikt per Web-Editor lösen: ${p.html_url} öffnen, unten „Resolve conflicts“, Markierungen <<<<<<< bis >>>>>>> bereinigen, „Mark as resolved“, „Commit merge“.` });
+      continue;
+    }
     const asks = (prev.conflictAsks ?? {})[p.number] ?? [];
     const waited = asks.length ? mins(asks[asks.length - 1], now) >= CLAUDE_RETRY_MIN : true;
     conflictAsks[p.number] = asks;
@@ -242,7 +297,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, linearFull: stop, now });
   const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
-  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}) };
+  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}), ...(deployAlarms.length ? { deployAlarm: deployAlarms.map((a) => a.text) } : {}) };
   if (refill.trigger) state.refilled = refill.maxIssues;
 
   // Kick: Dispatcher anstoßen, wenn nichts läuft, aber etwas startbar ist und der letzte Lauf lange her ist.
@@ -258,12 +313,29 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   } else out.push("- Kein Worker läuft.");
   if (paused) out.push(`- ⏸ Pausiert bis ${pausedUntil}. Fortsetzen: Workflow \`loop-pause\` mit „fortsetzen“.`);
   out.push(`- ${backup ? `${backup.ok ? "" : "⚠️ "}${backup.line}` : "Letzte Sicherung: nicht lesbar"}`);
+  out.push(`- ${migrations ? `${migrations.ok ? "" : "⚠️ "}${migrations.line}` : "Migrationen: nicht lesbar"}`);
+  if (liveCheck) out.push(`- ${liveCheck.ok ? "" : "⚠️ "}${liveCheck.line}`);
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
-  if (linearQ.level !== "unknown" && linearQ.level !== "ok") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
+  if (linearQ.level === "warn" || linearQ.level === "stop") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
   out.push("");
-  if (decisions.length) {
-    out.push("## Braucht dich", "", "Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
-    for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
+  if (deployAlarms.length) {
+    out.push("## Braucht dich (rot)", "");
+    for (const a of deployAlarms) out.push(`- 🔴 ${a.text}`);
+    out.push("");
+  }
+  const sinan = snap.sinanIssues ?? [];
+  if (decisions.length || sinan.length) {
+    out.push("## Braucht dich", "");
+    if (decisions.length) {
+      out.push("Entscheidungen in schon gemergten PRs, bis du im PR antwortest (Kommentar) oder das Label `entschieden` setzt:", "");
+      for (const d of decisions) out.push(`- #${d.number} ${cell(d.title)}: ${d.question}`);
+      out.push("");
+    }
+    if (sinan.length) out.push("Aufgaben mit Label `sinan` (Link, Minuten; der Loop schließt sie selbst, wenn er es erkennt):", "", renderSinan(sinan), "");
+  }
+  if (waiting.size) {
+    out.push("Wartende PRs (belegen keinen Platz, Issue bleibt „In Progress“):", "");
+    for (const [id, w] of waiting) out.push(`- ${id}: PR #${w.pr}, ${w.reason}`);
     out.push("");
   }
   if (openPrs.length) {
@@ -305,9 +377,17 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   out.push("", "## Kontingente", "", renderQuotaTable(quotaRows));
   out.push("", "## Token-Ablauf", "", renderTokens(snap.tokens, now), "", "Liste ohne Werte: docs/autonomy/tokens.md");
   if (snap.deploy) out.push("", renderDeploy(snap.deploy));
+  const split = snap.usage?.vercel_split;
+  if (split && typeof snap.usage.vercel_deployments_tag === "number") {
+    const n = snap.usage.vercel_deployments_tag;
+    out.push(`- Vercel heute: ${n}/100 (Production ${split.production}, Vorschau ${split.preview})${n >= VERCEL_WARN ? " ⚠️ ab 70 Deploys: Limit droht" : ""}`);
+  }
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
-  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis };
+  // Leitstand (SIN-303): Schlange und offene PRs für `loop_snapshot` (nur Kennungen, Titel, Zahlen).
+  const queue = { startable: order.length, in_progress: active.length, waiting: waiting.size, todo: todo.length, running: running.length, paused };
+  const openPrList = openPrs.map((p) => ({ number: p.number, title: p.title, risk: riskOf(p), draft: !!p.draft, ci: checks[p.number]?.ci ?? null }));
+  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis, queue, openPrList };
 }
 
 /** Kommentar mit Erwähnung für neue Vorfälle; leer, wenn es nichts Neues gibt. */
@@ -370,9 +450,16 @@ export async function collectLogs(repo, runs, { call = gh, text = ghText } = {})
   const out = [];
   for (const workflow of DIAG_WORKFLOWS) {
     const last = runs
-      .filter((r) => r.name === workflow && r.status === "completed")
+      // SIN-361: Läufe, die nur durch ein PR-Ereignis entstehen (dispatch.yml: Merge/Label), überspringen den Dispatcher-Job
+      // und stehen dann als „skipped“ vorn. Sie sagen nichts über den Zeitplan und verdecken den echten letzten Lauf.
+      .filter((r) => r.name === workflow && r.status === "completed" && r.conclusion !== "skipped" && r.event !== "pull_request")
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
-    if (!last || last.conclusion !== "failure") continue;
+    if (!last || last.conclusion !== "failure") {
+      // Kein roter Lauf: sonst bliebe der Wächter ohne Log und meldete „Ursache nicht erkennbar“ (SIN-328).
+      const what = last ? `Letzter Lauf #${last.id} ${last.conclusion ?? last.status} am ${last.created_at}` : "Kein Lauf gefunden (Zeitplan feuert nicht?)";
+      out.push({ workflow, runId: last?.id, url: last?.html_url, text: `Kein roter Lauf: ${workflow}. ${what}`, at: last?.created_at ?? "" });
+      continue;
+    }
     try {
       const { jobs } = await call(`/repos/${repo}/actions/runs/${last.id}/jobs?per_page=20`);
       const job = jobs.find((j) => j.conclusion === "failure") ?? jobs.at(-1);
@@ -413,12 +500,13 @@ async function collectGithub(repo, now) {
   for (const p of list) {
     const pr = {
       number: p.number, title: p.title, body: p.merged_at ? p.body : undefined, head: p.head?.ref, draft: p.draft, state: p.state, merged_at: p.merged_at,
-      labels: p.labels.map((l) => l.name), created_at: p.created_at, updated_at: p.updated_at, html_url: p.html_url,
+      labels: p.labels.map((l) => l.name), created_at: p.created_at, updated_at: p.updated_at, html_url: p.html_url, author: p.user?.login,
     };
     if (p.state === "open") {
+      pr.sha = p.head.sha;
       pr.mergeable_state = (await gh(`/repos/${repo}/pulls/${p.number}`)).mergeable_state;
       const cr = await gh(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`);
-      checks[p.number] = { mergeGate: cr.check_runs.find((c) => c.name === "merge-gate")?.conclusion ?? null };
+      checks[p.number] = { mergeGate: cr.check_runs.find((c) => c.name === "merge-gate")?.conclusion ?? null, ci: cr.check_runs.find((c) => c.name === "build")?.conclusion ?? undefined, checkRuns: cr.check_runs };
     }
     prs.push(pr);
   }
@@ -447,7 +535,7 @@ export async function collectUsage({ env = process.env, now = new Date(), runs =
     }
   };
   const bearer = (t) => ({ headers: { Authorization: `Bearer ${t}` } });
-  // Linear Free (SIN-291): Issue-Zahl gegen das Limit von 250.
+  // Linear Free (SIN-291): Issue-Zahl gegen das Limit aus free-tier-limits.json (Basic seit 2026-10-07: keins).
   await guard("linear_issues", !env.LINEAR_API_KEY && "LINEAR_API_KEY", () =>
     countIssues((q, v) => linear(q, v, { key: env.LINEAR_API_KEY, fetchImpl })),
   );
@@ -455,7 +543,10 @@ export async function collectUsage({ env = process.env, now = new Date(), runs =
     const q = new URLSearchParams({ since: String(now.getTime() - DAY_MS), limit: "100" });
     if (env.VERCEL_PROJECT_ID) q.set("projectId", env.VERCEL_PROJECT_ID);
     if (env.VERCEL_TEAM_ID) q.set("teamId", env.VERCEL_TEAM_ID);
-    return (await json(`https://api.vercel.com/v6/deployments?${q}`, bearer(env.VERCEL_TOKEN))).deployments.length;
+    const list = (await json(`https://api.vercel.com/v6/deployments?${q}`, bearer(env.VERCEL_TOKEN))).deployments;
+    const production = list.filter((d) => d.target === "production").length;
+    usage.vercel_split = { production, preview: list.length - production };
+    return list.length;
   });
   const sb = !env.SUPABASE_ACCESS_TOKEN ? "SUPABASE_ACCESS_TOKEN" : !env.SUPABASE_PROJECT_REF ? "SUPABASE_PROJECT_REF" : null;
   await guard("supabase_db_mb", sb, async () => {
@@ -525,6 +616,15 @@ function readTokens() {
   }
 }
 
+/** Ergebnis von konflikt.mjs (KONFLIKT_FILE); fehlt die Datei, fragt der Wächter wie bisher @claude. */
+function readConflictResults(env) {
+  try {
+    return env.KONFLIKT_FILE ? JSON.parse(readFileSync(env.KONFLIKT_FILE, "utf8")) : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function main(argv, env = process.env) {
   const dry = argv.includes("--dry-run");
   const fixtureAt = argv.indexOf("--fixture");
@@ -560,14 +660,32 @@ export async function main(argv, env = process.env) {
     const usage = await collectUsage({ env, now, runs: g.runs });
     // Production bündeln (SIN-266): Stand und Entscheidung; ausgelöst wird nach dem Schreiben des Status (unten).
     const vercelPct = percent(usage.vercel_deployments_tag, limitsFile.limits?.vercel_deployments_tag?.limit);
-    const deploy = await planDeploy({ env, now, vercelPct, call: gh });
+    statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
+    const deploy = await planDeploy({ env, now, vercelPct, call: gh, prevAttempt: parseState(statusIssue?.body).deployAttempt ?? null });
+    // Auslösen vor dem Schreiben des Status, damit der Versuch (Commit, Zeit) im Merker steht (SIN-309). Nur bei Erfolg: ein Netzfehler sperrt nicht.
+    if (deploy.deploy && !dry) {
+      const token = env.AGENT_WORKFLOW_TOKEN;
+      if (!token) console.log("Production-Deploy fällig, aber AGENT_WORKFLOW_TOKEN fehlt.");
+      else {
+        const r = await triggerDeploy({ repo, token }).catch((e) => ({ ok: false, status: e.message }));
+        if (r.ok && deploy.headSha) deploy.attempt = { sha: deploy.headSha, at: now.toISOString(), state: null };
+        console.log(r.ok ? "Production-Deploy ausgelöst (Workflow production-deploy)." : `::warning::Start von production-deploy fehlgeschlagen (${r.status}), nächster Versuch beim nächsten Takt.`);
+      }
+    }
     // Selbst-Diagnose (SIN-291): Logs der letzten roten Läufe, offene Entscheidungen, kürzlich erledigte Bug-Issues.
     const logs = await collectLogs(repo, g.runs).catch(() => []);
     const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
-    const doneTitles = linearOk ? await doneTitlesSince(STALL_PREFIX, now).catch(() => []) : [];
+    const doneTitles = linearOk ? [...(await doneTitlesSince(STALL_PREFIX, now).catch(() => [])), ...(await doneTitlesSince(GATE_PREFIX, now).catch(() => []))] : [];
+    // Rote Schritte offener PRs für den Gate-Bruch (SIN-327); nur PRs mit rotem Check kosten Anfragen.
+    const redPrs = g.prs.filter((p) => p.state === "open" && g.checks[p.number]?.checkRuns?.some((c) => c.conclusion === "failure")).map((p) => ({ number: p.number, sha: p.sha, author: p.author, checkRuns: g.checks[p.number].checkRuns }));
+    const gateFailures = await collectGateFailures(repo, env.GITHUB_TOKEN, redPrs).catch(() => []);
+    const mainChecks = await collectMainChecks(repo, env.GITHUB_TOKEN).catch(() => ({}));
     const backup = await collectBackup(repo, now, gh);
-    snap = { now: now.toISOString(), ...g, backup, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles };
-    statusIssue = dry ? null : await findOrCreateStatusIssue(repo);
+    const liveCheck = await collectLiveCheck(repo, gh);
+    const migrations = await collectMigrations(env).catch(() => null);
+    // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
+    const sinanIssues = linearOk ? (await syncSinan({ dry }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
@@ -591,14 +709,13 @@ export async function main(argv, env = process.env) {
   output("refill_bugs_only", String(res.refill.bugsOnly));
   if (!live) return res;
 
-  if (snap.deploy?.deploy) {
-    if (!env.VERCEL_DEPLOY_HOOK_PROD) console.log("Production-Deploy fällig, aber VERCEL_DEPLOY_HOOK_PROD fehlt.");
-    else {
-      const r = await triggerDeploy(env.VERCEL_DEPLOY_HOOK_PROD).catch((e) => ({ ok: false, status: e.message }));
-      console.log(r.ok ? "Production-Deploy ausgelöst (Deploy Hook)." : `::warning::Deploy Hook fehlgeschlagen (${r.status}), nächster Versuch beim nächsten Takt.`);
-    }
-  }
+  // Leitstand (SIN-303): Schnappschuss je Projekt; ohne Secrets oder bei Fehler nur eine Warnung.
+  const snapRes = await sendSnapshot(buildSnapshot({ quotas: res.quotaRows, queue: res.queue, openPrs: res.openPrList }, env), env);
+  if (!snapRes.ok) console.log(`::warning::Leitstand: Schnappschuss nicht gespeichert (${snapRes.grund})`);
 
+  // Roter Deploy-Alarm (SIN-332): zusätzlich Telegram, einmal je Vorfall (wie die Erwähnung). Ohne Secrets still.
+  const redFresh = res.fresh.filter((i) => i.key === "deploy-unreadable" || i.key === "deploy-behind");
+  if (redFresh.length) await sendTelegramPlain(`Loop-Status, rot:\n${redFresh.map((i) => i.text).join("\n")}`, env).catch((e) => console.log(`::warning::Telegram: ${e.message}`));
   // Erst melden, dann den Merker speichern: schlägt die Meldung fehl, kommt sie beim nächsten Lauf noch einmal.
   if (alert) await gh(`/repos/${repo}/issues/${statusIssue.number}/comments`, { method: "POST", body: { body: alert } });
   await gh(`/repos/${repo}/issues/${statusIssue.number}`, { method: "PATCH", body: { body: res.body } });
@@ -611,6 +728,23 @@ export async function main(argv, env = process.env) {
     if (a.type === "create-issue") {
       // Ist Linear selbst die Ursache (Limit), schlägt das Anlegen fehl: der Vorfall ging schon per Erwähnung an Sinan.
       await createLinearIssues([a.issue]).catch((e) => console.log(`::warning::Bug-Issue nicht angelegt: ${e.message}`));
+    }
+    // Label und Branch-Update mit dem Agenten-Token: nur so läuft die CI nach dem Push neu (SIN-240).
+    if (a.type === "gate-block" || a.type === "gate-release" || a.type === "gate-rerun") {
+      const token = env.AGENT_WORKFLOW_TOKEN || env.GITHUB_TOKEN;
+      try {
+        if (a.type === "gate-block") {
+          await gh(`/repos/${repo}/labels`, { method: "POST", body: { name: GATE_LABEL, color: "D93F0B", description: "Gate auf main kaputt: keine Reparatur (SIN-327)" }, token }).catch(() => {});
+          await gh(`/repos/${repo}/issues/${a.pr}/labels`, { method: "POST", body: { labels: [GATE_LABEL] }, token });
+        } else if (a.type === "gate-rerun") {
+          await gh(`/repos/${repo}/pulls/${a.pr}/update-branch`, { method: "PUT", token });
+        } else {
+          await gh(`/repos/${repo}/issues/${a.pr}/labels/${GATE_LABEL}`, { method: "DELETE", token });
+          await gh(`/repos/${repo}/pulls/${a.pr}/update-branch`, { method: "PUT", token });
+        }
+      } catch (e) {
+        console.log(`::warning::${a.type} für PR #${a.pr} fehlgeschlagen: ${e.message}`);
+      }
     }
     if (a.type === "linear-done") {
       await setState(a.issue, "Done");

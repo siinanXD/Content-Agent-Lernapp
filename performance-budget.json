@@ -1,9 +1,10 @@
 {
-  "runs": 3,
+  "runs": 7,
+  "tolerance": 0.1,
   "routes": {
-    "/": { "lcpMs": 3000, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },
-    "/start": { "lcpMs": 3000, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },
-    "/lernpfad": { "lcpMs": 3500, "cls": 0.1, "tbtMs": 300, "jsKb": 205 },
-    "/einheit/unit-03": { "lcpMs": 3000, "cls": 0.1, "tbtMs": 300, "jsKb": 210 }
+    "/": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },
+    "/start": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },
+    "/lernpfad": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 205 },
+    "/einheit/unit-03": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 210 }
   }
 }

@@ -6,6 +6,7 @@
  *   node --import tsx scripts/safety-sample.mjs --url https://<app> [--seed 272] [--size 15]
  *   node --import tsx scripts/safety-sample.mjs --live --review-page   (SIN-278: URL aus docs/autonomy/config.json, Prüfseite für Sinan)
  *
+ * --review-page --langfuse: zusätzlich die Fragen in die Langfuse-Warteschlange stellen (SIN-299).
  * --units: JSON-Datei mit { units: [...] } oder [...] (z. B. Antwort von /api/learner/phase-a).
  * --url:   Basis-URL der App; liest /api/learner/phase-a.
  * Schreibt docs/quality/sicherheits-stichprobe-maf-metall.md. Exit 2, wenn keine Einheiten
@@ -60,6 +61,14 @@ if (argv.includes("--review-page")) {
   // SIN-278: Prüfseite mit 10 % der Fragen zu Elektrik und Maschinensicherheit
   const mafMetall = loadAllCurricula().find((c) => c.id === "maf-metall");
   const r = buildQuestionSample(units, mafMetall, { seed });
+  if (argv.includes("--langfuse")) {
+    // SIN-299: Fragen in die Langfuse-Warteschlange „Sicherheits-Stichprobe“; Urteile kommen als Score zurück.
+    const { queueSafetySample } = await import("../src/lib/quality/langfuse-verwaltung.ts");
+    const { shutdownLangfuseOtel } = await import("../src/lib/quality/langfuse-otel.ts");
+    const q = await queueSafetySample(r.sample, { runId: `stichprobe-${today}`, seed });
+    await shutdownLangfuseOtel();
+    console.log(q ? `${q.queued} Fragen in der Langfuse-Warteschlange.` : "Langfuse nicht konfiguriert: nichts eingereiht.");
+  }
   const page = path.join(process.cwd(), "docs", "content", `safety-sample-${today}.md`);
   writeFileSync(page, renderReviewPage(r, { date: today, source, seed }));
   console.log(`${r.sample.length} von ${r.total} Fragen. Seite: ${path.relative(process.cwd(), page)}`);

@@ -1,12 +1,11 @@
 ---
 titel: Datenschutz
-entwurf: Struktur-Vorlage. Endgültiger Text über Generator oder Anwalt; erst nach abgeschlossenen AV-Verträgen veröffentlichen.
 inhalt: ja
 ---
 
 ## 1 Verantwortlicher
 
-[Name, Anschrift, E-Mail] wie im Impressum.
+Sinan Kahraman, Mühlenstraße 44, 53879 Euskirchen, E-Mail kontakt@sjcode.de (wie im Impressum).
 
 ## 2 Welche Daten und wofür
 
@@ -18,16 +17,18 @@ Vertrag (Art. 6 Abs. 1 lit. b DSGVO) für Konto und Lernen, Einwilligung (lit. a
 
 ## 4 Empfänger und Auftragsverarbeiter
 
-- Vercel | Hosting der App | [Region prüfen]
-- Supabase | Datenbank, Anmeldung | [Region prüfen]
-- Sentry | Fehlerberichte | [Region prüfen]
+- Vercel | Hosting der App | Funktionen in Frankfurt (fra1), Auslieferung statischer Dateien über ein weltweites Netz des Anbieters
+- Supabase | Datenbank, Anmeldung | EU (Irland)
+- Sentry | Fehlerberichte | EU
 - PostHog | Nutzungsdaten (Einwilligung) | EU
 - Langfuse | Qualitätsmessung der KI-Inhalte | EU
-- Anthropic, OpenAI | Erzeugen und Prüfen von Lerninhalten, ohne Personendaten | [Ort prüfen]
+- Anthropic, OpenAI | Erzeugen und Prüfen von Lerninhalten, ohne Personendaten | USA, es werden keine Personendaten übermittelt
 
 ## 5 Speicherdauer
 
-[Je Kategorie festlegen, z. B. Nutzungsdaten 12 Monate, Fehlerberichte 90 Tage.]
+- Konto und Lernfortschritt: bis zur Löschung des Kontos
+- Anonyme Nutzungsdaten: 12 Monate
+- Fehlerberichte: 90 Tage
 
 ## 6 Deine Rechte
 

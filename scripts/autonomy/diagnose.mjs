@@ -50,6 +50,13 @@ export const CAUSES = [
     re: /usage limit reached|hit your (?:usage )?limit|limit reached|rate[_ -]?limit|"status":\s*429|too many requests|HTTP 429|quota/i,
     fix: "Prüfen, ob AGENT_PAUSED_UNTIL gesetzt ist und der Reset-Zeitpunkt stimmt; sonst Takt oder Parallelität senken.",
   },
+  {
+    // Letzter Platz: kommt aus collectLogs, wenn kein Lauf rot war (SIN-328).
+    key: "ohne-start",
+    label: "Läufe ohne Fehler, aber kein Worker gestartet",
+    re: /Kein roter Lauf:/,
+    fix: "Dispatcher prüfen: Zeitplan (dispatch.yml) läuft, startbare Issues werden erkannt und der Worker wird ausgelöst (Blocker, Slots, Label `claude`, Pause). Schritt-Ausgabe des letzten dispatch-Laufs lesen und die Stelle beheben, die den Start verhindert.",
+  },
 ];
 
 /** Ursache aus einem Log-Auszug; `unbekannt`, wenn kein Muster passt. */
@@ -83,7 +90,8 @@ export function diagnoseStall({ running, paused, startable, idleMin, logs = [] }
   let found = null;
   for (const l of logs) {
     const c = classifyLog(l.text);
-    if (c.key !== "unbekannt") {
+    // „Ohne Start“ ist nur bei startbarer Arbeit ein Fehler; leere Schlange ist normal.
+    if (c.key !== "unbekannt" && !(c.key === "ohne-start" && !idle)) {
       found = { ...c, workflow: l.workflow, url: l.url ?? null, excerpt: logExcerpt(l.text) };
       break;
     }
@@ -211,14 +219,18 @@ export function splitIssue(issue, parts = 4) {
 /**
  * Anzahl Issues gegen das Limit. `level`: ok | warn (ab 85 %, Hinweis) | stop (ab 95 %, Planer legt nichts an).
  * @param {number | null | undefined} count
+ * @param {number | null} [limit] null = unbegrenzt (Linear Basic, SIN-360)
  */
 export function linearQuota(count, limit = LINEAR_ISSUE_LIMIT) {
+  // SIN-360: `limit: null` = Linear Basic, keine Issue-Grenze. Kein Prozent, nie warn/stop.
+  if (limit === null) return { count: typeof count === "number" ? count : null, limit: null, pct: null, level: "unlimited" };
   if (typeof count !== "number" || !(limit > 0)) return { count: null, limit, pct: null, level: "unknown" };
   const pct = Math.round((count / limit) * 1000) / 10;
   return { count, limit, pct, level: pct >= LINEAR_STOP_PCT ? "stop" : pct >= LINEAR_WARN_PCT ? "warn" : "ok" };
 }
 
 export function renderLinearQuota(q) {
+  if (q.level === "unlimited" && q.count != null) return `Linear: ${q.count} Issues (unbegrenzt)`;
   if (q.pct == null) return "Linear: Issue-Zahl nicht messbar";
   const tail = q.level === "stop" ? ": Planer legt keine neuen Issues an" : q.level === "warn" ? ": Hinweis, bald aufräumen" : "";
   return `Linear: ${q.count} von ${q.limit} Issues (${q.pct} %)${tail}`;

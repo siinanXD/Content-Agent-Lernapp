@@ -1,8 +1,10 @@
 /**
- * AP-22 / SIN-219 — A/B: Haiku 4.5 vs Sonnet 5.5 auf 20 LF3-Einheiten (Message Batches).
+ * AP-22 / SIN-219 / SIN-398 — A/B: Haiku 5.5 vs Sonnet 5.5 auf 20 LF3-Einheiten (Message Batches).
  *
  * Gleiche Prompts, gleicher gecachter System-Präfix. Richter gpt-5.4-mini. Misst echte
- * Batch-`usage` inkl. cache_creation/cache_read. Veröffentlicht nichts (nur Bericht als JSON).
+ * Batch-`usage` inkl. cache_creation/cache_read. Danach eine Reparatur-Runde (Ersatzfragen mit demselben
+ * Modell, vom selben Richter bewertet), damit die Kosten je Einheit die Reparatur enthalten.
+ * Veröffentlicht nichts (nur Bericht als JSON).
  *
  * Usage:
  *   npm run ap22:ab
@@ -13,15 +15,18 @@ import { join } from "node:path";
 import {
   chunkPrompt,
   collectBatchUnits,
+  collectRepairQuestions,
   pollBatchUntilDone,
   submitChunkTargets,
+  submitQuestionRepairBatch,
   UNITS_PER_CHUNK,
   type BatchChunkTarget,
 } from "../src/lib/generate/batch-generate";
 import { didaktikSchemaHint, variantRules } from "../src/lib/generate/didaktik-prompts";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { loadMafCurriculum } from "../src/lib/content/curriculum";
-import { KNOWN_GENERATOR_MODELS } from "../src/lib/anthropic/client";
+import { AB_MODELS } from "../src/lib/anthropic/client";
+import { applyRepair, planFromEvals } from "../src/lib/generate/repair-questions";
 import {
   addOpenAIUsage,
   claudeBatchUsd,
@@ -121,7 +126,7 @@ async function main() {
 
   // Grobe Vorab-Schätzung: ~3k Input, ~4k Output je Einheit und Modell, ~1,2k/0,2k Judge je Frage.
   const c = loadMafCurriculum();
-  const preflightUsd = KNOWN_GENERATOR_MODELS.reduce(
+  const preflightUsd = AB_MODELS.reduce(
     (sum, m) =>
       sum +
       claudeBatchUsd(m, {
@@ -133,7 +138,7 @@ async function main() {
     0,
   );
   const judgeUsd = 2 * unitCount * 7 * ((1200 / 1e6) * 0.75 + (200 / 1e6) * 4.5);
-  console.log(`preflight ~$${(preflightUsd + judgeUsd).toFixed(2)} (Budget €${BUDGET_EUR})`);
+  console.log(`preflight ~$${(preflightUsd + judgeUsd).toFixed(2)} (Budget €${BUDGET_EUR}, ohne Reparatur)`);
   if (preflightUsd + judgeUsd > BUDGET_USD) throw new Error("Preflight über Budget");
 
   if (hasFlag("dry-run")) {
@@ -153,7 +158,7 @@ async function main() {
 
   const system = sharedSystem();
   const submitted = await Promise.all(
-    KNOWN_GENERATOR_MODELS.map(async (model) => ({
+    AB_MODELS.map(async (model) => ({
       model,
       ...(await submitChunkTargets({ keyword: KEYWORD, targets, model, system })),
     })),
@@ -187,6 +192,50 @@ async function main() {
     const rate = unitPassRate(r.got.units, judged.questions);
     const l = r.got.ledger;
     const passingUnits = rate.passing;
+
+    // Eine Reparatur-Runde: nur durchgefallene Fragen ersetzen (wie im Produktivlauf, AP-21).
+    const evalsByUnit = new Map<string, QuestionEval[]>();
+    for (const e of judged.questions) evalsByUnit.set(e.unitId, [...(evalsByUnit.get(e.unitId) ?? []), e]);
+    const unitsById = new Map(r.got.units.map((u) => [u.id, u]));
+    const plans = r.got.units
+      .map((unit) => ({ unit, plan: planFromEvals(unit, evalsByUnit.get(unit.id) ?? []) }))
+      .filter((i) => i.plan.replacements > 0);
+    let repairUsd = 0;
+    let repairJudgeUsd = 0;
+    let finalPassing = passingUnits;
+    let repairedUnits = 0;
+    let repairFailed: string[] = [];
+    if (plans.length > 0 && totalUsd < BUDGET_USD) {
+      const sub = await submitQuestionRepairBatch({ items: plans, model: r.model });
+      await pollBatchUntilDone(sub.batchId, { intervalMs: 20_000 });
+      const rep = await collectRepairQuestions(sub.batchId, unitsById);
+      repairFailed = rep.failedCustomIds;
+      repairUsd = claudeBatchUsd(r.model, rep.ledger);
+      const newItems = flatten(
+        plans.flatMap(({ unit }) => {
+          const qs = rep.questions.get(unit.id);
+          return qs ? [{ ...unit, questions: qs }] : [];
+        }),
+      );
+      const newJudged = newItems.length
+        ? await liveJudgeWithUsage(key, newItems)
+        : { questions: [] as QuestionEval[], usage: { prompt_tokens: 0, completion_tokens: 0 } };
+      repairJudgeUsd = addOpenAIUsage(
+        emptyLedger(),
+        newJudged.usage.prompt_tokens,
+        newJudged.usage.completion_tokens,
+      ).usdEstimate;
+      for (const { unit, plan } of plans) {
+        const qs = rep.questions.get(unit.id);
+        if (!qs) continue;
+        if (applyRepair(unit, plan, qs, newJudged.questions).publishable) {
+          finalPassing += 1;
+          repairedUnits += 1;
+        }
+      }
+      totalUsd += repairUsd + repairJudgeUsd;
+    }
+    const totalModelUsd = r.generationUsd + judgeUsd + repairUsd + repairJudgeUsd;
     report.push({
       model: r.model,
       batchId: r.batchId,
@@ -208,6 +257,24 @@ async function main() {
       generationUsd: r.generationUsd,
       judgeUsd,
       usdPerPassingUnit: passingUnits ? Number((r.generationUsd / passingUnits).toFixed(4)) : null,
+      repair: {
+        unitsRepaired: repairedUnits,
+        failedBatchRequests: repairFailed,
+        repairUsd,
+        repairJudgeUsd,
+      },
+      /** Nach Reparatur: Einheiten mit genug bestandenen Fragen (wie live); Kosten inkl. Generierung, Reparatur und Richter. */
+      afterRepair: {
+        unitsPublishable: finalPassing,
+        unitsDiscarded: r.got.units.length - finalPassing,
+        publishableRate: Number((finalPassing / Math.max(1, r.got.units.length)).toFixed(3)),
+        totalUsd: Math.round(totalModelUsd * 10000) / 10000,
+        usdPerUnit: r.got.units.length ? Number((totalModelUsd / r.got.units.length).toFixed(4)) : null,
+        eurPerUnit: r.got.units.length
+          ? Number((totalModelUsd / USD_PER_EUR / r.got.units.length).toFixed(4))
+          : null,
+        usdPerPublishableUnit: finalPassing ? Number((totalModelUsd / finalPassing).toFixed(4)) : null,
+      },
     });
   }
 

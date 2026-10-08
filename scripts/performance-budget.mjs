@@ -4,7 +4,8 @@
  * (mobil, Median aus `runs` Läufen). Überschreitung → Exit 1 → der CI-Job `build` wird rot und blockiert den Merge.
  * Messgrößen: LCP, CLS, TBT und Größe der übertragenen JavaScript-Dateien der Route (resource-summary).
  *
- * Usage: node scripts/performance-budget.mjs [--base http://127.0.0.1:43123] [--out messung.json] [--runs 3] [--serve]
+ * Usage: node scripts/performance-budget.mjs [--base http://127.0.0.1:43123] [--out messung.json] [--runs 3] [--serve] [--details]
+ * --details zeigt je Route das LCP-Element und die LCP-Phasen (Ursachenanalyse, SIN-311); bei Überschreitung immer.
  * Braucht einen laufenden Server (`npm run build && npm start -- --port 43123`) oder --serve: startet `next start` selbst.
  */
 import { spawn } from "node:child_process";
@@ -13,13 +14,16 @@ import { pathToFileURL } from "node:url";
 
 const MEDIAN = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
 
+const allowed = (key, limit, tolerance) => (key === "lcpMs" || key === "tbtMs" ? Math.round(limit * (1 + tolerance)) : limit);
+
 /**
  * Vergleicht Messwerte mit der Grenze einer Route.
  * @param {{ lcpMs: number, cls: number, tbtMs: number, jsKb: number }} measured
  * @param {{ lcpMs: number, cls: number, tbtMs: number, jsKb: number }} limit
+ * @param {number} [tolerance] Toleranz auf die Zeitgrenzen LCP und TBT (SIN-322, Messrauschen im CI); CLS und JS-Größe sind exakt
  * @returns {string[]} eine Zeile je überschrittener Grenze (leer = im Budget)
  */
-export function violations(measured, limit) {
+export function violations(measured, limit, tolerance = 0) {
   const rows = [
     ["LCP", "lcpMs", "ms"],
     ["CLS", "cls", ""],
@@ -27,8 +31,8 @@ export function violations(measured, limit) {
     ["JS", "jsKb", "KB"],
   ];
   return rows
-    .filter(([, key]) => limit[key] !== undefined && measured[key] >= limit[key])
-    .map(([name, key, unit]) => `${name} ${measured[key]}${unit && ` ${unit}`} (Grenze ${limit[key]}${unit && ` ${unit}`})`);
+    .filter(([, key]) => limit[key] !== undefined && measured[key] >= allowed(key, limit[key], tolerance))
+    .map(([name, key, unit]) => `${name} ${measured[key]}${unit && ` ${unit}`} (Grenze ${limit[key]}${unit && ` ${unit}`}${allowed(key, limit[key], tolerance) !== limit[key] ? `, mit Toleranz ${allowed(key, limit[key], tolerance)}` : ""})`);
 }
 
 /** Messwerte aus Lighthouse-Berichten (lhr) einer Route: Median je Größe. */
@@ -54,6 +58,7 @@ async function main(argv) {
   const budget = JSON.parse(readFileSync(new URL("../performance-budget.json", import.meta.url), "utf8"));
   const runs = Number(take("--runs") ?? budget.runs ?? 3);
   const serve = args.includes("--serve");
+  const details = args.includes("--details");
 
   let server;
   if (serve) {
@@ -74,6 +79,8 @@ async function main(argv) {
   try {
     for (const [route, limit] of Object.entries(budget.routes)) {
       const lhrs = [];
+      // Aufwärmlauf (SIN-329): der erste Abruf trifft kalte Caches und Server; er zählt nicht in den Median.
+      await lighthouse(`${base}${route}`, { port: chrome.port, output: "json", onlyCategories: ["performance"] });
       for (let i = 0; i < runs; i++) {
         const result = await lighthouse(`${base}${route}`, {
           port: chrome.port,
@@ -85,10 +92,19 @@ async function main(argv) {
         if (result?.lhr) lhrs.push(result.lhr);
       }
       const measured = measure(lhrs);
-      const over = violations(measured, limit);
+      const over = violations(measured, limit, budget.tolerance ?? 0);
       rows.push({ route, measured, limit, over });
       console.log(`${over.length ? "✗" : "✓"} ${route.padEnd(18)} LCP ${measured.lcpMs} ms, CLS ${measured.cls}, TBT ${measured.tbtMs} ms, JS ${measured.jsKb} KB`);
       for (const line of over) console.error(`  - ${line}`);
+      if ((details || over.length) && lhrs[0]) {
+        const a = lhrs[0].audits ?? {};
+        const el = a["largest-contentful-paint-element"]?.details?.items?.[0]?.items?.[0]?.node;
+        console.log(`    LCP-Element: ${el?.selector ?? "?"} ${(el?.snippet ?? "").slice(0, 120)}`);
+        const m = a.metrics?.details?.items?.[0] ?? {};
+        console.log(`    FCP ${Math.round(a["first-contentful-paint"]?.numericValue ?? 0)} ms (gemessen ${Math.round(m.observedFirstContentfulPaint ?? 0)}), LCP gemessen ${Math.round(m.observedLargestContentfulPaint ?? 0)} ms`);
+        console.log(`    Render-blockierend: ${JSON.stringify(a["render-blocking-insight"]?.details?.items?.map((i) => `${i.url} ${i.wastedMs}ms`) ?? a["render-blocking-resources"]?.details?.items?.map((i) => `${i.url} ${i.wastedMs}ms`))}`);
+        console.log(`    LCP-Phasen: ${JSON.stringify(a["lcp-breakdown-insight"]?.details?.items ?? a["largest-contentful-paint-element"]?.details?.items?.[1]?.items)}`);
+      }
     }
   } finally {
     await chrome.kill();

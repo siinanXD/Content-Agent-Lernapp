@@ -14,7 +14,8 @@ const MAX_PAGES = 10;
 async function countIssues(env, query, fetchImpl, http) {
   const base = env.SENTRY_BASE_URL || "https://de.sentry.io";
   // `lastSeen:-7d` filtert verbindlich; `statsPeriod` allein steuert nur die Statistik.
-  const params = new URLSearchParams({ query: `${query} lastSeen:-7d`, statsPeriod: "7d", limit: "100" });
+  // Erlaubte stats_period-Werte: '' (Standard), '24h', '14d'. 7d ist nicht erlaubt.
+  const params = new URLSearchParams({ query: `${query} lastSeen:-7d`, statsPeriod: "24h", limit: "100" });
   let url = `${base}/api/0/projects/${encodeURIComponent(env.SENTRY_ORG)}/${encodeURIComponent(env.SENTRY_PROJECT)}/issues/?${params}`;
   let total = 0;
   for (let page = 0; page < MAX_PAGES && url; page++) {
@@ -28,12 +29,20 @@ async function countIssues(env, query, fetchImpl, http) {
 
 export async function collectSentryMetrics(env = process.env, fetchImpl = fetch, http = {}) {
   const out = { sentry: NA, sentry_kritisch: NA };
-  if (!env.SENTRY_AUTH_TOKEN || !env.SENTRY_ORG || !env.SENTRY_PROJECT) return out;
+  const missing = ["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"].filter((k) => !env[k]);
+  if (missing.length) {
+    const msg = `${NA} (Secret fehlt im Workflow: ${missing.join(", ")})`;
+    return { sentry: msg, sentry_kritisch: msg };
+  }
   try {
     out.sentry = `${await countIssues(env, "is:unresolved", fetchImpl, http)} ungelöste Fehler (7 Tage)`;
-    out.sentry_kritisch = await countIssues(env, "is:unresolved level:[error,fatal]", fetchImpl, http);
   } catch (e) {
     out.sentry = NOT_MEASURABLE(e);
+  }
+  try {
+    out.sentry_kritisch = await countIssues(env, "is:unresolved level:[error,fatal]", fetchImpl, http);
+  } catch (e) {
+    out.sentry_kritisch = NOT_MEASURABLE(e);
   }
   return out;
 }

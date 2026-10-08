@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { SCHWERPUNKTE } from "@/lib/learner/onboarding";
+import { DEMO_HREF } from "@/lib/ausbilder/demo";
 import type { DemoField } from "@/lib/demo/demo-request";
 
 type Status = "offen" | "sendet" | "fertig" | "fehler";
@@ -55,10 +56,10 @@ export default function DemoPage() {
 
   if (status === "fertig") {
     return (
-      <MobileShell>
-        <main className="flex flex-col gap-4 px-5 pb-8 pt-10">
+      <MobileShell wide>
+        <main className="mx-auto flex w-full flex-col gap-4 px-4 pb-8 pt-10 md:max-w-[640px]">
           <h1
-            className="text-[28px] font-bold leading-9"
+            className="text-[32px] font-bold leading-10 md:text-[44px] md:leading-[48px]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             Danke für Ihre Anfrage.
@@ -78,10 +79,10 @@ export default function DemoPage() {
   }
 
   return (
-    <MobileShell>
-      <main className="flex flex-col gap-4 px-5 pb-8 pt-10">
+    <MobileShell wide>
+      <main className="mx-auto flex w-full flex-col gap-4 px-4 pb-8 pt-10 md:max-w-[640px]">
         <h1
-          className="text-[28px] font-bold leading-9"
+          className="text-[32px] font-bold leading-10 md:text-[44px] md:leading-[48px]"
           style={{ fontFamily: "var(--font-display)" }}
         >
           Demo-Zugang anfragen
@@ -91,7 +92,17 @@ export default function DemoPage() {
           innerhalb eines Werktags.
         </p>
 
-        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+        <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
+          Erst ansehen? Die Gruppenansicht gibt es mit Beispieldaten, ohne Konto.{" "}
+          <Link
+            href={DEMO_HREF}
+            className="inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-primary)] underline underline-offset-2"
+          >
+            Beispielansicht öffnen
+          </Link>
+        </p>
+
+        <form onSubmit={submit} noValidate className="bento-tile !gap-4">
           <TextField
             label="Bildungsträger"
             id="organisation"

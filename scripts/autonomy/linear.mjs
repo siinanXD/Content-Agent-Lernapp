@@ -73,8 +73,8 @@ const rank = (p) => (p === 0 || p == null ? 5 : p);
 
 /** Spuren (SIN-227), in dieser Reihenfolge abwechselnd bedient. Label je Spur = Name. */
 export const LANES = ["frontend", "content", "backend"];
-/** Issues mit diesen Labels bekommt der Dispatcher nie: Design (Figma-Sitzung), Abnahme und Blocker (Mensch). */
-export const HUMAN_LABELS = ["design", "abnahme", "needs-human"];
+/** Issues mit diesen Labels bekommt der Dispatcher nie: Design (Figma-Sitzung), Abnahme, Blocker, Recherche und Aufgaben für Sinan (SIN-310). */
+export const HUMAN_LABELS = ["design", "abnahme", "needs-human", "research", "sinan"];
 
 const labelsOf = (issue) => (issue.labels?.nodes ?? []).map((l) => l.name.toLowerCase());
 export const isHumanIssue = (issue) => labelsOf(issue).some((l) => HUMAN_LABELS.includes(l));
@@ -85,9 +85,12 @@ export const laneOf = (issue) => LANES.find((l) => labelsOf(issue).includes(l)) 
  * Bis zu `slots` Issues: Status Todo, keine offenen Blocker, kein `design`/Mensch-Issue, `mayTake` (Cursor zuerst).
  * Spuren wechseln sich ab: Beginn bei der Spur nach der zuletzt gestarteten, danach reihum; innerhalb
  * einer Spur höchste Priorität, dann ältere Nummer. Eine Spur ohne Kandidat wird übersprungen (kein Hungern).
+ * Urgent (Priorität 1) kommt vor der Rotation (SIN-327). `waiting`: Kennungen von Issues mit wartendem PR,
+ * sie belegen keinen der `MAX_PARALLEL` Plätze.
  */
-export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true) {
-  const started = issues.filter((i) => i.state.type === "started");
+export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true, waiting = new Set()) {
+  // Wartende PRs (SIN-327) belegen keinen Platz: nur Issues mit Worker oder PR in Arbeit zählen.
+  const started = issues.filter((i) => i.state.type === "started" && !waiting.has(i.identifier));
   const free = Math.max(0, MAX_PARALLEL - started.length);
   const want = Math.min(slots, free);
   if (want === 0) return { issues: [], reason: `${started.length} Issues laufen schon (max. ${MAX_PARALLEL})` };
@@ -104,13 +107,15 @@ export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true) {
 export function startOrder(issues, mayTake = () => true) {
   const started = issues.filter((i) => i.state.type === "started");
   const queues = Object.fromEntries(LANES.map((l) => [l, []]));
-  issues
+  const todo = issues
     .filter((i) => i.state.name === "Todo" && !isHumanIssue(i) && !hasOpenBlockers(i) && mayTake(i))
-    .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b))
-    .forEach((i) => queues[laneOf(i)].push(i));
+    .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b));
+  // Urgent zuerst, älteste Nummer zuerst; die Rotation gilt erst ab Priorität 2 (SIN-327).
+  const urgent = todo.filter((i) => i.priority === 1);
+  todo.filter((i) => i.priority !== 1).forEach((i) => queues[laneOf(i)].push(i));
   const last = [...started].sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))[0];
   let lane = last ? (LANES.indexOf(laneOf(last)) + 1) % LANES.length : 0;
-  const ordered = [];
+  const ordered = [...urgent];
   while (LANES.some((l) => queues[l].length)) {
     const next = queues[LANES[lane]].shift();
     if (next) ordered.push(next);
@@ -135,16 +140,20 @@ export function buildPrompt(issue) {
     "",
     issue.description ?? "(ohne Beschreibung)",
     "",
-    "Regeln: AGENTS.md. Lies zuerst docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
+    "Regeln: AGENTS.md. Lies zuerst docs/LANDKARTE.md (wo liegt was), docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
+    "Lehren (SIN-296): Lies docs/autonomy/LEHREN.md. Nach jedem behobenen Bug ergänze dort eine Zeile (Was nicht geht → wie es richtig geht; keine Dopplungen, höchstens 150 Zeilen). Wiederholt sich ein Arbeitsablauf, lege docs/skills/<name>/SKILL.md an (Aufbau: docs/skills/README.md), nutze passende vorhandene Skills und nenne neue im PR unter `## Neue Skills`. Das Laufprotokoll erzeugt der Workflow, du schreibst es nicht.",
     `Entscheidungen und Annahmen: eine neue Datei docs/decisions/${issue.identifier}-<kurz>.md (Kopf: Links, Entscheidung, Annahmen, Warum). docs/DECISIONS.md nie von Hand bearbeiten: vor dem Push \`npm run decisions:index\` ausführen und den Index im selben PR committen (CI prüft ihn).`,
     `Arbeite auf einem neuen Branch claude/${issue.identifier.toLowerCase()}. Ein PR pro Arbeitspaket, Reparaturen im selben PR.`,
     `PR-Titel als Conventional Commit mit (${issue.identifier}), Body beginnt mit "Part of ${issue.identifier}". Kein Draft, nie selbst mergen.`,
     "PR-Titel in Klartext (Conventional Commit, SIN-248). PR-Beschreibung nach dem ersten Satz in festen Abschnitten mit `## `-Überschriften, daraus baut pr-gate den Steckbrief für Sinan: `## Was ändert sich` (2–4 Zeilen aus Nutzersicht, keine Dateilisten), `## Ausprobieren` (ein Klickpfad, z. B. Startseite → Los geht’s → Einverstanden; bei Backend-only weglassen), `## Nach dem Merge` (was automatisch passiert), `## Kosten` (nur wenn relevant: API-Kosten, neue Secrets, neue Dienste), `## Rückgängig` (nur wenn nicht „Revert-PR genügt“). Braucht es eine Entscheidung von Sinan: `## Entscheidung nötig` mit Frage und 2–3 Optionen.",
     `Höchstens ${MAX_REPAIR_ROUNDS} Reparatur-Runden. Bei einem Blocker: stoppen und den Blocker im PR beschreiben.`,
-    "Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, `npm run typecheck`, `npm run lint` und `npm test` ausführen. Rot? Erst beheben. Kein PR mit bekannten roten Checks.",
+    "Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, `npm run typecheck`, `npm run lint` und `npm test` ausführen (die CI-Prüfungen im selben Lauf, SIN-298). Rot? Ursache selbst beheben und erneut ausführen, erst dann pushen und den PR öffnen. Kein PR mit bekannten roten Checks.",
+    `Live-Updates (SIN-298): Schreibe kurze Fortschritts-Kommentare ins Linear-Issue: \`node scripts/autonomy/live.mjs fortschritt ${issue.identifier} "woran du gerade arbeitest"\` (höchstens 3 je Lauf, z. B. nach dem Plan, vor den Prüfungen). Rückfragen an Sinan als \`node scripts/autonomy/live.mjs frage ${issue.identifier} "…"\`, nicht nur im PR. Gestartet, fertig und gescheitert schreibt der Workflow selbst.`,
     "Frontend: Werte (Farben, Abstände, Texte) aus Figma lesen, nicht schätzen: `node scripts/autonomy/figma.mjs --node <ID>` (Datei 0SWGDO2ioBD3MyXiAnrbRz, Token FIGMA_ACCESS_TOKEN nur lesend; fehlt er, im PR „nicht verfügbar“ schreiben).",
     "Frontend-Selbstprüfung (SIN-275, Pflicht vor dem PR bei Änderungen an src/app oder Komponenten): Lies docs/skills/web-design-guidelines/SKILL.md. `npm run build`, dann `node scripts/autonomy/screenshots.mjs <geänderte Routen>` (Handy 390 px + Desktop, Chromium ist installiert; sonst `npx playwright install chromium`). Sieh dir die Bilder an, prüfe sie gegen die Checkliste und Figma, behebe Abweichungen oder nenne sie im PR. Spiele den Klickpfad aus dem Issue einmal durch. Schreibe in `## Ausprobieren` „Klickpfad geprüft“ und die Screenshot-Namen (Artefakt `screenshots` des Worker-Laufs).",
     "README (SIN-300): Ändern sich Funktion, Einrichtung, Befehle oder Umgebungsvariablen, passe `README.md` im selben PR an (CI warnt sonst). `CHANGELOG.md` nie von Hand: sie wird aus den PR-Titeln erzeugt.",
+    "Diagramme (SIN-376): Änderst du `.github/workflows/`, `scripts/autonomy/` oder `src/app/**/page.tsx`, passe im selben PR `docs/diagramme/pipeline.mmd` bzw. `docs/diagramme/nutzerwege.mmd` an (bei `pipeline.mmd` auch den Mermaid-Block im README). Ohne das zeigt der PR-Steckbrief einen Hinweis.",
+    "Aufgaben für Sinan (SIN-310): Braucht es etwas, das nur Sinan tun kann, schreibe keine Anleitung in den PR. Lege ein Linear-Issue mit Label `sinan` an: `node scripts/autonomy/sinan.mjs create --titel … --wo … --link … --minuten … --schritt „1. …“ (mehrfach) --pruefung …` (Beschreibung im festen Block wo, link, minuten, schritte, pruefung; kopierbare Werte, nie Geheimnisse). Verlinke das Issue im PR unter `## Nach dem Merge`.",
     "Keine neuen Komponenten, Farben oder Screens im Code erfinden. Fehlt etwas in Figma, lege ein Linear-Issue mit Label `design` an, statt zu improvisieren.",
   ].join("\n");
 }

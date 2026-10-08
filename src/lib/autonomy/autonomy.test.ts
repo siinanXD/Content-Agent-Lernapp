@@ -4,7 +4,7 @@ import { approvalStillValid, classifyRisk, fetchDependencyInfo, newDependencies 
 import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
-import { MAX_ISSUES_PER_WEEK, extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
+import { DESIGN_VORLAGEN_BLOCK, MAX_ISSUES_PER_WEEK,extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
 import {
   CHECKS,
   abnahmeIssue,
@@ -218,10 +218,18 @@ test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
   assert.equal(validatePlan([mk(1), mk(2, "frontend")], [], { bugsOnly: true }).map((r: { lane: string }) => r.lane).join(), "backend");
   // SIN-262: Label claude für Spuren, nicht für Design-Pakete
   const labelsOf = (lane: string) => (validatePlan([mk(1, lane)])[0] as { labels: string[] }).labels;
-  assert.deepEqual(labelsOf("backend"), ["backend", "claude"]);
-  assert.deepEqual(labelsOf("content"), ["content", "claude"]);
-  assert.deepEqual(labelsOf("frontend"), ["frontend", "claude"]);
+  // SIN-320: ohne `size` im Plan gilt `mittel`.
+  assert.deepEqual(labelsOf("backend"), ["backend", "claude", "groesse:mittel"]);
+  assert.deepEqual(labelsOf("content"), ["content", "claude", "groesse:mittel"]);
+  assert.deepEqual(labelsOf("frontend"), ["frontend", "claude", "groesse:mittel"]);
   assert.deepEqual(labelsOf("design"), ["design", "frontend"]);
+  // SIN-320: Größe und Bereich werden Labels, `gross` wird vor dem Start verworfen
+  const sized = validatePlan([
+    { ...mk(1), size: "klein", area: "Doku" },
+    { ...mk(2), size: "gross" },
+  ]) as { labels: string[] }[];
+  assert.equal(sized.length, 1);
+  assert.deepEqual(sized[0].labels, ["backend", "claude", "groesse:klein", "bereich:doku"]);
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: [], priority: 1 }]));
   assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: ["a"], priority: 9 }]));
   assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 1 }]), /lane/);
@@ -242,7 +250,7 @@ test("Planer: je Spur max. 3 (zusammen 9), 1 Design-Paket, Spur-Label", () => {
   for (const lane of ["frontend", "content", "backend"]) assert.equal(out.filter((i) => i.lane === lane).length, 3);
   assert.deepEqual(out.filter((i) => i.lane === "design").map((i) => i.title), ["D1"]);
   assert.deepEqual(out[0].labels, ["design", "frontend"]); // Design zuerst angelegt
-  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content", "claude"]);
+  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content", "claude", "groesse:mittel"]);
 });
 
 test("Planer: Frontend mit neuer Oberfläche braucht Design als Blocker", () => {
@@ -262,7 +270,7 @@ test("Planer: Pflege-Modus plant nur Backend und Content", () => {
 });
 
 test("Produktreife: Messung, Bestätigung, Tabelle, Abnahme und Pflege-Modus", () => {
-  const metrics = { bestehensquote_pct: 95, sentry_kritisch: 0 };
+  const metrics = { bestehensquote_pct: 95, sentry_kritisch: 0, content_fabrik_status: "läuft", content_fabrik: "letzter Lauf vor 2 Tagen" };
   const expected = ["01 Start", "02 Lernpfad"];
   const base = { metrics, issues: [issue("SIN-1", 2)], expected, figma: { frames: ["01 Start", "02 Lernpfad"] } };
   const rows = evaluateReadiness(base);
@@ -307,8 +315,8 @@ test("Dispatcher: überspringt design-, abnahme- und needs-human-Issues", () => 
 
 test("Dispatcher: Spuren wechseln sich ab, keine Spur verhungert", () => {
   const lane = (id: string, name: string, p = 2) => issue(id, p, { labels: { nodes: [{ name }] } });
-  const todo = [lane("SIN-1", "backend", 1), lane("SIN-2", "backend", 1), lane("SIN-3", "frontend"), lane("SIN-4", "content")];
-  assert.deepEqual(pickMany(todo, 2).issues.map((i) => i.identifier), ["SIN-3", "SIN-4"]); // trotz niedrigerer Priorität
+  const todo = [lane("SIN-1", "backend", 2), lane("SIN-2", "backend", 2), lane("SIN-3", "frontend", 3), lane("SIN-4", "content", 3)];
+  assert.deepEqual(pickMany(todo, 2).issues.map((i) => i.identifier), ["SIN-3", "SIN-4"]); // trotz niedrigerer Priorität (ab Priorität 2 gilt die Rotation)
   // Läuft schon ein Frontend-Issue, kommt als Nächstes Content.
   const running = issue("SIN-9", 2, { state: { name: "In Progress", type: "started" }, labels: { nodes: [{ name: "frontend" }] }, updatedAt: "2026-10-05T10:00:00Z" });
   assert.deepEqual(pickMany([running, ...todo], 2).issues.map((i) => i.identifier), ["SIN-4"]);
@@ -406,4 +414,18 @@ test("Figma: Worker liest Werte über die API (Mock)", async () => {
   assert.equal(await readNodeValues("KEY", "1:2", {}, fetchMock), null); // ohne Token: nicht verfügbar
   const tokens = { color: { a: { value: "#0B5F6E" }, b: { value: "#FFFFFF" } } };
   assert.deepEqual(await diffColorTokens(tokens, "KEY", { FIGMA_ACCESS_TOKEN: "t" }, fetchMock), ["b (#FFFFFF)"]);
+});
+
+test("Planer: Design-Paket enthält Abschnitt „Vorlagen geprüft“ und Hinweis für Sinan (SIN-306)", () => {
+  const [d] = validatePlan([{ lane: "design", title: "Paket", description: "Screens", acceptance: ["ok"], priority: 2 }]);
+  assert.match(d.description, /## Vorlagen geprüft/);
+  assert.match(d.description, /Figma Community/);
+  assert.match(d.description, /GitHub/);
+  assert.match(d.description, /## Hinweis für Sinan/);
+  assert.match(d.description, /nicht selbst übernehmen/);
+  // keine Dopplung, wenn der Plan den Abschnitt schon liefert
+  const [e] = validatePlan([{ lane: "design", title: "Paket", description: DESIGN_VORLAGEN_BLOCK, acceptance: ["ok"], priority: 2 }]);
+  assert.equal(e.description.match(/## Vorlagen geprüft/g)?.length, 1);
+  // andere Spuren bleiben unverändert
+  assert.doesNotMatch(validatePlan([{ lane: "backend", title: "B", acceptance: ["ok"], priority: 2 }])[0].description, /Vorlagen/);
 });

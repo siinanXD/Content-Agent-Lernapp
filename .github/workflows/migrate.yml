@@ -1,0 +1,58 @@
+# Migrationen automatisch anwenden (SIN-374): nach jedem Merge auf main mit Änderungen unter supabase/migrations/.
+# Vorher: Sicherung (SIN-293). Dann dieselbe Aufgabe `migrate` wie in run-task.yml: nur additive Migrationen, jede in einer
+# Transaktion, danach Version in supabase_migrations.schema_migrations und `notify pgrst, 'reload schema'`.
+# Nicht additive Migrationen bleiben liegen (risk:high, Sinan entscheidet) und machen den Lauf rot.
+# Der Wächter (status.yml) vergleicht Dateien und Datenbank und zeigt „Migrationen: n/n angewendet“.
+# Der Production-Deploy (production-deploy.yml) wartet, solange additive Migrationen fehlen.
+# Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (Sicherung), SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF (Secret oder Variable).
+name: migrate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Sicherung vor Migration (SIN-293)
+        id: backup
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node --import tsx scripts/backup.ts export
+          echo "at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - name: Migrationen anwenden
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || vars.SUPABASE_PROJECT_REF }}
+          BACKUP_AT: ${{ steps.backup.outputs.at }}
+        run: node scripts/autonomy/run-task.mjs --task migrate
+      - name: Stand nach dem Lauf
+        if: always()
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || vars.SUPABASE_PROJECT_REF }}
+        run: node scripts/autonomy/migrationen.mjs | tee -a "$GITHUB_STEP_SUMMARY"

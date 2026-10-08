@@ -17,7 +17,24 @@ export const SECTIONS = {
   cost: ["kosten", "kosten/folgen", "kosten und folgen"],
   revert: ["rückgängig"],
   decision: ["entscheidung nötig"],
+  // SIN-320: schreibt der Worker (verbrauch.mjs), eine Zeile je Lauf mit Tokens, Runden, Dauer, API-Gegenwert.
+  usage: ["verbrauch"],
+  // SIN-296: Link zum Laufprotokoll (protokoll.mjs) und neue Skills des Workers.
+  protocol: ["laufprotokoll"],
+  skills: ["neue skills"],
 };
+
+/** SIN-376: Diagramme in docs/diagramme/, passend zu den Pfaden, die sie beschreiben. */
+export const DIAGRAMME = [
+  { datei: "docs/diagramme/pipeline.mmd", wenn: /^(\.github\/workflows\/|scripts\/autonomy\/)/ },
+  { datei: "docs/diagramme/nutzerwege.mmd", wenn: /^src\/app\/(.+\/)?page\.tsx$/ },
+];
+
+/** Hinweis (kein Blocker): Pfade geändert, aber die passende .mmd nicht. @returns {string[]} die fehlenden Dateien */
+export function diagrammHinweis(files = []) {
+  const names = files.map((f) => (typeof f === "string" ? f : f.filename));
+  return DIAGRAMME.filter((d) => names.some((n) => d.wenn.test(n)) && !names.includes(d.datei)).map((d) => d.datei);
+}
 
 /** Zerlegt den PR-Body in Abschnitte. @returns {Record<string, string>} Schlüssel aus SECTIONS */
 export function parseBody(body = "") {
@@ -160,6 +177,10 @@ export function buildSteckbrief(input) {
     }`,
     `**Nach dem Merge:** ${sec.after ? short(sec.after, 2).join(" ") : migration ? "Die Migration läuft." : "Nichts Besonderes."}`,
     ...(sec.cost ? [`**Kosten/Folgen:** ${short(sec.cost, 3).join(" ")}`] : []),
+    ...(sec.skills ? ["**Neue Skills:**", ...short(sec.skills, 3).map((l) => `- ${l}`)] : []),
+    ...(sec.protocol ? ["**Laufprotokoll:**", ...short(sec.protocol, 2).map((l) => `- ${l}`)] : []),
+    ...(sec.usage ? ["**Verbrauch:**", ...short(sec.usage, 4).map((l) => `- ${l}`)] : []),
+    ...(diagrammHinweis(files).length ? [`**Diagramme:** Hinweis, kein Blocker: ${diagrammHinweis(files).join(", ")} nicht angepasst. Der Worker aktualisiert sie im selben PR.`] : []),
     `**Rückgängig:** ${sec.revert ? short(sec.revert, 2).join(" ") : migration ? "Nicht trivial: Migration, Revert-PR genügt nicht allein." : "Revert-PR genügt."}`,
     ...(high && reasons.length ? ["", "<details><summary>Gründe für risk:high</summary>", "", ...reasons.slice(0, 15).map((r) => `- ${r.text}`), "", "</details>"] : []),
   ];

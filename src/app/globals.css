@@ -29,6 +29,22 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  /* Variante 2026 (SIN-314): Lern-App 16–24 px (lg bis xl), Leitstand/Werkzeuge 2 px */
+  --radius-xl: 24px;
+  --radius-tool: 2px;
+
+  /* Bento-Raster (SIN-314) */
+  --bento-gap: 12px;
+  --bento-gap-wide: 16px;
+  --bento-pad: 24px;
+  --bento-pad-tool: 16px;
+  --bento-line: 1px;
+
+  /* Mono-Label: Geist Mono, 12/16, 500, Laufweite 0.06em (Leitstand zusätzlich Großbuchstaben) */
+  --type-mono-label-size: 12px;
+  --type-mono-label-line: 16px;
+  --type-mono-label-weight: 500;
+  --type-mono-label-tracking: 0.06em;
 
   /* Geist für Text, Geist Mono für Kennungen und Zahlen (next/font in layout.tsx) */
   --font-display: var(--font-geist-sans), "Geist", ui-sans-serif, sans-serif;
@@ -56,6 +72,11 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body);
+}
+
+/* Einwilligungs-Banner steht im Server-HTML; wer schon entschieden hat, sieht ihn nie (Skript im Layout, SIN-311). */
+html[data-consent="decided"] [data-consent-banner] {
+  display: none;
 }
 
 /* Design-Paket 2 (SIN-277, Figma Screens 18–21): Töne für Hinweise, dunkle Flächen und Avatare. */
@@ -163,4 +184,72 @@ body {
 @keyframes story-bar {
   0%, 67% { transform: scaleX(0); }
   78%, 100% { transform: scaleX(1); }
+}
+
+/* Mono-Label (SIN-314, Regeln 2026 §3): Kennungen und Zahlen in Geist Mono. */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-label-size);
+  line-height: var(--type-mono-label-line);
+  font-weight: var(--type-mono-label-weight);
+  letter-spacing: var(--type-mono-label-tracking);
+}
+
+/* Bento-Raster der Variante 2026 (SIN-318, Regeln: docs/design/regeln-2026.md).
+   Eine Spalte auf dem Handy mit Hauptkachel zuerst, ab 768 px sechs Spalten. Keine Karten in Karten. */
+.bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bento-gap);
+}
+@media (min-width: 768px) {
+  .bento {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--bento-gap-wide);
+  }
+}
+.bento-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--bento-pad);
+  border: var(--bento-line) solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-surface);
+}
+.bento-main {
+  gap: var(--space-16);
+  padding: var(--space-32);
+  border-color: var(--color-bg-hero);
+  background: var(--color-bg-hero);
+  color: var(--color-text-on-brand);
+}
+.bento-label {
+  font-family: var(--font-mono);
+  font-size: var(--type-mono-label-size);
+  line-height: var(--type-mono-label-line);
+  font-weight: var(--type-mono-label-weight);
+  letter-spacing: var(--type-mono-label-tracking);
+  color: var(--color-text-secondary);
+}
+.bento-main .bento-label {
+  color: var(--color-text-muted-on-dark);
+}
+
+/* Kachelbreiten ab 768 px (SIN-315): Hauptkachel breit, Nebenkacheln schmaler. Auf dem Handy bleibt es eine Spalte. */
+@media (min-width: 768px) {
+  .bento-span-2 { grid-column: span 2; }
+  .bento-span-3 { grid-column: span 3; }
+  .bento-span-4 { grid-column: span 4; }
+  .bento-span-6 { grid-column: span 6; }
+}
+
+/* Bewegung erklärt (Regeln 2026 §5): Säulen wachsen kurz; bei reduced-motion sofort. */
+@media (prefers-reduced-motion: no-preference) {
+  .grow-ring {
+    transition: stroke-dashoffset 250ms ease-out;
+  }
+  .grow-bar {
+    transition: height 250ms ease-out, width 250ms ease-out;
+  }
 }

@@ -82,7 +82,9 @@ describe("AP-13 curriculum maps (docs/content/*.json)", () => {
       it("uses only official sources with https links and a fetch date", () => {
         assert.ok(c.sources.length >= 5);
         for (const s of c.sources) {
-          assert.match(s.url, /^https:\/\/(www\.)?(gesetze-im-internet\.de|kmk\.org|bibb\.de|berufsbildung\.nrw\.de)\//, s.id);
+          const u = new URL(s.url);
+          assert.equal(u.protocol, "https:", s.id);
+          assert.ok(["gesetze-im-internet.de", "kmk.org", "bibb.de", "berufsbildung.nrw.de"].includes(u.hostname.replace(/^www\./, "")), s.id);
           assert.match(s.fetchedAt, /^\d{4}-\d{2}-\d{2}$/, s.id);
         }
         const refRlp = c.sources.find((s) => s.id === c.referenceRlp.sourceId);

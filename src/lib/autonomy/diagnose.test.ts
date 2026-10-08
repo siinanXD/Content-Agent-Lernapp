@@ -9,6 +9,7 @@ import {
   newStallIssue,
   noPrComment,
   pendingDecisions,
+  renderLinearQuota,
   splitIssue,
   stallIssue,
   summarizeExecution,
@@ -152,8 +153,44 @@ test("Logs: nur der letzte Lauf je Workflow zählt, ein späterer Erfolg heilt",
   const call = async () => ({ jobs: [{ id: 77, conclusion: "failure" }] });
   const text = async (path: string) => `Log ${path}`;
   const logs = await collectLogs("o/r", runs, { call: call as never, text });
-  assert.deepEqual(logs.map((l: { workflow: string }) => l.workflow), ["worker"]);
+  assert.equal(logs[0].workflow, "worker");
   assert.match(logs[0].text, /jobs\/77\/logs/);
+  // Geheilte Workflows erscheinen nur als Hinweiszeile (SIN-328), ohne roten Log.
+  assert.match(logs.find((l: { workflow: string }) => l.workflow === "planner")?.text ?? "", /^Kein roter Lauf: planner/);
+});
+
+test("SIN-328: Stillstand ohne roten Lauf → Ursache ohne-start statt unbekannt", async () => {
+  const runs = [{ id: 5, name: "dispatch", status: "completed", conclusion: "success", created_at: "2026-10-07T01:00:00Z", html_url: "u5" }];
+  const call = (async () => ({ jobs: [] })) as never;
+  const logs = await collectLogs("o/r", runs, { call, text: async () => "" });
+  const d = diagnoseStall({ running: 0, paused: false, startable: 13, idleMin: 400, logs });
+  assert.equal(d?.cause, "ohne-start");
+  assert.match(d!.reason, /400 Min.*13 startbare/);
+  assert.equal(newStallIssue(d, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+  // Leere Schlange bleibt normal.
+  assert.equal(diagnoseStall({ running: 0, paused: false, startable: 0, idleMin: 400, logs }), null);
+  // Gar keine Läufe: ebenfalls erkannt.
+  const none = await collectLogs("o/r", [], { call, text: async () => "" });
+  assert.match(none[0].text, /Kein Lauf gefunden/);
+  assert.equal(diagnoseStall({ running: 0, paused: false, startable: 13, idleMin: 400, logs: none })?.cause, "ohne-start");
+});
+
+test("SIN-361: übersprungener PR-Ereignis-Lauf von dispatch verdeckt den echten letzten Lauf nicht", async () => {
+  const runs = [
+    { id: 37704492311, name: "dispatch", status: "completed", conclusion: "skipped", event: "pull_request", created_at: "2026-10-07T23:50:16Z", html_url: "u2" },
+    { id: 7, name: "dispatch", status: "completed", conclusion: "success", event: "schedule", created_at: "2026-10-07T23:30:00Z", html_url: "u1" },
+  ];
+  const call = (async () => ({ jobs: [] })) as never;
+  const logs = await collectLogs("o/r", runs, { call, text: async () => "" });
+  assert.match(logs.find((l: { workflow: string }) => l.workflow === "dispatch")?.text ?? "", /Letzter Lauf #7 success am 2026-10-07T23:30:00Z/);
+  // Nur PR-Ereignis-Läufe: wie „kein Lauf“ melden, damit der Zeitplan geprüft wird.
+  const only = await collectLogs("o/r", runs.slice(0, 1), { call, text: async () => "" });
+  assert.match(only.find((l: { workflow: string }) => l.workflow === "dispatch")?.text ?? "", /Kein Lauf gefunden/);
+  // Fixture aus SIN-361: Log-Auszug → Ursache ohne-start → Bug-Issue
+  const text = "Kein roter Lauf: dispatch. Letzter Lauf #37704492311 skipped am 2026-10-07T23:50:16Z";
+  const diag = diagnoseStall({ running: 0, paused: false, startable: 1, idleMin: 183, logs: [{ workflow: "dispatch", text }] });
+  assert.equal(diag?.cause, "ohne-start");
+  assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
 });
 
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
@@ -195,6 +232,9 @@ test("Worker ohne PR: zu großer Auftrag wird in 2–4 Teil-Issues zerlegt", () 
   assert.ok(!tooBig(summarizeExecution(JSON.stringify([{ type: "result", subtype: "success", num_turns: 10 }]))));
 });
 
+// Linear Free (250er-Grenze) als Fixture; die echte Datei steht seit SIN-360 auf Basic (limit: null).
+const freeLimits = { ...limits, limits: { ...limits.limits, linear_issues: { ...limits.limits.linear_issues, limit: 250 } } };
+
 test("Linear-Kontingent: ab 85 % Hinweis, ab 95 % Planer stoppt, Zeile in der Kontingent-Tabelle", () => {
   assert.equal(linearQuota(200).level, "ok");
   assert.equal(linearQuota(212).level, "ok"); // 84,8 %
@@ -205,19 +245,19 @@ test("Linear-Kontingent: ab 85 % Hinweis, ab 95 % Planer stoppt, Zeile in der Ko
   assert.equal(linearQuotaIssue(linearQuota(230)), null);
   assert.match(linearQuotaIssue(linearQuota(240))!.title, /^Linear-Kontingent:/);
 
-  const row = (n: number) => buildQuotaRows({ linear_issues: n }, limits).find((r: { key: string }) => r.key === "linear_issues")!;
+  const row = (n: number) => buildQuotaRows({ linear_issues: n }, freeLimits).find((r: { key: string }) => r.key === "linear_issues")!;
   assert.equal(row(212).over, false); // 80 % reichen hier nicht, erst 85 %
   assert.equal(row(213).over, true);
-  assert.deepEqual(limitAlerts({ linear_issues: 213 }, limits).map((a: { key: string }) => a.key), ["linear_issues"]);
+  assert.deepEqual(limitAlerts({ linear_issues: 213 }, freeLimits).map((a: { key: string }) => a.key), ["linear_issues"]);
 
   // Wächter: Hinweis ab 85 %, Issue erst ab 95 %, Planer-Anstoß stoppt.
   const snap = fixture();
   snap.usage = { linear_issues: 213 };
-  const warn = analyze(snap, limits, {});
+  const warn = analyze(snap, freeLimits, {});
   assert.ok(warn.incidents.some((i: { key: string }) => i.key === "quota:linear_issues"));
   assert.ok(!warn.actions.some((a: { type: string; issue?: { title: string } }) => a.type === "create-issue" && a.issue?.title.startsWith("Linear-Kontingent")));
   snap.usage = { linear_issues: 240 };
-  const stop = analyze(snap, limits, {});
+  const stop = analyze(snap, freeLimits, {});
   assert.ok(stop.actions.some((a: { type: string; issue?: { title: string } }) => a.type === "create-issue" && a.issue?.title.startsWith("Linear-Kontingent")));
   assert.equal(stop.refill.trigger, false);
   assert.match(stop.refill.reason, /95 %/);
@@ -249,4 +289,26 @@ test("Entscheidungen in gemergten PRs: sichtbar bis Sinan antwortet", () => {
   assert.ok(r.incidents.some((i: { key: string }) => i.key === "decision:110"));
   snap.decisions = [];
   assert.doesNotMatch(analyze(snap, limits, {}).body, /## Braucht dich/);
+});
+
+test("Linear Basic (limit: null): kein Prozent, keine Warnung, Planer bremst nicht (SIN-360)", () => {
+  assert.equal(limits.limits.linear_issues.limit, null);
+  const q = linearQuota(213, null);
+  assert.equal(q.level, "unlimited");
+  assert.equal(q.pct, null);
+  assert.equal(renderLinearQuota(q), "Linear: 213 Issues (unbegrenzt)");
+  assert.equal(linearQuotaIssue(linearQuota(9999, null)), null);
+
+  const row = buildQuotaRows({ linear_issues: 213 }, limits).find((r: { key: string }) => r.key === "linear_issues")!;
+  assert.equal(row.pct, null);
+  assert.equal(row.over, false);
+  assert.equal(row.text, "213 Issues (unbegrenzt)");
+  assert.deepEqual(limitAlerts({ linear_issues: 9999 }, limits), []);
+
+  const snap = fixture();
+  snap.usage = { linear_issues: 9999 };
+  const r = analyze(snap, limits, {});
+  assert.ok(!r.incidents.some((i: { key: string }) => i.key === "quota:linear_issues"));
+  assert.notEqual(r.refill.bugsOnly, true);
+  assert.doesNotMatch(r.refill.reason, /95 %/);
 });

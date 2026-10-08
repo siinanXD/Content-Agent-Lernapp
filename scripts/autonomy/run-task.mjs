@@ -35,7 +35,7 @@ export const TASKS = {
     steps: [["npm", ["run", "quality:judge-backfill"]]],
   },
   "ab-haiku-sonnet": {
-    label: "Goldset-Vergleich Haiku gegen Sonnet",
+    label: "Goldset-Vergleich Haiku 5.5 gegen Sonnet 5.5 (20 LF3-Einheiten, inkl. Reparatur, unter 3 €)",
     paid: true,
     secrets: need("ANTHROPIC_API_KEY", "OPENAI_API_KEY"),
     steps: [["npm", ["run", "ap22:ab"]]],
@@ -179,6 +179,15 @@ export function pendingMigrations(files, { tables = new Set(), versions = new Se
     .map(({ name, sql }) => ({ name, sql, additiv: isAdditive(sql) }));
 }
 
+/** Tabellen, die nach `migrate` da sein müssen (SIN-347): Kosten-Ledger und Status der Content-Fabrik. */
+export const REQUIRED_TABLES = ["pipeline_run_costs", "content_factory_runs", "question_evaluations", "judge_runs"];
+
+/** Welche der geforderten Tabellen fehlen? Reine Funktion über die Namen aus information_schema. */
+export const missingTables = (present, required = REQUIRED_TABLES) => {
+  const have = new Set(present);
+  return required.filter((t) => !have.has(t));
+};
+
 /** Sicherung jünger als MAX_BACKUP_AGE_H? `lastBackupAt`: ISO-Zeit des letzten erfolgreichen Backup-Laufs. */
 export const backupFresh = (lastBackupAt, now = new Date()) =>
   Boolean(lastBackupAt) && now.getTime() - new Date(lastBackupAt).getTime() <= MAX_BACKUP_AGE_H * 3600 * 1000;
@@ -191,6 +200,13 @@ async function sqlQuery(env, query, fetchImpl = fetch) {
     { method: "POST", headers: { Authorization: `Bearer ${env.SUPABASE_ACCESS_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ query }) },
     { fetchImpl },
   );
+}
+
+/** SQL, das eine angewendete Migration in die Versionstabelle einträgt (doppelte Version: ignorieren). Name nur aus [a-z0-9_]. */
+export function recordVersionSql(fileName) {
+  const [version, ...rest] = fileName.replace(/\.sql$/, "").split("_");
+  if (!/^\d{14}$/.test(version) || !/^[a-z0-9_]*$/.test(rest.join("_"))) throw new Error(`Ungültiger Migrationsname: ${fileName}`);
+  return `insert into supabase_migrations.schema_migrations (version, name) values ('${version}', '${rest.join("_")}') on conflict (version) do nothing`;
 }
 
 async function migrate(env, { dry }) {
@@ -218,10 +234,22 @@ async function migrate(env, { dry }) {
     // Jede Migration in einer Transaktion; schlägt sie fehl, bleibt die Datenbank unverändert und der Lauf bricht ab.
     await sqlQuery(env, `begin;\n${p.sql}\ncommit;`);
     applied.push(p.name);
+    // Version eintragen (SIN-374), damit `supabase_migrations.schema_migrations` und der Wächter den Stand kennen.
+    // Schlägt das fehl, bricht der Lauf ab (rot), statt eine angewendete, aber nicht eingetragene Migration still zu übergehen.
+    await sqlQuery(env, recordVersionSql(p.name));
   }
+  // Schema-Cache von PostgREST neu laden (SIN-351): sonst antwortet die REST-Schnittstelle trotz vorhandener Tabelle mit 404.
+  if (!dry) await sqlQuery(env, "notify pgrst, 'reload schema'");
   const after = dry ? null : await sqlQuery(env, "select table_name from information_schema.tables where table_schema = 'public'");
   lines.push(dry ? `Trockenlauf: würde anwenden: ${todo.map((p) => p.name).join(", ") || "nichts"}` : `Angewendet: ${applied.join(", ") || "nichts"} (${after.length} Tabellen)`);
-  return { ok: blocked.length === 0, ergebnis: lines.join("; "), applied, blocked: blocked.map((b) => b.name) };
+  // Beleg im Log: nur Tabellennamen, keine Werte, keine Secrets.
+  let fehlend = [];
+  if (!dry) {
+    fehlend = missingTables(after.map((r) => r.table_name));
+    for (const t of REQUIRED_TABLES) console.log(`${fehlend.includes(t) ? "FEHLT" : "ok   "} ${t}`);
+    lines.push(fehlend.length ? `Tabellen fehlen weiter: ${fehlend.join(", ")}` : `Tabellen vorhanden: ${REQUIRED_TABLES.join(", ")}`);
+  }
+  return { ok: blocked.length === 0 && fehlend.length === 0, ergebnis: lines.join("; "), applied, blocked: blocked.map((b) => b.name) };
 }
 
 // ---- Eintrag in docs/product-readiness.json ------------------------------------------------------------------
@@ -264,7 +292,7 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
   if (task === "cost-report") result = await costReport(env);
   else if (task === "migrate") result = await migrate(env, { dry });
   else {
-    const steps = def.steps.map(([cmd, args]) => [cmd, args.map((a) => a.replace("{out}", out))]);
+    const steps = def.steps.map(([cmd, args]) => [cmd, args.map((a) => a.replaceAll("{out}", out))]);
     mkdirSync(RESULT_DIR, { recursive: true });
     if (dry) result = { ok: null, ergebnis: `Trockenlauf: ${steps.map(([c, a]) => `${c} ${a.join(" ")}`).join(" && ")}` };
     else {
@@ -274,6 +302,24 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
     }
   }
   return { ...base, ...result };
+}
+
+/** Pfade, die der Lauf ablegen darf (SIN-397). */
+export const RESULT_PATHS = [RESULT_DIR, "docs/ops/ap22-runs", READINESS_FILE];
+
+/**
+ * Ergebnisdateien vormerken. `git add a b c` bricht komplett ab, sobald ein Pfad fehlt (SIN-397: `docs/ops/ap22-runs`
+ * gibt es nur bei `migrate`), daher nur vorhandene Pfade. Liefert, ob etwas zu committen ist, und den Grund.
+ */
+export function stageResult({ cwd = ".", paths = RESULT_PATHS } = {}) {
+  const git = (...args) => spawnSync("git", args, { cwd, encoding: "utf8" });
+  const present = paths.filter((p) => existsSync(`${cwd}/${p}`));
+  if (!present.length) return { changed: false, grund: `Keine Ergebnisdatei vorhanden (${paths.join(", ")}): die Aufgabe hat nichts geschrieben.` };
+  const add = git("add", "--", ...present);
+  if (add.status !== 0) return { changed: false, grund: `git add fehlgeschlagen: ${add.stderr.trim()}` };
+  const staged = git("diff", "--cached", "--name-only", "--", ...present).stdout.trim().split("\n").filter(Boolean);
+  if (!staged.length) return { changed: false, grund: `Ergebnisdateien (${present.join(", ")}) sind identisch mit dem Stand auf main: nichts zu committen.` };
+  return { changed: true, grund: `Geändert: ${staged.join(", ")}` };
 }
 
 function writeResult(result) {
@@ -286,6 +332,14 @@ function writeResult(result) {
 }
 
 async function main(argv) {
+  if (argv.includes("--stage")) {
+    const r = stageResult();
+    const line = r.changed ? r.grund : `**Kein Ergebnis-PR:** ${r.grund}`;
+    console.log(line);
+    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${line}\n\n`);
+    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `changed=${r.changed}\n`);
+    return;
+  }
   const task = argv[argv.indexOf("--task") + 1];
   const dry = argv.includes("--dry-run");
   const result = await runTask(task, { dry });

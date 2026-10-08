@@ -49,6 +49,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase (nie ein Fehlerabbruch; ohne Secrets nur Warnung).
+      - name: Leitstand Start
+        if: env.DRY != 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt dispatch --status start
       - name: Issues wählen (max. 2, Spuren abwechselnd)
         id: pick
         env:
@@ -63,9 +73,24 @@ jobs:
           GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           IDENTIFIERS: ${{ steps.pick.outputs.identifiers }}
         run: |
-          for id in $IDENTIFIERS; do
-            gh workflow run worker.yml --repo "$GITHUB_REPOSITORY" --ref main -f identifier="$id"
+          # Eintrag „SIN-1“ oder „SIN-1+SIN-2+SIN-3“ (gebündelter Kleinkram, SIN-320): erstes = führendes Issue.
+          for entry in $IDENTIFIERS; do
+            id="${entry%%+*}"
+            rest=""
+            [ "$entry" != "$id" ] && rest="$(printf '%s' "${entry#*+}" | tr '+' ' ')"
+            gh workflow run worker.yml --repo "$GITHUB_REPOSITORY" --ref main -f identifier="$id" -f bundle="$rest"
           done
+      - name: Leitstand Ende
+        if: always() && env.DRY != 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_STATUS: ${{ job.status }}
+          IDENTIFIERS: ${{ steps.pick.outputs.identifiers }}
+        run: |
+          status=$([ "$JOB_STATUS" = "success" ] && echo ok || echo fehler)
+          node scripts/autonomy/leitstand.mjs ereignis --schritt dispatch --status "$status" --seit "$LEITSTAND_SEIT" --issue "$IDENTIFIERS"
 
   linear-done:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
@@ -85,8 +110,10 @@ jobs:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
           TITLE: ${{ github.event.pull_request.title }}
         run: |
-          id=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | tail -1)
-          [ -n "$id" ] && node scripts/autonomy/dispatch.mjs --done "$id" || echo "Keine Linear-ID im Titel."
+          # Gebündelte PRs (SIN-320) nennen mehrere Kennungen im Titel: alle auf Done.
+          ids=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | sort -u)
+          [ -n "$ids" ] || echo "Keine Linear-ID im Titel."
+          for id in $ids; do node scripts/autonomy/dispatch.mjs --done "$id"; done
       # Frei gewordene Slots sofort füllen (SIN-237), nicht erst beim nächsten 30-Min-Lauf.
       - name: Dispatcher neu anstoßen
         env:

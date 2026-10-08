@@ -5,10 +5,12 @@
 # Pause, der Dispatcher wird angestoßen. Ohne PR (auch wenn Claude „Erfolg“ meldet, SIN-291): Issue sofort zurück
 # auf Todo mit Kommentar (letzte Ausgabe, num_turns, permission denials); zu große Aufträge werden in Teil-Issues
 # zerlegt. Nur bei echter Usage-/Rate-Limit-Meldung (Ergebnis-Eintrag des Logs, nicht max-turns) wird AGENT_PAUSED_UNTIL gesetzt.
+# Sparsam (SIN-320): Modell und --max-turns nach Größe (docs/autonomy/groessen.md), Haiku nur für `klein` mit Sonnet als
+# zweitem Versuch, Kleinkram desselben Bereichs als ein Lauf (Eingabe `bundle`), Verbrauch im PR-Steckbrief und in Linear.
 # Secrets: LINEAR_API_KEY, CLAUDE_CODE_OAUTH_TOKEN; optional AGENT_VARIABLES_TOKEN (PAT, nur „Variables: write“).
 name: worker
 # Die Kennung steht im Lauf-Titel: der Loop-Status (status.yml, SIN-238) ordnet Läufe damit Issues zu.
-run-name: worker ${{ inputs.identifier }}
+run-name: worker ${{ inputs.identifier }} ${{ inputs.bundle }}
 
 on:
   workflow_dispatch:
@@ -17,6 +19,10 @@ on:
         description: "Linear-Kennung, z. B. SIN-123"
         type: string
         required: true
+      bundle:
+        description: "Weitere kleine Issues desselben Bereichs im selben Lauf, z. B. SIN-124 SIN-125 (SIN-320)"
+        type: string
+        default: ""
       fail_test:
         description: "Test des Wächters: Lauf scheitert sofort, ohne Claude und ohne Linear (SIN-238)"
         type: boolean
@@ -38,6 +44,7 @@ jobs:
       cancel-in-progress: false
     env:
       IDENTIFIER: ${{ inputs.identifier }}
+      BUNDLE: ${{ inputs.bundle }}
       LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
       # gh (auch `gh pr create` in Claude) mit dem Agenten-Token, sonst startet der PR keine Checks (SIN-240).
       GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
@@ -64,12 +71,39 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+      # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase, am Ende mit Tokens und total_cost_usd aus den Execution-Dateien.
+      - name: Leitstand Start
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt worker --status start --issue "$IDENTIFIER"
+      # Schnellerer Start (SIN-298): Browser-Download zwischenspeichern; Systempakete installiert install-deps immer.
+      - name: Playwright-Cache
+        id: pw
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       # SIN-275: Frontend-Worker sehen ihre Änderungen (Screenshots Handy + Desktop).
       - name: Chromium für Screenshots
-        run: npm ci && npx playwright install --with-deps chromium
+        env:
+          CACHE_HIT: ${{ steps.pw.outputs.cache-hit }}
+        run: |
+          start=$(date +%s)
+          npm ci
+          if [ "$CACHE_HIT" = "true" ]; then npx playwright install-deps chromium; else npx playwright install --with-deps chromium; fi
+          echo "Start-Vorbereitung: $(( $(date +%s) - start )) s (Cache-Treffer: ${CACHE_HIT:-false})" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Live-Kommentar gestartet
+        continue-on-error: true
+        run: node scripts/autonomy/live.mjs gestartet "$IDENTIFIER" --run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Prompt für das Issue holen
         id: pick
-        run: node scripts/autonomy/dispatch.mjs --prompt "$IDENTIFIER"
+        # Größe, Modell und Runden-Deckel (SIN-320): klein → Haiku, 30 Runden; mittel → Sonnet, 80; groß → Sonnet, 150.
+        run: node scripts/autonomy/dispatch.mjs --prompt "$IDENTIFIER" --bundle "$BUNDLE"
       - name: Claude im Automationsmodus
         id: claude
         # Ein Fehler (max-turns, Limit) darf den Lauf nicht sofort beenden: erst prüfen, ob ein PR existiert.
@@ -81,9 +115,62 @@ jobs:
           allowed_bots: "github-actions,github-actions[bot]"
           prompt: ${{ steps.pick.outputs.prompt }}
           claude_args: |
-            --model claude-sonnet-5-5
-            --max-turns 150
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
+            --model ${{ steps.pick.outputs.model }}
+            --max-turns ${{ steps.pick.outputs.max_turns }}
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/live.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
+
+      # Messen (SIN-320): Tokens, Runden, Dauer, API-Gegenwert → PR-Steckbrief („## Verbrauch“) und Linear-Kommentar.
+      - name: Verbrauch melden
+        if: always() && (steps.claude.outcome == 'failure' || steps.claude.outcome == 'success')
+        continue-on-error: true
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+          MODEL: ${{ steps.pick.outputs.model }}
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          node scripts/autonomy/verbrauch.mjs --file "$EXECUTION_FILE" --branch "$branch" --label "Worker" --model "$MODEL" --issues "$IDENTIFIER $BUNDLE" --part 1
+
+      # Haiku zuerst nur für `groesse:klein`; liefert er keinen PR (und ist es kein Limit), läuft ein zweiter Versuch mit Sonnet.
+      - name: Erster Lauf ohne PR?
+        id: first
+        if: steps.pick.outputs.size == 'klein' && (steps.claude.outcome == 'failure' || steps.claude.outcome == 'success')
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
+          limit=""
+          if [ -f "$EXECUTION_FILE" ]; then
+            limit=$(node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE" | tail -1 | grep -E '^Claude-Limit' || true)
+          fi
+          echo "retry=$([ "${n:-0}" -eq 0 ] && [ -z "$limit" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - name: Prompt für Versuch 2 (Sonnet)
+        id: pick2
+        if: steps.first.outputs.retry == 'true'
+        run: node scripts/autonomy/dispatch.mjs --prompt "$IDENTIFIER" --bundle "$BUNDLE" --attempt 2
+      - name: Claude, zweiter Versuch mit Sonnet
+        id: claude2
+        if: steps.first.outputs.retry == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          allowed_bots: "github-actions,github-actions[bot]"
+          prompt: ${{ steps.pick2.outputs.prompt }}
+          claude_args: |
+            --model ${{ steps.pick2.outputs.model }}
+            --max-turns ${{ steps.pick2.outputs.max_turns }}
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/live.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
+      - name: Verbrauch melden (Versuch 2)
+        if: always() && (steps.claude2.outcome == 'failure' || steps.claude2.outcome == 'success')
+        continue-on-error: true
+        env:
+          EXECUTION_FILE: ${{ steps.claude2.outputs.execution_file }}
+          MODEL: ${{ steps.pick2.outputs.model }}
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          node scripts/autonomy/verbrauch.mjs --file "$EXECUTION_FILE" --branch "$branch" --label "Worker, zweiter Versuch" --model "$MODEL" --issues "$IDENTIFIER $BUNDLE" --part 2
 
       - name: Screenshots als Artefakt
         if: always()
@@ -93,18 +180,82 @@ jobs:
           path: screenshots/
           if-no-files-found: ignore
 
+      # Laufprotokoll (SIN-296): gelesene Dateien, Entscheidungen, Prüfungen, Ergebnis, Abbruchgrund aus dem Log
+      # beider Versuche → Artefakt `laufprotokoll`, Link im PR-Steckbrief und als Linear-Kommentar.
+      - name: Laufprotokoll schreiben
+        if: always() && (steps.claude.outcome == 'failure' || steps.claude.outcome == 'success')
+        continue-on-error: true
+        env:
+          FILE1: ${{ steps.claude.outputs.execution_file }}
+          FILE2: ${{ steps.claude2.outputs.execution_file }}
+        run: |
+          args=(--file "$FILE1")
+          if [ -n "$FILE2" ]; then args+=(--file "$FILE2"); fi
+          node scripts/autonomy/protokoll.mjs write --out laufprotokoll/protokoll.md --label "Worker" --run "$GITHUB_RUN_ID" --issues "$IDENTIFIER $BUNDLE" "${args[@]}"
+      - name: Laufprotokoll als Artefakt
+        id: protokoll
+        if: always() && (steps.claude.outcome == 'failure' || steps.claude.outcome == 'success')
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: laufprotokoll
+          path: laufprotokoll/
+          if-no-files-found: ignore
+      - name: Laufprotokoll verlinken
+        if: always() && steps.protokoll.outcome == 'success'
+        continue-on-error: true
+        env:
+          LINK: ${{ steps.protokoll.outputs.artifact-url }}
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          node scripts/autonomy/protokoll.mjs link --link "$LINK" --branch "$branch" --run "$GITHUB_RUN_ID" --issues "$IDENTIFIER $BUNDLE"
+
       - name: PR vorhanden?
         id: pr
-        if: steps.claude.outcome == 'failure' || steps.claude.outcome == 'success'
+        if: steps.claude.outcome == 'failure' || steps.claude.outcome == 'success' || steps.claude2.outcome == 'failure' || steps.claude2.outcome == 'success'
         run: |
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
           n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
           echo "has_pr=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
+      - name: Leitstand Ende
+        if: always()
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HAS_PR: ${{ steps.pr.outputs.has_pr }}
+          FILE1: ${{ steps.claude.outputs.execution_file }}
+          FILE2: ${{ steps.claude2.outputs.execution_file }}
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          args=()
+          [ -n "$FILE1" ] && args+=(--file "$FILE1")
+          [ -n "$FILE2" ] && args+=(--file "$FILE2")
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq '.[0].number // empty' || true)
+          [ -n "$pr" ] && args+=(--pr "$pr")
+          status=$([ "$HAS_PR" = "true" ] && echo ok || echo fehler)
+          node scripts/autonomy/leitstand.mjs ereignis --schritt worker --status "$status" --seit "$LEITSTAND_SEIT" --issue "$IDENTIFIER" "${args[@]}"
+
+      - name: Live-Kommentar fertig oder gescheitert
+        if: always() && steps.pr.outcome == 'success'
+        continue-on-error: true
+        env:
+          HAS_PR: ${{ steps.pr.outputs.has_pr }}
+        run: |
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          if [ "$HAS_PR" = "true" ]; then
+            url=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json url --jq '.[0].url')
+            node scripts/autonomy/live.mjs fertig "$IDENTIFIER" --pr "$url" --run "$run"
+          else
+            node scripts/autonomy/live.mjs gescheitert "$IDENTIFIER" "Lauf ohne PR beendet, das Issue geht zurück auf Todo." --run "$run"
+          fi
+
       # Selbst-Anstoß: GitHubs Zeitplan ist unzuverlässig. Nach Erfolg (oder PR trotz Fehler) wählt der
       # Dispatcher das nächste Issue; findet er keins, endet die Kette.
       - name: Dispatcher anstoßen
-        if: steps.claude.outcome == 'success' || steps.pr.outputs.has_pr == 'true'
+        if: steps.claude.outcome == 'success' || steps.claude2.outcome == 'success' || steps.pr.outputs.has_pr == 'true'
         run: gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
 
       # Kein PR (auch bei gemeldetem Erfolg): Issue zurück auf Todo mit Grund, zu große Aufträge zerlegen
@@ -113,10 +264,20 @@ jobs:
         id: limit
         if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
         env:
-          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+          EXECUTION_FILE: ${{ steps.claude2.outputs.execution_file || steps.claude.outputs.execution_file }}
         run: |
-          node scripts/autonomy/dispatch.mjs --no-pr "$IDENTIFIER" "$EXECUTION_FILE"
+          # Gebündelte Issues (SIN-320) gehen alle zurück auf Todo bzw. werden zerlegt.
+          for id in $IDENTIFIER $BUNDLE; do
+            node scripts/autonomy/dispatch.mjs --no-pr "$id" "$EXECUTION_FILE"
+          done
           if [ -f "$EXECUTION_FILE" ]; then node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE"; fi
+      # Frei gewordener Platz (SIN-334): Ohne PR und ohne Limit-Pause 5 Min Abstand, damit dasselbe Issue
+      # (z. B. mit Label `claude`) nicht im Sekundentakt neu startet; dann wählt der Dispatcher neu.
+      - name: Dispatcher anstoßen (Platz frei)
+        if: steps.limit.outcome == 'success' && steps.limit.outputs.until == ''
+        run: |
+          sleep 300
+          gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
       - name: Pause bis Reset setzen
         if: steps.limit.outputs.until != ''
         env:
@@ -131,5 +292,5 @@ jobs:
       - name: Lauf ohne PR als fehlgeschlagen markieren
         if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
         run: |
-          echo "::error::Claude-Lauf für $IDENTIFIER ohne PR beendet (Ergebnis: ${{ steps.claude.outcome }})."
+          echo "::error::Claude-Lauf für $IDENTIFIER ohne PR beendet (Ergebnis: ${{ steps.claude2.outcome == 'skipped' && steps.claude.outcome || steps.claude2.outcome }})."
           exit 1

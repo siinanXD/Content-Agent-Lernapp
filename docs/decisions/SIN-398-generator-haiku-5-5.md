@@ -1,0 +1,14 @@
+# SIN-398: Goldset-Vergleich auf Haiku 5.5 statt Haiku 4.5
+
+- **Links:** Linear [SIN-398](https://linear.app/sinan-kahraman/issue/SIN-398); verwandt [SIN-388](https://linear.app/sinan-kahraman/issue/SIN-388/haiku-45-durch-haiku-55-ersetzen-und-wirkung-messen) (Loop-Worker, anderer Zweck), [SIN-302](SIN-302-lauf-workflow.md) (`run-task`); Anthropic: [Preise](https://platform.claude.com/docs/en/about-claude/pricing), [Batch-Preise](https://platform.claude.com/docs/en/about-claude/pricing#batch-processing), [Modellübersicht](https://platform.claude.com/docs/en/models/overview). Fertige Lösung für den Vergleich gibt es nicht; Eigenbau auf vorhandenem `ap22-ab.ts`.
+- **Entscheidung:**
+  1. `claude-haiku-5-5` steht in `KNOWN_GENERATOR_MODELS` (`GENERATOR_MODEL` kann es setzen, der Standard bleibt `claude-sonnet-5-5`). `claude-haiku-4-5-20251001` bleibt bekannt (Preis weiter nötig für alte Berichte).
+  2. Batch-Preise je 1 Mio. Token, am 2026-10-08 gegen die Preisseite geprüft: Haiku 5.5 **0,05 $ / 0,25 $** (Prompts bis 100.000 Token; darüber 0,25 $ / 1,25 $), Sonnet 5.5 **1 $ / 5 $**, Haiku 4.5 0,50 $ / 2,50 $. Cache-Schreiben 1,25×, Cache-Lesen 0,1× – **Ausnahme Sonnet 5.5: 0,05×** (Fußnote 2 der Preisseite). Das war bisher mit 0,1× falsch gerechnet und ist in `CLAUDE_BATCH_PRICES` (`cacheReadFactor`) korrigiert.
+  3. `npm run ap22:ab` vergleicht `AB_MODELS` = Haiku 5.5 und Sonnet 5.5 auf denselben 20 LF3-Einheiten, gleiche Prompts, gleicher Richter. Danach läuft je Modell **eine Reparatur-Runde** (Ersatzfragen mit dem jeweiligen Modell, vom selben Richter bewertet, `applyRepair` wie im Produktivlauf). Der Bericht weist Richter-Schnitt und Quote (Fragen/Einheiten bestanden) sowie unter `afterRepair` verworfene Einheiten und Kosten je Einheit **inkl. Generierung, Reparatur und Richter** aus (USD und EUR).
+  4. `submitQuestionRepairBatch` nimmt ein optionales `model` (Default `GENERATOR_MODEL`), sonst würde die Reparatur im Vergleich immer mit dem Standardmodell laufen.
+- **Annahmen:**
+  1. Generator-Prompts bleiben unter 100.000 Token, es gilt der niedrige Haiku-5.5-Tarif.
+  2. Preflight (ohne Reparatur) schätzt ~0,99 $; Reparatur kommt dazu. Die Budgetgrenze von 3 € gilt für den ganzen Lauf; ist sie nach der Bewertung erreicht, entfällt die Reparatur eines Modells (im Bericht sichtbar: `repairUsd` 0).
+  3. Der Richter bleibt `gpt-5.4-mini`, die Qualitäts-Schwelle unverändert. Der neue Tokenizer (Claude 4.7+, ca. 30 % mehr Token) ist bei beiden Kandidaten gleich.
+  4. Es wird kein Standardmodell gewechselt; das entscheidet Sinan nach dem Messlauf (`run-task ab-haiku-sonnet`, höchstens 1 Lauf pro Tag). Bisher kein Messwert, der Lauf ist noch nicht erfolgt.
+- **Warum:** Haiku 5.5 ist rund 20-mal günstiger als Sonnet 5.5. Ob die Qualität reicht und die Reparatur nicht den Vorteil auffrisst (67 % der Kosten im Lauf ZP), zeigt nur die Messung mit Reparatur.

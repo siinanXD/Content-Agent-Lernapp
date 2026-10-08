@@ -1,11 +1,14 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnswerFeedback } from "@/components/ui/answer-feedback";
 import { Button } from "@/components/ui/button";
+import { SourceChip } from "@/components/ui/source-chip";
 import { StateView } from "@/components/ui/state-view";
+import { Tile } from "@/components/ui/tile";
 import { correctAnswerText } from "@/lib/learner/feedback";
+import { WhyPanel } from "@/components/learner/why-panel";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { UnitImageView } from "@/components/learner/unit-image";
 import {
@@ -33,7 +36,9 @@ import {
 } from "@/lib/learner/progress-outbox";
 import { useOnline } from "@/lib/use-online";
 import {
+  trackExplanationReported,
   trackQuestionAnswered,
+  trackUnitAbandoned,
   trackUnitCompleted,
   trackUnitStarted,
 } from "@/lib/analytics";
@@ -71,6 +76,13 @@ export default function EinheitPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
+  const [whyOpen, setWhyOpen] = useState(false);
+  const questionHeading = useRef<HTMLHeadingElement>(null);
+
+  // Nach „Weiter“ verschwindet der fokussierte Button: Fokus auf die neue Frage setzen.
+  useEffect(() => {
+    if (index > 0) questionHeading.current?.focus();
+  }, [index]);
 
   useEffect(() => {
     if (!loading) return;
@@ -98,6 +110,31 @@ export default function EinheitPage() {
     });
     // Fire once per unit id when the Einheit becomes available.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: track by unit.id only
+  }, [unit?.id]);
+
+  // Abbruch: Einheit verlassen (Weg, Tab zu), ohne dass finish() lief. Nur Zahlen, keine Antworten.
+  const progress = useRef({ answered: 0, total: 0, finished: false });
+  useEffect(() => {
+    progress.current.answered = index + (revealed ? 1 : 0);
+    progress.current.total = unit?.questions.length ?? 0;
+  }, [index, revealed, unit]);
+  useEffect(() => {
+    if (!unit) return;
+    const unitId = unit.id;
+    const state = progress.current;
+    state.finished = false;
+    let sent = false;
+    function report() {
+      if (sent || state.finished) return;
+      sent = true;
+      trackUnitAbandoned({ unitId, answered: state.answered, total: state.total });
+    }
+    window.addEventListener("pagehide", report);
+    return () => {
+      window.removeEventListener("pagehide", report);
+      report();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: nur je Einheit
   }, [unit?.id]);
 
   if (loading) {
@@ -198,6 +235,7 @@ export default function EinheitPage() {
         kind: "unit",
       },
     });
+    progress.current.finished = true;
     trackUnitCompleted({
       unitId: unit!.id,
       unitTitle: unit!.title,
@@ -218,10 +256,12 @@ export default function EinheitPage() {
     setRevealed(false);
     setLastCorrect(false);
     setAwaitSelfCheck(false);
+    setWhyOpen(false);
   }
 
   return (
     <MobileShell>
+      <main className="flex flex-1 flex-col">
       <header className="px-6 pb-2 pt-12">
         <p className="text-sm text-[var(--color-text-secondary)]">
           Einheit {unit.indexLabel} · {unit.minutes} Min · {unit.variant}
@@ -244,7 +284,7 @@ export default function EinheitPage() {
       )}
 
       <section className="px-6 py-2">
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-4 py-3.5">
+        <Tile as="div">
           {unit.sections ? (
             <div className="flex flex-col gap-3">
               <SectionBlock label="Einstieg" text={unit.sections.einstieg} />
@@ -254,7 +294,7 @@ export default function EinheitPage() {
             </div>
           ) : (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+              <p className="mono-label text-[var(--color-text-secondary)]">
                 Erklärung
               </p>
               <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-primary)]">
@@ -263,9 +303,9 @@ export default function EinheitPage() {
             </>
           )}
           {unit.image ? <UnitImageView image={unit.image} /> : null}
-          <p className="mt-3 text-xs text-[var(--color-text-secondary)]">
-            {unit.sourceLabel}
-          </p>
+          <div className="mt-1">
+            <SourceChip source={unit.sourceLabel} />
+          </div>
           {prefs.readAloud ? (
             <Button
               variant="secondary"
@@ -275,7 +315,7 @@ export default function EinheitPage() {
               Erklärung vorlesen
             </Button>
           ) : null}
-        </div>
+        </Tile>
       </section>
 
       {question ? (
@@ -284,11 +324,21 @@ export default function EinheitPage() {
             Frage {index + 1} von {total} · {question.type} · {question.level}
           </p>
           <h2
-            className="text-lg font-medium leading-6 text-[var(--color-text-primary)]"
+            ref={questionHeading}
+            tabIndex={-1}
+            className="text-lg font-medium leading-6 text-[var(--color-text-primary)] focus:outline-none"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {question.prompt}
           </h2>
+          {/* Dauerhafte Live-Region: Der Ergebnis-Text wird sicher vorgelesen, weil die Region schon vor dem Inhalt im DOM steht. */}
+          <p role="status" className="sr-only">
+            {revealed && !awaitSelfCheck
+              ? `${lastCorrect ? "Richtig." : "Nicht ganz."} ${
+                  lastCorrect ? "" : `Richtige Antwort: ${correctAnswerText(question)}. `
+                }${question.explanation}`
+              : ""}
+          </p>
           <QuestionPanel
             key={question.id}
             question={question}
@@ -302,13 +352,41 @@ export default function EinheitPage() {
               explanation={question.explanation}
               source={question.sourceUrl || undefined}
             >
+              {question.sourceUrl ? (
+                <Button
+                  variant="secondary"
+                  aria-expanded={whyOpen}
+                  onClick={() => setWhyOpen((o) => !o)}
+                >
+                  Warum?
+                </Button>
+              ) : null}
               <Button onClick={next}>
                 {index + 1 >= total ? "Ergebnis anzeigen" : "Weiter"}
               </Button>
             </AnswerFeedback>
           ) : null}
+          {whyOpen && revealed && question.sourceUrl ? (
+            <>
+              <div aria-hidden className="h-[60vh]" />
+              <WhyPanel
+                explanation={question.explanation}
+                simpleExplanation={unit.explanationSimple}
+                source={question.sourceUrl}
+                readAloud={speakGerman}
+                onClose={() => setWhyOpen(false)}
+                onReport={() =>
+                  trackExplanationReported({
+                    unitId: unit.id,
+                    questionId: question.id,
+                  })
+                }
+              />
+            </>
+          ) : null}
         </section>
       ) : null}
+      </main>
     </MobileShell>
   );
 }
@@ -316,9 +394,7 @@ export default function EinheitPage() {
 function SectionBlock({ label, text }: { label: string; text: string }) {
   return (
     <div>
-      <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-        {label}
-      </p>
+      <p className="mono-label text-[var(--color-text-secondary)]">{label}</p>
       <p className="mt-1 text-[15px] leading-6 text-[var(--color-text-primary)]">
         {text}
       </p>

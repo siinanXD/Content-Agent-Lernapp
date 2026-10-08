@@ -2,6 +2,8 @@
 
 **Freigegeben durch Sinan (2026-10-02, „passt erstmal“).** Verbindliche Quelle für AP-08+.
 
+> Seit 2026-10-06 gelten zusätzlich die [Design-Regeln 2026](regeln-2026.md) (SIN-314) für alle Apps.
+
 ## Datei
 
 | Feld | Wert |
@@ -12,7 +14,50 @@
 | Linear | [SIN-185](https://linear.app/sinan-kahraman/issue/SIN-185/ap-07-figma-design-system-und-5-screens) |
 | Status | **Approved** (Done) |
 
-## Screens (390×844)
+## Variante 2026 (verbindlich ab 08.10.2026, SIN-375)
+
+**Freigegeben durch Sinan am 08.10.2026.** Für neue Frontend-Arbeit gilt die Seite **„Variante 2026“** (`52:369`). Die alte Seite „Screens“ heißt jetzt **„Archiv Stil E“** (`0:1`). Sie bleibt nur als Referenz erhalten. Regeln: [regeln-2026.md](regeln-2026.md).
+
+| Screen | Figma | Route |
+| --- | --- | --- |
+| A1 Lernpfad | 52:377 | `/lernpfad` |
+| A2 Einheit mit „Warum?“ | 53:369 | `/einheit/[unitId]` |
+| A3 Startseite (Desktop) | 53:412 | `/` |
+| W1 Willkommen | 56:369 | `/willkommen` |
+| W2 Einwilligung | 56:381 | `/einwilligung` |
+| W3 Schwerpunkt | 56:401 | `/schwerpunkt` |
+| W4 Einheit · Erklärung | 56:426 | `/einheit/[unitId]` |
+| W5 Ergebnis | 57:369 | `/ergebnis` |
+| W6 Wiederholung | 57:394 | `/wiederholung` |
+| W7 Prüfung läuft | 57:424 | `/pruefung` |
+| W8 Prüfungsergebnis | 58:369 | `/pruefung/ergebnis` |
+| W9 Profil | 58:405 | `/profil` |
+| W10 Zustände | 58:456 | Komponente `StateView` |
+| W11 Gruppenübersicht (Desktop) | 58:470 | `/ausbilder` |
+| W12 Kurs erzeugen | 74:377 | `/start` |
+| W13 Einstellungen | 74:398 | `/einstellungen` |
+| W14 Anmelden | 74:452 | `/anmelden` |
+| W15 Demo anfragen | 74:468 | `/demo` |
+| W16 Rechtstext-Vorlage | 75:377 | `/impressum`, `/datenschutz`, `/ki-hinweis` |
+| W17 Quellen | 75:396 | `/quellen` (Quellen-Einträge im Design sind Platzhalter, Inhalt kommt aus den Daten) |
+| W18 Gruppenübersicht (mobil) | 75:418 | `/ausbilder` |
+| W19 Frage · Lückentext | 76:377 | `/einheit/[unitId]` |
+| W20 Frage · Zuordnen | 76:399 | `/einheit/[unitId]` |
+| W21 Frage · Reihenfolge | 76:426 | `/einheit/[unitId]` |
+| W22 Frage · Offen (Musterlösung) | 76:455 | `/einheit/[unitId]` |
+| W23a/b Feedback richtig/falsch | 76:473, 76:503 | `/einheit/[unitId]` |
+| G1 Gruppe anlegen | 67:369 | `/ausbilder/gruppe/neu` (SIN-356) |
+| G2 Teilnehmende einladen | 67:400 | SIN-356 |
+| G3 Gruppe beitreten (Azubi) | 67:419 | SIN-356 |
+| G4 Leere Gruppenübersicht | 67:452 | SIN-356 |
+
+Komponenten 2026: `Bento/Kachel` (72:399, Ton = Hauptkachel · Kachel · Hinweis) und `Bento/Label` (72:385). Neue Variablen: `radius/xl` (24), `bg/hint`, `text/hint`, `bg/avatar`, `text/muted-on-dark`, `text/soft-on-dark`, `track/on-dark`, `bento/gap` (12), `bento/pad` (24).
+
+Nutzerwege (FigJam): Board `Qru6d3ves8YPyjJUzwsp8a` („Nutzerwege & Journey Map“) mit Screen-Nummern je Schritt.
+
+Pipeline-Ablauf (FigJam, für alle Projekte): Board `hFbCzMGNVpkoUAwJ9JXg8W` („Agenten-Pipeline: Ablauf“), Stand 08.10.2026.
+
+## Screens Stil E (Archiv, 390×844)
 
 | # | Frame | Inhalt |
 | --- | --- | --- |

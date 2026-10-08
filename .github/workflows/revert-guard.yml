@@ -5,12 +5,16 @@
 # Regeln: nur ein Revert-PR je Commit; kein Revert eines Reverts (sonst Endlosschleife); Merge-Commits und
 # Commits ohne Squash-Form werden nicht angefasst, dort meldet der Lauf nur. Der Hinweis im PR-Text taucht im
 # Tages-Update (SIN-246) auf, weil der PR-Titel mit `revert:` beginnt.
+# Live-Check (SIN-319): Wird `nach-deploy` nach einem Production-Deploy rot (Auslöser deployment_status, nicht der
+# nächtliche Lauf), nimmt dieser Lauf den Commit des Deploys zurück, solange er noch die Spitze von main ist. Der
+# Revert-Commit löst über den Status-Wächter den nächsten Deploy aus (letzter grüner Stand). Hilft das nicht, wird
+# `nach-deploy` erneut rot; der Revert eines Reverts ist gesperrt, dann bleibt die Meldung im Status und Tages-Update.
 # Token: AGENT_WORKFLOW_TOKEN (nie github.token, sonst starten keine Folge-Workflows).
 name: revert-guard
 
 on:
   workflow_run:
-    workflows: [ci]
+    workflows: [ci, nach-deploy]
     types: [completed]
     branches: [main]
 
@@ -24,12 +28,16 @@ concurrency:
 
 jobs:
   revert:
-    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event == 'push'
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      ((github.event.workflow_run.name == 'ci' && github.event.workflow_run.event == 'push') ||
+       (github.event.workflow_run.name == 'nach-deploy' && github.event.workflow_run.event == 'deployment_status'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       SHA: ${{ github.event.workflow_run.head_sha }}
+      REASON: ${{ github.event.workflow_run.name == 'nach-deploy' && 'der Live-Check nach dem Production-Deploy rot war' || 'die CI auf main rot wurde' }}
     steps:
       - name: Revert-PR öffnen
         run: |
@@ -59,24 +67,14 @@ jobs:
           git checkout -b "$branch" origin/main
           git revert --no-edit "$SHA"
           issue=$(printf '%s' "$title" | grep -oE 'SIN-[0-9]+' | tail -1 || true)
-          git commit --amend -q -m "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}
-
-Part of ${issue:-SIN-252}
-Revert von ${SHA}, weil die CI auf main rot wurde.
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+          msg_title="revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}"
+          # Mehrzeilige Texte per printf, nicht als freie Zeilen im run-Block (sonst bricht das YAML, SIN-252).
+          git commit --amend -q -F <(printf '%s\n\nPart of %s\nRevert von %s, weil %s.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n' \
+            "$msg_title" "${issue:-SIN-252}" "$SHA" "$REASON")
           git push -q origin "$branch"
 
-          body="Part of ${issue:-SIN-252}
-
-## Was ändert sich
-Nimmt \`${SHA:0:7}\` (${title}) zurück, weil die CI auf \`main\` nach dem Merge rot wurde. Der Stand von vorher ist wieder da.
-
-## Nach dem Merge
-Auto-Merge bei grünen Checks (\`risk:medium\`). Danach das ursprüngliche Issue prüfen und die Änderung in einem neuen PR korrigiert wieder einbringen.
-
-Fehlgeschlagener Lauf: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
+          body=$(printf 'Part of %s\n\n## Was ändert sich\nNimmt `%s` (%s) zurück, weil %s. Der Stand von vorher ist wieder da.\n\n## Nach dem Merge\nAuto-Merge bei grünen Checks (`risk:medium`). Danach das ursprüngliche Issue prüfen und die Änderung in einem neuen PR korrigiert wieder einbringen.\n\nFehlgeschlagener Lauf: %s\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n' \
+            "${issue:-SIN-252}" "${SHA:0:7}" "$title" "$REASON" "$run_url")
           gh pr create --base main --head "$branch" \
-            --title "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}" --body "$body"
+            --title "$msg_title" --body "$body"

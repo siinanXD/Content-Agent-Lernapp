@@ -17,6 +17,7 @@ const sentry = dsn
         ...SENTRY_PRIVACY_OPTIONS,
         // Nur mit Einwilligung (Onboarding 00b), ohne Personendaten (SIN-259); überschreibt beforeSend.
         beforeSend: (event) => (shouldSendClientEvent(loadOnboarding().consent) ? scrubEvent(event) : null),
+        beforeSendTransaction: (event) => (shouldSendClientEvent(loadOnboarding().consent) ? scrubEvent(event) : null),
         tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
       });
       return Sentry;

@@ -111,7 +111,7 @@ test("Planer: optionale Dienste mit Fehlerseite → „nicht messbar“, kein Ab
   assert.match(String(m.einheiten), /^nicht messbar \(Supabase: keine JSON-Antwort/);
   assert.match(String(m.sentry), /^nicht messbar \(Sentry: keine JSON-Antwort/);
   assert.match(String(m.posthog), /^nicht messbar \(PostHog: /);
-  assert.equal(m.sentry_kritisch, "nicht verfügbar");
+  assert.match(String(m.sentry_kritisch), /^nicht messbar \(Sentry: keine JSON-Antwort/);
 });
 
 test("Planer: Linear nicht erreichbar → saubere Warnung und Ausgabe linear_ok=false", () => {
@@ -137,6 +137,6 @@ test("Planer: Kostentabelle fehlt (404 PGRST205) → klare Meldung statt HTTP 40
       ? reply({ status: 404, body: JSON.stringify({ code: "PGRST205", message: "Could not find the table" }) })
       : reply({ body: "[]", headers: { "content-type": "application/json", "content-range": "0-0/3" } })) as never;
   const m = await collectMetrics(env as never, { fetchImpl, ...quick });
-  assert.match(String(m.kosten_pro_lauf), /^nicht messbar \(Tabelle pipeline_run_costs fehlt/);
+  assert.match(String(m.kosten_pro_lauf), /^nicht messbar \[Tabelle oder Schema-Cache\]: pipeline_run_costs nicht im Schema-Cache: Tabelle fehlt oder Cache veraltet/);
   assert.doesNotMatch(String(m.kosten_pro_lauf), /404/);
 });

@@ -5,6 +5,7 @@
  */
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
+import { cleanEnvValue, readEnvUrl } from "@/lib/env";
 
 const LANGFUSE_EU_HOST = ["https://", "cloud.", "langfuse.com"].join("");
 
@@ -17,14 +18,13 @@ function readConfig(): {
   secretKey: string;
   baseUrl: string;
 } | null {
-  const publicKey = process.env.LANGFUSE_PUBLIC_KEY?.trim();
-  const secretKey = process.env.LANGFUSE_SECRET_KEY?.trim();
+  const publicKey = cleanEnvValue(process.env.LANGFUSE_PUBLIC_KEY);
+  const secretKey = cleanEnvValue(process.env.LANGFUSE_SECRET_KEY);
   if (!publicKey || !secretKey) return null;
-  return {
-    publicKey,
-    secretKey,
-    baseUrl: process.env.LANGFUSE_BASE_URL?.trim() || LANGFUSE_EU_HOST,
-  };
+  const hasBaseUrl = Boolean(cleanEnvValue(process.env.LANGFUSE_BASE_URL));
+  const baseUrl = readEnvUrl("LANGFUSE_BASE_URL") ?? (hasBaseUrl ? null : LANGFUSE_EU_HOST);
+  if (!baseUrl) return null;
+  return { publicKey, secretKey, baseUrl };
 }
 
 /**
@@ -33,20 +33,31 @@ function readConfig(): {
  */
 export function ensureLangfuseOtel(): LangfuseSpanProcessor | null {
   if (started) return processor;
-  const cfg = readConfig();
-  if (!cfg) return null;
+  try {
+    const cfg = readConfig();
+    if (!cfg) return null;
 
-  processor = new LangfuseSpanProcessor({
-    publicKey: cfg.publicKey,
-    secretKey: cfg.secretKey,
-    baseUrl: cfg.baseUrl,
-  });
-  sdk = new NodeSDK({
-    spanProcessors: [processor],
-  });
-  sdk.start();
-  started = true;
-  return processor;
+    const nextProcessor = new LangfuseSpanProcessor({
+      publicKey: cfg.publicKey,
+      secretKey: cfg.secretKey,
+      baseUrl: cfg.baseUrl,
+    });
+    const nextSdk = new NodeSDK({ spanProcessors: [nextProcessor] });
+    nextSdk.start();
+    processor = nextProcessor;
+    sdk = nextSdk;
+    started = true;
+    return processor;
+  } catch (err) {
+    // Tracing darf die App nie lahmlegen (SIN-308).
+    console.warn(
+      `[langfuse] Tracing abgeschaltet: ${err instanceof Error ? err.message : "Start fehlgeschlagen"}`,
+    );
+    processor = null;
+    sdk = null;
+    started = true;
+    return null;
+  }
 }
 
 /** Flush pending OTEL spans (required in short-lived scripts / request handlers). */

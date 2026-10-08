@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { loadOnboarding, saveOnboarding } from "@/lib/learner/onboarding";
+import { EMPTY_ONBOARDING, loadOnboarding, saveOnboarding } from "@/lib/learner/onboarding";
 import { useAfterMount } from "@/lib/use-after-mount";
 
 const buttonClass =
@@ -14,9 +14,12 @@ const buttonClass =
  * es gibt kein Vorab-Häkchen, und die App funktioniert ohne Zustimmung.
  */
 export function ConsentBanner() {
-  const stored = useAfterMount(loadOnboarding, null);
+  // Server-HTML enthält das Banner (SIN-311): sonst erscheint sein Text erst nach dem Laden der Skripte
+  // und wird zum spätesten, größten Bildelement. Wer schon entschieden hat, bekommt es per Layout-Skript
+  // vor dem ersten Bild ausgeblendet; nach dem Laden entfernt es dieser Code.
+  const stored = useAfterMount(loadOnboarding, EMPTY_ONBOARDING);
   const [decided, setDecided] = useState(false);
-  if (decided || !stored || stored.consent !== null) return null;
+  if (decided || stored.consent !== null) return null;
 
   function decide(consent: boolean) {
     saveOnboarding({ consent });
@@ -25,6 +28,7 @@ export function ConsentBanner() {
 
   return (
     <section
+      data-consent-banner
       aria-labelledby="consent-banner-title"
       className="fixed inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[390px] flex-col gap-3.5 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-5 pb-8 pt-6"
     >

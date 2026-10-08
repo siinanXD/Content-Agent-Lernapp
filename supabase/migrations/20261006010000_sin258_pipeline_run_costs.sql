@@ -26,3 +26,6 @@ create index if not exists pipeline_run_costs_created_at_idx on public.pipeline_
 
 -- Wie die anderen Tabellen: RLS an, keine Policies für anon/authenticated → nur Service-Role.
 alter table public.pipeline_run_costs enable row level security;
+
+-- PostgREST-Schema neu laden, damit die Tabelle über REST sichtbar ist (SIN-351).
+notify pgrst, 'reload schema';

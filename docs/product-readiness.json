@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry; alles andere zählt nur mit Bestätigung.",
+  "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry und betrieb-fabrik; alles andere zählt nur mit Bestätigung.",
   "goldsetTarget": 0.9,
   "gebaut": {
     "qual-offline": {
@@ -14,14 +14,64 @@
       "issues": ["SIN-272"],
       "lauf": "node scripts/safety-sample.mjs --url <App-URL>; Mensch prüft den Bericht"
     },
+    "betrieb-sentry": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-289: Sentry (EU) in App-Routen und Pipeline (src/lib/sentry-pipeline.ts) mit PII-Scrubbing und Test (src/lib/sentry.test.ts); Planer-Kennzahlen sentry/sentry_kritisch, nie mit Live-Token gemessen (docs/decisions/SIN-289-sentry-fabrik-status.md)",
+      "issues": ["SIN-259", "SIN-289"],
+      "lauf": "Planer-Lauf mit SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT; Pipeline braucht NEXT_PUBLIC_SENTRY_DSN in content-grow.yml"
+    },
+    "betrieb-fabrik": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-289: Statusdatensatz je Lauf (Tabelle content_factory_runs, scripts/content-grow.ts), Planer leitet „läuft“ und „hängt“ nach 2 Läufen ohne neues Modul ab (scripts/autonomy/fabrik.mjs, Test src/lib/autonomy/fabrik.test.ts); noch kein Live-Lauf geschrieben (docs/decisions/SIN-289-sentry-fabrik-status.md)",
+      "issues": ["SIN-289"],
+      "lauf": "Migration 20261007020000 in Supabase anwenden, danach Workflow content-grow; der nächste Planer-Lauf misst"
+    },
     "betrieb-kosten": {
       "datum": "2026-10-06",
       "beleg": "SIN-258/SIN-268/SIN-280: Ledger pipeline_run_costs und Deckel, nie mit Live-Lauf gemessen (docs/decisions/SIN-258-kosten-ledger.md)",
       "issues": ["SIN-258", "SIN-268", "SIN-280"],
       "lauf": "Workflow content-grow oder run-task judge-backfill schreibt Ledger-Zeilen; danach run-task cost-report (SIN-302)"
+    },
+    "recht-ki": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-301/SIN-344: /ki-hinweis erreichbar von Fußzeile, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-301", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
+    },
+    "recht-einwilligung": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-279/SIN-344: /einwilligung erreichbar vom Onboarding, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-279", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
+    },
+    "recht-demo": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-279/SIN-344: /demo erreichbar von Startseite, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
+      "issues": ["SIN-279", "SIN-344"],
+      "lauf": "PR claude/sin-344 mit Playwright-Test"
     }
   },
   "bestaetigt": {
+    "betrieb-fabrik": {
+      "datum": "2026-10-08",
+      "beleg": "SIN-357: Erster Live-Lauf content-grow.yml (https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/37754302148, grün): Modul maf-metall/ZP 20 Einheiten erzeugt, 16 bestanden, 4 verworfen; Kosten 2,43 € von 20 €; Eintrag in content_factory_runs vorhanden; Bericht PR #200 (docs/ops/content-runs/2026-10-08T09-08-54-902Z.json)"
+    },
+    "recht-ki": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-353: Prüfung am Code des Branches (Netzzugriff auf die Live-URL war im Lauf gesperrt, keine Messung gegen die Live-App): Build erfolgreich, 557 Tests grün; /ki-hinweis erreichbar von der Fußzeile (Startseite, Einstellungen), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), kein Platzhalter im Text. Live-Abgleich nach dem Merge offen"
+    },
+    "recht-einwilligung": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-354: Playwright gegen den lokalen Produktionsbuild (e2e/einwilligung-tracking.spec.ts, e2e/onboarding.spec.ts): ohne Einwilligung auf 5 Seiten keine Anfrage an PostHog, nach Widerruf in den Einstellungen ebenfalls keine; Einwilligung ist Schalter mit Datum. Nicht belegt: PostHog lädt nach Einwilligung (im Test-Build kein NEXT_PUBLIC_POSTHOG_KEY) und Messung gegen die Live-App (Lauf ohne Live-Zugriff). SIN-387: Unit-Test mit gemocktem Key (src/lib/analytics.test.ts): ohne Einwilligung kein Laden, nach Einwilligung Laden, nach Widerruf Stopp; Abbruch-Ereignisse (unit_abandoned, review_abandoned) nur bei geladenem Client. Befund Key: in Vercel vermutlich nicht gesetzt (docs/ENV.md „fehlt“, Kennzahl posthog ohne Ereignisse), nicht geprüft, kein Vercel-Zugriff; Live-Beleg offen bis der Key gesetzt ist. Nachholen: PLAYWRIGHT_BASE_URL=<Live-URL> npx playwright test e2e/einwilligung-tracking.spec.ts (docs/decisions/SIN-354-einwilligung-demo-beleg.md)"
+    },
+    "recht-demo": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-354: Anfrage-Weg Startseite → /demo → Einwilligung Pflicht → Danke läuft lokal (e2e/demo-anfrage.spec.ts, Mock-Speicher, axe ohne Fehler); Gruppenansicht /ausbilder mit gemockter API (e2e/ausbilder.spec.ts). Befund: ein Demo-Zugang, der ohne Konto in die Gruppenansicht führt, existiert nicht; /ausbilder braucht ein von Sinan angelegtes Ausbilder-Konto und Gruppe (SIN-277), sonst Leerzustand. Nicht live belegt (Lauf ohne Live-Zugriff)"
+    },
+    "design-screens": {
+      "datum": "2026-10-07",
+      "beleg": "SIN-349: alle 51 Frames der Figma-Datei (Live-Abgleich mit Token am 2026-10-07) einer Route oder Komponente zugeordnet, Dateien vorhanden, 3 Frames sind keine App-Screens (docs/quality/figma-abdeckung.md, Prüfung scripts/autonomy/figma-abdeckung.mjs in npm test); Namens- und Dateiabgleich, Werte-Abgleich siehe design-figma"
+    },
     "lernen-e2e": {
       "datum": "2026-10-06",
       "beleg": "SIN-269: e2e/gesamtweg.spec.ts je veröffentlichtem Kurs, Start bis Prüfungsmodus mit Wiederholung 1/3/7 Tage, CI-Stufe build des PR claude/sin-269 (docs/decisions/SIN-269-e2e-je-kurs.md)"
@@ -37,6 +87,14 @@
     "qual-wcag": {
       "datum": "2026-10-06",
       "beleg": "SIN-286: axe WCAG 2.2 AA (inkl. Kontrast 4,5:1, Zielgröße), e2e/tastatur.spec.ts (Fokus sichtbar, Ziele ≥ 44 px je Route) und e2e/tastatur-lernweg.spec.ts (Lernweg ohne Maus); automatische Prüfung, manueller Screenreader-Test steht aus (docs/quality/SIN-286-bericht.md)"
+    },
+    "recht-datenschutz": {
+      "datum": "2026-10-08",
+      "beleg": "SIN-372: Lokaler Build mit npm ci && npm run build && npm test (570 Tests grün); /datenschutz erreichbar von Fußzeile (Startseite, Einstellungen), Onboarding (/einwilligung), Einwilligung (/demo) und Datenschutz (/demo), axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), Build erfolgreich"
+    },
+    "recht-impressum": {
+      "datum": "2026-10-08",
+      "beleg": "SIN-366: Lokaler Build mit npm ci && npm run build && npm test (566 Tests grün); /impressum erreichbar von Fußzeile (Startseite, Einstellungen) und als Link in /ki-hinweis, axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), Build erfolgreich. 7 Platzhalter offen (SIN-340); Live-Abgleich nach dem Merge offen"
     }
   },
   "abnahme": null

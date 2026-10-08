@@ -35,7 +35,7 @@ export const CHECKS = [
   { id: "qual-offline", area: "Qualität", label: "Offline nutzbar" },
   { id: "betrieb-sentry", area: "Betrieb", label: "Sentry ohne offene kritische Fehler seit 7 Tagen", auto: "sentry" },
   { id: "betrieb-kosten", area: "Betrieb", label: "Kosten pro Kurslauf gemessen und unter Deckel" },
-  { id: "betrieb-fabrik", area: "Betrieb", label: "Content-Fabrik läuft" },
+  { id: "betrieb-fabrik", area: "Betrieb", label: "Content-Fabrik läuft", auto: "fabrik" },
   { id: "recht-ki", area: "Recht/Vertrieb", label: "KI-Kennzeichnung" },
   { id: "recht-impressum", area: "Recht/Vertrieb", label: "Impressum" },
   { id: "recht-datenschutz", area: "Recht/Vertrieb", label: "Datenschutzerklärung" },
@@ -112,6 +112,11 @@ export function evaluateReadiness({ metrics, issues, confirmations = {}, built =
       const n = Number(metrics.sentry_kritisch);
       if (!Number.isFinite(n)) return [NA, String(metrics.sentry ?? "kein Sentry-Zugang")];
       return [n === 0 ? "ok" : "offen", `${n} offene kritische Fehler (7 Tage)`];
+    },
+    fabrik() {
+      const s = metrics.content_fabrik_status;
+      if (s !== "läuft" && s !== "hängt" && s !== "steht") return [NA, String(metrics.content_fabrik ?? "kein Supabase-Zugang")];
+      return [s === "läuft" ? "ok" : "offen", `${s}: ${metrics.content_fabrik}`];
     },
   };
   const done = (c) => Boolean(c?.datum && c?.beleg);

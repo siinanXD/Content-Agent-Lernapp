@@ -7,6 +7,7 @@ test("resolveGeneratorModel: Default, Override, unbekannt", () => {
   assert.equal(resolveGeneratorModel(undefined), DEFAULT_GENERATOR_MODEL);
   assert.equal(resolveGeneratorModel("  "), DEFAULT_GENERATOR_MODEL);
   assert.equal(resolveGeneratorModel("claude-haiku-4-5-20251001"), "claude-haiku-4-5-20251001");
+  assert.equal(resolveGeneratorModel("claude-haiku-5-5"), "claude-haiku-5-5");
   assert.throws(() => resolveGeneratorModel("claude-haiku-4-5"), /unbekannt/);
 });
 
@@ -19,7 +20,9 @@ test("claudeBatchUsd: Batch-Preise inkl. Cache-Faktoren", () => {
   };
   // Haiku 4.5: 0.5 + 2.5 + 0.5*1.25 + 0.5*0.1
   assert.equal(claudeBatchUsd("claude-haiku-4-5-20251001", usage), 3.675);
-  // Sonnet 5.5: 1 + 5 + 1.25 + 0.1
-  assert.equal(claudeBatchUsd("claude-sonnet-5-5", usage), 7.35);
+  // Sonnet 5.5: 1 + 5 + 1.25 + 0.05 (Cache-Treffer 0,05×)
+  assert.equal(claudeBatchUsd("claude-sonnet-5-5", usage), 7.3);
+  // Haiku 5.5: 0.05 + 0.25 + 0.05*1.25 + 0.05*0.1
+  assert.equal(claudeBatchUsd("claude-haiku-5-5", usage), 0.3675);
   assert.throws(() => claudeBatchUsd("x", usage), /Kein Batch-Preis/);
 });

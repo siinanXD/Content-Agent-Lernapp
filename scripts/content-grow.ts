@@ -42,7 +42,7 @@ import {
   trimTargets,
   type RunReport,
 } from "../src/lib/generate/content-grow";
-import { didaktikSchemaHint, variantRules } from "../src/lib/generate/didaktik-prompts";
+import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { MAX_QUESTIONS, MIN_PASSED_QUESTIONS, planFromEvals } from "../src/lib/generate/repair-questions";
 import {
@@ -54,6 +54,15 @@ import {
 } from "../src/lib/quality/cost-guard";
 import { JUDGE_MODEL, JUDGE_PROMPT_VERSION, liveJudgeWithUsage } from "../src/lib/quality/evaluate-agent";
 import { recordEvaluationTrace } from "../src/lib/quality/langfuse-client";
+import { flushLangfuseOtel } from "../src/lib/quality/langfuse-otel";
+import { createGrowTracer } from "../src/lib/quality/grow-traces";
+import {
+  DEFAULT_BERUF,
+  kurslaufSessionId,
+  PROMPT_NAMEN,
+  traceTitel,
+} from "../src/lib/quality/langfuse-names";
+import { promptLink } from "../src/lib/quality/langfuse-verwaltung";
 import { toQuestionEvaluationRecords } from "../src/lib/quality/question-evaluations";
 import { assertWithinRunCap, RunBudgetExceededError, recordRunCost } from "../src/lib/quality/run-ledger";
 import {
@@ -62,7 +71,9 @@ import {
   type EvaluateResult,
   type QuestionEval,
 } from "../src/lib/quality/schemas";
+import { reportPipelineError, initPipelineSentry } from "../src/lib/sentry-pipeline";
 import { getStorage } from "../src/lib/storage";
+import { recordFactoryRun, toAbortedRunRecord, toFactoryRunRecord } from "../src/lib/generate/factory-status";
 
 const ROOT = process.cwd();
 const OUT_DIR = join(ROOT, "docs", "ops", "content-runs");
@@ -86,11 +97,10 @@ function loadHistory(): RunReport[] {
 
 /** Gleicher Präfix für alle Anfragen; cache_control schaltet Prompt-Caching an (D-41). */
 function cachedSystem() {
-  const rules = Object.values(variantRules()).join("\n");
   return [
     {
       type: "text" as const,
-      text: `Du erzeugst Lerneinheiten als reines JSON. Didaktik-Regeln:\n${rules}\n${didaktikSchemaHint()}`,
+      text: generatorSystemText(),
       cache_control: { type: "ephemeral" as const },
     },
   ];
@@ -118,26 +128,41 @@ function runRepair(dry: boolean): { ran: boolean; costEur: number; budgetStop: b
   return { ran: true, costEur, budgetStop: r.status === 3 };
 }
 
+const STARTED_AT = new Date().toISOString();
+const RUN_ID = STARTED_AT.replace(/[:.]/g, "-");
+
+/** SIN-378: Auch ein Abbruch vor dem Ergebnis hinterlässt eine Zeile mit Grund (nur Live-Läufe). Schlägt das fehl, endet der Lauf trotzdem. */
+async function abortRun(reason: string, code: number): Promise<never> {
+  if (!hasFlag("dry-run")) {
+    try {
+      await recordFactoryRun(toAbortedRunRecord(RUN_ID, COURSE, STARTED_AT, reason));
+    } catch (e) {
+      console.error("::warning::Fabrik-Status nicht geschrieben:", e instanceof Error ? e.message : e);
+    }
+  }
+  process.exit(code);
+}
+
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
   const dry = hasFlag("dry-run");
-  const runId = new Date().toISOString().replace(/[:.]/g, "-");
+  const runId = RUN_ID;
 
   const missing = missingSecrets(process.env);
   if (missing.length) {
     console.error(`::error::Secrets fehlen: ${missing.join(", ")} — nichts erzeugt, nichts veröffentlicht`);
-    process.exit(2);
+    return abortRun(`Secrets fehlen: ${missing.join(", ")}`, 2);
   }
 
   const storage = getStorage();
   if (storage.backend !== "supabase") {
     console.error("::error::COURSE_STORAGE=supabase nötig (Mock veröffentlicht nichts)");
-    process.exit(2);
+    return abortRun("COURSE_STORAGE=supabase nötig", 2);
   }
   const course = await storage.getCourse(COURSE);
   if (!course) {
     console.error("::error::Kurs fehlt:", COURSE);
-    process.exit(2);
+    return abortRun("Kurs fehlt", 2);
   }
   const priorUnits = (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [];
   const published = new Set(priorUnits.map((u) => u.id));
@@ -163,7 +188,7 @@ async function main() {
   const report: RunReport = {
     runId,
     mode: dry ? "dry-run" : "live",
-    startedAt: new Date().toISOString(),
+    startedAt: STARTED_AT,
     mapId: next?.item.mapId ?? null,
     moduleId: next?.item.module.id ?? null,
     nextModuleId: null,
@@ -196,8 +221,17 @@ async function main() {
     }),
   );
 
-  const finish = (code = 0) => {
+  const finish = async (code = 0) => {
     report.costEur = Math.round(report.costEur * 100) / 100;
+    // SIN-289: Statusdatensatz je Lauf (Live-Läufe), Grundlage für „läuft“ und „hängt“ im Planer.
+    if (!dry) {
+      try {
+        await recordFactoryRun(toFactoryRunRecord(report, COURSE, next !== null));
+      } catch (e) {
+        console.error("::warning::Fabrik-Status nicht geschrieben:", e instanceof Error ? e.message : e);
+        await reportPipelineError(e).catch(() => undefined);
+      }
+    }
     writeFileSync(join(OUT_DIR, reportFileName(report)), JSON.stringify(report, null, 2) + "\n");
     writeFileSync(join(ROOT, "content-run-summary.md"), linearSummary(report) + "\n");
     console.log(linearSummary(report));
@@ -238,6 +272,20 @@ async function main() {
   const allEvals: QuestionEval[] = [];
   const live: GeneratedUnit[] = [];
 
+  // SIN-380: Traces je Schritt, sofort gesendet (nicht erst am Laufende).
+  const erzeugerLink = await promptLink(PROMPT_NAMEN.erzeuger);
+  const common = { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined };
+  const tracer = createGrowTracer({
+    runId,
+    courseId: COURSE,
+    common,
+    generatorModel: GENERATOR_MODEL,
+    judgeModel: JUDGE_MODEL,
+    generatorPrompt: erzeugerLink,
+    minBestanden: MIN_PASSED_QUESTIONS,
+  });
+  let lastJudgeTraceId: string | undefined;
+
   async function judge(units: GeneratedUnit[], label: string): Promise<QuestionEval[]> {
     const judged = await liveJudgeWithUsage(
       openaiKey,
@@ -245,6 +293,9 @@ async function main() {
     );
     ledger = addOpenAIUsage(ledger, judged.usage.prompt_tokens, judged.usage.completion_tokens);
     allEvals.push(...judged.questions);
+    // SIN-383: ein Trace je Einheit; die Trace-ID gehört zu den Zeilen der jeweiligen Einheit.
+    const traceIds = await tracer.einheiten(units, judged.questions);
+    for (const id of traceIds.values()) lastJudgeTraceId = id;
     const result: EvaluateResult = {
       courseId: COURSE,
       passed: judged.questions.every((q) => q.passed),
@@ -256,7 +307,9 @@ async function main() {
       runId: `${runId}-${label}`,
       promptVersion: JUDGE_PROMPT_VERSION,
     };
-    await storage.appendQuestionEvaluations(toQuestionEvaluationRecords(result));
+    await storage.appendQuestionEvaluations(
+      toQuestionEvaluationRecords(result).map((r) => ({ ...r, langfuseTraceId: traceIds.get(r.unitId) })),
+    );
     return judged.questions;
   }
 
@@ -276,8 +329,30 @@ async function main() {
   const refreshIds = affected.unitIds.slice(0, affordableUnits(spentTotal(), perUnit));
   report.sourceRefresh.units = refreshIds.length;
   // SIN-258: Vor jedem bezahlten Batch prüfen; bei Überschreitung des Deckels stoppt der Lauf sauber.
-  const capStop = (e: unknown) => {
-    if (!(e instanceof RunBudgetExceededError)) throw e;
+  // SIN-258: Kosten des Laufs ins Ledger (Supabase) und als Trace an Langfuse; SIN-380: auch bei Abbruch.
+  const recordCosts = async () => {
+    try {
+      const cost = await recordRunCost({
+        runId,
+        courseId: COURSE,
+        kind: "content-grow",
+        ledger,
+        totalEur: report.costEur,
+        capEur: RUN_CAP_EUR,
+        kontext: { ...common, modell: GENERATOR_MODEL },
+      });
+      if (cost.stopped && !report.stopReason) report.stopReason = cost.stopReason ?? "Deckel erreicht";
+    } catch (e) {
+      console.error("::warning::Kosten-Ledger nicht geschrieben:", e instanceof Error ? e.message : e);
+    }
+    await flushLangfuseOtel().catch(() => undefined);
+  };
+  const capStop = async (e: unknown) => {
+    if (!(e instanceof RunBudgetExceededError)) {
+      report.costEur = spentTotal();
+      await recordCosts();
+      throw e;
+    }
     report.stopReason = `Deckel erreicht (${e.message}); Rest im nächsten Lauf`;
   };
   try {
@@ -292,6 +367,7 @@ async function main() {
     await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
     const got = await collectBatchUnits(sub.batchId);
     ledger = addClaudeLedger(ledger, got.ledger);
+    tracer.batchFertig(got.units, got.ledger, "reparatur");
     if (got.units.length > 0) {
       const { ok } = keepPassing(got.units, await judge(got.units, "refresh"));
       live.push(...ok);
@@ -301,7 +377,7 @@ async function main() {
   }
 
   } catch (e) {
-    capStop(e);
+    await capStop(e);
   }
 
   // Stufe c: nächstes Modul, so viel der Deckel erlaubt.
@@ -326,6 +402,7 @@ async function main() {
       await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
       const got = await collectBatchUnits(sub.batchId);
       ledger = addClaudeLedger(ledger, got.ledger);
+      tracer.batchFertig(got.units, got.ledger, "neuesModul");
       // Nur Einheiten, die zum Modul gehören und noch offen sind.
       const wanted = new Set(next.pending);
       generatedUnits.push(...got.units.filter((u) => wanted.has(u.id)));
@@ -347,7 +424,7 @@ async function main() {
     report.deferred = next.pending.length;
   }
   } catch (e) {
-    capStop(e);
+    await capStop(e);
   }
 
   // Veröffentlichen: erst jetzt, alles in einem Schritt.
@@ -370,49 +447,39 @@ async function main() {
   report.nextModuleId = after?.item.module.id ?? null;
   report.resumeModuleId = report.deferred > 0 ? (next?.item.module.id ?? null) : null;
 
-  // SIN-258: Kosten des Laufs ins Ledger (Supabase) und als Trace an Langfuse.
-  try {
-    const cost = await recordRunCost({
-      runId,
-      courseId: COURSE,
-      kind: "content-grow",
-      ledger,
-      totalEur: report.costEur,
-      capEur: RUN_CAP_EUR,
-    });
-    if (cost.stopped && !report.stopReason) report.stopReason = cost.stopReason ?? "Deckel erreicht";
-  } catch (e) {
-    console.error("::warning::Kosten-Ledger nicht geschrieben:", e instanceof Error ? e.message : e);
-  }
+  await recordCosts();
 
-  const scores = aggregateScores(allEvals);
-  report.langfuseTraceId =
-    (await recordEvaluationTrace({
-      name: "ap23-content-grow",
-      courseId: COURSE,
-      passed: live.length > 0,
-      scores: {
-        sourceFidelity: scores.sourceFidelity,
-        uniqueness: scores.uniqueness,
-        niveau: scores.niveau,
-        language: scores.language,
-        safetyFlag: scores.safetyFlag,
-      },
-      metadata: {
-        moduleId: report.moduleId,
-        generated: report.generated,
-        passed: report.passed,
-        discarded: report.discarded,
-        costEur: report.costEur,
-        model: GENERATOR_MODEL,
-        batchIds: report.batchIds.join("+"),
-      },
-    })) ?? undefined;
+  // SIN-299: Schritte des Kurslaufs als fachlich benannte Traces in einer Session.
+  // SIN-383: „erzeugen“ und „prüfen“ stehen je Einheit im Einheiten-Trace (tracer).
+  const sessionId = kurslaufSessionId(runId);
+  const traceBase = { courseId: COURSE, sessionId, passed: live.length > 0, scores: {} };
+  const publishKontext = { ...common, schritt: "veroeffentlichen" as const, modell: GENERATOR_MODEL };
+  const publishedQuestions = live.reduce((n, u) => n + u.questions.length, 0);
+  const publishScores: Record<string, number> = { "Fragen veröffentlicht": publishedQuestions };
+  if (publishedQuestions > 0) publishScores["Kosten je Frage (EUR)"] = Math.round((report.costEur / publishedQuestions) * 10000) / 10000;
+  const zaehler = {
+    generated: report.generated,
+    passed: report.passed,
+    discarded: report.discarded,
+    costEur: report.costEur,
+    batchIds: report.batchIds.join("+"),
+  };
+  report.langfuseTraceId = lastJudgeTraceId;
+  await recordEvaluationTrace({
+    ...traceBase,
+    name: traceTitel(publishKontext),
+    kontext: publishKontext,
+    scores: publishScores,
+    metadata: zaehler,
+  });
+  await flushLangfuseOtel().catch(() => undefined);
 
   finish(0);
 }
 
-main().catch((err) => {
+initPipelineSentry("content-grow");
+main().catch(async (err) => {
   console.error(err);
-  process.exit(1);
+  await reportPipelineError(err).catch(() => undefined);
+  await abortRun(err instanceof Error ? err.message : String(err), 1);
 });

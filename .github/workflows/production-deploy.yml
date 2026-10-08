@@ -1,0 +1,144 @@
+# Production-Deploy und Smoke-Test in einem Lauf (SIN-332, löst den Deploy Hook aus SIN-266/SIN-309 und deploy-smoke aus SIN-308 ab).
+# Der Hook erzeugte unter `git.deploymentEnabled: false` keinen Deploy, und `deployment_status` kommt bei Deploys ohne Git-Anbindung
+# nicht an. Darum: `vercel deploy --prod` per CLI vom Stand von main, danach direkt /api/health und /api/learner/phase-a.
+# Rot beim Smoke-Test: Revert-PR (wie revert-guard, SIN-252) und der Lauf wird rot. Grün: Live-Check (nach-deploy.yml) anstoßen.
+# Auslöser: der Status-Wächter (status.yml) per workflow_dispatch, höchstens 1× pro Stunde und nur bei neuem App-Code
+# (scripts/autonomy/deploy.mjs); von Hand möglich. Secrets: VERCEL_TOKEN, AGENT_WORKFLOW_TOKEN (nie github.token).
+# Variablen: VERCEL_PROJECT_ID, VERCEL_TEAM_ID (bei persönlichem Konto leer lassen), optional PRODUCTION_URL.
+name: production-deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      SHA: ${{ github.sha }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_TEAM_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      URL: ${{ vars.PRODUCTION_URL || 'https://content-agent-ashen-nu.vercel.app' }}
+    outputs:
+      fail: ${{ steps.smoke.outputs.fail }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # Migrationen zuerst (SIN-374): migrate.yml wendet sie nach dem Merge an. Fehlen additive noch, kein Deploy
+      # (rot, der Wächter startet beim nächsten Takt neu). Ohne Supabase-Zugang meldet das Skript nur „nicht lesbar“.
+      - name: Migrationen angewendet?
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || vars.SUPABASE_PROJECT_REF }}
+        run: node scripts/autonomy/migrationen.mjs --check
+      # Baut auf Vercel und wartet bis READY; bei Fehler endet der Schritt rot (der Wächter meldet „Production hängt“).
+      # `--meta githubCommitSha` lässt den Wächter den Live-Stand (Commit, Uhrzeit) lesen.
+      - name: Production-Deploy (Vercel CLI)
+        id: deploy
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "::error::VERCEL_TOKEN oder VERCEL_PROJECT_ID fehlt."; exit 1
+          fi
+          # Ohne VERCEL_ORG_ID (persönliches Konto) liest die CLI nur .vercel/project.json: dann Projekt-ID allein reicht nicht.
+          if [ -z "${VERCEL_ORG_ID:-}" ]; then
+            org=$(curl -s -m 20 -H "Authorization: Bearer ${VERCEL_TOKEN}" https://api.vercel.com/v2/user | jq -r '.user.id // empty')
+            [ -n "$org" ] || { echo "::error::Vercel-Konto nicht lesbar (Token prüfen)."; exit 1; }
+            echo "VERCEL_ORG_ID=$org" >> "$GITHUB_ENV"
+            export VERCEL_ORG_ID="$org"
+          fi
+          url=$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" --meta "githubCommitSha=${SHA}" | tail -1)
+          echo "Deploy: ${url}"
+          echo "### Production-Deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit \`${SHA:0:7}\`, Deploy: ${url}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Erreichbarkeit prüfen
+        id: smoke
+        run: |
+          set -uo pipefail
+          fail=0
+          for path in /api/health /api/learner/phase-a; do
+            code=000
+            for try in 1 2 3; do
+              code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "${URL%/}${path}") || code=000
+              [ "$code" = "200" ] && break
+              sleep 10
+            done
+            echo "${path}: ${code}"
+            [ "$code" = "200" ] || fail=1
+          done
+          echo "fail=${fail}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Revert-PR öffnen
+        if: steps.smoke.outputs.fail == '1'
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then echo "::warning::AGENT_WORKFLOW_TOKEN fehlt, kein Revert-PR."; exit 1; fi
+          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          git config user.name "claude[bot]"
+          git config user.email "claude[bot]@users.noreply.github.com"
+
+          # Nur zurücknehmen, wenn der Deploy noch die Spitze von main ist.
+          if [ "$(git rev-parse origin/main)" != "$SHA" ]; then
+            echo "main ist weiter als $SHA, ein neuerer Deploy entscheidet."; exit 1
+          fi
+          title=$(git log -1 --format=%s "$SHA")
+          case "$title" in
+            revert:*|Revert*) echo "Der Commit ist selbst ein Revert, Stopp: $title"; exit 1 ;;
+          esac
+          if [ "$(git log -1 --format=%p "$SHA" | wc -w)" -ne 1 ]; then echo "Merge-Commit, kein automatischer Revert."; exit 1; fi
+
+          branch="claude/revert-${SHA:0:7}"
+          if [ -n "$(gh pr list --head "$branch" --state all --json number --jq '.[0].number')" ]; then
+            echo "Revert-PR für $SHA existiert schon."; exit 1
+          fi
+
+          git checkout -b "$branch" origin/main
+          git revert --no-edit "$SHA"
+          issue=$(printf '%s' "$title" | grep -oE 'SIN-[0-9]+' | tail -1 || true)
+          git commit --amend -q -m "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}
+
+          Part of ${issue:-SIN-308}
+          Revert von ${SHA}, weil der Smoke-Test nach dem Production-Deploy rot war.
+
+          Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+          git push -q origin "$branch"
+
+          body="Part of ${issue:-SIN-308}
+
+          ## Was ändert sich
+          Nimmt \`${SHA:0:7}\` (${title}) zurück, weil \`/api/health\` oder \`/api/learner/phase-a\` nach dem Production-Deploy nicht 200 lieferten. Der Stand von vorher ist wieder da.
+
+          ## Nach dem Merge
+          Auto-Merge bei grünen Checks (\`risk:medium\`). Danach das ursprüngliche Issue prüfen und die Änderung korrigiert neu einbringen.
+
+          Fehlgeschlagener Lauf: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          gh pr create --base main --head "$branch" \
+            --title "revert: ${title%% (#*} zurücknehmen${issue:+ ($issue)}" --body "$body"
+
+      - name: Live-Check anstoßen
+        if: steps.smoke.outputs.fail != '1'
+        continue-on-error: true
+        run: gh workflow run nach-deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+      - name: Lauf rot melden
+        if: steps.smoke.outputs.fail == '1'
+        run: |
+          echo "::error::Smoke-Test nach Production-Deploy fehlgeschlagen."
+          exit 1

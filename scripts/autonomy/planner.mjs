@@ -23,11 +23,15 @@ import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs
 import { pathToFileURL } from "node:url";
 import { LANES, commentOnIssue, countIssues, fetchProjectIssues, fetchRecentlyDone, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
 import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
-import { runLimitCheck } from "./limits.mjs";
+import { readLimits, runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
+import { collectFabrikMetrics } from "./fabrik.mjs";
+import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error.mjs";
+import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection } from "./content-metrics.mjs";
+import { DEFAULT_SIZE, SIZES } from "./sparen.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
 import { dispatchRun, taskForCheck } from "./run-task.mjs";
@@ -48,7 +52,16 @@ export const MAX_PER_LANE = 3;
 export const MAX_DESIGN_PER_WEEK = 1;
 /** Höchstens 3 je Spur (zusammen 9); dazu höchstens 1 Design-Paket. */
 export const MAX_ISSUES_PER_WEEK = MAX_PER_LANE * LANES.length;
-export const PLAN_LANES = [...LANES, "design"];
+/** Pflichtabschnitte jedes Design-Pakets (SIN-306): Vorlagen-Recherche und Hinweis für Sinan. */
+export const DESIGN_VORLAGEN_HEADING = "## Vorlagen geprüft";
+export const DESIGN_VORLAGEN_BLOCK = [
+  DESIGN_VORLAGEN_HEADING,
+  "Quellen: Figma Community (User Flow, Journey Map, UI-Kits, Device Mockups, Präsentation) und GitHub. Je Treffer: Link, Lizenz/Nutzungsbedingungen und Begründung (übernommen oder verworfen); Ergebnis zusätzlich in `docs/decisions/<ISSUE-ID>-<kurz>.md`. Gibt es keinen Treffer, das ausdrücklich hier schreiben.",
+  "",
+  "## Hinweis für Sinan",
+  "Agenten können Figma-Community-Dateien nicht selbst übernehmen. Wird ein Treffer gebraucht: Datei in der Community öffnen, auf „In Entwurf öffnen“ (Kopie anlegen) klicken und den Link der Kopie ins Issue schreiben.",
+].join("\n");
+export const PLAN_LANES =[...LANES, "design"];
 /** Pflege-Modus: nur Fehler (Backend) und Content. */
 export const MAINTENANCE_LANES = ["backend", "content"];
 export const READINESS_FILE = "docs/product-readiness.json";
@@ -91,6 +104,9 @@ export async function collectMetrics(env = process.env, http = {}) {
     posthog: "nicht verfügbar",
     sentry: "nicht verfügbar",
     sentry_kritisch: "nicht verfügbar",
+    content_fabrik: "nicht verfügbar",
+    content_fabrik_status: "nicht verfügbar",
+    content_fabrik_ueberfaellig_tage: "nicht verfügbar",
   };
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const h = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
@@ -98,13 +114,23 @@ export async function collectMetrics(env = process.env, http = {}) {
       m.einheiten = await supabaseCount("units?select=id", h, env.SUPABASE_URL, http);
       const total = await supabaseCount("question_quality_latest?select=question_id", h, env.SUPABASE_URL, http);
       const passed = await supabaseCount("question_quality_latest?select=question_id&passed=eq.true", h, env.SUPABASE_URL, http);
+      const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
       try {
-        const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
         m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
       } catch (e) {
-        m.kosten_pro_lauf = e.status === 404
-          ? "nicht messbar (Tabelle pipeline_run_costs fehlt in Supabase, Migration 20261006020000 anwenden)"
-          : notMeasurable(e);
+        if (isSchemaCache(e)) {
+          const sleep = http.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+          await sleep(500);
+          try {
+            m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
+          } catch (retryError) {
+            m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", retryError);
+            queueSinanTask(http, "pipeline_run_costs", "20261006020000", retryError);
+          }
+        } else {
+          m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", e);
+          queueSinanTask(http, "pipeline_run_costs", "20261006020000", e);
+        }
       }
       m.fragen_bewertet = total;
       m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";
@@ -114,6 +140,7 @@ export async function collectMetrics(env = process.env, http = {}) {
     }
   }
   Object.assign(m, await collectSentryMetrics(env, http.fetchImpl, http));
+  Object.assign(m, await collectFabrikMetrics(env, http));
   Object.assign(m, await collectPostHogMetrics(env, http.fetchImpl, http));
   m.figma_abgleich = await figmaTokenMetric(env, http.fetchImpl);
   return m;
@@ -178,10 +205,13 @@ export function buildPlannerPrompt(
     "- gelaufen, Ergebnis unter Ziel: Verbesserung des Ergebnisses planen, nicht das Werkzeug neu bauen.",
     "- erfüllt: nichts planen.",
     "",
+    "Größe (SIN-320): Setze je Eintrag `size` = `klein`, `mittel` oder `gross` nach docs/autonomy/groessen.md (klein: 1–2 Dateien, kein neues Verhalten; mittel: ein Arbeitspaket; gross: mehr als ein PR). Große Aufträge teilst du selbst in mittlere oder kleine Einträge (Blocker-Reihenfolge), ein Eintrag mit `size: gross` wird verworfen. Kleinkram desselben Bereichs (Doku, Index, Labels) bekommt dasselbe `area` (ein kurzes Wort), der Dispatcher bündelt ihn zu einem Lauf.",
+    "",
     "Figma zuerst (SIN-239):",
     "- Ohne Design-Issue: Änderungen, die nur vorhandene Figma-Komponenten und Tokens nutzen (Zustände, Texte, Abstände, Varianten bestehender Screens, Fehler-/Leer-/Ladezustände nach Screen 17). Dann `needsDesign: false`.",
     "- Design nötig (`needsDesign: true`): neue Screens, neue Komponenten, neue Farben/Tokens, geänderte Navigation. Setze `blockedBy` auf den Titel eines Design-Eintrags im Plan (oder eine offene Kennung wie SIN-123).",
     `- Bündle alle Design-Arbeiten zu höchstens ${MAX_DESIGN_PER_WEEK} Design-Paket pro Woche (\`lane: "design"\`, Label \`design\`, Backlog bis Sinan die Sitzung macht, kein Dispatcher-Lauf).`,
+    `- Vorlagen (SIN-306): Jedes Design-Paket enthält den Abschnitt „${DESIGN_VORLAGEN_HEADING.slice(3)}“ (Figma Community und GitHub nach User Flow, Journey Map, UI-Kits, Device Mockups, Präsentation durchsucht; je Treffer Link, Lizenz und Begründung) und den Hinweis für Sinan, dass Community-Dateien nur per Klick kopiert werden können. Das Skript hängt beide Abschnitte an, falls sie in der Beschreibung fehlen.`,
     "- Agenten erfinden keine Komponenten im Code. Weicht der Code von Figma ab (Kennzahl `figma_abgleich`), plane die Abweichung als Issue.",
     ...(betrieb ? betriebPrompt(phase) : []),
     ...(maxIssues != null
@@ -214,7 +244,7 @@ export function buildPlannerPrompt(
     ...Object.entries(metrics).map(([k, v]) => `- ${k}: ${v}`),
     "",
     "## Ausgabe",
-    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft"}].',
+    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "size": "klein|mittel", "area": "optional, nur für klein", "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft"}].',
     "`needsDesign` und `blockedBy` nur bei Frontend-Issues, die ein Design-Paket brauchen (siehe oben). Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
   ].join("\n");
 }
@@ -257,6 +287,12 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
     if (!PLAN_LANES.includes(p.lane)) throw new Error(`Eintrag ${i}: lane muss ${PLAN_LANES.join(", ")} sein`);
     if (!Array.isArray(p.acceptance) || p.acceptance.length === 0) throw new Error(`Eintrag ${i}: Akzeptanzkriterien fehlen`);
     if (![1, 2, 3, 4].includes(p.priority)) throw new Error(`Eintrag ${i}: priority muss 1 bis 4 sein`);
+    const size = SIZES.includes(p.size) ? p.size : DEFAULT_SIZE;
+    if (size === "gross" && p.lane !== "design") {
+      console.log(`Eintrag verworfen (zu gross, vor dem Start teilen, SIN-320): ${p.title}`);
+      continue;
+    }
+    const area = size === "klein" && typeof p.area === "string" && /^[a-z0-9-]{2,30}$/i.test(p.area.trim()) ? p.area.trim().toLowerCase() : "";
     const blockedBy = typeof p.blockedBy === "string" ? p.blockedBy.trim() : "";
     if (p.needsDesign) {
       if (p.lane !== "frontend") throw new Error(`Eintrag ${i}: needsDesign nur für frontend`);
@@ -277,10 +313,13 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
         ...((observing || bugsOnly) && p.lane === "backend" ? ["bug"] : []),
         ...(planning ? [PLAN_LABEL] : []),
         ...(p.runOrder ? [RUN_LABEL] : []),
+        ...(p.lane === "design" ? [] : [`groesse:${size}`, ...(area ? [`bereich:${area}`] : [])]),
       ],
       ...(p.lane === "frontend" ? { needsDesign: Boolean(p.needsDesign) } : {}),
       ...(p.needsDesign ? { blockedBy } : {}),
       description: `${p.description ?? ""}${
+        p.lane === "design" && !String(p.description ?? "").includes(DESIGN_VORLAGEN_HEADING) ? `\n\n${DESIGN_VORLAGEN_BLOCK}` : ""
+      }${
         p.lane === "design" ? "\n\nWird in einer Claude-Sitzung mit Figma-Connector erledigt (nicht vom Dispatcher). Danach Frame zur Freigabe in docs/design/." : ""
       }\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`.trim(),
     });
@@ -394,7 +433,8 @@ export async function main(argv) {
   }
 
   // Linear-Kontingent (SIN-291): ab 95 % der Issue-Grenze legt der Planer nichts an und meldet es; der Wächter legt das Hinweis-Issue an.
-  const quota = issues ? linearQuota(await countIssues(linear).catch(() => null)) : linearQuota(null);
+  const linearLimit = readLimits().limits?.linear_issues?.limit; // null = unbegrenzt (SIN-360)
+  const quota = issues ? linearQuota(await countIssues(linear).catch(() => null), linearLimit) : linearQuota(null, linearLimit);
   if (quota.level === "stop" && (argv.includes("--context") || argv.includes("--create"))) {
     console.log(`::warning::${renderLinearQuota(quota)}. Der Planer legt keine neuen Issues an, bis aufgeräumt ist.`);
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, "linear_ok=false\n");
@@ -402,10 +442,18 @@ export async function main(argv) {
   }
 
   if (argv.includes("--context")) {
-    const metrics = await collectMetrics();
+    const sinanTasks = [];
+    const metrics = await collectMetrics(process.env, { sinanTasks });
+    if (sinanTasks.length && issues) {
+      // Ursache nur durch Sinan behebbar (SIN-359): Aufgabe mit Label sinan anlegen, Doppelte überspringt createSinanIssues.
+      await createSinanIssues(sinanTasks, await fetchSinanIssues(), linear).catch((e) => console.log(`::warning::Sinan-Aufgabe nicht angelegt: ${e.message}`));
+    }
     const { rows, abnahme } = await assessReadiness({ metrics, issues });
     const sourceIssues = (issues ?? []).filter((i) => /quellen-monitor/i.test(i.title));
-    const content = renderContentSection(await collectContentMetrics(), { sourceIssues });
+    const content = renderContentSection(await collectContentMetrics(), {
+      sourceIssues,
+      fabrik: { detail: metrics.content_fabrik, ueberfaelligTage: Number(metrics.content_fabrik_ueberfaellig_tage) || null },
+    });
     const definition = extractSection(readFileSync("docs/PRODUCT.md", "utf8"), "Definition fertig");
     const phase = await resolvePhase(argv, issues);
     const recentDone = issues ? await fetchRecentlyDone(linear).catch(() => []) : [];

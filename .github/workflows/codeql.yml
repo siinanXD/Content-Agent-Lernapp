@@ -1,0 +1,55 @@
+# CodeQL (SIN-295): Codeanalyse bei jedem PR, bei Push auf main und wöchentlich.
+# Nur Leserechte: Ergebnisse gehen nicht an den Security-Tab (dafür wäre `security-events: write` nötig),
+# sondern werden hier ausgewertet. Funde mit hoher Schwere (CVSS >= 7.0) lassen den Lauf scheitern.
+name: codeql
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:javascript-typescript"
+          upload: never
+          output: codeql-results
+
+      # SIN-322: im PR blockieren nur Funde in geänderten Dateien, Altfunde auf main sind Warnungen.
+      - name: Funde hoher Schwere prüfen
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            git diff --name-only "origin/$BASE_REF...HEAD" > changed.txt
+            node scripts/autonomy/codeql-gate.mjs codeql-results --changed changed.txt
+          else
+            node scripts/autonomy/codeql-gate.mjs codeql-results
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-sarif
+          path: codeql-results
+          retention-days: 14

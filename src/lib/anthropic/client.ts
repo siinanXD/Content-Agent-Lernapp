@@ -6,8 +6,14 @@
 export const ANTHROPIC_API_BASE = "https://api.anthropic.com";
 
 /** Model IDs aus der offiziellen Anthropic-Preisseite / Modell-Übersicht (geprüft 2026-10-05, D-41). */
-export const KNOWN_GENERATOR_MODELS = ["claude-sonnet-5-5", "claude-haiku-4-5-20251001"] as const;
+export const KNOWN_GENERATOR_MODELS = [
+  "claude-sonnet-5-5",
+  "claude-haiku-5-5",
+  "claude-haiku-4-5-20251001",
+] as const;
 export type GeneratorModel = (typeof KNOWN_GENERATOR_MODELS)[number];
+/** Kandidaten des Goldset-Vergleichs `ap22:ab` (SIN-398): günstiger Kandidat gegen den Standard. */
+export const AB_MODELS: readonly GeneratorModel[] = ["claude-haiku-5-5", "claude-sonnet-5-5"];
 export const DEFAULT_GENERATOR_MODEL: GeneratorModel = "claude-sonnet-5-5";
 
 /** Env `GENERATOR_MODEL` überschreibt den Default; unbekannte IDs scheitern laut statt falsch abzurechnen. */

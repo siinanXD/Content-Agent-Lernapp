@@ -17,8 +17,14 @@ export const CLAUDE_CACHE_READ_FACTOR = 0.1;
  * Batch-Preise je 1M Token (USD) laut offizieller Preisseite, geprüft 2026-10-05 (D-41).
  * Cache-Schreiben (5 min) = 1,25×, Cache-Lesen = 0,1× des Batch-Eingabepreises (Multiplikatoren stapeln mit Batch).
  */
-export const CLAUDE_BATCH_PRICES: Record<string, { in: number; out: number }> = {
-  "claude-sonnet-5-5": { in: 1.0, out: 5.0 },
+export const CLAUDE_BATCH_PRICES: Record<
+  string,
+  { in: number; out: number; cacheReadFactor?: number }
+> = {
+  // Cache-Treffer bei Sonnet 5.5 kosten 0,05× statt 0,1× (Preisseite, Fußnote 2), geprüft 2026-10-08 (SIN-398).
+  "claude-sonnet-5-5": { in: 1.0, out: 5.0, cacheReadFactor: 0.05 },
+  // Haiku 5.5, Prompts bis 100.000 Token: Batch 0,05 / 0,25 (darüber 0,25 / 1,25; Generator-Prompts bleiben darunter).
+  "claude-haiku-5-5": { in: 0.05, out: 0.25 },
   "claude-haiku-4-5-20251001": { in: 0.5, out: 2.5 },
 };
 
@@ -38,7 +44,7 @@ export function claudeBatchUsd(
     (c.claudeInputTokens / 1e6) * p.in +
     (c.claudeOutputTokens / 1e6) * p.out +
     (c.claudeCacheCreationTokens / 1e6) * p.in * CLAUDE_CACHE_WRITE_FACTOR +
-    (c.claudeCacheReadTokens / 1e6) * p.in * CLAUDE_CACHE_READ_FACTOR;
+    (c.claudeCacheReadTokens / 1e6) * p.in * (p.cacheReadFactor ?? CLAUDE_CACHE_READ_FACTOR);
   return Math.round(usd * 10000) / 10000;
 }
 

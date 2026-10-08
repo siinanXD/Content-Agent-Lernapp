@@ -17,6 +17,7 @@ import {
   propagateAttributes,
   startActiveObservation,
 } from "@langfuse/tracing";
+import { cleanEnvValue, readEnvUrl } from "@/lib/env";
 import type { CostLedger } from "./cost-guard";
 import { LANGFUSE_DATASET_NAME } from "./maf-goldset";
 import type { GoldQuestion } from "./maf-goldset-fixture";
@@ -24,6 +25,14 @@ import {
   ensureLangfuseOtel,
   flushLangfuseOtel,
 } from "./langfuse-otel";
+import { schreibeEinheitTrace, type EinheitTraceInput } from "./unit-traces";
+import {
+  traceMetadata,
+  traceTags,
+  umgebungsName,
+  type PruefpunktScore,
+  type TraceKontext,
+} from "./langfuse-names";
 
 export const LANGFUSE_EU_HOST = ["https://", "cloud.", "langfuse.com"].join("");
 
@@ -38,14 +47,13 @@ export type LangfuseConfig = {
 };
 
 export function getLangfuseConfig(): LangfuseConfig | null {
-  const publicKey = process.env.LANGFUSE_PUBLIC_KEY?.trim();
-  const secretKey = process.env.LANGFUSE_SECRET_KEY?.trim();
+  const publicKey = cleanEnvValue(process.env.LANGFUSE_PUBLIC_KEY);
+  const secretKey = cleanEnvValue(process.env.LANGFUSE_SECRET_KEY);
   if (!publicKey || !secretKey) return null;
-  return {
-    publicKey,
-    secretKey,
-    baseUrl: process.env.LANGFUSE_BASE_URL?.trim() || LANGFUSE_EU_HOST,
-  };
+  const hasBaseUrl = Boolean(cleanEnvValue(process.env.LANGFUSE_BASE_URL));
+  const baseUrl = readEnvUrl("LANGFUSE_BASE_URL") ?? (hasBaseUrl ? null : LANGFUSE_EU_HOST);
+  if (!baseUrl) return null;
+  return { publicKey, secretKey, baseUrl };
 }
 
 export function langfuseConfigured(): boolean {
@@ -89,6 +97,13 @@ export async function recordEvaluationTrace(payload: {
   passed: boolean;
   scores: Record<string, number | boolean>;
   metadata?: Record<string, unknown>;
+  /** SIN-299: Kurslauf-Session (kurslaufSessionId), Tags und Metadaten nach Beruf, Modul, Schritt, Modell. */
+  sessionId?: string;
+  kontext?: TraceKontext;
+  /** Prompt aus Langfuse Prompt Management (Name und Version), mit dem Trace verknüpft. */
+  prompt?: { name: string; version: number };
+  /** Zusätzliche Scores mit Begründung (z. B. Prüfpunkte des Richters). */
+  extraScores?: PruefpunktScore[];
 }): Promise<string | null> {
   const cfg = getLangfuseConfig();
   if (!cfg) return null;
@@ -102,11 +117,17 @@ export async function recordEvaluationTrace(payload: {
     await propagateAttributes(
       {
         traceName: payload.name,
-        tags: ["quality-gate", "course-evaluate", "ap-06"],
+        ...(payload.sessionId ? { sessionId: payload.sessionId } : {}),
+        ...(payload.prompt ? { prompt: payload.prompt } : {}),
+        environment: payload.kontext?.umgebung ?? umgebungsName(),
+        tags: payload.kontext
+          ? traceTags(payload.kontext)
+          : ["quality-gate", "course-evaluate", "ap-06"],
         metadata: stringMetadata({
           courseId: payload.courseId,
           dataset: LANGFUSE_DATASET_NAME,
           passed: payload.passed,
+          ...(payload.kontext ? traceMetadata(payload.kontext) : {}),
           ...(payload.metadata ?? {}),
         }),
       },
@@ -153,6 +174,19 @@ export async function recordEvaluationTrace(payload: {
                 },
               );
             }
+
+            for (const extra of payload.extraScores ?? []) {
+              client.score.observation(
+                { otelSpan: observation.otelSpan },
+                {
+                  name: extra.name,
+                  value: extra.value,
+                  dataType: "NUMERIC",
+                  comment: extra.comment,
+                  metadata: { courseId: payload.courseId },
+                },
+              );
+            }
           },
           { asType: "evaluator" },
         );
@@ -162,6 +196,29 @@ export async function recordEvaluationTrace(payload: {
     await client.score.flush();
     await flushLangfuseOtel();
     return traceId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** SIN-383: Einheiten-Trace mit Fragen und Scores; ohne Zugangsdaten oder bei Fehlern null. */
+export async function recordUnitTrace(payload: Omit<EinheitTraceInput, "score">): Promise<string | null> {
+  const cfg = getLangfuseConfig();
+  if (!cfg) return null;
+  try {
+    ensureLangfuseOtel();
+    const client = createClient(cfg);
+    const id = await schreibeEinheitTrace({
+      ...payload,
+      score: (span, sc) =>
+        client.score.observation(
+          { otelSpan: span },
+          { name: sc.name, value: sc.value, dataType: sc.dataType, comment: sc.comment, metadata: { courseId: payload.courseId } },
+        ),
+    });
+    await client.score.flush();
+    await flushLangfuseOtel();
+    return id;
   } catch {
     return null;
   }
@@ -192,6 +249,9 @@ export async function recordClaudeUsageTrace(payload: {
 /** SIN-258: Token und Euro eines Pipeline-Laufs als Trace (nur Zahlen und Kennungen). */
 export async function recordRunCostTrace(payload: {
   name: string;
+  /** SIN-299: Session und Kontext des Kurslaufs. */
+  sessionId?: string;
+  kontext?: TraceKontext;
   record: {
     runId: string;
     courseId: string;
@@ -212,6 +272,8 @@ export async function recordRunCostTrace(payload: {
   return recordEvaluationTrace({
     name: payload.name,
     courseId: r.courseId,
+    sessionId: payload.sessionId,
+    kontext: payload.kontext,
     passed: !r.stopped,
     scores: {
       costEur: r.costEur,

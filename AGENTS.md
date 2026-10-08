@@ -4,9 +4,11 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 ## Zuerst lesen
 
-1. `docs/PRODUCT.md` (Konzept, Arbeitspakete AP-00 bis AP-12)
-2. `docs/DECISIONS.md` (Index der bisherigen Entscheidungen; Einzeldateien in `docs/decisions/`)
-3. Das zugewiesene Linear-Issue
+1. `docs/LANDKARTE.md` (wo liegt was, wichtigste Befehle, Konventionen; spart Suchen)
+2. `docs/PRODUCT.md` (Konzept, Arbeitspakete AP-00 bis AP-12)
+3. `docs/DECISIONS.md` (Index der bisherigen Entscheidungen; Einzeldateien in `docs/decisions/`)
+4. `docs/autonomy/LEHREN.md` (Fehler, die schon passiert sind, und wie es richtig geht; SIN-296)
+5. Das zugewiesene Linear-Issue
 
 ## Grundsatz
 
@@ -19,7 +21,8 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 1. Suche auf GitHub und Hugging Face nach einer fertigen Lösung
 2. Lies die offiziellen Docs von Anthropic, OpenAI, Hermes oder Langfuse zum aktuellen Stand. Nutze nie Modellnamen oder Funktionen aus dem Gedächtnis
-3. Schreibe die Entscheidung mit Links und einem Satz Begründung in `docs/decisions/<ISSUE-ID>-<kurz>.md` (eine Datei je Entscheidung, keine laufenden Nummern, SIN-240). `docs/DECISIONS.md` ist ein erzeugter Index: nie bearbeiten
+3. Bei Design/UX: Figma Community nach Vorlagen durchsuchen (User Flow, Journey Map, UI-Kits, Device Mockups, Präsentation). Treffer mit Link, Lizenz/Nutzungsbedingungen und Begründung in `docs/decisions/` festhalten. Agenten können Community-Dateien nicht selbst übernehmen: Sinan muss sie per Klick kopieren (Hinweis im Design-Paket, SIN-306)
+4. Schreibe die Entscheidung mit Links und einem Satz Begründung in `docs/decisions/<ISSUE-ID>-<kurz>.md` (eine Datei je Entscheidung, keine laufenden Nummern, SIN-240). `docs/DECISIONS.md` ist ein erzeugter Index: nie bearbeiten
 
 ### So wird entschieden
 
@@ -65,6 +68,12 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.
 - Workflows: In github-script@v7 nie `getOctokit` verwenden (nicht definiert). Stattdessen `new github.constructor({ auth: process.env.AGENT_TOKEN })`.
 
+## Aufgaben für Sinan (SIN-310)
+
+- Braucht ein Worker, der Wächter oder der Planer etwas, das nur Sinan tun kann (Konto, Vertrag, Token, Einstellung), steht die Anleitung **nicht** im PR-Text. Es entsteht ein Linear-Issue mit Label `sinan` (nie `claude`, der Dispatcher nimmt es nie): `node scripts/autonomy/sinan.mjs create --titel … --wo … --link … --minuten … --schritt "…" (mehrfach) --pruefung …`. Der PR verlinkt das Issue unter `## Nach dem Merge`.
+- Beschreibung im festen Block: `wo`, `link`, `minuten`, `schritte` (nummeriert, mit kopierbaren Werten, nie Geheimnisse), `pruefung` (wie der Loop erkennt, dass es erledigt ist).
+- Tages-Update und Status-Seite zeigen offene `sinan`-Issues unter „Braucht dich“ mit Link und Minuten. Der Loop schließt sie selbst, wenn die Prüfung greift (`scripts/autonomy/sinan.mjs`, Standard-Aufgaben in `SEED`).
+
 ## Technik (siehe DECISIONS.md)
 
 - App: Next.js auf Vercel
@@ -91,6 +100,12 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Keine Platzhalter-Texte („Lorem“, „Text folgt“ ohne Issue), keine erfundenen Zahlen oder Kennzahlen.
 - Keine Karten in Karten; eine Hero-Komposition je Screen; Texte kurz, deutsch, konkret.
 - Zugänglichkeit vor Optik: Kontrast ≥ 4,5:1, sichtbarer Fokus, Ziele ≥ 44 px.
+
+## Lehren, Skills, Laufprotokoll (SIN-296)
+
+- Nach jedem behobenen Bug (auch im Reparatur-Lauf) ergänzt du `docs/autonomy/LEHREN.md` um **eine Zeile** im selben PR: Was nicht geht → wie es richtig geht. Erst suchen, ob es sie schon gibt. Höchstens 150 Zeilen.
+- Wiederholt sich ein Arbeitsablauf, lege `docs/skills/<name>/SKILL.md` an (Aufbau: `docs/skills/README.md`) und nutze vorhandene Skills bei passenden Issues. Neue Skills nennst du im PR unter `## Neue Skills`.
+- Das Laufprotokoll (gelesene Dateien, Entscheidungen, Prüfungen, Ergebnis, Abbruchgrund) baut der Worker-Workflow selbst aus dem Log (`scripts/autonomy/protokoll.mjs`, Artefakt `laufprotokoll`, Link im PR-Steckbrief und in Linear). Du schreibst es nicht.
 
 ## Qualität
 

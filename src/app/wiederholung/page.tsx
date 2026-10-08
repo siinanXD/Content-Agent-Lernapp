@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { trackReviewAbandoned, trackReviewCompleted, trackReviewStarted } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { BottomNav } from "@/components/learner/bottom-nav";
@@ -24,11 +25,101 @@ import {
   enqueueProgress,
   flushProgress,
 } from "@/lib/learner/progress-outbox";
+import {
+  formatDueDate,
+  mostMissedAreas,
+  nextDueAt,
+  stageRows,
+} from "@/lib/learner/review-overview";
+import { Bento, Tile } from "@/components/ui/tile";
+import { Progress } from "@/components/ui/progress";
 import { StateView } from "@/components/ui/state-view";
 import { useOnline } from "@/lib/use-online";
 import { loadSession, saveSession } from "@/lib/learner/session";
-import { recordLearningEvent } from "@/lib/learner/streak";
+import { loadLearningSummary, recordLearningEvent } from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
+
+const linkButton =
+  "inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] px-5 py-3.5 text-base font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
+
+/** Stapel, Plan 1 · 3 · 7 · 14 und Gebiete mit den meisten Fragen (Figma W6). */
+function ReviewOverview({ stack }: { stack: LeitnerStack }) {
+  const rows = stageRows(stack);
+  const areas = mostMissedAreas(
+    stack.items.map((i) => getQuestionById(i.questionId)?.examAreas ?? []),
+  );
+  return (
+    <Bento>
+      <div className="grid grid-cols-2 gap-[var(--bento-gap)] md:gap-[var(--bento-gap-wide)]">
+        <Tile as="div">
+          <p className="mono-label text-[var(--color-text-secondary)]">Stapel</p>
+          <p
+            className="text-[32px] font-bold leading-10"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            {stackSize(stack)}
+          </p>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {stackSize(stack) === 1 ? "Frage" : "Fragen"}
+          </p>
+        </Tile>
+        <Tile as="div">
+          <p className="mono-label text-[var(--color-text-secondary)]">Plan</p>
+          <p
+            className="text-[22px] font-bold leading-8"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            {rows.map((r) => r.days).join(" · ")}
+          </p>
+          <p className="text-sm text-[var(--color-text-secondary)]">Tage Abstand</p>
+        </Tile>
+      </div>
+      <Tile aria-labelledby="stufen-titel">
+        <h2
+          id="stufen-titel"
+          className="text-base font-semibold"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Fragen je Stufe
+        </h2>
+        <ul className="flex flex-col">
+          {rows.map((r) => (
+            <li
+              key={r.stage}
+              className="flex min-h-11 items-center justify-between gap-3 border-b border-[var(--color-border-subtle)] last:border-b-0"
+            >
+              <span className="text-[15px]">
+                Stufe {r.stage} · nach {r.days} {r.days === 1 ? "Tag" : "Tagen"}
+              </span>
+              <span className="mono-label text-[var(--color-text-primary)]">{r.count}</span>
+            </li>
+          ))}
+        </ul>
+      </Tile>
+      {areas.length > 0 ? (
+        <Tile aria-labelledby="gebiete-titel">
+          <h2
+            id="gebiete-titel"
+            className="text-base font-semibold"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Meiste Fehler
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {areas.map((a) => (
+              <li key={a.areaId} className="flex items-center justify-between gap-3">
+                <span className="mono-label">{a.areaId}</span>
+                <span className="text-sm text-[var(--color-text-secondary)]">
+                  {a.count} {a.count === 1 ? "Frage" : "Fragen"} im Stapel
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Tile>
+      ) : null}
+    </Bento>
+  );
+}
 
 export default function WiederholungPage() {
   const loadedStack = useAfterMount<LeitnerStack | null>(loadStack, null);
@@ -64,6 +155,31 @@ export default function WiederholungPage() {
     ? getQuestionById(currentItem.questionId)
     : undefined;
 
+  // Start und Abbruch der Runde (nur Zahlen). Erst zählen, wenn Fragen fällig sind.
+  const reviewState = useRef({ answered: 0, total: 0, finished: false });
+  useEffect(() => {
+    reviewState.current.answered = index + (revealed ? 1 : 0);
+    reviewState.current.total = due.length;
+  }, [index, revealed, due.length]);
+  const hasDue = pathReady && due.length > 0;
+  useEffect(() => {
+    if (!hasDue) return;
+    const state = reviewState.current;
+    state.finished = false;
+    let sent = false;
+    trackReviewStarted({ total: state.total });
+    function report() {
+      if (sent || state.finished) return;
+      sent = true;
+      trackReviewAbandoned({ answered: state.answered, total: state.total });
+    }
+    window.addEventListener("pagehide", report);
+    return () => {
+      window.removeEventListener("pagehide", report);
+      report();
+    };
+  }, [hasDue]);
+
   function onChecked(result: AnswerResult) {
     if (!currentItem || !question || revealed) return;
     setRevealed(true);
@@ -88,6 +204,8 @@ export default function WiederholungPage() {
         totalPoints: 1720,
       };
       recordLearningEvent("review");
+      reviewState.current.finished = true;
+      trackReviewCompleted({ correct: correctCount, total: due.length });
       saveSession({
         ...session,
         lastResult: {
@@ -109,9 +227,11 @@ export default function WiederholungPage() {
   if (stack === null || !pathReady) {
     return (
       <MobileShell>
-        <main className="px-6 py-16">
-          <p>Lade Wiederholungsstapel …</p>
+        <main className="flex flex-1 flex-col justify-center">
+          <h1 className="sr-only">Wiederholung</h1>
+          <StateView kind="laden" title="Wiederholungsstapel wird geladen" text="Einen Moment bitte." />
         </main>
+        <BottomNav />
       </MobileShell>
     );
   }
@@ -119,22 +239,31 @@ export default function WiederholungPage() {
   if (done) {
     return (
       <MobileShell>
-        <main className="flex flex-1 flex-col gap-4 px-6 py-16">
-          <h1
-            className="text-2xl font-bold"
-            style={{ fontFamily: "var(--font-display)" }}
+        <main className="flex flex-1 flex-col gap-[var(--bento-gap)] px-6 pb-6 pt-12">
+          <Tile tone="hero">
+            <p className="mono-label text-[var(--color-text-muted-on-dark)]">Wiederholung</p>
+            <h1
+              className="text-2xl font-bold"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Wiederholung fertig
+            </h1>
+            <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
+              {correctCount} von {due.length} richtig. Stapel: {stackSize(stack)}{" "}
+              Fragen.
+            </p>
+            <Link
+              href="/ergebnis"
+              className={`${linkButton} mt-2 bg-[var(--color-brand-accent)] text-[var(--color-text-primary)]`}
+            >
+              Zum Ergebnis
+            </Link>
+          </Tile>
+          <Link
+            href="/lernpfad"
+            className={`${linkButton} border-[1.5px] border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]`}
           >
-            Wiederholung fertig
-          </h1>
-          <p className="text-[15px] text-[var(--color-text-secondary)]">
-            {correctCount} von {due.length} richtig. Stapel: {stackSize(stack)}{" "}
-            Fragen.
-          </p>
-          <Link href="/ergebnis">
-            <Button>Zum Ergebnis</Button>
-          </Link>
-          <Link href="/lernpfad">
-            <Button variant="secondary">Zum Lernpfad</Button>
+            Zum Lernpfad
           </Link>
         </main>
         <BottomNav />
@@ -143,30 +272,38 @@ export default function WiederholungPage() {
   }
 
   if (due.length === 0 || !question || !currentItem) {
+    const nextDue = nextDueAt(stack);
+    const summary = loadLearningSummary();
+    const goalReached = summary !== "fehler" && summary.goal.reached;
     return (
       <MobileShell>
-        <header className="px-6 pb-4 pt-12">
-          <h1
-            className="text-[28px] font-bold"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Wiederholung
-          </h1>
-          <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-            Leitner 1/3/7/14 Tage · keine fälligen Fragen
-          </p>
-        </header>
-        <main className="flex flex-1 flex-col gap-3 px-6">
-          <p className="text-[15px] text-[var(--color-text-primary)]">
-            Stapelgröße: {stackSize(stack)}. Bearbeite Einheiten — falsche und
-            Anwenden-Fragen landen hier.
-          </p>
-          <Link href="/einheit/unit-03">
-            <Button>Einheit üben</Button>
-          </Link>
-          <Link href="/lernpfad">
-            <Button variant="secondary">Zum Lernpfad</Button>
-          </Link>
+        <main className="flex flex-1 flex-col gap-[var(--bento-gap)] px-6 pb-6 pt-12">
+          <Tile tone="hero">
+            <p className="mono-label text-[var(--color-text-muted-on-dark)]">Wiederholung</p>
+            <h1
+              className="text-[28px] font-bold leading-9"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Heute nichts fällig
+            </h1>
+            <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
+              {nextDue
+                ? `Heute sind keine fälligen Fragen übrig. Die nächsten kommen am ${formatDueDate(nextDue)}.`
+                : "Heute sind keine fälligen Fragen übrig. Falsche und Anwenden-Fragen landen hier."}
+            </p>
+            {goalReached ? (
+              <p className="text-[15px] font-medium text-[var(--color-text-soft-on-dark)]">
+                Tagesziel erreicht. Deine Serie ist für heute sicher.
+              </p>
+            ) : null}
+            <Link
+              href="/lernpfad"
+              className={`${linkButton} mt-2 bg-[var(--color-brand-accent)] text-[var(--color-text-primary)]`}
+            >
+              Zum Lernpfad
+            </Link>
+          </Tile>
+          {stackSize(stack) > 0 ? <ReviewOverview stack={stack} /> : null}
         </main>
         <BottomNav />
       </MobileShell>
@@ -176,7 +313,7 @@ export default function WiederholungPage() {
   return (
     <MobileShell>
       <header className="px-6 pb-2 pt-12">
-        <p className="text-sm text-[var(--color-text-secondary)]">
+        <p className="mono-label text-[var(--color-text-secondary)]">
           Wiederholung {index + 1} von {due.length} · Stufe {currentItem.stage}
         </p>
         <h1
@@ -185,6 +322,12 @@ export default function WiederholungPage() {
         >
           Fällige Fragen
         </h1>
+        <div className="mt-3">
+          <Progress
+            value={Math.round(((index + (revealed ? 1 : 0)) / due.length) * 100)}
+            label="Fortschritt dieser Wiederholung"
+          />
+        </div>
       </header>
       {online ? null : (
         <section className="px-6">
@@ -192,28 +335,30 @@ export default function WiederholungPage() {
         </section>
       )}
       <section className="flex flex-1 flex-col gap-3 px-6 pb-8 pt-4">
-        <h2
-          className="text-lg font-medium leading-6"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {question.prompt}
-        </h2>
-        <QuestionPanel
-          key={question.id + String(index)}
-          question={question}
-          revealed={revealed}
-          onChecked={onChecked}
-        />
-        {revealed ? (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-[var(--color-text-secondary)]" role="status">
-              {question.explanation}
-            </p>
-            <Button onClick={next}>
-              {index + 1 >= due.length ? "Abschließen" : "Weiter"}
-            </Button>
-          </div>
-        ) : null}
+        <Tile as="div">
+          <h2
+            className="text-lg font-medium leading-6"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {question.prompt}
+          </h2>
+          <QuestionPanel
+            key={question.id + String(index)}
+            question={question}
+            revealed={revealed}
+            onChecked={onChecked}
+          />
+          {revealed ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-[var(--color-text-secondary)]" role="status">
+                {question.explanation}
+              </p>
+              <Button onClick={next}>
+                {index + 1 >= due.length ? "Abschließen" : "Weiter"}
+              </Button>
+            </div>
+          ) : null}
+        </Tile>
       </section>
       <BottomNav />
     </MobileShell>

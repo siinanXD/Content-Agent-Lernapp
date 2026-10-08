@@ -12,18 +12,25 @@
  * Auswerten und Rendern sind reine Funktionen (`buildDigest`); nur `collect` und `main` sprechen mit dem Netz.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
+import { sumStats } from "./review.mjs";
 import { collectBackup } from "./backup.mjs";
+import { collectLiveCheck } from "./live-check.mjs";
+import { isoWeek } from "./trend-radar.mjs";
+import { renderWeekUsage, weekUsage } from "./sparen.mjs";
+import { sinanLine, sortSinan, syncSinan } from "./sinan.mjs";
 import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
-import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh } from "./status.mjs";
+import { MENTION, STATUS_LABEL, buildQuotaRows, collectDecisions as collectOpenDecisions, collectUsage, gh, parseState } from "./status.mjs";
 
 export const SLOTS = ["morgen", "abend"];
 export const TZ = "Europe/Berlin";
 export const MAX_ITEMS = 4;
+/** So viele `sinan`-Aufgaben nennt das Update, der Rest steht als „… und n weitere“ (die Status-Seite zeigt alle). */
+export const MAX_SINAN = 5;
 export const QUOTA_MIN_PCT = 50;
 /** Ohne früheres Update zählt das letzte halbe Tag. */
 export const FALLBACK_SINCE_MS = 12 * 60 * 60 * 1000;
@@ -102,12 +109,15 @@ export function openLegalItems(md) {
   return [...String(md).matchAll(/^- \[ \] (.+)$/gm)].map((m) => m[1].trim());
 }
 
-/** @param {{ openPrs?: any[], issues?: any[], decisions?: { number: number, title: string, question: string }[], legalOpen?: string[], tokens?: { name: string, ort: string, ablauf: string, rechte: string }[], now?: Date }} snap */
-export function needsYou({ openPrs = [], issues = [], decisions = [], legalOpen = [], tokens = [], now = new Date() }) {
+/**
+ * Offene `sinan`-Issues (SIN-310) stehen am Ende, je eine Zeile mit Link und Minuten. Sie ersetzen den Sammelhinweis zur Rechts-Checkliste.
+ * @param {{ openPrs?: any[], issues?: any[], decisions?: { number: number, title: string, question: string }[], legalOpen?: string[], sinan?: any[], tokens?: { name: string, ort: string, ablauf: string, rechte: string }[], now?: Date }} snap
+ */
+export function needsYou({ openPrs = [], issues = [], decisions = [], legalOpen = [], sinan = [], tokens = [], now = new Date() }) {
   const out = [];
   // SIN-294: Token läuft in höchstens 14 Tagen ab (oder ist abgelaufen).
   for (const t of expiringSoon(tokens, now)) out.push(`Token ${t.name} ${describeExpiry(t, now)} (${t.ablauf}), erneuern und docs/autonomy/tokens.md anpassen`);
-  if (legalOpen.length) out.push(`Recht: ${legalOpen.length} ${legalOpen.length === 1 ? "Punkt" : "Punkte"} offen vor dem Demo-Zugang (docs/legal/checkliste-demo-zugang.md), z. B. ${trim(legalOpen[0], 50)}`);
+  if (legalOpen.length && !sinan.length) out.push(`Recht: ${legalOpen.length} ${legalOpen.length === 1 ? "Punkt" : "Punkte"} offen vor dem Demo-Zugang (docs/legal/checkliste-demo-zugang.md), z. B. ${trim(legalOpen[0], 50)}`);
   // SIN-291: Entscheidungen in schon gemergten PRs, bis Sinan im PR antwortet.
   for (const d of decisions) out.push(`Entscheidung PR #${d.number}: ${trim(d.question, 70)}`);
   for (const p of openPrs) {
@@ -121,6 +131,7 @@ export function needsYou({ openPrs = [], issues = [], decisions = [], legalOpen 
     else if (l.includes("design")) out.push(`Design ${i.identifier}: ${trim(i.title, 60)}`);
     else if (l.includes("abnahme")) out.push(`Abnahme ${i.identifier}: ${trim(i.title, 60)}`);
   }
+  out.push(...sortSinan(sinan).map((i) => `Sinan ${sinanLine(i)}`));
   return out;
 }
 
@@ -154,19 +165,34 @@ export function buildDigest(snap) {
   lines.push("", `**${abend ? "Über Nacht geplant" : "Heute geplant"}**`);
   lines.push(...(queue.length ? queue.map((i) => `- ${i.identifier} ${trim(i.title, 70)} (${laneOf(i)})`) : ["- nichts in der Schlange"]));
 
-  const need = needsYou({ ...snap, decisions: snap.decisionsOpen, now });
-  lines.push("", "**Braucht dich**", ...(need.length ? [...need.slice(0, MAX_ITEMS).map((n) => `- ${n}`), ...more(need, MAX_ITEMS)] : ["Nichts zu tun."]));
+  const sinan = sortSinan(snap.sinanIssues ?? []);
+  const all = needsYou({ ...snap, sinan, decisions: snap.decisionsOpen, now });
+  const need = all.slice(0, all.length - sinan.length);
+  const sinanNeed = all.slice(all.length - sinan.length);
+  // Production hängt (SIN-309): Merker aus dem Loop-Status.
+  if (snap.deployStuck) need.unshift(`Production hängt seit ${String(snap.deployStuck.since).slice(11, 16)} UTC (Deploy ${String(snap.deployStuck.sha).slice(0, 7)}: ${snap.deployStuck.state})`);
+  // Production rot (SIN-332): nicht lesbar oder > 3 h hinter main, Merker aus dem Loop-Status. Ganz oben.
+  for (const text of [...(snap.deployAlarm ?? [])].reverse()) need.unshift(`🔴 ${text}`);
+  const shown = [...need.slice(0, MAX_ITEMS).map((n) => `- ${n}`), ...more(need, MAX_ITEMS), ...sinanNeed.slice(0, MAX_SINAN).map((n) => `- ${n}`), ...more(sinanNeed, MAX_SINAN)];
+  lines.push("", "**Braucht dich**", ...(shown.length ? shown : ["Nichts zu tun."]));
 
   const c = snap.content;
   const kpi = c
     ? `Content: ${c.einheitenNeuWoche ?? 0} neue Einheiten, Bestehensquote ${c.bestehensquote == null ? "nicht verfügbar" : `${c.bestehensquote} %`}, Kosten Fabrik ${Number(c.kostenWocheEur ?? 0).toFixed(2)} € (je 7 Tage)`
     : "Content: nicht verfügbar";
   const high = (snap.quotas ?? []).filter((q) => q.pct != null && q.pct > QUOTA_MIN_PCT);
-  lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"}`);
+  lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"} · Review-Funde (schwer, 7 Tage): ${snap.reviewStats ? `${snap.reviewStats.gesamt} gesamt / ${snap.reviewStats.widerlegt} widerlegt` : "nicht verfügbar"}`, ...renderWeekUsage(snap.usageWeek ?? null));
+
+  // SIN-376: Diagramme geändert, FigJam in der nächsten Claude-Sitzung nachziehen.
+  if (snap.diagramme?.length) lines.push("", `**Diagramme geändert:** ${snap.diagramme.join(", ")} (FigJam nachziehen)`);
+
+  // SIN-313: montags der Link auf den Trend-Radar der Woche.
+  if (snap.trendRadar) lines.push("", `**Trend-Radar:** ${snap.trendRadar}`);
 
   const r = snap.readiness;
   const b = snap.backup;
-  lines.push("", `Sicherung: ${b ? (b.ok ? b.line.replace("Letzte Sicherung ", "zuletzt ") : `⚠️ ${b.line}`) : "nicht verfügbar"}`);
+  const live = snap.liveCheck ? ` · ${snap.liveCheck.ok ? "" : "⚠️ "}${snap.liveCheck.line}` : " · Live-Check: nicht verfügbar";
+  lines.push("", `Sicherung: ${b ? (b.ok ? b.line.replaceAll("Letzte Sicherung ", "zuletzt ") : `⚠️ ${b.line}`) : "nicht verfügbar"}${live}`);
   lines.push("", r ? `Phase: ${r.green === r.total ? "beobachten" : "bauen"} · Produktreife ${r.green} von ${r.total} Punkten` : "Phase und Produktreife: nicht verfügbar");
   lines.push("", markOf(day, snap.slot, snap.now, snap.force));
   return { text: lines.join("\n"), day };
@@ -187,9 +213,25 @@ export function collectDecisions(since, run = execFileSync) {
   });
 }
 
-async function collect(repo, slot, now, since, env) {
+/** SIN-376: Diagramme seit `since` geändert (Git-Historie), damit Claude die FigJam-Boards nachzieht. */
+export function collectDiagramme(since, run = execFileSync) {
+  const out = String(run("git", ["log", `--since=${since}`, "--name-only", "--format=", "origin/main", "--", "docs/diagramme"], { encoding: "utf8" }));
+  return [...new Set(out.split("\n").filter((f) => /^docs\/diagramme\/.+\.mmd$/.test(f)))];
+}
+
+/** Montags (Berlin) der Bericht des Sonntagslaufs (Vorwoche), sonst `null`. */
+export function mondayRadar(now, files = readdirSync(new URL("../../docs/research/", import.meta.url))) {
+  if (new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(now) !== "Mon") return null;
+  const f = `trend-radar-${isoWeek(new Date(now.getTime() - 24 * 3600 * 1000))}.md`;
+  return files.includes(f) ? `docs/research/${f}` : null;
+}
+
+async function collect(repo, slot, now, since, env, dry = false) {
   const prs = await gh(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`);
   const mergedPrs = prs.filter((p) => p.merged_at && (!since || p.merged_at > since)).map((p) => ({ title: p.title, merged_at: p.merged_at }));
+  // SIN-320: Verbrauch der letzten 7 Tage aus den Merkern in gemergten PRs (Wochensumme, teuerste 3, Tokens je PR).
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
+  const usageWeek = weekUsage(prs.filter((p) => p.merged_at && p.merged_at > weekAgo).map((p) => ({ title: p.title, body: p.body })));
   const openPrs = prs.filter((p) => p.state === "open").map((p) => ({ number: p.number, title: p.title, labels: p.labels.map((l) => l.name) }));
   let issues = [];
   try {
@@ -217,6 +259,12 @@ async function collect(repo, slot, now, since, env) {
   } catch (e) {
     console.log(`Entscheidungen nicht lesbar: ${e.message}`);
   }
+  let diagramme = [];
+  try {
+    diagramme = collectDiagramme(since ?? new Date(now.getTime() - FALLBACK_SINCE_MS).toISOString());
+  } catch (e) {
+    console.log(`Diagramme nicht lesbar: ${e.message}`);
+  }
   const decisionsOpen = await collectOpenDecisions(repo, prs.map((p) => ({ ...p, labels: p.labels.map((l) => l.name) })), now).catch(() => []);
   let legalOpen = [];
   try {
@@ -230,8 +278,27 @@ async function collect(repo, slot, now, since, env) {
   } catch (e) {
     console.log(`Token-Liste nicht lesbar: ${e.message}`);
   }
+  // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene im Update nennen.
+  let sinanIssues = [];
+  try {
+    sinanIssues = (await syncSinan({ dry })).open;
+  } catch (e) {
+    console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`);
+  }
+  // SIN-381: Review-Funde der letzten 7 Tage aus den Kommentaren der PRs (gesamt / widerlegt).
+  let reviewStats = null;
+  try {
+    const bodies = [];
+    for (const p of prs.filter((x) => x.updated_at > weekAgo).slice(0, 30)) {
+      bodies.push(...(await gh(`/repos/${repo}/issues/${p.number}/comments?per_page=100`)).map((c) => c.body ?? ""));
+    }
+    reviewStats = sumStats(bodies);
+  } catch (e) {
+    console.log(`Review-Kennzahl nicht lesbar: ${e.message}`);
+  }
   const backup = await collectBackup(repo, now, gh);
-  return { now: now.toISOString(), slot, since, mergedPrs, openPrs, issues, decisions, decisionsOpen, legalOpen, tokens, content, quotas, readiness, backup };
+  const liveCheck = await collectLiveCheck(repo, gh);
+  return { now: now.toISOString(), slot, since, mergedPrs, usageWeek, reviewStats, openPrs, issues, decisions, diagramme, decisionsOpen, legalOpen, sinanIssues, tokens, content, quotas, readiness, backup, liveCheck, trendRadar: mondayRadar(now) };
 }
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {
@@ -268,7 +335,9 @@ export async function main(argv, env = process.env) {
     console.log(`Update ${slot} wurde vor weniger als 6 h schon gesendet, übersprungen.`);
     return null;
   }
-  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env)), force });
+  const deployStuck = parseState(found[0].body).deployStuck ?? null;
+  const deployAlarm = parseState(found[0].body).deployAlarm ?? [];
+  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env, dry)), deployStuck, deployAlarm, force });
   console.log(text);
   if (dry) return text;
   // Erst der Kommentar (trägt den Merker), dann Telegram: ein Fehler dort wiederholt das Update nicht.
