@@ -165,3 +165,21 @@ test("Einstellungen · Datennutzung: Erinnerung nur mit Einwilligung, Widerruf s
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
   expect(axe.violations).toEqual([]);
 });
+
+test("Fertig-Zustände (SIN-368): Tagesziel erreicht und heute nichts fällig", async ({ page }) => {
+  await seedEvents(page, [1, 0, 0, 0, 0]);
+  await page.goto("/lernpfad");
+
+  await expect(page.getByRole("heading", { name: "Tagesziel geschafft" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Heute nichts fällig" })).toBeVisible();
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+  expect(axe.violations).toEqual([]);
+
+  await page.getByRole("link", { name: "Zur Wiederholung" }).click();
+  await expect(page.getByRole("heading", { name: "Heute nichts fällig", level: 1 })).toBeVisible();
+  await expect(page.getByText("Tagesziel erreicht. Deine Serie ist für heute sicher.")).toBeVisible();
+  const link = await page.getByRole("link", { name: "Zum Lernpfad" }).first().boundingBox();
+  expect(link?.height).toBeGreaterThanOrEqual(44);
+  const axe2 = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+  expect(axe2.violations).toEqual([]);
+});

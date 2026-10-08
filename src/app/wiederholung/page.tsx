@@ -25,6 +25,7 @@ import {
   flushProgress,
 } from "@/lib/learner/progress-outbox";
 import {
+  formatDueDate,
   mostMissedAreas,
   nextDueAt,
   stageRows,
@@ -34,7 +35,7 @@ import { Progress } from "@/components/ui/progress";
 import { StateView } from "@/components/ui/state-view";
 import { useOnline } from "@/lib/use-online";
 import { loadSession, saveSession } from "@/lib/learner/session";
-import { recordLearningEvent } from "@/lib/learner/streak";
+import { loadLearningSummary, recordLearningEvent } from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
 
 const linkButton =
@@ -244,6 +245,8 @@ export default function WiederholungPage() {
 
   if (due.length === 0 || !question || !currentItem) {
     const nextDue = nextDueAt(stack);
+    const summary = loadLearningSummary();
+    const goalReached = summary !== "fehler" && summary.goal.reached;
     return (
       <MobileShell>
         <main className="flex flex-1 flex-col gap-[var(--bento-gap)] px-6 pb-6 pt-12">
@@ -253,13 +256,18 @@ export default function WiederholungPage() {
               className="text-[28px] font-bold leading-9"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Heute alles geschafft
+              Heute nichts fällig
             </h1>
             <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
               {nextDue
-                ? `Heute sind keine fälligen Fragen übrig. Die nächsten kommen am ${new Date(nextDue).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}.`
+                ? `Heute sind keine fälligen Fragen übrig. Die nächsten kommen am ${formatDueDate(nextDue)}.`
                 : "Heute sind keine fälligen Fragen übrig. Falsche und Anwenden-Fragen landen hier."}
             </p>
+            {goalReached ? (
+              <p className="text-[15px] font-medium text-[var(--color-text-soft-on-dark)]">
+                Tagesziel erreicht. Deine Serie ist für heute sicher.
+              </p>
+            ) : null}
             <Link
               href="/lernpfad"
               className={`${linkButton} mt-2 bg-[var(--color-brand-accent)] text-[var(--color-text-primary)]`}
