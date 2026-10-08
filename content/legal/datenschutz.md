@@ -1,6 +1,5 @@
 ---
 titel: Datenschutz
-entwurf: Endgültiger Text nach Abschluss der AV-Verträge (SIN-339) freigeben; bis dahin Entwurf.
 inhalt: ja
 ---
 
