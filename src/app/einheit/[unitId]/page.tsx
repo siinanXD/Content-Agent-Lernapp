@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnswerFeedback } from "@/components/ui/answer-feedback";
 import { Button } from "@/components/ui/button";
 import { SourceChip } from "@/components/ui/source-chip";
@@ -76,6 +76,12 @@ export default function EinheitPage() {
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
+  const questionHeading = useRef<HTMLHeadingElement>(null);
+
+  // Nach „Weiter“ verschwindet der fokussierte Button: Fokus auf die neue Frage setzen.
+  useEffect(() => {
+    if (index > 0) questionHeading.current?.focus();
+  }, [index]);
 
   useEffect(() => {
     if (!loading) return;
@@ -228,6 +234,7 @@ export default function EinheitPage() {
 
   return (
     <MobileShell>
+      <main className="flex flex-1 flex-col">
       <header className="px-6 pb-2 pt-12">
         <p className="text-sm text-[var(--color-text-secondary)]">
           Einheit {unit.indexLabel} · {unit.minutes} Min · {unit.variant}
@@ -290,11 +297,21 @@ export default function EinheitPage() {
             Frage {index + 1} von {total} · {question.type} · {question.level}
           </p>
           <h2
-            className="text-lg font-medium leading-6 text-[var(--color-text-primary)]"
+            ref={questionHeading}
+            tabIndex={-1}
+            className="text-lg font-medium leading-6 text-[var(--color-text-primary)] focus:outline-none"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {question.prompt}
           </h2>
+          {/* Dauerhafte Live-Region: Der Ergebnis-Text wird sicher vorgelesen, weil die Region schon vor dem Inhalt im DOM steht. */}
+          <p role="status" className="sr-only">
+            {revealed && !awaitSelfCheck
+              ? `${lastCorrect ? "Richtig." : "Nicht ganz."} ${
+                  lastCorrect ? "" : `Richtige Antwort: ${correctAnswerText(question)}. `
+                }${question.explanation}`
+              : ""}
+          </p>
           <QuestionPanel
             key={question.id}
             question={question}
@@ -342,6 +359,7 @@ export default function EinheitPage() {
           ) : null}
         </section>
       ) : null}
+      </main>
     </MobileShell>
   );
 }

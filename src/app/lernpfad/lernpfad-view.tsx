@@ -122,6 +122,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
   return (
     <MobileShell wide>
       <ConsentBanner />
+      <main className="flex flex-1 flex-col">
       <header className="px-6 pb-4 pt-12 md:px-12">
         <p className="bento-label">Heute</p>
         <h1
@@ -329,6 +330,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
           ))}
         </ul>
       </section>
+      </main>
 
       <BottomNav />
     </MobileShell>

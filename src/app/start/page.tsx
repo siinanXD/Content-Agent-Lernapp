@@ -10,6 +10,7 @@ export default function StartPage() {
   return (
     <MobileShell>
       <script dangerouslySetInnerHTML={{ __html: ERSTSTART_WEITERLEITUNG }} />
+      <main className="flex flex-1 flex-col">
       <section
         className="flex flex-col gap-4 bg-gradient-to-br from-[var(--color-bg-hero)] to-[var(--color-brand-primary)] px-7 pb-10 pt-14"
         aria-labelledby="brand-title"
@@ -34,6 +35,7 @@ export default function StartPage() {
       </section>
 
       <StartForm />
+      </main>
     </MobileShell>
   );
 }

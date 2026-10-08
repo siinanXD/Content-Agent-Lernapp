@@ -58,6 +58,7 @@ export default function ErgebnisPage() {
 
   return (
     <MobileShell>
+      <main className="flex flex-1 flex-col">
       <div className="bento px-6 pb-4 pt-12">
         <section
           aria-label="Ergebnis"
@@ -212,6 +213,7 @@ export default function ErgebnisPage() {
           <Button variant="secondary">Für heute fertig</Button>
         </Link>
       </section>
+      </main>
     </MobileShell>
   );
 }

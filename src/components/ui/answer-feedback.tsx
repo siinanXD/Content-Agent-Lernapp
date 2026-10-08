@@ -31,8 +31,8 @@ export function AnswerFeedback({
       data-testid="answer-feedback"
       data-correct={correct}
     >
-      <div role="status" className="flex flex-col gap-2">
-        <p className="mono-label" style={{ color: tone }}>
+      <div className="flex flex-col gap-2">
+        <p className="mono-label" style={{ color: tone }} aria-hidden="true">
           {correct ? "RICHTIG" : "FALSCH"}
         </p>
         <div className="flex items-center gap-2.5" style={{ color: tone }}>
