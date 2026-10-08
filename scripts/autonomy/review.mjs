@@ -76,16 +76,17 @@ export function parseWiderlegt(messages = []) {
 
 const words = (t) => new Set(String(t).toLowerCase().match(/[a-zäöüß0-9_.]{4,}/g) ?? []);
 
-/** Gleiche Datei und ähnliche Aussage (Wortüberlappung ≥ 50 % der kürzeren Aussage). */
+/** Gleiche Datei und gleiche Aussage (Wortüberlappung ≥ 60 % der Vereinigung beider Aussagen). */
 export function sameFinding(a, b) {
   if (a.datei !== b.datei) return false;
-  const wa = words(a.text);
-  const wb = words(b.text);
-  const min = Math.min(wa.size, wb.size);
-  if (!min) return a.text.trim() === b.text.trim();
+  // Die Begründung am Ende („ (…)“) gehört nicht zur Aussage des Funds.
+  const claim = (t) => String(t).replace(/\s\(.*\)\s*$/, "");
+  const wa = words(claim(a.text));
+  const wb = words(claim(b.text));
+  if (!wa.size || !wb.size) return a.text.trim() === b.text.trim();
   let common = 0;
   for (const w of wa) if (wb.has(w)) common++;
-  return common / min >= 0.5;
+  return common / (wa.size + wb.size - common) >= 0.6;
 }
 
 const CI_FAIL = "schl(?:ä|ae)gt.{0,20}fehl|fehlschl|fehlgeschlagen|bricht|\\bfails?\\b|\\bfailing\\b|\\brot\\b";
