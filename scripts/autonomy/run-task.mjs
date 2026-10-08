@@ -235,7 +235,8 @@ async function migrate(env, { dry }) {
     await sqlQuery(env, `begin;\n${p.sql}\ncommit;`);
     applied.push(p.name);
     // Version eintragen (SIN-374), damit `supabase_migrations.schema_migrations` und der Wächter den Stand kennen.
-    await sqlQuery(env, recordVersionSql(p.name)).catch((e) => console.log(`::warning::Version von ${p.name} nicht eingetragen: ${e.message}`));
+    // Schlägt das fehl, bricht der Lauf ab (rot), statt eine angewendete, aber nicht eingetragene Migration still zu übergehen.
+    await sqlQuery(env, recordVersionSql(p.name));
   }
   // Schema-Cache von PostgREST neu laden (SIN-351): sonst antwortet die REST-Schnittstelle trotz vorhandener Tabelle mit 404.
   if (!dry) await sqlQuery(env, "notify pgrst, 'reload schema'");
