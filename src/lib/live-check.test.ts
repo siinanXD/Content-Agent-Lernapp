@@ -19,14 +19,14 @@ const healthy = (async (input: string | URL | Request, init?: RequestInit) => {
 }) as typeof fetch;
 
 test("Live-Check API: gesunde App ist komplett grün", async () => {
-  const res = await runApiChecks("https://app.test", healthy, 1);
+  const res = await runApiChecks("https://app.test", healthy);
   assert.equal(res.length, 8);
   assert.deepEqual(res.filter((r: { ok: boolean }) => !r.ok), []);
 });
 
 test("Live-Check API: kaputter Deploy (alle Routen 500, wie SIN-308) wird erkannt", async () => {
   const broken = (async () => new Response("Internal Server Error", { status: 500 })) as typeof fetch;
-  const res = await runApiChecks("https://app.test", broken, 1);
+  const res = await runApiChecks("https://app.test", broken);
   const failed = res.filter((r: { ok: boolean }) => !r.ok).map((r: { id: string }) => r.id);
   // API-04 gilt ohne Einheiten als erfüllt; alle anderen müssen rot sein.
   assert.deepEqual(failed, ["API-01", "API-02", "API-03", "API-05", "API-06", "API-07", "API-08"]);
@@ -38,7 +38,7 @@ test("Live-Check API: kaputter Deploy (alle Routen 500, wie SIN-308) wird erkann
 test("Live-Check API: Datenbank nicht erreichbar ist rot", async () => {
   const f = (async (input: string | URL | Request, init?: RequestInit) =>
     String(input).endsWith("/api/health") ? json(503, { ok: false, db: "unreachable" }) : healthy(input, init)) as typeof fetch;
-  const res = await runApiChecks("https://app.test", f, 1);
+  const res = await runApiChecks("https://app.test", f);
   assert.equal(res[0].ok, false);
 });
 

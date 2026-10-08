@@ -1,7 +1,7 @@
 # Live-Checkliste (SIN-319)
 
 Der Workflow `nach-deploy` prüft nach jedem Production-Deploy (und nachts um 21:05) diese Liste gegen die laufende App.
-Er ändert keine echten Nutzerdaten: Schreib-Endpunkte sind abgefangen oder laufen mit Test-Kennung (`livecheck-<Zeit>`).
+Er ändert keine echten Nutzerdaten: Schreib-Endpunkte sind abgefangen oder laufen mit Test-UUID (`f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0`).
 
 **Pflege:** Jede neue Seite und jede neue Funktion kommt hier mit einer Kennung dazu und wird in `scripts/autonomy/live-check.mjs`
 (API) oder `live/live.spec.ts` (Browser) geprüft. Ein Unit-Test (`src/lib/live-check.test.ts`) bricht, wenn eine Kennung hier steht,
