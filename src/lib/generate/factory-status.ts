@@ -19,12 +19,16 @@ export type FactoryRunRecord = {
   costEur: number;
   stopped: boolean;
   stopReason: string | null;
+  /** SIN-378: Start und Ende des Laufs (ISO). */
+  startedAt: string;
+  finishedAt: string;
 };
 
 export function toFactoryRunRecord(
-  report: Pick<RunReport, "runId" | "moduleId" | "generated" | "passed" | "costEur" | "stopReason">,
+  report: Pick<RunReport, "runId" | "moduleId" | "generated" | "passed" | "costEur" | "stopReason" | "startedAt">,
   courseId: string,
   queueOpen: boolean,
+  finishedAt: string = new Date().toISOString(),
 ): FactoryRunRecord {
   return {
     runId: report.runId,
@@ -37,11 +41,40 @@ export function toFactoryRunRecord(
     costEur: report.costEur,
     stopped: report.stopReason !== null,
     stopReason: report.stopReason,
+    startedAt: report.startedAt,
+    finishedAt,
   };
 }
 
-export async function recordFactoryRun(record: FactoryRunRecord): Promise<void> {
-  const { error } = await getServiceSupabase().from("content_factory_runs").insert({
+/** SIN-378: Lauf, der vor dem Ergebnis endet (fehlende Secrets, Absturz). Der Grund steht im Protokoll. */
+export function toAbortedRunRecord(
+  runId: string,
+  courseId: string,
+  startedAt: string,
+  reason: string,
+  finishedAt: string = new Date().toISOString(),
+): FactoryRunRecord {
+  return {
+    runId,
+    courseId,
+    moduleId: null,
+    newModule: false,
+    queueOpen: true,
+    unitsGenerated: 0,
+    unitsPublished: 0,
+    costEur: 0,
+    stopped: true,
+    stopReason: `Abbruch: ${reason.replace(/\s+/g, " ").trim().slice(0, 300)}`,
+    startedAt,
+    finishedAt,
+  };
+}
+
+export async function recordFactoryRun(
+  record: FactoryRunRecord,
+  client: Pick<ReturnType<typeof getServiceSupabase>, "from"> = getServiceSupabase(),
+): Promise<void> {
+  const { error } = await client.from("content_factory_runs").insert({
     run_id: record.runId,
     course_id: record.courseId,
     module_id: record.moduleId,
@@ -52,6 +85,8 @@ export async function recordFactoryRun(record: FactoryRunRecord): Promise<void> 
     cost_eur: record.costEur,
     stopped: record.stopped,
     stop_reason: record.stopReason,
+    started_at: record.startedAt,
+    finished_at: record.finishedAt,
   });
   if (error) throw new Error(`content_factory_runs_insert: ${error.message}`);
 }

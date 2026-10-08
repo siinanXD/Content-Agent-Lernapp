@@ -73,7 +73,7 @@ import {
 } from "../src/lib/quality/schemas";
 import { reportPipelineError, initPipelineSentry } from "../src/lib/sentry-pipeline";
 import { getStorage } from "../src/lib/storage";
-import { recordFactoryRun, toFactoryRunRecord } from "../src/lib/generate/factory-status";
+import { recordFactoryRun, toAbortedRunRecord, toFactoryRunRecord } from "../src/lib/generate/factory-status";
 
 const ROOT = process.cwd();
 const OUT_DIR = join(ROOT, "docs", "ops", "content-runs");
@@ -128,26 +128,41 @@ function runRepair(dry: boolean): { ran: boolean; costEur: number; budgetStop: b
   return { ran: true, costEur, budgetStop: r.status === 3 };
 }
 
+const STARTED_AT = new Date().toISOString();
+const RUN_ID = STARTED_AT.replace(/[:.]/g, "-");
+
+/** SIN-378: Auch ein Abbruch vor dem Ergebnis hinterlässt eine Zeile mit Grund (nur Live-Läufe). Schlägt das fehl, endet der Lauf trotzdem. */
+async function abortRun(reason: string, code: number): Promise<never> {
+  if (!hasFlag("dry-run")) {
+    try {
+      await recordFactoryRun(toAbortedRunRecord(RUN_ID, COURSE, STARTED_AT, reason));
+    } catch (e) {
+      console.error("::warning::Fabrik-Status nicht geschrieben:", e instanceof Error ? e.message : e);
+    }
+  }
+  process.exit(code);
+}
+
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
   const dry = hasFlag("dry-run");
-  const runId = new Date().toISOString().replace(/[:.]/g, "-");
+  const runId = RUN_ID;
 
   const missing = missingSecrets(process.env);
   if (missing.length) {
     console.error(`::error::Secrets fehlen: ${missing.join(", ")} — nichts erzeugt, nichts veröffentlicht`);
-    process.exit(2);
+    return abortRun(`Secrets fehlen: ${missing.join(", ")}`, 2);
   }
 
   const storage = getStorage();
   if (storage.backend !== "supabase") {
     console.error("::error::COURSE_STORAGE=supabase nötig (Mock veröffentlicht nichts)");
-    process.exit(2);
+    return abortRun("COURSE_STORAGE=supabase nötig", 2);
   }
   const course = await storage.getCourse(COURSE);
   if (!course) {
     console.error("::error::Kurs fehlt:", COURSE);
-    process.exit(2);
+    return abortRun("Kurs fehlt", 2);
   }
   const priorUnits = (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [];
   const published = new Set(priorUnits.map((u) => u.id));
@@ -173,7 +188,7 @@ async function main() {
   const report: RunReport = {
     runId,
     mode: dry ? "dry-run" : "live",
-    startedAt: new Date().toISOString(),
+    startedAt: STARTED_AT,
     mapId: next?.item.mapId ?? null,
     moduleId: next?.item.module.id ?? null,
     nextModuleId: null,
@@ -470,5 +485,5 @@ initPipelineSentry("content-grow");
 main().catch(async (err) => {
   console.error(err);
   await reportPipelineError(err).catch(() => undefined);
-  process.exit(1);
+  await abortRun(err instanceof Error ? err.message : String(err), 1);
 });
