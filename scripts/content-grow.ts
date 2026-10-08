@@ -54,10 +54,11 @@ import {
 } from "../src/lib/quality/cost-guard";
 import { JUDGE_MODEL, JUDGE_PROMPT_VERSION, liveJudgeWithUsage } from "../src/lib/quality/evaluate-agent";
 import { recordEvaluationTrace } from "../src/lib/quality/langfuse-client";
+import { flushLangfuseOtel } from "../src/lib/quality/langfuse-otel";
+import { createGrowTracer } from "../src/lib/quality/grow-traces";
 import {
   DEFAULT_BERUF,
   kurslaufSessionId,
-  pruefpunktScores,
   PROMPT_NAMEN,
   traceTitel,
 } from "../src/lib/quality/langfuse-names";
@@ -256,6 +257,22 @@ async function main() {
   const allEvals: QuestionEval[] = [];
   const live: GeneratedUnit[] = [];
 
+  // SIN-380: Traces je Schritt, sofort gesendet (nicht erst am Laufende).
+  const erzeugerLink = await promptLink(PROMPT_NAMEN.erzeuger);
+  const richterLink = await promptLink(PROMPT_NAMEN.richter);
+  const common = { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined };
+  const tracer = createGrowTracer({
+    runId,
+    courseId: COURSE,
+    common,
+    generatorModel: GENERATOR_MODEL,
+    judgeModel: JUDGE_MODEL,
+    judgePromptVersion: JUDGE_PROMPT_VERSION,
+    generatorPrompt: erzeugerLink,
+    judgePrompt: richterLink,
+  });
+  let lastJudgeTraceId: string | undefined;
+
   async function judge(units: GeneratedUnit[], label: string): Promise<QuestionEval[]> {
     const judged = await liveJudgeWithUsage(
       openaiKey,
@@ -263,6 +280,8 @@ async function main() {
     );
     ledger = addOpenAIUsage(ledger, judged.usage.prompt_tokens, judged.usage.completion_tokens);
     allEvals.push(...judged.questions);
+    const traceId = (await tracer.pruefen(judged.questions, label)) ?? undefined;
+    if (traceId) lastJudgeTraceId = traceId;
     const result: EvaluateResult = {
       courseId: COURSE,
       passed: judged.questions.every((q) => q.passed),
@@ -273,6 +292,7 @@ async function main() {
       modelId: JUDGE_MODEL,
       runId: `${runId}-${label}`,
       promptVersion: JUDGE_PROMPT_VERSION,
+      langfuseTraceId: traceId,
     };
     await storage.appendQuestionEvaluations(toQuestionEvaluationRecords(result));
     return judged.questions;
@@ -294,8 +314,30 @@ async function main() {
   const refreshIds = affected.unitIds.slice(0, affordableUnits(spentTotal(), perUnit));
   report.sourceRefresh.units = refreshIds.length;
   // SIN-258: Vor jedem bezahlten Batch prüfen; bei Überschreitung des Deckels stoppt der Lauf sauber.
-  const capStop = (e: unknown) => {
-    if (!(e instanceof RunBudgetExceededError)) throw e;
+  // SIN-258: Kosten des Laufs ins Ledger (Supabase) und als Trace an Langfuse; SIN-380: auch bei Abbruch.
+  const recordCosts = async () => {
+    try {
+      const cost = await recordRunCost({
+        runId,
+        courseId: COURSE,
+        kind: "content-grow",
+        ledger,
+        totalEur: report.costEur,
+        capEur: RUN_CAP_EUR,
+        kontext: { ...common, modell: GENERATOR_MODEL },
+      });
+      if (cost.stopped && !report.stopReason) report.stopReason = cost.stopReason ?? "Deckel erreicht";
+    } catch (e) {
+      console.error("::warning::Kosten-Ledger nicht geschrieben:", e instanceof Error ? e.message : e);
+    }
+    await flushLangfuseOtel().catch(() => undefined);
+  };
+  const capStop = async (e: unknown) => {
+    if (!(e instanceof RunBudgetExceededError)) {
+      report.costEur = spentTotal();
+      await recordCosts();
+      throw e;
+    }
     report.stopReason = `Deckel erreicht (${e.message}); Rest im nächsten Lauf`;
   };
   try {
@@ -307,9 +349,12 @@ async function main() {
     });
     const sub = await submitRegenBatch({ keyword: KEYWORD, unitSpecs: specs });
     report.batchIds.push(sub.batchId);
+    const refreshBatch = { batchId: sub.batchId, units: specs.length, label: "refresh" };
+    await tracer.batchGestartet(refreshBatch);
     await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
     const got = await collectBatchUnits(sub.batchId);
     ledger = addClaudeLedger(ledger, got.ledger);
+    await tracer.batchFertig({ ...refreshBatch, ledger: got.ledger, geliefert: got.units.length });
     if (got.units.length > 0) {
       const { ok } = keepPassing(got.units, await judge(got.units, "refresh"));
       live.push(...ok);
@@ -319,7 +364,7 @@ async function main() {
   }
 
   } catch (e) {
-    capStop(e);
+    await capStop(e);
   }
 
   // Stufe c: nächstes Modul, so viel der Deckel erlaubt.
@@ -341,9 +386,12 @@ async function main() {
       const sub = await submitChunkTargets({ keyword: KEYWORD, targets, system: cachedSystem() });
       report.batchIds.push(sub.batchId);
       console.log("Batch", sub.batchId, "Einheiten", units, "Modell", GENERATOR_MODEL);
+      const growBatch = { batchId: sub.batchId, units, label: "grow" };
+      await tracer.batchGestartet(growBatch);
       await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
       const got = await collectBatchUnits(sub.batchId);
       ledger = addClaudeLedger(ledger, got.ledger);
+      await tracer.batchFertig({ ...growBatch, ledger: got.ledger, geliefert: got.units.length });
       // Nur Einheiten, die zum Modul gehören und noch offen sind.
       const wanted = new Set(next.pending);
       generatedUnits.push(...got.units.filter((u) => wanted.has(u.id)));
@@ -365,7 +413,7 @@ async function main() {
     report.deferred = next.pending.length;
   }
   } catch (e) {
-    capStop(e);
+    await capStop(e);
   }
 
   // Veröffentlichen: erst jetzt, alles in einem Schritt.
@@ -388,30 +436,12 @@ async function main() {
   report.nextModuleId = after?.item.module.id ?? null;
   report.resumeModuleId = report.deferred > 0 ? (next?.item.module.id ?? null) : null;
 
-  // SIN-258: Kosten des Laufs ins Ledger (Supabase) und als Trace an Langfuse.
-  try {
-    const cost = await recordRunCost({
-      runId,
-      courseId: COURSE,
-      kind: "content-grow",
-      ledger,
-      totalEur: report.costEur,
-      capEur: RUN_CAP_EUR,
-      kontext: { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined, modell: GENERATOR_MODEL },
-    });
-    if (cost.stopped && !report.stopReason) report.stopReason = cost.stopReason ?? "Deckel erreicht";
-  } catch (e) {
-    console.error("::warning::Kosten-Ledger nicht geschrieben:", e instanceof Error ? e.message : e);
-  }
+  await recordCosts();
 
   // SIN-299: Schritte des Kurslaufs als fachlich benannte Traces in einer Session.
+  // SIN-380: „erzeugen“ und „prüfen“ entstehen schon während des Laufs (tracer).
   const sessionId = kurslaufSessionId(runId);
   const traceBase = { courseId: COURSE, sessionId, passed: live.length > 0, scores: {} };
-  const common = { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined };
-  const erzeugerLink = await promptLink(PROMPT_NAMEN.erzeuger);
-  const richterLink = await promptLink(PROMPT_NAMEN.richter);
-  const erzeugenKontext = { ...common, schritt: "erzeugen" as const, modell: GENERATOR_MODEL, promptVersion: erzeugerLink ? `v${erzeugerLink.version}` : undefined };
-  const pruefenKontext = { ...common, schritt: "pruefen" as const, modell: JUDGE_MODEL, promptVersion: richterLink ? `v${richterLink.version}` : JUDGE_PROMPT_VERSION };
   const publishKontext = { ...common, schritt: "veroeffentlichen" as const, modell: GENERATOR_MODEL };
   const publishedQuestions = live.reduce((n, u) => n + u.questions.length, 0);
   const publishScores: Record<string, number> = { "Fragen veröffentlicht": publishedQuestions };
@@ -423,26 +453,7 @@ async function main() {
     costEur: report.costEur,
     batchIds: report.batchIds.join("+"),
   };
-  await recordEvaluationTrace({
-    ...traceBase,
-    name: traceTitel(erzeugenKontext),
-    kontext: erzeugenKontext,
-    prompt: erzeugerLink,
-    metadata: zaehler,
-  });
-  report.langfuseTraceId =
-    (await recordEvaluationTrace({
-      ...traceBase,
-      name: traceTitel(pruefenKontext),
-      kontext: pruefenKontext,
-      prompt: richterLink,
-      scores: {
-        safetyFlag: aggregateScores(allEvals).safetyFlag,
-        ...(allEvals.length > 0 ? { Bestehensquote: Math.round((allEvals.filter((e) => e.passed).length / allEvals.length) * 100) / 100 } : {}),
-      },
-      extraScores: pruefpunktScores(allEvals),
-      metadata: zaehler,
-    })) ?? undefined;
+  report.langfuseTraceId = lastJudgeTraceId;
   await recordEvaluationTrace({
     ...traceBase,
     name: traceTitel(publishKontext),
@@ -450,6 +461,7 @@ async function main() {
     scores: publishScores,
     metadata: zaehler,
   });
+  await flushLangfuseOtel().catch(() => undefined);
 
   finish(0);
 }

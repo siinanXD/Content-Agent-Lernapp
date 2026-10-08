@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-380 | SIN-380: Content-Fabrik schreibt Langfuse-Traces je Schritt | [SIN-380-langfuse-traces-je-schritt.md](decisions/SIN-380-langfuse-traces-je-schritt.md) |
 | SIN-377 | SIN-377: Sentry stats_period auf erlaubten Wert korrigieren | [SIN-377-sentry-stats-period.md](decisions/SIN-377-sentry-stats-period.md) |
 | SIN-374 | SIN-374 — Migrationen kommen nicht in Supabase an | [SIN-374-migrationen-automatisch.md](decisions/SIN-374-migrationen-automatisch.md) |
 | SIN-373 | SIN-373: PostHog-Ereignisse für Abbrüche im Lernweg | [SIN-373-posthog-abbrueche.md](decisions/SIN-373-posthog-abbrueche.md) |
