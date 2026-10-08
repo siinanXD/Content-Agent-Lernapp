@@ -26,7 +26,7 @@ import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { readLimits, runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
 import { collectFabrikMetrics } from "./fabrik.mjs";
-import { describeTableError, queueSinanTask } from "./table-error.mjs";
+import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error.mjs";
 import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
@@ -113,12 +113,23 @@ export async function collectMetrics(env = process.env, http = {}) {
       m.einheiten = await supabaseCount("units?select=id", h, env.SUPABASE_URL, http);
       const total = await supabaseCount("question_quality_latest?select=question_id", h, env.SUPABASE_URL, http);
       const passed = await supabaseCount("question_quality_latest?select=question_id&passed=eq.true", h, env.SUPABASE_URL, http);
+      const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
       try {
-        const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
         m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
       } catch (e) {
-        m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", e);
-        queueSinanTask(http, "pipeline_run_costs", "20261006020000", e);
+        if (isSchemaCache(e)) {
+          const sleep = http.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+          await sleep(500);
+          try {
+            m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
+          } catch (retryError) {
+            m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", retryError);
+            queueSinanTask(http, "pipeline_run_costs", "20261006020000", retryError);
+          }
+        } else {
+          m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", e);
+          queueSinanTask(http, "pipeline_run_costs", "20261006020000", e);
+        }
       }
       m.fragen_bewertet = total;
       m.bestehensquote = total ? `${Math.round((passed / total) * 100)} %` : "keine Bewertungen";

@@ -6,7 +6,7 @@
  * Ohne Supabase-Zugang oder ohne Tabelle: „nicht verfügbar“.
  */
 import { fetchJson } from "./http.mjs";
-import { describeTableError, queueSinanTask } from "./table-error.mjs";
+import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error.mjs";
 
 const NA = "nicht verfügbar";
 const DAY = 86_400_000;
@@ -37,14 +37,27 @@ export async function collectFabrikMetrics(env = process.env, http = {}) {
     return out;
   }
   const headers = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
+  const url = `${env.SUPABASE_URL}/rest/v1/content_factory_runs?select=created_at,new_module,queue_open&order=created_at.desc&limit=${STUCK_AFTER_RUNS}`;
   try {
-    const url = `${env.SUPABASE_URL}/rest/v1/content_factory_runs?select=created_at,new_module,queue_open&order=created_at.desc&limit=${STUCK_AFTER_RUNS}`;
     const { status, detail } = deriveFabrikStatus(await fetchJson("Supabase", url, { headers }, http));
     out.content_fabrik = detail;
     out.content_fabrik_status = status;
   } catch (e) {
-    out.content_fabrik = describeTableError("content_factory_runs", "20261007020000", e);
-    queueSinanTask(http, "content_factory_runs", "20261007020000", e);
+    if (isSchemaCache(e)) {
+      const sleep = http.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+      await sleep(500);
+      try {
+        const { status, detail } = deriveFabrikStatus(await fetchJson("Supabase", url, { headers }, http));
+        out.content_fabrik = detail;
+        out.content_fabrik_status = status;
+      } catch (retryError) {
+        out.content_fabrik = describeTableError("content_factory_runs", "20261007020000", retryError);
+        queueSinanTask(http, "content_factory_runs", "20261007020000", retryError);
+      }
+    } else {
+      out.content_fabrik = describeTableError("content_factory_runs", "20261007020000", e);
+      queueSinanTask(http, "content_factory_runs", "20261007020000", e);
+    }
   }
   return out;
 }
