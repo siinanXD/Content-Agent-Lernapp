@@ -1,0 +1,40 @@
+{
+  "runId": "2026-10-08T09-08-54-902Z",
+  "mode": "live",
+  "startedAt": "2026-10-08T09:08:57.077Z",
+  "mapId": "maf-metall",
+  "moduleId": "ZP",
+  "nextModuleId": "WISO",
+  "resumeModuleId": null,
+  "generated": 20,
+  "passed": 16,
+  "discarded": 4,
+  "discardedUnitIds": [
+    "ZP-2-u1",
+    "ZP-4-u4",
+    "ZP-1-u4",
+    "ZP-1-u1"
+  ],
+  "deferred": 0,
+  "repair": {
+    "ran": true,
+    "costEur": 1.62
+  },
+  "sourceRefresh": {
+    "units": 0,
+    "replaced": 0,
+    "changeKeys": []
+  },
+  "model": "claude-sonnet-5-5",
+  "costEur": 2.43,
+  "capEur": 20,
+  "stopReason": null,
+  "safetySampleUnitIds": [
+    "ZP-1-u2",
+    "ZP-3-u2"
+  ],
+  "batchIds": [
+    "msgbatch_0124kK5M1GJqdmtNTVrdjZ26"
+  ],
+  "langfuseTraceId": "86a43ef062e51a0d57485566aaaccf3e"
+}
