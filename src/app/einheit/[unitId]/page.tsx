@@ -38,6 +38,7 @@ import { useOnline } from "@/lib/use-online";
 import {
   trackExplanationReported,
   trackQuestionAnswered,
+  trackUnitAbandoned,
   trackUnitCompleted,
   trackUnitStarted,
 } from "@/lib/analytics";
@@ -109,6 +110,31 @@ export default function EinheitPage() {
     });
     // Fire once per unit id when the Einheit becomes available.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: track by unit.id only
+  }, [unit?.id]);
+
+  // Abbruch: Einheit verlassen (Weg, Tab zu), ohne dass finish() lief. Nur Zahlen, keine Antworten.
+  const progress = useRef({ answered: 0, total: 0, finished: false });
+  useEffect(() => {
+    progress.current.answered = index + (revealed ? 1 : 0);
+    progress.current.total = unit?.questions.length ?? 0;
+  }, [index, revealed, unit]);
+  useEffect(() => {
+    if (!unit) return;
+    const unitId = unit.id;
+    const state = progress.current;
+    state.finished = false;
+    let sent = false;
+    function report() {
+      if (sent || state.finished) return;
+      sent = true;
+      trackUnitAbandoned({ unitId, answered: state.answered, total: state.total });
+    }
+    window.addEventListener("pagehide", report);
+    return () => {
+      window.removeEventListener("pagehide", report);
+      report();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: nur je Einheit
   }, [unit?.id]);
 
   if (loading) {
@@ -209,6 +235,7 @@ export default function EinheitPage() {
         kind: "unit",
       },
     });
+    progress.current.finished = true;
     trackUnitCompleted({
       unitId: unit!.id,
       unitTitle: unit!.title,

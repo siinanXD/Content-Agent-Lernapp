@@ -22,12 +22,20 @@ test("PostHog: fragt EU-Host mit Bearer-Token ab und liefert die Ergebnisse", as
   let seen: { url: string; auth: string } | null = null;
   const fetchMock = async (url: string, init: { headers: { Authorization: string } }) => {
     seen = { url, auth: init.headers.Authorization };
-    return ok({ results: [["unit_started", 4]] });
+    return ok({ results: [["unit_started", 4], ["unit_completed", 3], ["onboarding_step", 2]] });
   };
   const m = await collectPostHogMetrics(env as never, fetchMock as never);
-  assert.equal(m.posthog, '[["unit_started",4]]');
+  assert.equal(
+    m.posthog,
+    "Abbruch je Schritt: Onboarding 100 % (0 von 2 beendet); Einheit 25 % (3 von 4 beendet)",
+  );
   assert.equal(seen!.url, "https://eu.posthog.com/api/projects/7/query/");
   assert.equal(seen!.auth, "Bearer k");
+});
+
+test("PostHog: leere Liste nennt den Grund", async () => {
+  const m = await collectPostHogMetrics(env as never, (async () => ok({ results: [] })) as never);
+  assert.match(String(m.posthog), /^keine Ereignisse in 7 Tagen \(Ursache: keine Einwilligung/);
 });
 
 test("PostHog: HTTP-Fehler - nicht messbar mit Statuscode", async () => {
