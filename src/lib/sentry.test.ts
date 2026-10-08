@@ -52,13 +52,13 @@ test("Sentry: Personendaten werden entfernt", () => {
   assert.equal(e.message, "boom");
 });
 
-test("Sentry: Abfrage zaehlt nur Issues der letzten 7 Tage (lastSeen) mit Level error/fatal", async () => {
+test("Sentry: Abfrage zaehlt nur Issues der letzten 7 Tage (lastSeen) mit Level error/fatal, stats_period='24h'", async () => {
   const urls: string[] = [];
   const m = await collectSentryMetrics(env as never, (async (url: string) => (urls.push(url), res([{}, {}]))) as never);
   assert.equal(m.sentry_kritisch, 2);
   const q = decodeURIComponent(urls[1].replace(/\+/g, " "));
   assert.match(q, /is:unresolved level:\[error,fatal\] lastSeen:-7d/);
-  assert.match(q, /statsPeriod=7d/);
+  assert.match(q, /statsPeriod=24h/);
 });
 
 test("Sentry: wenn erste Abfrage erfolgreich ist, aber zweite fehlschlaegt - sentry_kritisch liefert Fehler", async () => {

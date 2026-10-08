@@ -14,7 +14,8 @@ const MAX_PAGES = 10;
 async function countIssues(env, query, fetchImpl, http) {
   const base = env.SENTRY_BASE_URL || "https://de.sentry.io";
   // `lastSeen:-7d` filtert verbindlich; `statsPeriod` allein steuert nur die Statistik.
-  const params = new URLSearchParams({ query: `${query} lastSeen:-7d`, statsPeriod: "7d", limit: "100" });
+  // Erlaubte stats_period-Werte: '' (Standard), '24h', '14d'. 7d ist nicht erlaubt.
+  const params = new URLSearchParams({ query: `${query} lastSeen:-7d`, statsPeriod: "24h", limit: "100" });
   let url = `${base}/api/0/projects/${encodeURIComponent(env.SENTRY_ORG)}/${encodeURIComponent(env.SENTRY_PROJECT)}/issues/?${params}`;
   let total = 0;
   for (let page = 0; page < MAX_PAGES && url; page++) {
