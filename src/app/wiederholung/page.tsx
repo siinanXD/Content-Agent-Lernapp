@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { trackReviewAbandoned, trackReviewCompleted, trackReviewStarted } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { BottomNav } from "@/components/learner/bottom-nav";
@@ -154,6 +155,31 @@ export default function WiederholungPage() {
     ? getQuestionById(currentItem.questionId)
     : undefined;
 
+  // Start und Abbruch der Runde (nur Zahlen). Erst zählen, wenn Fragen fällig sind.
+  const reviewState = useRef({ answered: 0, total: 0, finished: false });
+  useEffect(() => {
+    reviewState.current.answered = index + (revealed ? 1 : 0);
+    reviewState.current.total = due.length;
+  }, [index, revealed, due.length]);
+  const hasDue = pathReady && due.length > 0;
+  useEffect(() => {
+    if (!hasDue) return;
+    const state = reviewState.current;
+    state.finished = false;
+    let sent = false;
+    trackReviewStarted({ total: state.total });
+    function report() {
+      if (sent || state.finished) return;
+      sent = true;
+      trackReviewAbandoned({ answered: state.answered, total: state.total });
+    }
+    window.addEventListener("pagehide", report);
+    return () => {
+      window.removeEventListener("pagehide", report);
+      report();
+    };
+  }, [hasDue]);
+
   function onChecked(result: AnswerResult) {
     if (!currentItem || !question || revealed) return;
     setRevealed(true);
@@ -178,6 +204,8 @@ export default function WiederholungPage() {
         totalPoints: 1720,
       };
       recordLearningEvent("review");
+      reviewState.current.finished = true;
+      trackReviewCompleted({ correct: correctCount, total: due.length });
       saveSession({
         ...session,
         lastResult: {

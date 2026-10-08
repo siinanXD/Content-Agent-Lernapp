@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { trackOnboardingCompleted, trackOnboardingStep } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { OptionChoice } from "@/components/ui/option-choice";
 import { MobileShell } from "@/components/learner/mobile-shell";
@@ -17,6 +18,10 @@ export default function SchwerpunktPage() {
   const twoMaps = (schwerpunkt?.maps.length ?? 0) > 1;
   const defaultBetrieb = schwerpunkt?.maps.find((m) => m.mapId === schwerpunkt.defaultMapId)?.betrieb;
 
+  useEffect(() => {
+    trackOnboardingStep({ step: "schwerpunkt" });
+  }, []);
+
   function pick(id: string) {
     setSchwerpunktId(id);
     setMapId(findSchwerpunkt(id)?.defaultMapId ?? null);
@@ -31,6 +36,7 @@ export default function SchwerpunktPage() {
       variant: "pruefung",
       totalPoints: 0,
     });
+    trackOnboardingCompleted({ schwerpunktId: schwerpunkt.id });
     router.push("/lernpfad");
   }
 
