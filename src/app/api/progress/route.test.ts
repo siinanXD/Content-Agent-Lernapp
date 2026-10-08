@@ -1,6 +1,10 @@
-import { test } from "node:test";
+import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
+import { mockStorage, setStorageForTests } from "@/lib/storage";
 import { POST, GET } from "./route";
+
+before(() => setStorageForTests(mockStorage));
+after(() => setStorageForTests(null));
 
 const VALID_UUID = "f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0";
 const INVALID_ID = "livecheck-1234567890";
