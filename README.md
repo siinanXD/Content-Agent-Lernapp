@@ -104,7 +104,7 @@ flowchart TD
   Waechter -- "neuer App-Code" --> Deploy
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
   subgraph Inhalte
-    Fabrik["Content-Fabrik (content-grow.yml, montags)"] --> Bewertung["Bewertungslauf"]
+    Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
   end
 ```
@@ -165,7 +165,8 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 
 - Sentry EU (`NEXT_PUBLIC_SENTRY_DSN`, DSN-Host `ingest.de.sentry.io`) erfasst Fehler der App-Routen und der Pipeline (`scripts/content-grow.ts`). Ohne Personendaten (`src/lib/sentry-privacy.ts`); ohne DSN passiert nichts.
 - Der Planer liest offene kritische Fehler der letzten 7 Tage (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`); ohne Token steht „nicht verfügbar“.
-- Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migration `20261007020000`). Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
+- Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migrationen `20261007020000`, `20261010010000`), mit Start, Ende und Ergebnis. Auch ein Abbruch (fehlende Secrets, fehlender Kurs, Absturz) hinterlässt eine Zeile mit `stop_reason`. Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
+- Der Kennzahlen-Bericht nennt das Datum des letzten Laufs. Nach 8 Tagen ohne Lauf steht dort „überfällig seit N Tagen“, und der Planer erhält die bestehende Stillstand-Regel `fabrik-haengt`.
 
 ## Repo
 
