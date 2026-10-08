@@ -27,7 +27,17 @@ export type TraceKontext = {
   modell?: string;
   promptVersion?: string;
   umgebung?: string;
+  /** SIN-383: Art des Laufs, Tag `lauf:…`. */
+  laufArt?: LaufArt;
 };
+
+/** SIN-383: Lauf-Art als Tag, damit Dashboards Grundbestand, Reparatur und neue Module trennen. */
+export const LAUF_ARTEN = {
+  grundbestand: "Grundbestand",
+  reparatur: "Reparatur",
+  neuesModul: "neues Modul",
+} as const;
+export type LaufArt = keyof typeof LAUF_ARTEN;
 
 export const DEFAULT_BERUF = "MAF Metall";
 
@@ -41,6 +51,13 @@ export function traceTitel(k: Pick<TraceKontext, "beruf" | "modul" | "schritt">)
   const teile = [`Kurslauf ${k.beruf ?? DEFAULT_BERUF}`];
   if (k.modul) teile.push(k.modul);
   teile.push(KURSLAUF_SCHRITTE[k.schritt]);
+  return teile.join(" · ").slice(0, 200);
+}
+
+/** SIN-383: Titel eines Einheiten-Traces, z. B. `M3 · 02 Spannmittel` (Nummer aus `…-u2`). */
+export function einheitTitel(u: { id: string; title: string; moduleId?: string }, modul?: string): string {
+  const nr = /-u(\d+)$/.exec(u.id)?.[1];
+  const teile = [u.moduleId ?? modul, nr ? `${nr.padStart(2, "0")} ${u.title}` : u.title].filter(Boolean);
   return teile.join(" · ").slice(0, 200);
 }
 
@@ -62,6 +79,7 @@ export function traceTags(k: TraceKontext): string[] {
     tag("schwerpunkt", k.schwerpunkt),
     tag("modul", k.modul),
     tag("schritt", k.schritt),
+    tag("lauf", k.laufArt ? LAUF_ARTEN[k.laufArt] : undefined),
     tag("modell", k.modell),
     tag("prompt", k.promptVersion),
     tag("umgebung", k.umgebung ?? umgebungsName()),
@@ -77,6 +95,7 @@ export function traceMetadata(k: TraceKontext): Record<string, string> {
   };
   if (k.schwerpunkt) out.schwerpunkt = k.schwerpunkt;
   if (k.modul) out.modul = k.modul;
+  if (k.laufArt) out.laufArt = LAUF_ARTEN[k.laufArt];
   if (k.modell) out.modell = k.modell;
   if (k.promptVersion) out.promptVersion = k.promptVersion;
   return out;
@@ -89,6 +108,9 @@ export const PRUEFPUNKTE = {
   niveau: "Niveau",
   language: "Sprache",
 } as const;
+/** SIN-383: Scores je Frage für Sicherheit (1 = Sicherheitsthema, Stichprobe nötig) und das Gesamturteil. */
+export const SICHERHEIT_SCORE = "Sicherheit";
+export const BESTANDEN_SCORE = "bestanden";
 export type PruefpunktSchluessel = keyof typeof PRUEFPUNKTE;
 
 export type PruefpunktScore = { name: string; value: number; comment: string };
