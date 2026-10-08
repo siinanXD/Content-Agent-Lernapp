@@ -138,8 +138,9 @@ export async function schreibeEinheitTrace(p: EinheitTraceInput): Promise<string
 
         p.evals.forEach((ev, i) => {
           const q = fragen.get(ev.questionId);
+          const pos = p.einheit.questions.findIndex((x) => x.id === ev.questionId);
           const obs = root.startObservation(
-            `Prüfen · Frage ${i + 1}`,
+            `Prüfen · Frage ${(pos >= 0 ? pos : i) + 1}`,
             {
               input: q ? frageText(q) : `Frage ${ev.questionId}`,
               output: {
