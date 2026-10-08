@@ -140,3 +140,18 @@ test("SIN-394: ratedQuestions zählt Mehrfachbewertungen einmal und ignoriert ge
   assert.equal(r.bewertet.length, 2);
   assert.ok(r.bewertet.length <= r.gesamt);
 });
+
+test("SIN-402: passRateByModule nutzt nur gefilterte Bewertungen", () => {
+  const questions = [
+    { course_id: "c1", unit_id: "LF1-1-u1", id: "q1" },
+    { course_id: "c1", unit_id: "LF1-1-u2", id: "q2" },
+  ];
+  const evaluations = [
+    { course_id: "c1", unit_id: "LF1-1-u1", question_id: "q1", passed: true },
+    { course_id: "c1", unit_id: "LF1-1-u2", question_id: "q2", passed: false },
+    { course_id: "c1", unit_id: "LF1-1-u3", question_id: "q3", passed: true }, // Frage q3 gelöscht
+  ];
+  const { bewertet } = ratedQuestions(questions, evaluations);
+  const passRates = passRateByModule(maps, bewertet, { c1: "maf-metall" });
+  assert.deepEqual(passRates, [{ mapId: "maf-metall", moduleId: "LF1", total: 2, passed: 1, failed: 1, pct: 50 }]);
+});
