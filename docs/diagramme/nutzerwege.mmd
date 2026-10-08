@@ -15,6 +15,7 @@ flowchart LR
   end
   subgraph Bildungsträger
     B1["Startseite (/)"] --> B2["Demo-Zugang anfragen (/demo)"]
+    B2 --> B8["Beispielansicht ohne Konto (/ausbilder?demo=1)"]
     B2 --> B3["Anmelden (/anmelden)"]
     B3 --> B4["Gruppe anlegen"]
     B4 --> B5["Einladen"]

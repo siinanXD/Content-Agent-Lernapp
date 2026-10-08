@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-385 | SIN-385 — Demo-Gruppenansicht mit Beispieldaten ohne Konto | [SIN-385-demo-gruppenansicht.md](decisions/SIN-385-demo-gruppenansicht.md) |
 | SIN-383 | SIN-383: Langfuse lesbar machen, ein Trace je Einheit mit jeder Frage | [SIN-383-langfuse-trace-je-einheit.md](decisions/SIN-383-langfuse-trace-je-einheit.md) |
 | SIN-381 | SIN-381: Review-Fehlalarme verbrauchen keine Reparatur-Runden | [SIN-381-review-fehlalarme.md](decisions/SIN-381-review-fehlalarme.md) |
 | SIN-380 | SIN-380: Content-Fabrik schreibt Langfuse-Traces je Schritt | [SIN-380-langfuse-traces-je-schritt.md](decisions/SIN-380-langfuse-traces-je-schritt.md) |

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { getAccessToken, signOut } from "@/lib/auth/browser-client";
+import { demoOverview, isDemoSearch } from "@/lib/ausbilder/demo";
 import {
   INACTIVE_DAYS,
   filterMembers,
@@ -30,7 +31,7 @@ type Load =
   | { kind: "anmelden" }
   | { kind: "ohne-gruppe" }
   | { kind: "fehler"; text: string }
-  | { kind: "bereit"; overview: Overview };
+  | { kind: "bereit"; overview: Overview; demo: boolean };
 
 const FILTERS: Array<{ id: MemberFilter; label: string }> = [
   { id: "alle", label: "Alle" },
@@ -49,6 +50,10 @@ export default function AusbilderPage() {
 
   // `still`: Daten im Hintergrund auffrischen, ohne die Seite auf „Laden“ zu setzen (Formulare bleiben stehen).
   const reload = useCallback(async (still = false) => {
+    // Beispielansicht ohne Konto (SIN-385): nur mit ?demo=1, keine Anfrage an die API.
+    if (isDemoSearch(window.location.search)) {
+      return setLoad({ kind: "bereit", overview: demoOverview(new Date()), demo: true });
+    }
     if (!still) setLoad({ kind: "laden" });
     try {
       const token = await getAccessToken();
@@ -61,7 +66,7 @@ export default function AusbilderPage() {
       if (res.status === 401 || res.status === 403) return setLoad({ kind: "anmelden" });
       if (res.status === 404) return setLoad({ kind: "ohne-gruppe" });
       const overview = res.ok ? parseOverview(data) : null;
-      if (overview) return setLoad({ kind: "bereit", overview });
+      if (overview) return setLoad({ kind: "bereit", overview, demo: false });
       const text = (data as { error?: string } | null)?.error;
       setLoad({ kind: "fehler", text: text ?? "Bitte versuchen Sie es noch einmal." });
     } catch {
@@ -119,6 +124,7 @@ export default function AusbilderPage() {
   return (
     <Ansicht
       overview={load.overview}
+      demo={load.demo}
       filter={filter}
       onFilter={setFilter}
       now={now}
@@ -129,12 +135,14 @@ export default function AusbilderPage() {
 
 function Ansicht({
   overview,
+  demo,
   filter,
   onFilter,
   now,
   onInvited,
 }: {
   overview: Overview;
+  demo: boolean;
   filter: MemberFilter;
   onFilter: (f: MemberFilter) => void;
   now: Date;
@@ -161,8 +169,21 @@ function Ansicht({
   return (
     <MobileShell wide>
       <main className="flex flex-col gap-[var(--bento-gap)] px-4 pb-8 pt-10 md:gap-[var(--bento-gap-wide)] md:px-8">
+        {demo ? (
+          <p
+            role="note"
+            className="rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] px-4 py-3 text-[13px] leading-[17px] text-[var(--color-text-hint)]"
+          >
+            Beispieldaten: Gruppe und Namen sind erfunden. Es sind keine echten
+            Personen.
+          </p>
+        ) : null}
+
         <header className="bento-tile bento-main !gap-1">
-          <p className="bento-label">{group.name}</p>
+          <p className="bento-label">
+            {group.name}
+            {demo ? " · Beispiel" : ""}
+          </p>
           <h1
             className="text-[28px] font-bold leading-9 md:text-[48px] md:leading-[52px]"
             style={{ fontFamily: "var(--font-display)" }}
@@ -224,7 +245,7 @@ function Ansicht({
           )}
         </section>
 
-        <InviteSection onInvited={onInvited} />
+        {demo ? null : <InviteSection onInvited={onInvited} />}
 
         <p className="rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] px-4 py-3 text-[13px] leading-[17px] text-[var(--color-text-hint)]">
           Die App bewertet keine Personen. Sie zeigt nur Fortschritt und
@@ -250,12 +271,21 @@ function Ansicht({
           >
             Als CSV exportieren
           </Button>
-          <Button
-            variant="ghost"
-            onClick={() => void signOut().then(() => router.push("/"))}
-          >
-            Abmelden
-          </Button>
+          {demo ? (
+            <Link
+              href="/demo"
+              className={`inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] border-[1.5px] border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-5 py-3.5 text-base font-semibold text-[var(--color-brand-primary)] ${focusRing}`}
+            >
+              Eigenen Demo-Zugang anfragen
+            </Link>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={() => void signOut().then(() => router.push("/"))}
+            >
+              Abmelden
+            </Button>
+          )}
         </div>
       </main>
     </MobileShell>
