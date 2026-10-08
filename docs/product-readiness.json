@@ -62,7 +62,7 @@
     },
     "recht-einwilligung": {
       "datum": "2026-10-07",
-      "beleg": "SIN-354: Playwright gegen den lokalen Produktionsbuild (e2e/einwilligung-tracking.spec.ts, e2e/onboarding.spec.ts): ohne Einwilligung auf 5 Seiten keine Anfrage an PostHog, nach Widerruf in den Einstellungen ebenfalls keine; Einwilligung ist Schalter mit Datum. Nicht belegt: PostHog lädt nach Einwilligung (im Test-Build kein NEXT_PUBLIC_POSTHOG_KEY) und Messung gegen die Live-App (Lauf ohne Live-Zugriff). Nachholen: PLAYWRIGHT_BASE_URL=<Live-URL> npx playwright test e2e/einwilligung-tracking.spec.ts (docs/decisions/SIN-354-einwilligung-demo-beleg.md)"
+      "beleg": "SIN-354: Playwright gegen den lokalen Produktionsbuild (e2e/einwilligung-tracking.spec.ts, e2e/onboarding.spec.ts): ohne Einwilligung auf 5 Seiten keine Anfrage an PostHog, nach Widerruf in den Einstellungen ebenfalls keine; Einwilligung ist Schalter mit Datum. Nicht belegt: PostHog lädt nach Einwilligung (im Test-Build kein NEXT_PUBLIC_POSTHOG_KEY) und Messung gegen die Live-App (Lauf ohne Live-Zugriff). SIN-387: Unit-Test mit gemocktem Key (src/lib/analytics.test.ts): ohne Einwilligung kein Laden, nach Einwilligung Laden, nach Widerruf Stopp; Abbruch-Ereignisse (unit_abandoned, review_abandoned) nur bei geladenem Client. Befund Key: in Vercel vermutlich nicht gesetzt (docs/ENV.md „fehlt“, Kennzahl posthog ohne Ereignisse), nicht geprüft, kein Vercel-Zugriff; Live-Beleg offen bis der Key gesetzt ist. Nachholen: PLAYWRIGHT_BASE_URL=<Live-URL> npx playwright test e2e/einwilligung-tracking.spec.ts (docs/decisions/SIN-354-einwilligung-demo-beleg.md)"
     },
     "recht-demo": {
       "datum": "2026-10-07",
