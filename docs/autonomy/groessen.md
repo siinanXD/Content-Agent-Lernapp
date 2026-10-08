@@ -4,7 +4,7 @@ Der Planer setzt je Issue genau ein Label `groesse:klein`, `groesse:mittel` oder
 
 | Größe | Kriterien | Modell | `--max-turns` |
 | --- | --- | --- | --- |
-| `klein` | 1–2 Dateien, kein neues Verhalten, keine neue Abhängigkeit: Doku, Texte, Labels, Index, Konfigurationswert, einzelner Testfall | `claude-haiku-4-5-20251001` | 30 |
+| `klein` | 1–2 Dateien, kein neues Verhalten, keine neue Abhängigkeit: Doku, Texte, Labels, Index, Konfigurationswert, einzelner Testfall | `claude-haiku-5-5` | 30 |
 | `mittel` | Ein Arbeitspaket mit klaren Kriterien: neue Funktion in einem Bereich, Skript mit Test, Workflow-Schritt, einzelne Seite aus vorhandenen Komponenten | `claude-sonnet-5-5` | 80 |
 | `gross` | Mehr als ein PR nötig: mehrere Bereiche, Migration plus UI plus Pipeline, neue Integration | `claude-sonnet-5-5` | 150 |
 
