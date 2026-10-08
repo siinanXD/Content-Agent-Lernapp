@@ -40,6 +40,7 @@ async function main() {
   const baseRunId = `backfill-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   const summary: Array<Record<string, unknown>> = [];
   let spentEur = 0;
+  let failures = 0;
 
   for (const course of courses) {
     const units = (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [];
@@ -56,29 +57,39 @@ async function main() {
       summary.push({ course: course.id, total: items.length, stopped: "Kostendeckel" });
       continue;
     }
-    const r = await runJudgeBackfill({
-      storage,
-      courseId: course.id,
-      items,
-      stopEur,
-      runId: `${baseRunId}-${course.id.slice(0, 8)}`,
-      // Nur Kennungen und Zahlen nach Langfuse, keine Fragetexte (SIN-270).
-      report: {
-        question: async (q, ctx) => {
-          await recordEvaluationTrace({
-            name: "judge-backfill-question",
-            courseId: ctx.courseId,
-            passed: q.passed,
-            scores: { ...q.scores },
-            metadata: { kind: "question-eval", runId: ctx.runId, unitId: q.unitId, questionId: q.questionId },
-          });
+    let r;
+    try {
+      r = await runJudgeBackfill({
+        storage,
+        courseId: course.id,
+        items,
+        stopEur,
+        runId: `${baseRunId}-${course.id.slice(0, 8)}`,
+        // Nur Kennungen und Zahlen nach Langfuse, keine Fragetexte (SIN-270).
+        report: {
+          question: async (q, ctx) => {
+            await recordEvaluationTrace({
+              name: "judge-backfill-question",
+              courseId: ctx.courseId,
+              passed: q.passed,
+              scores: { ...q.scores },
+              metadata: { kind: "question-eval", runId: ctx.runId, unitId: q.unitId, questionId: q.questionId },
+            });
+          },
+          run: async (s) => {
+            await recordRunCost({ runId: s.runId, courseId: course.id, kind: "judge-backfill", ledger: s.ledger });
+          },
         },
-        run: async (s) => {
-          await recordRunCost({ runId: s.runId, courseId: course.id, kind: "judge-backfill", ledger: s.ledger });
-        },
-      },
-      judge: (chunk) => liveJudgeWithUsage(key!, chunk),
-    });
+        judge: (chunk) => liveJudgeWithUsage(key!, chunk),
+      });
+    } catch (err) {
+      // SIN-371: Fehler je Kurs sichtbar machen und den Lauf rot enden lassen, statt still 0 zu bewerten.
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`FEHLER Kurs ${course.id}: ${message}`);
+      failures += 1;
+      summary.push({ course: course.id, total: items.length, fehler: message });
+      continue;
+    }
     spentEur += r.ledger.eurEstimate;
     summary.push({
       course: course.id,
@@ -93,6 +104,9 @@ async function main() {
   }
 
   console.log(JSON.stringify({ dry, spentEur: Math.round(spentEur * 100) / 100, courses: summary }, null, 2));
+  const judged = summary.reduce((n, c) => n + (typeof c.judged === "number" ? c.judged : 0), 0);
+  console.log(`Bewertet: ${judged} Fragen, Fehler in ${failures} Kursen`);
+  if (!dry && failures > 0) process.exitCode = 1;
 }
 
 main().catch((err) => {

@@ -180,7 +180,7 @@ export function pendingMigrations(files, { tables = new Set(), versions = new Se
 }
 
 /** Tabellen, die nach `migrate` da sein müssen (SIN-347): Kosten-Ledger und Status der Content-Fabrik. */
-export const REQUIRED_TABLES = ["pipeline_run_costs", "content_factory_runs"];
+export const REQUIRED_TABLES = ["pipeline_run_costs", "content_factory_runs", "question_evaluations", "judge_runs"];
 
 /** Welche der geforderten Tabellen fehlen? Reine Funktion über die Namen aus information_schema. */
 export const missingTables = (present, required = REQUIRED_TABLES) => {
