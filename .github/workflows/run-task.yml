@@ -116,8 +116,10 @@ jobs:
           GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           TASK: ${{ inputs.task }}
         run: |
-          git add docs/quality/runs docs/ops/ap22-runs docs/product-readiness.json 2>/dev/null || true
-          if git diff --cached --quiet; then echo "Keine Änderungen, kein PR."; exit 0; fi
+          # Stagen mit Begründung im Lauf-Bericht (SIN-397); fehlende Pfade lassen `git add` nicht mehr alles verwerfen.
+          out="$(mktemp)"
+          GITHUB_OUTPUT="$out" node scripts/autonomy/run-task.mjs --stage
+          if ! grep -q '^changed=true$' "$out"; then exit 0; fi
           branch="claude/lauf-${TASK}-${GITHUB_RUN_ID}"
           git config user.name "claude[bot]"
           git config user.email "claude[bot]@users.noreply.github.com"
