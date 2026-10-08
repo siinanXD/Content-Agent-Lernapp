@@ -205,8 +205,12 @@ export function ratedQuestions(questions, evaluations) {
   const typeOf = new Map(questions.map((q) => [key(q.course_id, q.unit_id, q.id), q.type]));
   const seen = new Map();
   for (const e of evaluations) {
-    const k = key(e.course_id, e.unit_id, e.question_id);
-    if (existing.has(k)) seen.set(k, { ...e, type: typeOf.get(k) });
+    // SIN-409: Der Bewertungslauf schreibt question_id als `<unit_id>-<id>` (EvalItem.id), `questions.id` ist nur `<id>`.
+    const prefix = `${e.unit_id}-`;
+    const raw = key(e.course_id, e.unit_id, e.question_id);
+    const stripped = String(e.question_id).startsWith(prefix) ? key(e.course_id, e.unit_id, String(e.question_id).slice(prefix.length)) : null;
+    const k = existing.has(raw) ? raw : stripped && existing.has(stripped) ? stripped : null;
+    if (k) seen.set(k, { ...e, type: typeOf.get(k) });
   }
   return { gesamt: existing.size, bewertet: [...seen.values()] };
 }
