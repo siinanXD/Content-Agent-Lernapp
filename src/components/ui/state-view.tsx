@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useRef, type ReactNode } from "react";
 import { AlertIcon, InboxIcon, OfflineIcon } from "@/components/ui/icons";
 
 type Kind = "laden" | "leer" | "fehler" | "offline";
@@ -22,15 +24,23 @@ export function StateView({
   title,
   text,
   children,
+  heading = false,
 }: {
   kind: Kind;
   title?: string;
   text?: string;
   /** Aktion, z. B. „Erneut versuchen“ */
   children?: ReactNode;
+  /** Titel als Überschrift (h1) darstellen und beim Einblenden fokussieren (Fehler-, Leer-Seiten). */
+  heading?: boolean;
 }) {
   const c = copy[kind];
   const Icon = kind === "fehler" ? AlertIcon : kind === "offline" ? OfflineIcon : InboxIcon;
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (heading) titleRef.current?.focus();
+  }, [heading]);
+  const titleClass = "text-lg font-medium text-[var(--color-text-primary)]";
   return (
     <div
       role={kind === "fehler" ? "alert" : "status"}
@@ -47,12 +57,20 @@ export function StateView({
           <Icon />
         )}
       </span>
-      <p
-        className="text-lg font-medium text-[var(--color-text-primary)]"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {title ?? c.title}
-      </p>
+      {heading ? (
+        <h1
+          ref={titleRef}
+          tabIndex={-1}
+          className={`${titleClass} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]`}
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {title ?? c.title}
+        </h1>
+      ) : (
+        <p className={titleClass} style={{ fontFamily: "var(--font-display)" }}>
+          {title ?? c.title}
+        </p>
+      )}
       <p className="text-[15px] text-[var(--color-text-secondary)]">
         {text ?? c.text}
       </p>
