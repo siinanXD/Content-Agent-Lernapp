@@ -16,6 +16,7 @@ import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
 import { collectBackup } from "./backup.mjs";
+import { collectMigrations, migrationIncident } from "./migrationen.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { sendTelegramPlain } from "./telegram.mjs";
@@ -221,6 +222,10 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   // Sicherung (SIN-293): Fehler oder überfällig = Meldung. Fehlt der Messwert (nicht lesbar), bleibt es still.
   const backup = snap.backup ?? null;
   if (backup?.incident) incidents.push(backup.incident);
+  // Migrationen (SIN-374): fehlt eine Datei in Supabase → roter Punkt und Bug-Issue (ohne Duplikat).
+  const migrations = snap.migrations ?? null;
+  const migr = migrationIncident(migrations);
+  if (migr.incident) incidents.push(migr.incident);
   // Live-Check nach dem Deploy (SIN-319): Meldung erst, wenn er nach dem Revert noch rot ist.
   const liveCheck = snap.liveCheck ?? null;
   if (liveCheck?.incident) incidents.push(liveCheck.incident);
@@ -242,7 +247,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null, limitsFile.limits?.linear_issues?.limit);
   const stop = linearQ.level === "stop";
-  const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...deployBugs.filter((b) => !known.some((k) => k.title === b.title)), ...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
+  const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...[...deployBugs, migr.bug].filter((b) => b && !known.some((k) => k.title === b.title)),...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
   const decisions = snap.decisions ?? [];
   for (const d of decisions) incidents.push({ key: `decision:${d.number}`, text: `Entscheidung nötig in gemergtem PR #${d.number} (${cell(d.title)}): ${d.question}` });
 
@@ -307,6 +312,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   } else out.push("- Kein Worker läuft.");
   if (paused) out.push(`- ⏸ Pausiert bis ${pausedUntil}. Fortsetzen: Workflow \`loop-pause\` mit „fortsetzen“.`);
   out.push(`- ${backup ? `${backup.ok ? "" : "⚠️ "}${backup.line}` : "Letzte Sicherung: nicht lesbar"}`);
+  out.push(`- ${migrations ? `${migrations.ok ? "" : "⚠️ "}${migrations.line}` : "Migrationen: nicht lesbar"}`);
   if (liveCheck) out.push(`- ${liveCheck.ok ? "" : "⚠️ "}${liveCheck.line}`);
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
   if (linearQ.level === "warn" || linearQ.level === "stop") out.push(`- ⚠️ ${renderLinearQuota(linearQ)}`);
@@ -672,9 +678,10 @@ export async function main(argv, env = process.env) {
     const mainChecks = await collectMainChecks(repo, env.GITHUB_TOKEN).catch(() => ({}));
     const backup = await collectBackup(repo, now, gh);
     const liveCheck = await collectLiveCheck(repo, gh);
+    const migrations = await collectMigrations(env).catch(() => null);
     // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
     const sinanIssues = linearOk ? (await syncSinan({ dry }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
-    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
