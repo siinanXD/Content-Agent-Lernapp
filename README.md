@@ -103,6 +103,8 @@ flowchart TD
   Live --> Waechter["Wächter / Loop-Status (status.yml)"]
   Waechter -- "neuer App-Code" --> Deploy
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
+  Waechter --> Leitstand["Leitstand: Start/Ende jedes Schritts und Schnappschuss in Supabase (SIN-303)"]
+  Worker -.-> Leitstand
   subgraph Inhalte
     Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
@@ -123,6 +125,7 @@ flowchart TD
 | Paket-Updates | `.github/dependabot.yml` (Dependabot, montags) | npm und Actions: Minor/Patch als Bündel, Major einzeln. Sicherheits-Updates sofort (Repo-Einstellung). Entscheidung: [`SIN-295`](docs/decisions/SIN-295-codeql-updates.md). |
 | Review-Agent | Workflow `review.yml` · `node scripts/autonomy/review.mjs --pr <Nr>` · Secret `OPENAI_API_KEY`, Repo-Variable `REVIEW_DAILY_CAP_USD` (Standard 2) | Ein OpenAI-Modell liest jeden PR-Diff gegen den Auftrag und kommentiert mit Schwere. Schwer: Claude repariert im selben PR (zählt als Runde), leicht: nur Hinweis. Behauptet ein Fund rote Tests oder einen kaputten Build, obwohl `build` grün ist, gilt er als widerlegt; von der Reparatur begründet verworfene Funde („Fund geprüft, keine Änderung nötig“) zählen nicht als Runde und kommen nicht erneut als schwer (SIN-381). Kosten je Review im Kommentar, Tagesdeckel, Label `no-review` überspringt. Entscheidung: [`SIN-297`](docs/decisions/SIN-297-review-agent.md). |
 | Recht-und-Inhalt-Wächter | `src/lib/review/` · läuft in `POST /api/courses/{id}/publish` | Blockiert die Veröffentlichung (422, `reason: content_guard`) bei fehlender Quelle oder Abrufdatum, fehlender KI-Kennzeichnung, Personendaten oder IHK-Aufgaben als Vorlage. Die Verbote aus `AGENTS.md` stehen als Liste in `regeln.ts`. |
+| Leitstand-Ereignisse | `node scripts/autonomy/leitstand.mjs ereignis --schritt <dispatch\|worker\|pr-gate\|planner\|digest\|status> --status <start\|ok\|fehler>` · braucht `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (vorhandene Secrets) | Jeder Schritt schreibt Start und Ende in Supabase `loop_events` (Projekt, Schritt, Issue, PR, Status, Dauer; der Worker zusätzlich Tokens und `total_cost_usd`), `status.yml` den Stand in `loop_snapshot` (Kontingente, Schlange, offene PRs). Lesen nur für Nutzer in `leitstand_nutzer` (RLS), keine Personendaten. Ohne Secrets nur eine Warnung. Für alle Repos gleich (`LEITSTAND_PROJEKT` überschreibt den Projektnamen). Entscheidung: [`SIN-303`](docs/decisions/SIN-303-leitstand-ereignisse.md). |
 | Aufgaben für Sinan | `node scripts/autonomy/sinan.mjs sync\|list\|create` (braucht `LINEAR_API_KEY`) | Was nur Sinan tun kann, steht als Linear-Issue mit Label `sinan` (Link, Minuten, Schritte, Prüfung), nicht im PR-Text. Tages-Update und Status-Seite zeigen sie unter „Braucht dich“; der Loop schließt sie selbst, wo er es lesen kann. Entscheidung: [`SIN-310`](docs/decisions/SIN-310-sinan-issues.md). |
 
 Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).

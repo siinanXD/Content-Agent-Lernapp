@@ -19,6 +19,7 @@ import { collectBackup } from "./backup.mjs";
 import { collectMigrations, migrationIncident } from "./migrationen.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
+import { buildSnapshot, sendSnapshot } from "./leitstand.mjs";
 import { sendTelegramPlain } from "./telegram.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
 import { renderSinan, syncSinan } from "./sinan.mjs";
@@ -383,7 +384,10 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
-  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis };
+  // Leitstand (SIN-303): Schlange und offene PRs für `loop_snapshot` (nur Kennungen, Titel, Zahlen).
+  const queue = { startable: order.length, in_progress: active.length, waiting: waiting.size, todo: todo.length, running: running.length, paused };
+  const openPrList = openPrs.map((p) => ({ number: p.number, title: p.title, risk: riskOf(p), draft: !!p.draft, ci: checks[p.number]?.ci ?? null }));
+  return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis, queue, openPrList };
 }
 
 /** Kommentar mit Erwähnung für neue Vorfälle; leer, wenn es nichts Neues gibt. */
@@ -704,6 +708,10 @@ export async function main(argv, env = process.env) {
   output("refill_max", String(res.refill.maxIssues));
   output("refill_bugs_only", String(res.refill.bugsOnly));
   if (!live) return res;
+
+  // Leitstand (SIN-303): Schnappschuss je Projekt; ohne Secrets oder bei Fehler nur eine Warnung.
+  const snapRes = await sendSnapshot(buildSnapshot({ quotas: res.quotaRows, queue: res.queue, openPrs: res.openPrList }, env), env);
+  if (!snapRes.ok) console.log(`::warning::Leitstand: Schnappschuss nicht gespeichert (${snapRes.grund})`);
 
   // Roter Deploy-Alarm (SIN-332): zusätzlich Telegram, einmal je Vorfall (wie die Erwähnung). Ohne Secrets still.
   const redFresh = res.fresh.filter((i) => i.key === "deploy-unreadable" || i.key === "deploy-behind");

@@ -33,6 +33,8 @@ flowchart TD
   Live --> Waechter["Wächter / Loop-Status (status.yml)"]
   Waechter -- "neuer App-Code" --> Deploy
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
+  Waechter --> Leitstand["Leitstand: Start/Ende jedes Schritts und Schnappschuss in Supabase (SIN-303)"]
+  Worker -.-> Leitstand
   subgraph Inhalte
     Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update

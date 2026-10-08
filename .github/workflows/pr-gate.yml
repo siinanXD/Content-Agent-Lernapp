@@ -110,6 +110,20 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.sha }}
 
+      # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase. Skript aus der Basis (nie PR-Code); fehlt es dort
+      # noch, entfällt der Schritt. Nie ein Fehlerabbruch.
+      - name: Leitstand Start
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          if [ -f scripts/autonomy/leitstand.mjs ]; then
+            node scripts/autonomy/leitstand.mjs ereignis --schritt pr-gate --status start --pr "$PR_NUMBER"
+          fi
+
       - name: Geänderte Zeilen des PRs laden
         id: diff
         uses: actions/github-script@v7
@@ -354,6 +368,20 @@ jobs:
               core.setOutput("waiting", "true");
               core.notice("risk:high: wartet auf das Label `freigegeben` von Sinan.");
             }
+
+      - name: Leitstand Ende
+        if: always()
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          status=$([ "$JOB_STATUS" = "success" ] && echo ok || echo fehler)
+          if [ -f scripts/autonomy/leitstand.mjs ]; then
+            node scripts/autonomy/leitstand.mjs ereignis --schritt pr-gate --status "$status" --seit "$LEITSTAND_SEIT" --pr "$PR_NUMBER"
+          fi
 
   # SIN-261: Pflicht-Check `merge-gate` (Name aus dem Ruleset) ist wieder ein echter Job. Ein per Checks-API
   # geschriebener Check-Run wurde vom Ruleset nicht erkannt („Waiting for status to be reported“), kein PR mergte.

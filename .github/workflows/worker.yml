@@ -72,6 +72,15 @@ jobs:
         with:
           node-version: "22"
           cache: npm
+      # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase, am Ende mit Tokens und total_cost_usd aus den Execution-Dateien.
+      - name: Leitstand Start
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt worker --status start --issue "$IDENTIFIER"
       # Schnellerer Start (SIN-298): Browser-Download zwischenspeichern; Systempakete installiert install-deps immer.
       - name: Playwright-Cache
         id: pw
@@ -208,6 +217,25 @@ jobs:
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
           n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
           echo "has_pr=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Leitstand Ende
+        if: always()
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HAS_PR: ${{ steps.pr.outputs.has_pr }}
+          FILE1: ${{ steps.claude.outputs.execution_file }}
+          FILE2: ${{ steps.claude2.outputs.execution_file }}
+        run: |
+          branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
+          args=()
+          [ -n "$FILE1" ] && args+=(--file "$FILE1")
+          [ -n "$FILE2" ] && args+=(--file "$FILE2")
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq '.[0].number // empty' || true)
+          [ -n "$pr" ] && args+=(--pr "$pr")
+          status=$([ "$HAS_PR" = "true" ] && echo ok || echo fehler)
+          node scripts/autonomy/leitstand.mjs ereignis --schritt worker --status "$status" --seit "$LEITSTAND_SEIT" --issue "$IDENTIFIER" "${args[@]}"
 
       - name: Live-Kommentar fertig oder gescheitert
         if: always() && steps.pr.outcome == 'success'
