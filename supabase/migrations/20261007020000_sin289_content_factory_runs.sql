@@ -20,3 +20,6 @@ create index if not exists content_factory_runs_created_at_idx on public.content
 
 -- Wie die anderen Tabellen: RLS an, keine Policies für anon/authenticated → nur Service-Role.
 alter table public.content_factory_runs enable row level security;
+
+-- PostgREST-Schema neu laden, damit die Tabelle über REST sichtbar ist (SIN-351).
+notify pgrst, 'reload schema';
