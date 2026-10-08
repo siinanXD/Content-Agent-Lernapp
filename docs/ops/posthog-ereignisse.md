@@ -23,7 +23,9 @@ Dazu `$pageview` und `$pageleave` von PostHog selbst.
 
 `scripts/autonomy/posthog.mjs` fragt die letzten 7 Tage ab und nennt die Abbruchquote je Schritt: Onboarding (`onboarding_step` → `onboarding_completed`), Einheit (`unit_started` → `unit_completed`), Wiederholung (`review_started` → `review_completed`). Gezählt werden Besucher je Ereignis, nicht Ereignisse. Quote = 1 − beendet / gestartet.
 
-Ist die Liste leer, steht der Grund da: keine Einwilligung, kein `NEXT_PUBLIC_POSTHOG_KEY` im Build oder noch keine Nutzung. Fehlen die Secrets, steht „nicht verfügbar“.
+Dazu steht „häufigste Abbruchstellen“ (höchstens 3 Schritte nach Besuchern, die `unit_abandoned`/`review_abandoned` melden; Onboarding: gestartet minus beendet) und „meistverlassene Einheiten“ (höchstens 3 `unitId`, nur Inhaltskennungen und Besucherzahlen, keine Personendaten).
+
+Ist die Liste leer, fragt der Bericht, ob es überhaupt Ereignisse gibt: Gibt es welche (z. B. `$pageview`), lautet die Ursache „keine Nutzung des Lernwegs“. Gibt es keine, sendet PostHog nichts: „kein `NEXT_PUBLIC_POSTHOG_KEY` im Build oder keine Einwilligung“ (beides ist von außen nicht trennbar). Schlägt die Zusatzabfrage fehl, steht die allgemeine Liste der drei Ursachen. Fehlen die Secrets, steht „nicht verfügbar“.
 
 ## Grenzen
 
