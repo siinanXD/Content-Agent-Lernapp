@@ -74,6 +74,11 @@ export function sinanTaskForTableError(table, migration, e) {
   return null;
 }
 
+/** true, wenn der Fehler ein Schema-Cache-Fehler (PGRST205) ist; diese sind oft vorübergehend. */
+export function isSchemaCache(e) {
+  return classifyTableError(e) === "schema-cache";
+}
+
 /** Legt die Aufgabe (falls nötig) in `http.sinanTasks` ab; der Planer legt sie als Issue an. */
 export function queueSinanTask(http, table, migration, e) {
   const task = sinanTaskForTableError(table, migration, e);
