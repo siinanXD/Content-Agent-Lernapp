@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-397 | SIN-397: Lauf-PR bleibt aus | [SIN-397-run-task-pr.md](decisions/SIN-397-run-task-pr.md) |
 | SIN-396 | SIN-396: Test-UUID für Live-Check und Validierung | [SIN-396-live-check-uuid.md](decisions/SIN-396-live-check-uuid.md) |
 | SIN-395 | SIN-395: Verworfene Fragen nie ausspielen, Verwerfungsgründe im Kennzahlen-Bericht | [SIN-395-verworfene-fragen.md](decisions/SIN-395-verworfene-fragen.md) |
 | SIN-394 | SIN-394: Kennzahl „Fragen bewertet" — Nenner und Zähler aus demselben Stand | [SIN-394-fragen-bewertet.md](decisions/SIN-394-fragen-bewertet.md) |

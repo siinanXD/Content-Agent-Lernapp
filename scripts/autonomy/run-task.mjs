@@ -304,6 +304,24 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
   return { ...base, ...result };
 }
 
+/** Pfade, die der Lauf ablegen darf (SIN-397). */
+export const RESULT_PATHS = [RESULT_DIR, "docs/ops/ap22-runs", READINESS_FILE];
+
+/**
+ * Ergebnisdateien vormerken. `git add a b c` bricht komplett ab, sobald ein Pfad fehlt (SIN-397: `docs/ops/ap22-runs`
+ * gibt es nur bei `migrate`), daher nur vorhandene Pfade. Liefert, ob etwas zu committen ist, und den Grund.
+ */
+export function stageResult({ cwd = ".", paths = RESULT_PATHS } = {}) {
+  const git = (...args) => spawnSync("git", args, { cwd, encoding: "utf8" });
+  const present = paths.filter((p) => existsSync(`${cwd}/${p}`));
+  if (!present.length) return { changed: false, grund: `Keine Ergebnisdatei vorhanden (${paths.join(", ")}): die Aufgabe hat nichts geschrieben.` };
+  const add = git("add", "--", ...present);
+  if (add.status !== 0) return { changed: false, grund: `git add fehlgeschlagen: ${add.stderr.trim()}` };
+  const staged = git("diff", "--cached", "--name-only", "--", ...present).stdout.trim().split("\n").filter(Boolean);
+  if (!staged.length) return { changed: false, grund: `Ergebnisdateien (${present.join(", ")}) sind identisch mit dem Stand auf main: nichts zu committen.` };
+  return { changed: true, grund: `Geändert: ${staged.join(", ")}` };
+}
+
 function writeResult(result) {
   mkdirSync(RESULT_DIR, { recursive: true });
   const file = `${RESULT_DIR}/${result.task}-${result.datum}.json`;
@@ -314,6 +332,14 @@ function writeResult(result) {
 }
 
 async function main(argv) {
+  if (argv.includes("--stage")) {
+    const r = stageResult();
+    const line = r.changed ? r.grund : `**Kein Ergebnis-PR:** ${r.grund}`;
+    console.log(line);
+    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${line}\n\n`);
+    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `changed=${r.changed}\n`);
+    return;
+  }
   const task = argv[argv.indexOf("--task") + 1];
   const dry = argv.includes("--dry-run");
   const result = await runTask(task, { dry });
