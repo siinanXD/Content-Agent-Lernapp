@@ -18,6 +18,9 @@ import {
 /** SIN-260: Lauf stoppt vor dem harten Deckel von 20 € (AGENTS.md), wie ap15-regen-dropped. */
 export const BACKFILL_STOP_EUR = 19;
 export const BACKFILL_CHUNK = 10;
+/** SIN-386: Versuche je Chunk; Abbruch nach so vielen Chunks in Folge ohne Ergebnis (Ausfall statt Einzelfehler). */
+export const BACKFILL_ATTEMPTS = 3;
+export const BACKFILL_MAX_FAILED_IN_ROW = 3;
 
 export type JudgeFn = (items: EvalItem[]) => Promise<{
   questions: QuestionEval[];
@@ -97,6 +100,8 @@ export type BackfillSummary = {
   failed: number;
   /** Fragen, die wegen des Kostendeckels nicht mehr bewertet wurden. */
   remaining: number;
+  /** Chunks, die auch nach Wiederholung scheiterten (SIN-386); ihre Fragen bleiben für den nächsten Lauf offen. */
+  chunkErrors: string[];
   ledger: CostLedger;
 };
 
@@ -114,6 +119,9 @@ export async function runJudgeBackfill(opts: {
   runId?: string;
   stopEur?: number;
   chunk?: number;
+  attempts?: number;
+  /** Wartezeit vor dem nächsten Versuch in ms; Tests setzen 0. */
+  backoffMs?: (attempt: number) => number;
   report?: BackfillReporter;
 }): Promise<BackfillSummary> {
   const { storage, courseId, items, judge } = opts;
@@ -126,6 +134,10 @@ export async function runJudgeBackfill(opts: {
   let ledger = emptyLedger();
   let judged = 0;
   let passed = 0;
+  const chunkErrors: string[] = [];
+  let failedInRow = 0;
+  const attempts = opts.attempts ?? BACKFILL_ATTEMPTS;
+  const backoffMs = opts.backoffMs ?? ((n: number) => 2000 * 2 ** (n - 1));
 
   for (let i = 0; i < pending.length; i += chunk) {
     if (ledger.eurEstimate >= Math.min(stopEur, BUDGET_EUR) || ledger.stopped) {
@@ -137,7 +149,24 @@ export async function runJudgeBackfill(opts: {
       break;
     }
     const part = pending.slice(i, i + chunk);
-    const res = await judge(part);
+    // SIN-386: Ein Fehler (429, 5xx, kaputtes JSON) darf nicht den Rest des Kurses liegen lassen.
+    let res: Awaited<ReturnType<JudgeFn>> | undefined;
+    let lastError = "";
+    for (let a = 1; a <= attempts && !res; a++) {
+      try {
+        res = await judge(part);
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
+        if (a < attempts) await new Promise((r) => setTimeout(r, backoffMs(a)));
+      }
+    }
+    if (!res) {
+      chunkErrors.push(`Fragen ${i + 1}–${i + part.length}: ${lastError}`);
+      failedInRow += 1;
+      if (failedInRow >= BACKFILL_MAX_FAILED_IN_ROW) break;
+      continue;
+    }
+    failedInRow = 0;
     ledger = addOpenAIUsage(ledger, res.usage.prompt_tokens, res.usage.completion_tokens);
     const result: EvaluateResult = {
       courseId,
@@ -186,6 +215,7 @@ export async function runJudgeBackfill(opts: {
     passed,
     failed: judged - passed,
     remaining: pending.length - judged,
+    chunkErrors,
     ledger,
   };
   if (judged > 0 || ledger.stopped) await opts.report?.run?.(summary).catch(() => {});

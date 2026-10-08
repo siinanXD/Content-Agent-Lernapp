@@ -54,7 +54,7 @@ async function main() {
     // Deckel gilt für den ganzen Lauf, nicht je Kurs.
     const stopEur = BACKFILL_STOP_EUR - spentEur;
     if (stopEur <= 0) {
-      summary.push({ course: course.id, total: items.length, stopped: "Kostendeckel" });
+      summary.push({ course: course.id, total: items.length, remaining: items.length, stopped: "Kostendeckel" });
       continue;
     }
     let r;
@@ -87,10 +87,12 @@ async function main() {
       const message = err instanceof Error ? err.message : String(err);
       console.error(`FEHLER Kurs ${course.id}: ${message}`);
       failures += 1;
-      summary.push({ course: course.id, total: items.length, fehler: message });
+      summary.push({ course: course.id, total: items.length, remaining: items.length, fehler: message });
       continue;
     }
     spentEur += r.ledger.eurEstimate;
+    for (const e of r.chunkErrors) console.error(`FEHLER Kurs ${course.id}, ${e}`);
+    if (r.chunkErrors.length > 0) failures += 1;
     summary.push({
       course: course.id,
       total: r.total,
@@ -99,11 +101,16 @@ async function main() {
       passed: r.passed,
       failed: r.failed,
       remaining: r.remaining,
+      chunkFehler: r.chunkErrors.length,
       eur: r.ledger.eurEstimate,
     });
   }
 
   console.log(JSON.stringify({ dry, spentEur: Math.round(spentEur * 100) / 100, courses: summary }, null, 2));
+  const sum = (k: string) => summary.reduce((n, c) => n + (typeof c[k] === "number" ? (c[k] as number) : 0), 0);
+  const total = sum("total");
+  const offen = dry ? sum("pending") : sum("remaining");
+  console.log(`fragen_bewertet: ${total - offen} von ${total}, offen ${offen} (erneut starten, bis offen 0 ist)`);
   const judged = summary.reduce((n, c) => n + (typeof c.judged === "number" ? c.judged : 0), 0);
   console.log(`Bewertet: ${judged} Fragen, Fehler in ${failures} Kursen`);
   if (!dry && failures > 0) process.exitCode = 1;

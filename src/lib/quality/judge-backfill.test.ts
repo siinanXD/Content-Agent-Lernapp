@@ -61,6 +61,25 @@ describe("Bewertungslauf bestehender Fragen (SIN-260)", () => {
     assert.equal(third.skipped, 2);
   });
 
+  it("SIN-386: Chunk-Fehler wird wiederholt, scheiternder Chunk lässt den Rest nicht liegen", async () => {
+    const inner = countingJudge().judge;
+    let flaky = 0;
+    const judge: JudgeFn = async (items) => {
+      if (items.some((i) => i.id === "u1-q1") && flaky++ < 1) throw new Error("OpenAI 429");
+      if (items.some((i) => i.id === "u1-q3")) throw new Error("OpenAI 500");
+      return inner(items);
+    };
+    const items = [1, 2, 3, 4, 5].map((n) => item(n));
+    const r = await runJudgeBackfill({ storage: mockStorage, courseId, items, judge, chunk: 2, backoffMs: () => 0 });
+    assert.equal(r.judged, 3, "Chunks 1 (nach Wiederholung) und 3 laufen, Chunk 2 scheitert");
+    assert.equal(r.remaining, 2);
+    assert.equal(r.chunkErrors.length, 1);
+    // Nächster Lauf holt den Rest nach.
+    const again = await runJudgeBackfill({ storage: mockStorage, courseId, items, judge: inner, chunk: 2 });
+    assert.equal(again.judged, 2);
+    assert.equal(again.remaining, 0);
+  });
+
   it("Altzeilen ohne Hash gelten als bewertet", () => {
     const items = [item(1)];
     const legacy = {
