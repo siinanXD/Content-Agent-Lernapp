@@ -19,10 +19,15 @@ import {
   weekActivity,
   type LearningEvent,
   type LearningSummary,
+  type WeekDay,
 } from "@/lib/learner/streak";
 import { useAfterMount } from "@/lib/use-after-mount";
 
 const NO_EVENTS: LearningEvent[] = [];
+const NO_WEEK: WeekDay[] = [];
+
+/** Die Woche hängt vom heutigen Datum und darf nicht ins statische HTML (Hydration-Fehler um Mitternacht). */
+const loadWeek = () => weekActivity(loadLearningEvents());
 
 const rowLink =
   "flex min-h-11 items-center justify-between gap-3 text-[15px] text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
@@ -32,7 +37,8 @@ export default function ProfilPage() {
   const session = useAfterMount(loadSession, null);
   const stack = useAfterMount<LeitnerStack | null>(loadStack, null);
   const events = useAfterMount<LearningEvent[]>(loadLearningEvents, NO_EVENTS);
-  const reviewSize = stack ? stackSize(stack) : 0;
+  const week = useAfterMount<WeekDay[]>(loadWeek, NO_WEEK);
+  const reviewSize =stack ? stackSize(stack) : 0;
   const summary = useAfterMount<LearningSummary | "laden" | "fehler">(
     loadLearningSummary,
     "laden",
@@ -74,7 +80,6 @@ export default function ProfilPage() {
     session?.variant === "weiterbildung"
       ? "Weiterbildung · 3 Monate"
       : "Prüfungsvorbereitung · 2 Monate";
-  const week = weekActivity(events);
   const weekMax = Math.max(DAILY_GOAL, ...week.map((d) => d.count));
   const weekdayFmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" });
   const areaResults = session?.lastResult?.areaResults ?? [];
