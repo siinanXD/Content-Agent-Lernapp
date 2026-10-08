@@ -175,6 +175,97 @@ paths:
           description: Keine Gruppe zugeordnet
         '503':
           description: Nicht eingerichtet oder nicht ladbar
+    post:
+      summary: Gruppe anlegen (SIN-356); höchstens eine Gruppe je Ausbilder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, schwerpunkt]
+              properties:
+                name: { type: string, maxLength: 80 }
+                schwerpunkt: { type: string, maxLength: 200 }
+                startsOn: { type: string, format: date, nullable: true }
+                examDate: { type: string, format: date, nullable: true }
+      responses:
+        '201':
+          description: Gruppe angelegt
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id: { type: string, format: uuid }
+        '400':
+          description: Angaben fehlen oder sind ungültig
+        '401':
+          description: Nicht angemeldet
+        '403':
+          description: Kein Ausbilder-Zugang
+        '409':
+          description: Es gibt schon eine Gruppe
+        '503':
+          description: Nicht eingerichtet oder nicht speicherbar
+  /api/ausbilder/einladungen:
+    get:
+      summary: Einladungen der eigenen Gruppe (SIN-356); Row Level Security
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Einladungen mit Beitrittscode
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitations'
+        '401':
+          description: Nicht angemeldet
+        '403':
+          description: Kein Ausbilder-Zugang
+        '503':
+          description: Nicht eingerichtet oder nicht ladbar
+    post:
+      summary: Einladungen erzeugen (SIN-356); je Name ein Platz in der Gruppe und ein Code, kein Versand
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [names]
+              properties:
+                names:
+                  type: array
+                  minItems: 1
+                  maxItems: 30
+                  description: Vorname und Initial, höchstens 60 Zeichen, keine E-Mail-Adressen
+                  items: { type: string, maxLength: 60 }
+      responses:
+        '201':
+          description: Erzeugte Einladungen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitations'
+        '400':
+          description: Namen fehlen oder sind ungültig
+        '401':
+          description: Nicht angemeldet
+        '403':
+          description: Kein Ausbilder-Zugang
+        '404':
+          description: Noch keine Gruppe
+        '409':
+          description: Gruppe ist voll (höchstens 100 Teilnehmende)
+        '503':
+          description: Nicht eingerichtet oder nicht speicherbar
 components:
   securitySchemes:
     bearerAuth:
@@ -189,6 +280,19 @@ components:
         type: string
         format: uuid
   schemas:
+    Invitations:
+      type: object
+      required: [invitations]
+      properties:
+        invitations:
+          type: array
+          items:
+            type: object
+            required: [memberId, name, code]
+            properties:
+              memberId: { type: string, format: uuid }
+              name: { type: string }
+              code: { type: string, pattern: '^[A-Z0-9]{10}$' }
     CreateCourseRequest:
       type: object
       required: [keyword]
