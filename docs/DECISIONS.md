@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-369 | SIN-369 — Bewertungslauf-Trockenlauf: Voraussetzungen für SIN-348 prüfen | [SIN-369-bewertungslauf-voraussetzungen.md](decisions/SIN-369-bewertungslauf-voraussetzungen.md) |
+| SIN-368 | SIN-368 — Fertig-Zustände: Tagesziel erreicht, heute nichts fällig | [SIN-368-fertig-zustaende.md](decisions/SIN-368-fertig-zustaende.md) |
 | SIN-361 | SIN-361 — Wächter: übersprungene PR-Ereignis-Läufe von dispatch zählen nicht | [SIN-361-dispatch-skipped-lauf.md](decisions/SIN-361-dispatch-skipped-lauf.md) |
 | SIN-360 | SIN-360: Linear Basic, keine Issue-Grenze | [SIN-360-linear-basic.md](decisions/SIN-360-linear-basic.md) |
 | SIN-359 | SIN-359: Kennzahlen-Bericht unterscheidet die Ursache bei fehlenden Tabellen | [SIN-359-tabellenfehler-klassen.md](decisions/SIN-359-tabellenfehler-klassen.md) |
