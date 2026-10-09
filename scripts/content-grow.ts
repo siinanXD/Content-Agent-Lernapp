@@ -79,6 +79,7 @@ import {
 } from "../src/lib/quality/schemas";
 import { reportPipelineError, initPipelineSentry } from "../src/lib/sentry-pipeline";
 import { getStorage } from "../src/lib/storage";
+import { isApiLimitError, pauseReason } from "../src/lib/anthropic/limit-error";
 import { recordFactoryRun, toAbortedRunRecord, toFactoryRunRecord } from "../src/lib/generate/factory-status";
 
 const ROOT = process.cwd();
@@ -406,6 +407,12 @@ async function main() {
       report.stopReason = `Zeitlimit: ${e.message}; Rest im nächsten Lauf`;
       return;
     }
+    // SIN-450: Ausgabenlimit der Anthropic-API ist kein Qualitätsfehler: pausieren, nicht rot laufen.
+    if (isApiLimitError(e)) {
+      report.stopReason = pauseReason(e);
+      console.log(`::notice::${report.stopReason}`);
+      return;
+    }
     if (!(e instanceof RunBudgetExceededError)) {
       report.costEur = spentTotal();
       await recordCosts();
@@ -568,6 +575,11 @@ async function main() {
 
 initPipelineSentry("content-grow");
 main().catch(async (err) => {
+  if (isApiLimitError(err)) {
+    // SIN-450: Limit vor dem Ergebnis (z. B. in der Reparatur): Status „pausiert“, Exit 0, keine Reparaturschleife.
+    console.log(`::notice::${pauseReason(err)}`);
+    await abortRun(pauseReason(err), 0);
+  }
   console.error(err);
   await reportPipelineError(err).catch(() => undefined);
   await abortRun(err instanceof Error ? err.message : String(err), 1);

@@ -4,6 +4,7 @@
  * und „hängt“ ab (scripts/autonomy/fabrik.mjs).
  */
 import { getServiceSupabase } from "@/lib/storage/supabase-client";
+import { PAUSE_PREFIX } from "@/lib/anthropic/limit-error";
 import type { RunReport } from "./content-grow";
 
 export type FactoryRunRecord = {
@@ -64,7 +65,10 @@ export function toAbortedRunRecord(
     unitsPublished: 0,
     costEur: 0,
     stopped: true,
-    stopReason: `Abbruch: ${reason.replace(/\s+/g, " ").trim().slice(0, 300)}`,
+    // SIN-450: Der Pausegrund bleibt ohne „Abbruch:“-Präfix, daran erkennt der Planer „pausiert“.
+    stopReason: reason.startsWith(PAUSE_PREFIX)
+      ? reason.slice(0, 300)
+      : `Abbruch: ${reason.replace(/\s+/g, " ").trim().slice(0, 300)}`,
     startedAt,
     finishedAt,
   };
