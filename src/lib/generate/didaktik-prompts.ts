@@ -32,12 +32,28 @@ export function formatMix(mix: QuestionMix): string {
     .join(", ");
 }
 
+/**
+ * SIN-432: Regeln für auswahl und reihenfolge. Ursachen der Verwerfungen (SIN-395):
+ * Niveau unter 4 und mehrdeutige Antworten (Eindeutigkeit).
+ */
+export const AUSWAHL_REGELN = `Regeln für Fragetyp auswahl und reihenfolge (der Richter verwirft sonst):
+- auswahl: 4 Antworten, genau EINE ist nach der zitierten Quelle richtig. Jede falsche Antwort ist nach der Quelle eindeutig falsch, nicht nur "weniger passend". Keine zweite Antwort, die als teilweise richtig gelten kann. Kein "alle genannten", "keine der genannten", keine Verneinung in der Frage.
+- Distraktoren: gleiche Länge, gleiche Satzform, gleicher Fachbereich wie die richtige Antwort; typische Fehlvorstellungen aus der Praxis, keine Scherzantworten. Die richtige Antwort steht nicht immer an derselben Stelle und ist nicht die längste.
+- Niveau: Fragen auf dem Niveau des Moduls (Jahr 1 = Zwischenprüfung, Jahr 2+ = Abschlussprüfung). Nicht nur Namen oder Zahlen abfragen: Situation aus dem Betrieb schildern und eine Entscheidung, Ursache oder Folge verlangen. Bei Stufe anwenden mindestens eine konkrete Angabe (Maschine, Werkstück, Wert) in der Frage.
+- reihenfolge: 4–6 Schritte, die Quelle schreibt genau diese Folge zwingend vor. Keine Schritte, die sich vertauschen lassen. Jeder Schritt eine Handlung, gleiche Satzform, keine Nummern im Text.
+- Begründung (explanation) nennt, warum die richtige Antwort gilt und warum eine typische falsche nicht.`;
+
+/** `PROMPT_AUSWAHL_REGELN=aus` erzeugt den Prompt von vor SIN-432 (nur für den Vorher-Lauf im Vergleich). */
+function auswahlRegelnBlock(): string {
+  return process.env.PROMPT_AUSWAHL_REGELN === "aus" ? "" : `\n${AUSWAHL_REGELN}`;
+}
+
 export function didaktikSchemaHint(): string {
   return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
 Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter mit Quelle.
 Offene Aufgaben (rechnen/kurze Begründung): nur sampleSolution + sampleChecklist zur Selbstkontrolle — keine KI-Bewertung.
 Phase A: nur generierte SVG (license Generated-SVG), keine Commons-/KI-Bilder.
-explanation muss immer gesetzt sein (Fallback aus sections).`;
+explanation muss immer gesetzt sein (Fallback aus sections).${auswahlRegelnBlock()}`;
 }
 
 /** Full block prompt with variant rules (AP-14/AP-15 contract). */

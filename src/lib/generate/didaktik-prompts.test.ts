@@ -4,6 +4,7 @@ import { loadMafCurriculum } from "@/lib/content/curriculum";
 import {
   buildDidaktikBlockPrompt,
   buildDidaktikKeywordPrompt,
+  generatorSystemText,
   variantRules,
 } from "./didaktik-prompts";
 
@@ -31,5 +32,22 @@ describe("didaktik prompts (AP-18e)", () => {
     assert.match(p, /moduleId="M0"/);
     assert.match(p, /examAreas/);
     assert.match(p, /explanation/);
+  });
+
+  it("SIN-432: auswahl/reihenfolge-Regeln stehen im System- und Block-Prompt", () => {
+    assert.match(generatorSystemText(), /genau EINE/);
+    assert.match(generatorSystemText(), /reihenfolge: 4–6 Schritte/);
+    const c = loadMafCurriculum();
+    const mod = c.modules[0]!;
+    assert.match(buildDidaktikBlockPrompt(c, mod, mod.blocks[0]!), /Distraktoren/);
+  });
+
+  it("SIN-432: PROMPT_AUSWAHL_REGELN=aus liefert den alten Prompt", () => {
+    process.env.PROMPT_AUSWAHL_REGELN = "aus";
+    try {
+      assert.doesNotMatch(generatorSystemText(), /Distraktoren/);
+    } finally {
+      delete process.env.PROMPT_AUSWAHL_REGELN;
+    }
   });
 });

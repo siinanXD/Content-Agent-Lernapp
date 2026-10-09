@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-432 | SIN-432: Generator-Prompt für auswahl und reihenfolge, weniger Verwerfungen | [SIN-432-auswahl-prompt.md](decisions/SIN-432-auswahl-prompt.md) |
 | SIN-431 | SIN-431: Content-Fabrik erzeugt Industriekaufleute | [SIN-431-indkfl-fabrik.md](decisions/SIN-431-indkfl-fabrik.md) |
 | SIN-422 | SIN-422: Steckbrief zeigt Bereiche statt einer Spur | [SIN-422-steckbrief-bereiche.md](decisions/SIN-422-steckbrief-bereiche.md) |
 | SIN-418 | SIN-418: Reparatur ohne Commit lässt PR nicht mehr liegen | [SIN-418-reparatur-ohne-commit.md](decisions/SIN-418-reparatur-ohne-commit.md) |
