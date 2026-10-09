@@ -12,6 +12,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { anthropicFetch } from "../src/lib/anthropic/client";
+import { compactApiError } from "../src/lib/api-error";
 import { loadMafCurriculum } from "../src/lib/content/curriculum";
 import {
   annotateUnit,
@@ -40,6 +41,7 @@ import {
   USD_PER_EUR,
   type AlleReport,
   type Candidate,
+  type FailedCandidate,
   type ModelReport,
 } from "../src/lib/quality/ab-alle";
 import { claudeJudge, CLAUDE_JUDGE_MODEL } from "../src/lib/quality/claude-judge";
@@ -129,7 +131,7 @@ async function claudeGenerate(model: string, system: string, user: string) {
     method: "POST",
     body: JSON.stringify({ model, max_tokens: Math.min(CLAUDE_MAX_TOKENS, MAX_OUTPUT_TOKENS), system, messages: [{ role: "user", content: user }] }),
   });
-  if (!res.ok) throw new Error(`Anthropic ${res.status} (${model}): ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Anthropic ${res.status} (${model}): ${compactApiError(await res.text().catch(() => ""))}`);
   const data = (await res.json()) as {
     content?: Array<{ type: string; text?: string }>;
     usage?: { input_tokens?: number; output_tokens?: number };
@@ -172,6 +174,7 @@ async function main() {
     if (totalUsd >= ALLE_BUDGET_USD) throw new BudgetExceeded(`Deckel ${ALLE_BUDGET_EUR} € erreicht ($${totalUsd.toFixed(2)})`);
   };
   const models: ModelReport[] = [];
+  const failed: FailedCandidate[] = [];
   let aborted: string | undefined;
 
   const generate = async (cand: Candidate, user: string, schema: "units" | "questions") => {
@@ -283,7 +286,10 @@ async function main() {
         aborted = `${e.message}; Kandidat ${cand.id} und alle folgenden fehlen im Bericht.`;
         break;
       }
-      throw e;
+      // SIN-445: Ein Fehler bei einem Kandidaten verwirft nicht die bezahlten Ergebnisse der anderen.
+      const error = compactApiError(e instanceof Error ? e.message : String(e));
+      failed.push({ model: cand.id, provider: cand.provider, error });
+      console.error(`Kandidat ${cand.id} gescheitert: ${error}`);
     }
   }
 
@@ -301,6 +307,7 @@ async function main() {
       "Claude-Preise: Standard = 2× Batch-Preis (cost-guard). Alle Modelle ohne Batch, ohne Cache.",
     ],
     models,
+    ...(failed.length ? { failed } : {}),
     published: false,
   };
   mkdirSync(OUT_DIR, { recursive: true });
@@ -309,6 +316,8 @@ async function main() {
   writeFileSync(join(REPORT_DIR, `ab-alle-modelle-${runId.slice(0, 10)}.md`), renderAlleMarkdown(report));
   console.log(JSON.stringify({ ...report, models: report.models.map((m) => ({ ...m, examples: m.examples.length })) }, null, 2));
   if (aborted) process.exit(3);
+  // Nur wenn kein Kandidat durchlief, gilt der Lauf als gescheitert (Bericht liegt trotzdem vor).
+  if (!models.length && failed.length) process.exit(1);
 }
 
 main().catch((e) => {
