@@ -24,7 +24,7 @@ import { sendTelegramPlain } from "./telegram.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
 import { renderSinan, syncSinan } from "./sinan.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
-import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
+import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, stalledRepairs, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
 import { GATE_LABEL, GATE_PREFIX, collectGateFailures, collectMainChecks, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
@@ -255,6 +255,13 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   // --- Selbstheilung ---
   for (const issue of bugs) actions.push({ type: "create-issue", issue });
   for (const a of gateActions(openPrs, breaks, gateBugOpen, rerun)) actions.push(/** @type {any} */ (a));
+  // Reparatur ohne Commit (SIN-418): rote CI, kein neuer Commit seit > 30 Min → `ci` neu anstoßen, damit `repair` die nächste Runde startet.
+  const repairKicks = {};
+  for (const k of stalledRepairs(openPrs, checks, runs, now, prev.repairKicks ?? {})) {
+    repairKicks[k.pr] = k.sha;
+    incidents.push({ key: `repair-stall:${k.pr}:${k.sha.slice(0, 7)}`, text: `Reparatur-Stillstand: PR #${k.pr} hat rote CI und seit ${hm(k.idleMin)} keinen neuen Commit. Der Wächter stößt \`ci\` neu an, damit die nächste Reparatur-Runde startet (SIN-418).` });
+    actions.push({ type: "repair-kick", pr: k.pr, sha: k.sha });
+  }
   const conflictAsks = {};
   for (const p of openPrs.filter((x) => isAgentPr(x) && !x.draft && !labelNames(x).includes("no-automerge") && x.mergeable_state === "dirty")) {
     // SIN-312: erzeugte Dateien löst konflikt.mjs ohne KI (vorher im Lauf); hier nur noch echte Code-Konflikte.
@@ -297,7 +304,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, linearFull: stop, now });
   const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
-  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}), ...(deployAlarms.length ? { deployAlarm: deployAlarms.map((a) => a.text) } : {}) };
+  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(Object.keys(repairKicks).length || prev.repairKicks ? { repairKicks: { ...(prev.repairKicks ?? {}), ...repairKicks } } : {}), ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}), ...(deployAlarms.length ? { deployAlarm: deployAlarms.map((a) => a.text) } : {}) };
   if (refill.trigger) state.refilled = refill.maxIssues;
 
   // Kick: Dispatcher anstoßen, wenn nichts läuft, aber etwas startbar ist und der letzte Lauf lange her ist.
@@ -504,6 +511,7 @@ async function collectGithub(repo, now) {
     };
     if (p.state === "open") {
       pr.sha = p.head.sha;
+      pr.head_at = (await gh(`/repos/${repo}/commits/${p.head.sha}`)).commit?.committer?.date;
       pr.mergeable_state = (await gh(`/repos/${repo}/pulls/${p.number}`)).mergeable_state;
       const cr = await gh(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`);
       checks[p.number] = { mergeGate: cr.check_runs.find((c) => c.name === "merge-gate")?.conclusion ?? null, ci: cr.check_runs.find((c) => c.name === "build")?.conclusion ?? undefined, checkRuns: cr.check_runs };
@@ -744,6 +752,18 @@ export async function main(argv, env = process.env) {
         }
       } catch (e) {
         console.log(`::warning::${a.type} für PR #${a.pr} fehlgeschlagen: ${e.message}`);
+      }
+    }
+    if (a.type === "repair-kick") {
+      // SIN-418: roten `ci`-Lauf des Head-Commits neu starten; das löst workflow_run → repair (nächste Runde oder needs-human) aus.
+      const token = env.AGENT_WORKFLOW_TOKEN || env.GITHUB_TOKEN;
+      try {
+        const { workflow_runs } = await gh(`/repos/${repo}/actions/runs?head_sha=${a.sha}&event=pull_request&per_page=30`, { token });
+        const ci = workflow_runs.find((r) => r.name === "ci" && r.conclusion === "failure");
+        if (!ci) throw new Error("kein roter ci-Lauf für den Head-Commit");
+        await gh(`/repos/${repo}/actions/runs/${ci.id}/rerun`, { method: "POST", token });
+      } catch (e) {
+        console.log(`::warning::repair-kick für PR #${a.pr} fehlgeschlagen: ${e.message}`);
       }
     }
     if (a.type === "linear-done") {

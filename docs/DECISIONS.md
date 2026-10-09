@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-418 | SIN-418: Reparatur ohne Commit lässt PR nicht mehr liegen | [SIN-418-reparatur-ohne-commit.md](decisions/SIN-418-reparatur-ohne-commit.md) |
 | SIN-409 | SIN-409: Kennzahl „Fragen bewertet“ blieb 0 wegen abweichender Frage-ID | [SIN-409-kennzahl-fragen-id.md](decisions/SIN-409-kennzahl-fragen-id.md) |
 | SIN-407 | SIN-407: Abbruchstellen im Kennzahlen-Bericht | [SIN-407-abbruchstellen.md](decisions/SIN-407-abbruchstellen.md) |
 | SIN-406 | SIN-406 — Content-Fabrik: Durchsatz je Lauf erhöhen | [SIN-406-fabrik-durchsatz.md](decisions/SIN-406-fabrik-durchsatz.md) |

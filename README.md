@@ -86,7 +86,7 @@ flowchart TD
     CodeQL --> Gate
     Review --> Gate
   end
-  CI -- rot --> Repair["repair.yml: bis 3 Runden"]
+  CI -- rot --> Repair["repair.yml: bis 3 Runden, ohne Commit startet ci neu"]
   Repair --> CI
   Repair -- "nach Runde 3" --> Mensch["needs-human, Stopp"]
   Gate -- "risk:high" --> Freigabe["Label freigegeben (Sinan)"]
