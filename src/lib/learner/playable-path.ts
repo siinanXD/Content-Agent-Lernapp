@@ -270,6 +270,32 @@ export function groupUnitsByModule(units: PathUnit[] = activePathUnits()): PathM
   return [...modules.values()];
 }
 
+/** Modul des Kurses für den Lernpfad: `units` ist 0, solange die Content-Fabrik es noch nicht gefüllt hat. */
+export type PathModuleEntry = PathModuleGroup & { units: number };
+
+/**
+ * Alle Module des Kurses in Kurs-Reihenfolge, auch ohne Einheiten (SIN-452). Module mit Einheiten
+ * kommen aus `groups`; Gruppen, die der Kurs nicht kennt (Seed), folgen am Ende.
+ */
+export function withEmptyModules(
+  groups: PathModuleGroup[],
+  modules: Array<{ id: string; title: string }>,
+): PathModuleEntry[] {
+  const byId = new Map(groups.map((g) => [g.moduleId, g]));
+  const entry = (g: PathModuleGroup): PathModuleEntry => ({
+    ...g,
+    units: g.blocks.reduce((n, b) => n + b.units.length, 0),
+  });
+  const known = new Set(modules.map((m) => m.id));
+  return [
+    ...modules.map((m) => {
+      const g = byId.get(m.id);
+      return g ? entry(g) : { moduleId: m.id, moduleTitle: m.title, blocks: [], units: 0 };
+    }),
+    ...groups.filter((g) => !known.has(g.moduleId)).map(entry),
+  ];
+}
+
 export function unitExplanation(unit: PathUnit, simpleLanguage: boolean): string {
   return resolveExplanation(unit, simpleLanguage);
 }

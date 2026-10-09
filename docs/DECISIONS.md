@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-452 | SIN-452: Lernpfad zeigt Module ohne Einheiten als Leerzustand | [SIN-452-lernpfad-leere-module.md](decisions/SIN-452-lernpfad-leere-module.md) |
 | SIN-447 | SIN-447: Goldset Industriekaufleute | [SIN-447-goldset-indkfl.md](decisions/SIN-447-goldset-indkfl.md) |
 | SIN-446 | SIN-446: Migrationen 13/15 sind dieselbe Blockade wie SIN-441 und SIN-443 | [SIN-446-migrationen-weiter-offen.md](decisions/SIN-446-migrationen-weiter-offen.md) |
 | SIN-443 | SIN-443: Migration 20261014010000 wartet auf 20261013010000 | [SIN-443-migration-416-haengt-an-415.md](decisions/SIN-443-migration-416-haengt-an-415.md) |
