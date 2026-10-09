@@ -7,6 +7,8 @@
  * Usage: node scripts/performance-budget.mjs [--base http://127.0.0.1:43123] [--out messung.json] [--runs 3] [--serve] [--details]
  * --details zeigt je Route das LCP-Element und die LCP-Phasen (Ursachenanalyse, SIN-311); bei Überschreitung immer.
  * Braucht einen laufenden Server (`npm run build && npm start -- --port 43123`) oder --serve: startet `next start` selbst.
+ * SIN-455: Reißt eine Route die Grenze, wird sie einmal nachgemessen; rot nur, wenn auch die Nachmessung reißt.
+ * Jede Route schreibt eine `::notice`-Anmerkung mit allen Werten, jede Verletzung eine `::error`-Anmerkung.
  */
 import { spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -33,6 +35,35 @@ export function violations(measured, limit, tolerance = 0) {
   return rows
     .filter(([, key]) => limit[key] !== undefined && measured[key] >= allowed(key, limit[key], tolerance))
     .map(([name, key, unit]) => `${name} ${measured[key]}${unit && ` ${unit}`} (Grenze ${limit[key]}${unit && ` ${unit}`}${allowed(key, limit[key], tolerance) !== limit[key] ? `, mit Toleranz ${allowed(key, limit[key], tolerance)}` : ""})`);
+}
+
+/** GitHub-Anmerkung, über die Check-API lesbar (SIN-455). Zeilenumbrüche und `::` würden das Format brechen. */
+const clean = (s) => String(s).replace(/\r?\n/g, " ").replace(/::/g, ": ");
+export const annotation = (level, title, message) => `::${level} title=${clean(title).replace(/,/g, ";")}::${clean(message)}`;
+
+/** Messwerte einer Route als eine Zeile: Wert und Grenze je Größe. */
+export function summary(measured, limit) {
+  const part = (name, key, unit) => `${name} ${measured[key]}${unit} (Grenze ${limit[key]}${unit})`;
+  return [part("LCP", "lcpMs", " ms"), part("CLS", "cls", ""), part("TBT", "tbtMs", " ms"), part("JS", "jsKb", " KB")].join(", ");
+}
+
+/**
+ * Entscheidung je Route (SIN-455): Reißt die erste Messung die Grenze, zählt die Nachmessung.
+ * Rot nur, wenn auch die Nachmessung reißt. Liefert die Anmerkungen für den Lauf.
+ * @typedef {{ lcpMs: number, cls: number, tbtMs: number, jsKb: number }} Messwerte
+ * @param {string} route
+ * @param {{ measured: Messwerte, over: string[] }} first
+ * @param {{ measured: Messwerte, over: string[] } | null} retry
+ * @param {Messwerte} limit
+ * @returns {{ ok: boolean, measured: Messwerte, over: string[], retried: boolean, notes: string[] }}
+ */
+export function verdict(route, first, retry, limit) {
+  const final = retry ?? first;
+  const notes = [];
+  if (retry) notes.push(annotation("warning", `Leistungsbudget ${route}`, `Erste Messung über der Grenze: ${first.over.join("; ")}. Nachmessung: ${retry.over.length ? "wieder über der Grenze" : "im Budget"}.`));
+  notes.push(annotation("notice", `Leistungsbudget ${route}`, summary(final.measured, limit)));
+  for (const line of final.over) notes.push(annotation("error", `Leistungsbudget ${route}`, line));
+  return { ok: final.over.length === 0, measured: final.measured, over: final.over, retried: Boolean(retry), notes };
 }
 
 /** Messwerte aus Lighthouse-Berichten (lhr) einer Route: Median je Größe. */
@@ -78,24 +109,33 @@ async function main(argv) {
   const rows = [];
   try {
     for (const [route, limit] of Object.entries(budget.routes)) {
-      const lhrs = [];
-      // Aufwärmlauf (SIN-329): der erste Abruf trifft kalte Caches und Server; er zählt nicht in den Median.
-      await lighthouse(`${base}${route}`, { port: chrome.port, output: "json", onlyCategories: ["performance"] });
-      for (let i = 0; i < runs; i++) {
-        const result = await lighthouse(`${base}${route}`, {
-          port: chrome.port,
-          output: "json",
-          onlyCategories: ["performance"],
-          formFactor: "mobile",
-          screenEmulation: { mobile: true, width: 390, height: 844, deviceScaleFactor: 2 },
-        });
-        if (result?.lhr) lhrs.push(result.lhr);
-      }
-      const measured = measure(lhrs);
-      const over = violations(measured, limit, budget.tolerance ?? 0);
-      rows.push({ route, measured, limit, over });
-      console.log(`${over.length ? "✗" : "✓"} ${route.padEnd(18)} LCP ${measured.lcpMs} ms, CLS ${measured.cls}, TBT ${measured.tbtMs} ms, JS ${measured.jsKb} KB`);
+      const runRoute = async () => {
+        const lhrs = [];
+        // Aufwärmlauf (SIN-329): der erste Abruf trifft kalte Caches und Server; er zählt nicht in den Median.
+        await lighthouse(`${base}${route}`, { port: chrome.port, output: "json", onlyCategories: ["performance"] });
+        for (let i = 0; i < runs; i++) {
+          const result = await lighthouse(`${base}${route}`, {
+            port: chrome.port,
+            output: "json",
+            onlyCategories: ["performance"],
+            formFactor: "mobile",
+            screenEmulation: { mobile: true, width: 390, height: 844, deviceScaleFactor: 2 },
+          });
+          if (result?.lhr) lhrs.push(result.lhr);
+        }
+        const measured = measure(lhrs);
+        return { lhrs, measured, over: violations(measured, limit, budget.tolerance ?? 0) };
+      };
+      const first = await runRoute();
+      // SIN-455: Ausreißer einmal nachmessen; rot nur, wenn auch die Nachmessung reißt. Grenzen bleiben gleich.
+      const retry = first.over.length ? await runRoute() : null;
+      const v = verdict(route, first, retry, limit);
+      const lhrs = (retry ?? first).lhrs;
+      const { measured, over } = v;
+      rows.push({ route, measured, limit, over, retried: v.retried, ...(retry ? { first: first.measured } : {}) });
+      console.log(`${over.length ? "✗" : "✓"} ${route.padEnd(18)} LCP ${measured.lcpMs} ms, CLS ${measured.cls}, TBT ${measured.tbtMs} ms, JS ${measured.jsKb} KB${retry ? " (nachgemessen)" : ""}`);
       for (const line of over) console.error(`  - ${line}`);
+      for (const note of v.notes) console.log(note);
       if ((details || over.length) && lhrs[0]) {
         const a = lhrs[0].audits ?? {};
         const el = a["largest-contentful-paint-element"]?.details?.items?.[0]?.items?.[0]?.node;
