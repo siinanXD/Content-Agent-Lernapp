@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { buildSteckbrief, diagrammHinweis, laneFromFiles, parseBody } from "../../../scripts/autonomy/steckbrief.mjs";
+import { bereicheAusDateien, buildSteckbrief, diagrammHinweis, laneFromFiles, parseBody } from "../../../scripts/autonomy/steckbrief.mjs";
 
 const green = { build: "ok", tests: "ok", a11y: "ok", prTitle: "ok" };
 const base = {
@@ -23,7 +23,7 @@ test("Steckbrief: ✅ nichts nötig, keine Erwähnung", () => {
   assert.equal(r.mention, false);
   assert.ok(!r.body.includes("@siinanXD"));
   assert.match(r.body, /✅ \*\*Nichts\.\*\*/);
-  assert.match(r.body, /Frontend · \[SIN-123\]\(https:\/\/linear\.app\/sinan-kahraman\/issue\/SIN-123\)/);
+  assert.match(r.body, /\*\*Issue:\*\* \[SIN-123\]\(https:\/\/linear\.app\/sinan-kahraman\/issue\/SIN-123\)/);
   assert.match(r.body, /\[Vorschau\]\(https:\/\/vorschau\.example\/pr-1\) · Startseite/);
 });
 
@@ -73,6 +73,40 @@ test("Body-Abschnitte und Spuren", () => {
   assert.equal(laneFromFiles([{ filename: ".github/workflows/a.yml" }, { filename: "docs/x.md" }]), "Infra");
   assert.equal(laneFromFiles([{ filename: "docs/content/MAF.md" }]), "Content");
   assert.equal(laneFromFiles([{ filename: "src/lib/a.ts" }]), "Backend");
+});
+
+test("Bereiche: gemischter PR nach Tragweite sortiert mit Dateizahl", () => {
+  const names = [
+    "src/app/lernpfad/page.tsx", "src/components/ui/a.tsx", "supabase/migrations/1_x.sql",
+    "src/app/api/abo/route.ts", ".github/workflows/a.yml", "package.json", "docs/content/x.md", "docs/a.md",
+  ];
+  assert.deepEqual(bereicheAusDateien(names.map((filename) => ({ filename }))), [
+    { bereich: "Datenbank", dateien: 1 }, { bereich: "Infrastruktur", dateien: 1 },
+    { bereich: "Deployment", dateien: 1 }, { bereich: "Backend", dateien: 1 },
+    { bereich: "Frontend", dateien: 2 }, { bereich: "Inhalte", dateien: 1 },
+  ]);
+});
+
+test("Bereiche: nur Doku, Migration, Tests unter src/", () => {
+  assert.deepEqual(bereicheAusDateien([{ filename: "docs/x.md" }, { filename: "README.md" }]), [{ bereich: "Doku und Tests", dateien: 2 }]);
+  assert.deepEqual(bereicheAusDateien([{ filename: "supabase/migrations/1_x.sql" }]), [{ bereich: "Datenbank", dateien: 1 }]);
+  assert.deepEqual(
+    bereicheAusDateien(["src/lib/a.test.ts", "src/app/x/page.test.tsx", "tests/a.spec.ts"]),
+    [{ bereich: "Doku und Tests", dateien: 3 }],
+  );
+  assert.deepEqual(bereicheAusDateien([]), []);
+});
+
+test("Steckbrief: Block Bereiche in Reihenfolge, eigener Satz überschreibt", () => {
+  const files = ["src/app/lernpfad/page.tsx", "supabase/migrations/1_x.sql", "docs/a.md"].map((filename) => ({ filename }));
+  const r = buildSteckbrief({ ...base, files });
+  const i = ["**Datenbank**", "**Frontend**", "**Doku und Tests**"].map((k) => r.body.indexOf(k));
+  assert.ok(i[0] > 0 && i[0] < i[1] && i[1] < i[2]);
+  assert.match(r.body, /\*\*Datenbank\*\* \(1 Datei\): Tabellen oder Rechte ändern sich\./);
+  assert.ok(!r.body.includes("Spur und Issue"));
+  const own = buildSteckbrief({ ...base, files, body: `${base.body}\n## Bereiche\n- Datenbank: Neue Tabelle für Abos\n` });
+  assert.match(own.body, /\*\*Datenbank\*\* \(1 Datei\): Neue Tabelle für Abos/);
+  assert.match(own.body, /\*\*Frontend\*\* \(1 Datei\): Sichtbar für Nutzer\./);
 });
 
 test("Diagramme (SIN-376): Hinweis, wenn Workflow ohne pipeline.mmd geändert wird", () => {

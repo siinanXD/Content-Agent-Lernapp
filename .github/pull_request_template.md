@@ -12,6 +12,10 @@
 
 <!-- Ein Klickpfad. Bei Backend-only weglassen. -->
 
+## Bereiche
+
+<!-- Optional: ein Satz Auswirkung je Bereich, z. B. `Datenbank: Neue Tabelle für Abos`. Bereiche: Datenbank, Infrastruktur, Deployment, Backend, Frontend, Inhalte, Doku und Tests. Ohne Zeile gilt der Standardsatz. -->
+
 ## Nach dem Merge
 
 ## Kosten

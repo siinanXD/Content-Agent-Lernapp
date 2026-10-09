@@ -1,7 +1,7 @@
 /**
  * PR-Steckbrief (SIN-248): der Gate-Kommentar, lesbar am Handy in 15 Sekunden.
  * Reine Funktionen ohne Netz, damit pr-gate sie testbar aus main laden kann.
- * Feste Reihenfolge: Von dir gebraucht, Was sich ändert, Spur und Issue, Risiko, Checks,
+ * Feste Reihenfolge: Von dir gebraucht, Was sich ändert, Bereiche, Issue, Risiko, Checks,
  * Ansehen, Nach dem Merge, Kosten/Folgen, Rückgängig.
  */
 
@@ -22,6 +22,8 @@ export const SECTIONS = {
   // SIN-296: Link zum Laufprotokoll (protokoll.mjs) und neue Skills des Workers.
   protocol: ["laufprotokoll"],
   skills: ["neue skills"],
+  // SIN-422: eigener Satz je Bereich, Zeilen wie `Datenbank: Neue Tabelle für Abos`.
+  areas: ["bereiche"],
 };
 
 /** SIN-376: Diagramme in docs/diagramme/, passend zu den Pfaden, die sie beschreiben. */
@@ -80,6 +82,59 @@ export function laneFromFiles(files = []) {
   return "Backend";
 }
 
+/** SIN-422: Bereiche nach Tragweite (Reihenfolge im Steckbrief; der Leitstand nutzt dieselbe Einteilung). */
+export const BEREICHE = [
+  { name: "Datenbank", satz: "Tabellen oder Rechte ändern sich. Migration läuft nach dem Merge." },
+  { name: "Infrastruktur", satz: "Loop und Automatik ändern sich." },
+  { name: "Deployment", satz: "Build oder Auslieferung auf Vercel ändern sich." },
+  { name: "Backend", satz: "Logik und Schnittstellen im Hintergrund." },
+  { name: "Frontend", satz: "Sichtbar für Nutzer." },
+  { name: "Inhalte", satz: "Lerninhalte ändern sich." },
+  { name: "Doku und Tests", satz: "Keine Auswirkung im Betrieb." },
+];
+const MAX_BEREICHE = 6;
+const DEPLOYMENT = /^(vercel\.json|next\.config\.|package\.json$|package-lock\.json$|\.env\.example$|performance-budget\.json$)/;
+
+/** Bereich einer Datei. Tests zählen immer zu „Doku und Tests“, auch unter src/. Ohne Treffer: Infrastruktur. */
+function bereichVonDatei(n) {
+  if (/\.(test|spec)\.[cm]?[tj]sx?$/.test(n) || /^(tests|e2e)\//.test(n)) return "Doku und Tests";
+  if (/^supabase\/migrations\//.test(n)) return "Datenbank";
+  if (DEPLOYMENT.test(n)) return "Deployment";
+  if (CONTENT.test(n)) return "Inhalte";
+  if (/^(\.github\/|scripts\/|src\/lib\/autonomy\/)/.test(n)) return "Infrastruktur";
+  if (/^src\/(app\/api\/|lib\/)/.test(n)) return "Backend";
+  if (FRONTEND.test(n) || /\.css$/.test(n)) return "Frontend";
+  if (/^docs\//.test(n) || /\.md$/.test(n)) return "Doku und Tests";
+  return "Infrastruktur";
+}
+
+/**
+ * Bereiche eines PR mit Zahl der Dateien, nach Tragweite sortiert, höchstens 6.
+ * @param {(string | { filename: string })[]} files
+ * @returns {{ bereich: string, dateien: number }[]}
+ */
+export function bereicheAusDateien(files = []) {
+  const count = new Map();
+  for (const f of files) {
+    const b = bereichVonDatei(typeof f === "string" ? f : f.filename);
+    count.set(b, (count.get(b) ?? 0) + 1);
+  }
+  return BEREICHE.filter((b) => count.has(b.name))
+    .slice(0, MAX_BEREICHE)
+    .map((b) => ({ bereich: b.name, dateien: count.get(b.name) }));
+}
+
+/** Eigene Sätze aus dem Abschnitt `## Bereiche`: `Datenbank: Neue Tabelle` → { Datenbank: "Neue Tabelle" }. */
+export function parseBereiche(text = "") {
+  const out = {};
+  for (const line of String(text).split("\n")) {
+    const m = line.replace(/^\s*[-*]\s+/, "").match(/^\s*([^:]+?)\s*:\s*(.+?)\s*$/);
+    const b = m && BEREICHE.find((x) => x.name.toLowerCase() === m[1].replace(/\*/g, "").trim().toLowerCase());
+    if (b) out[b.name] = m[2];
+  }
+  return out;
+}
+
 const FIRST_LINES = 4;
 const short = (text, max = FIRST_LINES) =>
   text.split("\n").map((l) => l.replace(/^\s*[-*]\s+/, "").trim()).filter(Boolean).slice(0, max);
@@ -116,7 +171,8 @@ export function buildSteckbrief(input) {
   const sec = parseBody(body);
   const high = risk === "risk:high";
   const repairRound = [3, 2, 1].find((n) => labels.includes(`repair:${n}`)) ?? 0;
-  const lane = laneFromFiles(files);
+  const bereiche = bereicheAusDateien(files);
+  const eigene = parseBereiche(sec.areas);
   const id = issueId({ title, branch, body });
   const principle = reasons.filter((r) => r.category === "grundsatz");
 
@@ -153,7 +209,7 @@ export function buildSteckbrief(input) {
     ? `**high**: ${reasons.slice(0, 3).map((r) => r.text).join("; ")}`
     : "low/medium: keine High-Gründe";
   const migration = files.some((f) => /(^|\/)migrations\/.+\.sql$/.test(f.filename));
-  const visible = lane === "Frontend";
+  const visible = bereiche.some((b) => b.bereich === "Frontend");
   const tryPath = sec.try ? short(sec.try, 1)[0] : null;
 
   const lines = [
@@ -166,7 +222,16 @@ export function buildSteckbrief(input) {
     "**Was sich ändert**",
     ...(change.length ? change.map((l) => `- ${l}`) : ["- Siehe PR-Titel: " + title]),
     "",
-    `**Spur und Issue:** ${lane}${id ? ` · [${id}](${LINEAR}/${id})` : ""}`,
+    ...(bereiche.length
+      ? [
+          "**Bereiche**",
+          ...bereiche.map((b) => {
+            const satz = eigene[b.bereich] ?? BEREICHE.find((x) => x.name === b.bereich).satz;
+            return `- **${b.bereich}** (${b.dateien} ${b.dateien === 1 ? "Datei" : "Dateien"}): ${satz}`;
+          }),
+        ]
+      : []),
+    ...(id ? [`**Issue:** [${id}](${LINEAR}/${id})`] : []),
     `**Risiko:** ${riskLine}`,
     ...(principle.length ? ["> ⚠️ **Grundsatz-Änderung:** " + principle.map((r) => r.text).join("; ")] : []),
     `**Checks:** ${ICON[checks.build ?? "none"]} build · ${ICON[checks.tests ?? "none"]} Tests · ${ICON[checks.a11y ?? "none"]} a11y · ${ICON[checks.prTitle ?? "none"]} pr-title · ${ICON[gate]} merge-gate${waiting ? " (wartet auf Freigabe, nicht rot)" : ""}`,
