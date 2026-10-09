@@ -116,7 +116,7 @@ flowchart TD
   PWS --> Schlange
   PWR --> Repair
   subgraph Inhalte
-    Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll)"] --> Bewertung["Bewertungslauf"]
+    Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll, bei API-Limit pausiert)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
   end
 ```
@@ -185,6 +185,7 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 - Der Lauf-Bericht der Content-Fabrik nennt je Lauf erzeugt, bestanden, verworfen und `nichtVersucht` mit Grund (Kostendeckel, Zeitlimit, begonnene Module, andere Map). Die Kosten je Einheit rechnen ohne Reparatur, damit der Deckel nicht doppelt zählt (SIN-434, `docs/decisions/SIN-434-fabrik-engpass.md`).
 - Die Content-Fabrik erzeugt zwei Berufe: MAF Metall und Industriekaufleute (SIN-431, `docs/decisions/SIN-431-indkfl-fabrik.md`). Jeder Lauf bedient eine Map und wechselt zum nächsten Lauf; Kurs und amtliche Quellen für Industriekaufleute legt die Migration `20261012010000` an.
 - Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migrationen `20261007020000`, `20261010010000`), mit Start, Ende und Ergebnis. Auch ein Abbruch (fehlende Secrets, fehlender Kurs, Absturz) hinterlässt eine Zeile mit `stop_reason`. Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
+- Gesperrte Anthropic-API (Ausgabenlimit, SIN-450): Der Lauf endet ohne Wiederholung mit Exit 0 und `stop_reason` „pausiert: API-Limit am <Datum>“; `content_fabrik_status` zeigt „pausiert“ statt „hängt“, der Planer legt kein Issue an, der nächste Lauf startet normal (`docs/decisions/SIN-450-fabrik-pausiert-bei-api-limit.md`).
 - Der Kennzahlen-Bericht nennt die Verwerfungsgründe verworfener Fragen je Modul und Fragetyp (SIN-395). Verworfene Fragen werden in Lernpfad, Wiederholung und Prüfung nie ausgespielt.
 - Der Kennzahlen-Bericht nennt das Datum des letzten Laufs. Nach 8 Tagen ohne Lauf steht dort „überfällig seit N Tagen“, und der Planer erhält die bestehende Stillstand-Regel `fabrik-haengt`.
 
