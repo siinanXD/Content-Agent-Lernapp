@@ -97,14 +97,25 @@ export const runTitle = (task) => `Lauf ${task}`;
 /** Lauf-Aufträge des Planers (SIN-292) → Aufgabe dieses Workflows. */
 export const taskForCheck = (check) => TASK_IDS.find((t) => TASKS[t].check === check);
 
+/** Ein Lauf, der in weniger als 3 Minuten scheitert, hat nichts verbraucht (z. B. API lehnt ab, SIN-444). */
+export const QUICK_FAIL_SEC = 180;
+/** Höchstens so viele schnelle Fehlschläge je Aufgabe und Tag, dann greift der Deckel trotzdem. */
+export const MAX_QUICK_FAILS = 3;
+
+const quickFail = (r) =>
+  r.conclusion === "failure" &&
+  Boolean(r.run_started_at && r.updated_at) &&
+  (Date.parse(String(r.updated_at)) - Date.parse(String(r.run_started_at))) / 1000 < QUICK_FAIL_SEC;
+
 /**
- * Höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag (UTC). Zählt laufende und erfolgreiche Läufe, keine abgebrochenen.
- * @param {{ display_title?: string, created_at?: string, conclusion?: string | null, id?: number }[]} runs
+ * Höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag (UTC). Zählt laufende, erfolgreiche und lange gescheiterte Läufe,
+ * keine abgebrochenen. Schnelle Fehlschläge (unter 3 Minuten) zählen erst ab dem dritten am Tag (SIN-444).
+ * @param {{ display_title?: string, created_at?: string, run_started_at?: string, updated_at?: string, conclusion?: string | null, id?: number }[]} runs
  */
 export function dailyLimitReached(task, runs, now = new Date(), /** @type {number | null} */ selfId = null) {
   if (!isPaid(task)) return false;
   const today = now.toISOString().slice(0, 10);
-  return runs.some(
+  const mine = runs.filter(
     (r) =>
       r.id !== selfId &&
       r.display_title === runTitle(task) &&
@@ -112,6 +123,8 @@ export function dailyLimitReached(task, runs, now = new Date(), /** @type {numbe
       r.conclusion !== "cancelled" &&
       r.conclusion !== "skipped",
   );
+  const quick = mine.filter(quickFail).length;
+  return mine.length > quick || quick >= MAX_QUICK_FAILS;
 }
 
 async function ghRuns(repo, token, fetchImpl = fetch) {
