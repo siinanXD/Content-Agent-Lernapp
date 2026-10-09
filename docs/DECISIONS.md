@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-441 | SIN-441: Migration 20261013010000 bleibt liegen, Sinan entscheidet | [SIN-441-migration-sin415-nicht-additiv.md](decisions/SIN-441-migration-sin415-nicht-additiv.md) |
 | SIN-438 | SIN-438: Tabellenrechte härten (TRUNCATE, TRIGGER, REFERENCES) | [SIN-438-tabellenrechte.md](decisions/SIN-438-tabellenrechte.md) |
 | SIN-437 | SIN-437: Goldset-Vergleich aller Modelle (Claude und OpenAI), zwei Richter | [SIN-437-ab-alle-modelle.md](decisions/SIN-437-ab-alle-modelle.md) |
 | SIN-436 | SIN-436 — Abgleich mit Figma: Willkommen, Einwilligung, Schwerpunkt, Lernpfad | [SIN-436-figma-abgleich-onboarding.md](decisions/SIN-436-figma-abgleich-onboarding.md) |
@@ -23,6 +24,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-431 | SIN-431: Content-Fabrik erzeugt Industriekaufleute | [SIN-431-indkfl-fabrik.md](decisions/SIN-431-indkfl-fabrik.md) |
 | SIN-422 | SIN-422: Steckbrief zeigt Bereiche statt einer Spur | [SIN-422-steckbrief-bereiche.md](decisions/SIN-422-steckbrief-bereiche.md) |
 | SIN-418 | SIN-418: Reparatur ohne Commit lässt PR nicht mehr liegen | [SIN-418-reparatur-ohne-commit.md](decisions/SIN-418-reparatur-ohne-commit.md) |
+| SIN-416 | SIN-416: Admin-Rolle für Organisationen, Zugänge und alle Kurse | [SIN-416-admin-rolle.md](decisions/SIN-416-admin-rolle.md) |
 | SIN-415 | SIN-415: Mehrere Gruppen, Archiv statt Löschen, Zugang per Einladungslink | [SIN-415-mehrere-gruppen-archiv.md](decisions/SIN-415-mehrere-gruppen-archiv.md) |
 | SIN-414 | SIN-414: Variante 2026, neue Lernenden-Screens N1 bis N5 | [SIN-414-beruf-waehlen.md](decisions/SIN-414-beruf-waehlen.md) |
 | SIN-409 | SIN-409: Kennzahl „Fragen bewertet“ blieb 0 wegen abweichender Frage-ID | [SIN-409-kennzahl-fragen-id.md](decisions/SIN-409-kennzahl-fragen-id.md) |

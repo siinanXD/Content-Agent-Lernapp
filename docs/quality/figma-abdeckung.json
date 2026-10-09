@@ -58,6 +58,7 @@
     { "frame": "G5 Meine Gruppen · Ausbilder", "route": "/ausbilder/gruppen", "code": ["src/app/ausbilder/gruppen/page.tsx", "src/components/ausbilder/gruppen-kacheln.tsx"], "stand": "umgesetzt" },
     { "frame": "G6 Gruppe archivieren · Bestätigung", "route": "/ausbilder/gruppen", "code": ["src/components/ausbilder/archive-sheet.tsx"], "stand": "umgesetzt" },
     { "frame": "G7 Archiv · Historie der Gruppen", "route": "/ausbilder/archiv", "code": ["src/app/ausbilder/archiv/page.tsx"], "stand": "umgesetzt" },
+    { "frame": "X1 Admin · Organisationen und Zugänge (Desktop)", "route": "/admin", "code": ["src/app/admin/page.tsx"], "stand": "umgesetzt" },
     { "frame": "Intern · Checkliste vor dem ersten Demo-Zugang", "route": "–", "code": [], "stand": "kein Screen", "notiz": "interne Checkliste für Sinan, keine App-Seite" },
     { "frame": "00 Richtung 2026 · Lern-App", "route": "–", "code": [], "stand": "kein Screen", "notiz": "Richtungsfolie der Variante 2026, kein App-Screen" },
     { "frame": "Bühne · Lern-App 2026", "route": "–", "code": [], "stand": "kein Screen", "notiz": "Präsentationsfläche, kein App-Screen" }
