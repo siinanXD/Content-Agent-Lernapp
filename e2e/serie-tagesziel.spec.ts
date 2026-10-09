@@ -143,7 +143,7 @@ test("Einwilligungs-Banner: gleichwertige Knöpfe, per Tastatur bedienbar, ohne 
   expect(
     await page.evaluate(() => JSON.parse(window.localStorage.getItem("cal-onboarding") ?? "{}").consent),
   ).toBe(false);
-  await expect(page.getByRole("heading", { name: "Lernpfad", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Guten (Morgen|Tag|Abend)$/, level: 1 })).toBeVisible();
 });
 
 test("Einstellungen · Datennutzung: Erinnerung nur mit Einwilligung, Widerruf stoppt sofort", async ({ page }) => {

@@ -1,35 +1,53 @@
 import Link from "next/link";
 import { MobileShell } from "@/components/learner/mobile-shell";
 
-/** W1 Willkommen (Variante 2026): große Schlagzeile, eine Hauptaktion, Hinweis zur KI als zweite Kachel. */
+/**
+ * W1 Willkommen (Figma 56:369, Variante 2026): dunkle Fläche, drei Zeilen Schlagzeile, eine Hauptaktion.
+ * Der KI-Hinweis steht auf W2 (Einwilligung), nicht hier.
+ */
 export default function WillkommenPage() {
   return (
     <MobileShell wide>
-      <main className="flex flex-1 flex-col justify-center px-6 py-12 md:px-12">
-        <div className="bento">
-          <section className="bento-tile bento-main bento-span-4 justify-end md:min-h-[360px]">
-            <p className="bento-label">Willkommen</p>
-            <h1
-              className="text-[40px] font-bold leading-[44px] text-[var(--color-text-on-brand)] md:text-[56px] md:leading-[60px]"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Lernen für den Maschinen- und Anlagenführer, in kurzen Einheiten.
-            </h1>
+      <main className="flex flex-1 flex-col gap-3.5 bg-[var(--color-bg-hero)] px-4 pb-6 pt-11 md:px-12">
+        <p className="mono-label text-[var(--color-text-soft-on-dark)]">LERNPFAD MAF</p>
+
+        <div className="mt-auto flex flex-col gap-3.5">
+          <h1
+            className="text-[52px] font-bold leading-[50px] text-[var(--color-text-on-brand)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Prüfungsreif
+            <br />
+            in kleinen
+            <br />
+            Schritten.
+          </h1>
+          <p className="text-base leading-[21px] text-[var(--color-text-soft-on-dark)]">
+            5–10 Minuten am Tag. Jede Frage mit Quelle aus der Ausbildungsordnung.
+          </p>
+
+          <div className="flex gap-1.5" aria-hidden="true">
+            <span className="h-2 w-6 rounded-full bg-[var(--color-brand-accent)]" />
+            <span className="h-2 w-2 rounded-full bg-[var(--color-track-on-dark)]" />
+            <span className="h-2 w-2 rounded-full bg-[var(--color-track-on-dark)]" />
+          </div>
+
+          <Link
+            href="/einwilligung"
+            className="flex min-h-[53px] items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-brand-primary)] px-[18px] py-4 text-base font-semibold text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Los geht’s
+          </Link>
+          <p className="text-sm leading-[18px] text-[var(--color-text-muted-on-dark)]">
+            Schon dabei?{" "}
             <Link
-              href="/einwilligung"
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 py-3.5 text-base font-medium text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)] md:w-auto md:self-start"
-              style={{ fontFamily: "var(--font-display)" }}
+              href="/anmelden"
+              className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
             >
-              Los geht’s
+              Anmelden
             </Link>
-          </section>
-          <section className="bento-tile bento-span-2 justify-end" aria-label="Hinweis zur KI">
-            <p className="bento-label">Quellen und KI</p>
-            <p className="text-[15px] leading-6 text-[var(--color-text-primary)]">
-              Alle Inhalte stammen aus amtlichen Quellen. Die App erzeugt Inhalte
-              mit KI. Wer bewertet und zur Prüfung zulässt, ist immer ein Mensch.
-            </p>
-          </section>
+          </p>
         </div>
       </main>
     </MobileShell>

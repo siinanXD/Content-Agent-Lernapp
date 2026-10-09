@@ -47,7 +47,7 @@ test("Einwilligung vom Onboarding erreichbar", async ({ page }) => {
   const losGehtsLink = page.getByRole("link", { name: "Los geht’s" });
   await losGehtsLink.click();
   await expect(page).toHaveURL(/\/einwilligung$/);
-  await expect(page.getByRole("heading", { name: "Einwilligung" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dürfen wir anonym messen, was hilft?" })).toBeVisible();
 });
 
 test("Datenschutz-Link aus Einwilligung", async ({ page }) => {
