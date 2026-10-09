@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { pickMany, startOrder } from "../../../scripts/autonomy/linear.mjs";
 import { analyze } from "../../../scripts/autonomy/status.mjs";
-import { GATE_PREFIX, detectGateBreaks, gateActions, waitReason, waitingIssues } from "../../../scripts/autonomy/warten.mjs";
+import { GATE_PREFIX, detectGateBreaks, gateActions, pickFailureLine, waitReason, waitingIssues } from "../../../scripts/autonomy/warten.mjs";
 
 const mk = (identifier: string, priority: number, over: Record<string, unknown> = {}) => ({
   id: identifier,
@@ -62,6 +62,26 @@ test("SIN-327: gleicher roter Check in 2 PRs → genau ein Bug-Issue, keine Dopp
   // Gleicher Code (gleicher Commit) oder nur ein PR ist kein Gate-Bruch.
   assert.equal(detectGateBreaks([red(1, "a"), red(2, "a")]).breaks.length, 0);
   assert.equal(detectGateBreaks([red(1, "a")]).breaks.length, 0);
+});
+
+test("SIN-439: merge-gate rot, weil risk:high auf Freigabe wartet → kein Gate-Bruch", () => {
+  const warten = (number: number, sha: string) => ({
+    number,
+    sha,
+    failures: [{ check: "merge-gate", step: "Ergebnis des Gates melden", lines: "risk:high: wartet auf das Label freigegeben von Sinan. Kein Fehler, der Merge ist gesperrt." }],
+  });
+  assert.equal(detectGateBreaks([warten(245, "a"), warten(246, "b")]).breaks.length, 0);
+});
+
+test("SIN-439: Fehlerzeile ist die erste spezifische Anmerkung, nicht „exit code 1“", () => {
+  const notes = [
+    { annotation_level: "failure", message: "Process completed with exit code 1." },
+    { annotation_level: "failure", message: "risk:high: wartet auf das Label freigegeben von Sinan." },
+    { annotation_level: "warning", message: "Ubuntu 26" },
+  ];
+  assert.match(pickFailureLine(notes), /wartet auf das Label freigegeben/);
+  assert.equal(pickFailureLine([{ annotation_level: "failure", message: "Process completed with exit code 1." }]), "Process completed with exit code 1.");
+  assert.equal(pickFailureLine([]), "");
 });
 
 test("SIN-327: Gate-Bruch sperrt Reparatur und gibt nach dem Fix frei", () => {
