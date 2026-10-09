@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-431 | SIN-431: Content-Fabrik erzeugt Industriekaufleute | [SIN-431-indkfl-fabrik.md](decisions/SIN-431-indkfl-fabrik.md) |
 | SIN-422 | SIN-422: Steckbrief zeigt Bereiche statt einer Spur | [SIN-422-steckbrief-bereiche.md](decisions/SIN-422-steckbrief-bereiche.md) |
 | SIN-418 | SIN-418: Reparatur ohne Commit lässt PR nicht mehr liegen | [SIN-418-reparatur-ohne-commit.md](decisions/SIN-418-reparatur-ohne-commit.md) |
 | SIN-414 | SIN-414: Variante 2026, neue Lernenden-Screens N1 bis N5 | [SIN-414-beruf-waehlen.md](decisions/SIN-414-beruf-waehlen.md) |

@@ -10,6 +10,9 @@ import {
   affordableUnits,
   buildQueue,
   changeKey,
+  chooseRunMap,
+  MAP_COURSES,
+  SUPPORTED_MAP_IDS,
   eurPerUnit,
   missingSecrets,
   COST_MARGIN,
@@ -176,4 +179,49 @@ test("fehlende Secrets werden benannt", () => {
   const all = Object.fromEntries(missingSecrets({}).map((k) => [k, "x"]));
   assert.deepEqual(missingSecrets(all), []);
   assert.deepEqual(missingSecrets({ ...all, OPENAI_API_KEY: "  " }), ["OPENAI_API_KEY"]);
+});
+
+// SIN-431: Industriekaufleute in der Schlange, Läufe wechseln die Map ab.
+const indkfl = map("indkfl", "indkfl", [mod("LF1", 1, [2]), mod("M0", 0, [1])]);
+const beide = buildQueue([indkfl, metall, kunststoff], ["M0"]);
+const keine = new Map<string, ReadonlySet<string>>();
+
+test("indkfl ist unterstützt und hat einen eigenen Kurs", () => {
+  assert.ok(SUPPORTED_MAP_IDS.includes("indkfl"));
+  assert.notEqual(MAP_COURSES.indkfl!.courseId, MAP_COURSES["maf-metall"]!.courseId);
+  assert.ok(SUPPORTED_MAP_IDS.every((id) => MAP_COURSES[id]));
+});
+
+test("Queue enthält indkfl-Module (Shared gilt nur für MAF), andere MAF-Schwerpunkte bleiben aus", () => {
+  const ik = beide.filter((q) => q.mapId === "indkfl");
+  assert.deepEqual(ik.map((q) => q.module.id), ["M0", "LF1"]);
+  assert.ok(ik.every((q) => q.supported && !q.shared));
+  assert.equal(beide.find((q) => q.mapId === "maf-kunststoff")!.supported, false);
+});
+
+test("Lauf wechselt die Map ab: nach Metall kommt indkfl, danach wieder Metall", () => {
+  assert.equal(chooseRunMap(beide, keine, keine, null), "maf-metall");
+  assert.equal(chooseRunMap(beide, keine, keine, "maf-metall"), "indkfl");
+  assert.equal(chooseRunMap(beide, keine, keine, "indkfl"), "maf-metall");
+});
+
+test("Lauf: fertige Map wird übersprungen, nichts offen ergibt null, Fortsetzung zuerst", () => {
+  const ids = (mapId: string) =>
+    new Set(beide.filter((q) => q.mapId === mapId).flatMap((q) => slotIds(q.module)));
+  const metallFertig = new Map([["maf-metall", ids("maf-metall")]]);
+  assert.equal(chooseRunMap(beide, metallFertig, keine, "maf-metall"), "indkfl");
+  const indkflFertig = new Map([["indkfl", ids("indkfl")]]);
+  assert.equal(chooseRunMap(beide, indkflFertig, keine, "maf-metall"), "maf-metall");
+  const fertig = new Map([["maf-metall", ids("maf-metall")], ["indkfl", ids("indkfl")]]);
+  assert.equal(chooseRunMap(beide, fertig, keine, null), null);
+  // Verworfene zählen nur in ihrer eigenen Map (gleiche IDs in beiden Maps).
+  assert.equal(chooseRunMap(beide, keine, metallFertig, "indkfl"), "indkfl");
+  // Ein angefangenes indkfl-Modul läuft zuerst weiter, auch wenn Metall dran wäre.
+  assert.equal(chooseRunMap(beide, keine, keine, "indkfl", "LF1"), "indkfl");
+});
+
+test("Plan eines Laufs bleibt in der gewählten Map, Modulreihenfolge unverändert", () => {
+  const nurIndkfl = beide.filter((q) => q.mapId === "indkfl");
+  const plan = nextOpenItems(nurIndkfl, new Set(), new Set(), null, 100);
+  assert.deepEqual(plan.map((x) => x.item.module.id), ["M0", "LF1"]);
 });
