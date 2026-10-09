@@ -40,7 +40,7 @@ test("ab-alle-modelle: bezahlt, beide Schlüssel nötig, Probelauf kostenlos (SI
 });
 
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {
-  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "ab-alle-modelle", "cost-report", "lighthouse", "offline-check", "migrate", "safety-sample"]);
+  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "ab-alle-modelle", "goldset-indkfl", "cost-report", "lighthouse", "offline-check", "migrate", "safety-sample"]);
   await assert.rejects(() => runTask("rm -rf /", { env: {}, now }), /Unbekannte Aufgabe/);
   const yml = readFileSync(".github/workflows/run-task.yml", "utf8");
   for (const id of TASK_IDS) assert.match(yml, new RegExp(`- ${id}\\n`));

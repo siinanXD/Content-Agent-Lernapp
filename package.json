@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "langfuse:setup": "node --import tsx scripts/langfuse-setup.ts",
     "quality:sync-goldset": "node --import tsx scripts/ap06-sync-goldset.ts",
+    "quality:goldset-indkfl": "node --import tsx scripts/goldset-indkfl.ts",
     "quality:calibrate": "node --import tsx scripts/ap06-calibrate.ts",
     "quality:judge-backfill": "node --import tsx scripts/sin260-judge-backfill.ts",
     "quality:smoke": "node --import tsx scripts/ap06-smoke.ts",

@@ -51,6 +51,13 @@ export const TASKS = {
     steps: [["npm", ["run", "ap22:alle"]]],
     dryStep: ["npm", ["run", "ap22:alle:dry"]],
   },
+  // SIN-449: Goldset Industriekaufleute nach Langfuse, Richter dagegen prüfen (35 Fragen, wenige Cent).
+  "goldset-indkfl": {
+    label: "Goldset Industriekaufleute: Langfuse-Datensatz anlegen und Richter prüfen (35 Fragen inkl. 3 Gegenproben)",
+    paid: true,
+    secrets: need("OPENAI_API_KEY"),
+    steps: [["npm", ["run", "quality:goldset-indkfl"]]],
+  },
   "cost-report": {
     label: "Kosten pro Kurslauf aus dem Ledger",
     check: "betrieb-kosten",

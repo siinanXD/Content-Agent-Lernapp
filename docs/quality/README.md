@@ -55,12 +55,13 @@ Langfuse dataset name: `maf-goldset-70` (Langfuse Cloud EU).
 - je 5 Fachfragen zu Phase A: `M0` (Anlage, Abschnitt B), `LF1`, `LF2`, `LF3` ([KMK-Rahmenlehrplan 15.12.2023](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf)); `unitId` ist der Block der Map
 - 3 Gegenproben (Feld `gegenprobe`): falsche Zahl (Quellentreue 0), mehrere richtige Antworten (Eindeutigkeit 0), zu leicht und unsauber (Niveau und Sprache unter 4). Der Richter muss sie durchfallen lassen.
 
-Quellen nur aus `docs/content/indkfl.json` (abgerufen 2026-10-03), keine IHK-Prüfungsaufgaben, keine Personendaten. Lader: `src/lib/quality/indkfl-goldset.ts`, Langfuse-Datensatz `indkfl-goldset` (noch nicht angelegt). Tests prüfen Quellen, Abdeckung, Sicherheitsmerkmal und Gegenproben.
+Quellen nur aus `docs/content/indkfl.json` (abgerufen 2026-10-03), keine IHK-Prüfungsaufgaben, keine Personendaten. Lader: `src/lib/quality/indkfl-goldset.ts`. Langfuse-Datensatz `indkfl-goldset` und Richter-Prüfung über die Lauf-Aufgabe `goldset-indkfl` (`npm run quality:goldset-indkfl`, SIN-449): Ergebnis in `docs/quality/runs/indkfl-goldset-check-<datum>.md` (Urteil wie erwartet, Gegenproben erkannt, abgelehnte gute Fragen). Tests prüfen Quellen, Abdeckung, Sicherheitsmerkmal und Gegenproben.
 
 ## Commands
 
 ```bash
 npm run quality:sync-goldset   # upsert 70 items into Langfuse
+npm run quality:goldset-indkfl # SIN-449: Goldset Industriekaufleute nach Langfuse + Richter-Prüfung (OpenAI, wenige Cent)
 npm run quality:calibrate      # OpenAI judge → GOLDSET_TARGET + Langfuse dataset
 npm run quality:smoke          # live evaluate + 409/422/200 publish gate
 npm run ap15:phase-a:dry       # secret + chunk preflight (no spend)
