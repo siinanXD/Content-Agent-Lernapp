@@ -100,6 +100,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Neuer Schritt im Onboarding (/beruf) nur in `e2e/` nachgezogen → Live-Check UI-04 nach dem Deploy rot. Richtig: Ändert sich ein Nutzerweg, im selben PR auch `live/live.spec.ts` und `docs/ops/live-checkliste.md` anpassen. (SIN-414)
 - Tabellen-Escape nur in einem Skript gefixt → derselbe CodeQL-Fund blieb im Renderer; `<!--` mit einem Durchlauf entfernt → verschachtelte Reste bleiben. Richtig: gemeinsame Helfer `scripts/autonomy/sanitize.mjs` (`escTableCell`, `stripComments` bis stabil) in allen Generatoren nutzen. (SIN-435)
 - Preise aus dem Gedächtnis oder aus Drittseiten → nie. Fehlt der Zugriff auf die offizielle Preisseite, „ungeprüft“ schreiben und die Seite im nächsten Lauf mit Web-Zugriff lesen; Spalten-Zuordnung (z. B. Batch-Reiter) als Annahme kennzeichnen. (SIN-399)
+- Gate-Bruch-Erkennung hielt `merge-gate` rot wegen „risk:high wartet auf freigegeben“ für einen Bruch (las nur „exit code 1“) → zwei PRs bekamen `gate-bruch`, Reparatur gesperrt. Richtig: spezifische Fehlerzeile lesen (`pickFailureLine`) und Warten auf Freigabe nie als Bruch zählen (`WAITING_RE`). (SIN-439)
 
 ## Datenbank-Rechte
 
