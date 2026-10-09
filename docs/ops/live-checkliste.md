@@ -28,7 +28,7 @@ Hilft der Revert nicht (zweiter Lauf rot), meldet der Status-Wächter es an Sina
   Startseite, Start, Demo, Anmelden, Ausbilder, Willkommen, Einwilligung, Schwerpunkt, Lernpfad, Einheit, Ergebnis, Wiederholung,
   Prüfung, Prüfungsergebnis, Profil, Einstellungen, Impressum, Datenschutz, KI-Hinweis, Quellen
 - UI-03 axe (WCAG 2.2 AA) ohne Verstöße auf den Hauptseiten (nur Desktop)
-- UI-04 Onboarding: Willkommen → Einwilligung → Schwerpunkt → Lernpfad
+- UI-04 Onboarding: Willkommen → Einwilligung → Beruf → Schwerpunkt → Lernpfad
 - UI-05 Einheit: Erklärung und alle 5 Fragetypen (Auswahl, Lückentext, Zuordnen, Reihenfolge, Rechnen), danach Ergebnis
 - UI-06 Wiederholung öffnet
 - UI-07 Prüfung starten, abgeben, Ergebnis
