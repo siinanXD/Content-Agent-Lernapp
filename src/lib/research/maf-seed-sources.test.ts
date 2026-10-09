@@ -24,7 +24,7 @@ describe("mafSeedSources", () => {
   it("includes KMK RLP and gesetze-im-internet AO", () => {
     const sources = mafSeedSources();
     const hosts = sources.map((s) => new URL(s.url).hostname);
-    assert.ok(hosts.includes("www.kmk.org"));
-    assert.ok(hosts.includes("www.gesetze-im-internet.de"));
+    assert.ok(hosts.some((h) => h === "www.kmk.org"));
+    assert.ok(hosts.some((h) => h === "www.gesetze-im-internet.de"));
   });
 });

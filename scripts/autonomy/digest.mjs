@@ -17,6 +17,7 @@ import { pathToFileURL } from "node:url";
 import { collectContentMetrics } from "./content-metrics.mjs";
 import { LANES, fetchProjectIssues, startOrder } from "./linear.mjs";
 import { sumStats } from "./review.mjs";
+import { stripComments } from "./sanitize.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { isoWeek } from "./trend-radar.mjs";
@@ -303,7 +304,7 @@ async function collect(repo, slot, now, since, env, dry = false) {
 
 export async function sendTelegram(text, env, fetchImpl = fetch) {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return false;
-  const plain = text.replace(/<!--.*?-->/gs, "").replace(/\*\*/g, "").replace(MENTION, "").trim();
+  const plain = stripComments(text).replace(/\*\*/g, "").replace(MENTION, "").trim();
   const res = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

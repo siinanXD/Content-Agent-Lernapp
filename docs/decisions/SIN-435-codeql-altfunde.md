@@ -1,0 +1,13 @@
+# SIN-435 — CodeQL auf main: Altfunde hoher Schwere beheben
+
+- **Links:** Linear [SIN-435](https://linear.app/sinan-kahraman/issue/SIN-435/codeql-auf-main-grun-8-altfunde-hoher-schwere-beheben), [SIN-322](https://linear.app/sinan-kahraman/issue/SIN-322/ci-gates-entsperren-codeql-altfunde-und-wackeliges-leistungsbudget) (PR-Prüfung zählt nur neue Funde), [SIN-330](SIN-330-codeql-hostpruefung.md) und [SIN-404](SIN-404-sicherheits-lauf.md) (dieselben Muster, schon einmal gefixt), CodeQL-Regeln [js/incomplete-url-substring-sanitization](https://codeql.github.com/codeql-query-help/javascript/js-incomplete-url-substring-sanitization/), [js/incomplete-sanitization](https://codeql.github.com/codeql-query-help/javascript/js-incomplete-sanitization/), [js/incomplete-multi-character-sanitization](https://codeql.github.com/codeql-query-help/javascript/js-incomplete-multi-character-sanitization/)
+- **Entscheidung:**
+  1. Hostprüfungen in Tests nutzen `new URL(url).hostname === "…"` bzw. exakten Vergleich je Eintrag (`review.test.ts`, `maf-seed-sources.test.ts`, `legal.test.ts`). Keine Regel abgeschaltet, nichts gefiltert.
+  2. Ein gemeinsamer Helfer `scripts/autonomy/sanitize.mjs` mit `escTableCell` (erst `\` verdoppeln, dann `|`) und `stripComments` (HTML-Kommentare entfernen, wiederholt bis stabil, danach übriggebliebene `<!--` entfernen). Genutzt von `content-render-curriculum.mjs` (Tabellen-Escape), `steckbrief.mjs` (`parseBody`) und `digest.mjs` (Telegram-Text).
+  3. Tests: `src/lib/autonomy/sanitize.test.ts` für Escape, verschachtelte Kommentare und `parseBody`.
+- **Annahmen:**
+  - Die Fundstellen stammen aus dem Issue (Lauf 37891141951). Die Alarm-Liste per API konnte ich im Lauf nicht abrufen (Freigabe fehlte). Der `codeql`-Lauf auf main nach dem Merge ist der Nachweis; bleibt er rot, sind weitere Stellen offen.
+  - `docs/content/*.json` enthält keine Backslashes, daher ändert die neue Escape-Reihenfolge die gerenderten Kurs-Dateien nicht. Den Renderer habe ich nicht neu laufen lassen (Freigabe fehlte); der Befund ist per Suche belegt.
+  - Der Helfer ersetzt auch einen unvollständigen Öffner `<!--` (ohne Schluss) durch nichts. Für PR-Texte und Telegram-Nachrichten ist das sicherer als ein stehengebliebener Rest, ändert aber den Text in diesem seltenen Fall.
+  - Die Umstellung ist kein Pipeline-Umbau, daher bleibt `docs/diagramme/pipeline.mmd` unverändert.
+- **Warum:** `main` zeigte bei jedem Merge rot, echte neue Funde gingen darin unter. Die Muster sind bekannt (SIN-330, SIN-404), die Fixes gehören in gemeinsame Helfer, damit ein weiterer Generator sie nicht wieder neu falsch schreibt.

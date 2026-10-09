@@ -71,7 +71,7 @@ test("Review: schwerer Fund → Kommentar mit Schwere und Ausgabe severe=true (T
     if (url.includes("/issues/comments") || url.includes("/issues/7/comments")) {
       return (init.method ?? "GET") === "POST" ? json({}) : json([]);
     }
-    if (url.includes("api.openai.com")) {
+    if (new URL(url).hostname === "api.openai.com") {
       return json({
         choices: [{ message: { content: JSON.stringify({ zusammenfassung: "Fehler gefunden.", funde: [{ schwere: "schwer", datei: "src/a.ts", text: "null.y wirft" }] }) } }],
         usage: { prompt_tokens: 1000, completion_tokens: 200 },
@@ -108,7 +108,7 @@ async function runReview(opts: { buildConclusion: string | null; commits?: strin
       return jsonRes({ check_runs: opts.buildConclusion ? [{ name: "build", status: "completed", conclusion: opts.buildConclusion }] : [] });
     }
     if (url.includes("/issues/comments") || url.includes("/issues/9/comments")) return (init.method ?? "GET") === "POST" ? jsonRes({}) : jsonRes([]);
-    if (url.includes("api.openai.com")) {
+    if (new URL(url).hostname === "api.openai.com") {
       return jsonRes({
         choices: [{ message: { content: JSON.stringify({ zusammenfassung: "x", funde: [{ schwere: "schwer", ...opts.finding }] }) } }],
         usage: { prompt_tokens: 10, completion_tokens: 10 },
@@ -123,7 +123,7 @@ async function runReview(opts: { buildConclusion: string | null; commits?: strin
   }
   const post = calls.find((c) => c.method === "POST" && c.url.includes("/issues/9/comments"));
   const body: string = JSON.parse(post!.body!).body;
-  const prompt = JSON.stringify(JSON.parse(calls.find((c) => c.url.includes("api.openai.com"))!.body!).messages);
+  const prompt = JSON.stringify(JSON.parse(calls.find((c) => new URL(c.url).hostname === "api.openai.com")!.body!).messages);
   return { body, prompt };
 }
 
