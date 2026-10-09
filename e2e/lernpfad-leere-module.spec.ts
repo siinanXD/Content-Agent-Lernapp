@@ -19,6 +19,13 @@ test("Lernpfad: Modul ohne Einheiten ist beschriftet, fokussierbar und nicht sta
   await expect(first).toBeFocused();
   const outline = await first.evaluate((el) => getComputedStyle(el).outlineStyle);
   expect(outline).not.toBe("none");
+  // Enter und Leertaste lösen nichts aus: keine Navigation, kein Dialog.
+  const urlVorher = page.url();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Space");
+  expect(page.url()).toBe(urlVorher);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(first).toBeFocused();
   const box = await first.boundingBox();
   expect(box!.height).toBeGreaterThanOrEqual(44);
 
