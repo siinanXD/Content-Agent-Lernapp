@@ -10,17 +10,20 @@ export function DailyGoal({
   summary,
   dueCount,
   className = "",
+  vertical = false,
 }: {
   summary: LearningSummary;
   dueCount: number;
   className?: string;
+  /** Ring über dem Text (Lernpfad, halbe Breite neben der Serie, Figma 52:377). */
+  vertical?: boolean;
 }) {
   const { goal } = summary;
   const copy = dailyGoalCopy(summary, dueCount);
   return (
     <section aria-label="Tagesziel" className={`bento-tile ${className}`}>
       <p className="bento-label">Tagesziel</p>
-      <div className="flex items-center gap-4">
+      <div className={vertical ? "flex flex-col items-start gap-3" : "flex items-center gap-4"}>
         <ProgressRing done={goal.done} total={goal.goal} showLabel={false} label="heute" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h2

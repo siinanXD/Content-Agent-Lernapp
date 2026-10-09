@@ -7,20 +7,15 @@ import { NextUpCard } from "@/components/ui/next-up-card";
 import { PathNode, type PathNodeState } from "@/components/ui/path-node";
 import { ConsentBanner } from "@/components/learner/consent-banner";
 import { DailyGoal } from "@/components/ui/daily-goal";
-import { StatChip } from "@/components/ui/stat-chip";
 import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import {
   groupUnitsByModule,
-  PLAYABLE_TODAY,
   type PathUnit,
   type PathUnitStatus,
 } from "@/lib/learner/playable-path";
-import {
-  fetchPhaseAPathUnits,
-  usingPhaseASnapshot,
-} from "@/lib/learner/phase-a-path";
-import { loadSession } from "@/lib/learner/session";
+import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
+import { begruessung, type Begruessung } from "@/lib/learner/begruessung";
 import {
   dueItems,
   loadStack,
@@ -31,7 +26,6 @@ import { nextDueAt, reviewTileCopy } from "@/lib/learner/review-overview";
 import { listExamParts } from "@/lib/learner/exam";
 import {
   EMPTY_LEARNING_SUMMARY,
-  formatDays,
   loadLearningEvents,
   loadLearningSummary,
   weekActivity,
@@ -52,15 +46,25 @@ const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
 /** Letzte 7 Tage aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
 const loadWeek = (): WeekDay[] => weekActivity(loadLearningEvents());
 
+/** Wochentag und Begrüßung im Browser; stabile Referenz für `useAfterMount`. */
+const loadGreeting = (): Begruessung => begruessung(new Date());
+
 const weekdayShort = (day: string) =>
   new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "");
 
+/** Kachel im Figma-Maß (16 px Innenabstand); `bento-tile` hat dagegen fest 24 px. */
+const tile =
+  "flex flex-col gap-2 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-4";
+
+const focus =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
+
 /**
- * Lernpfad. Die Einheiten kommen fertig vom Server (SIN-311), damit der erste Bildaufbau
+ * Lernpfad (Figma 52:377, A1). Die Einheiten kommen fertig vom Server (SIN-311), damit der erste Bildaufbau
  * nicht auf einen Abruf wartet und im Regelfall nach dem Laden nichts mehr ausgetauscht wird.
  */
 export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
-  const session = useAfterMount(loadSession, null);
+  const hello = useAfterMount<Begruessung | null>(loadGreeting, null);
   // Server-HTML zeigt den Stand ohne Ereignisse statt eines Lade-Zustands: kein Austausch, kein Sprung.
   const summary = useAfterMount<LearningSummary | "fehler">(
     loadLearningSummary,
@@ -75,7 +79,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
   const groups = groupUnitsByModule(pathUnits);
   const examParts = listExamParts().filter((p) => p.simulated);
   const online = useOnline();
-  const phaseA = usingPhaseASnapshot() && pathUnits.length > 6;
+  const days = summary === "fehler" ? 0 : summary.streak.days;
 
   // Wärmt den Zwischenspeicher für Einheit, Wiederholung und Prüfung. Die Anzeige wechselt nur, wenn
   // die Einheiten von denen des Servers abweichen (z. B. frisch veröffentlicht); sonst bleibt sie stehen.
@@ -96,14 +100,6 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
     pathUnits.find((u) => u.status === "today") ??
     pathUnits.find((u) => u.status === "open");
 
-  const subtitle = session
-    ? `${session.keyword} · ${
-        session.variant === "pruefung"
-          ? "Prüfungsvorbereitung"
-          : "Weiterbildung"
-      }`
-    : PLAYABLE_TODAY.occupation;
-
   const readiness = groups.map((mod) => {
     const all = mod.blocks.flatMap((b) => b.units);
     const done = all.filter((u) => u.status === "done").length;
@@ -120,25 +116,14 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
     <MobileShell wide>
       <ConsentBanner />
       <main className="flex flex-1 flex-col">
-      <header className="px-6 pb-4 pt-12 md:px-12">
-        <p className="bento-label">Heute</p>
+      <header className="px-6 pb-4 pt-11 md:px-12">
+        <p className="bento-label uppercase">{hello?.weekday}</p>
         <h1
-          className="mt-1 text-[40px] font-bold leading-[44px] text-[var(--color-text-primary)]"
+          className="mt-0.5 text-[24px] font-bold leading-[31px] text-[var(--color-text-primary)]"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          Lernpfad
+          {hello?.greeting ?? "Hallo"}
         </h1>
-        <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-          {subtitle}
-          {pathUnits.length > 0
-            ? ` · ${pathUnits.filter((u) => u.status === "done").length} von ${pathUnits.length} Einheiten`
-            : ""}
-        </p>
-        <p className="bento-label mt-1">
-          {phaseA
-            ? `Phase A · ${pathUnits.length} Einheiten (M0, LF1, LF2, PA)`
-            : "Demo-Seed Sicherheit — Phase A noch nicht veröffentlicht"}
-        </p>
       </header>
 
       <div className="bento px-6 md:px-12">
@@ -157,83 +142,101 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
             href={`/einheit/${nextUnit.id}`}
           />
         ) : null}
-        {summary === "fehler" ? (
-          <div className="bento-tile bento-span-2">
-            <StateView
-              kind="fehler"
-              title="Serie konnte nicht geladen werden"
-              text="Dein Fortschritt ist gespeichert. Wir versuchen es gleich noch einmal."
-            />
+
+        <div className="grid grid-cols-2 gap-3 bento-span-6">
+          {summary === "fehler" ? (
+            <div className="bento-tile">
+              <StateView
+                kind="fehler"
+                title="Serie konnte nicht geladen werden"
+                text="Dein Fortschritt ist gespeichert. Wir versuchen es gleich noch einmal."
+              />
+            </div>
+          ) : (
+            <DailyGoal vertical summary={summary} dueCount={dueCount} />
+          )}
+
+          <section aria-label="Serie" className="flex flex-col gap-2 rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] p-4">
+            <p className="mono-label text-[var(--color-text-hint)]">Serie</p>
+            <p data-kind="serie" className="text-[var(--color-text-hint)]">
+              <span
+                className="block text-[44px] font-bold leading-[52px]"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
+                {days}
+              </span>{" "}
+              <span className="block text-[13px] font-medium leading-[17px]">
+                {days === 1 ? "Tag am Stück" : "Tage am Stück"}
+              </span>
+            </p>
+            <ol aria-label="Letzte 7 Tage" className="mt-auto flex justify-between gap-1 pt-1">
+              {(week ?? EMPTY_WEEK).map((d, i) => (
+                <li key={d?.day ?? i} className="flex flex-col items-center gap-1">
+                  <span
+                    aria-hidden="true"
+                    className={`h-3.5 w-3.5 rounded-full border-2 ${
+                      d && d.count > 0
+                        ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]"
+                        : "border-[var(--color-text-hint)] bg-transparent"
+                    } ${d?.today ? "outline outline-2 outline-offset-2 outline-[var(--color-bg-hero)]" : ""}`}
+                  />
+                  <span className="mono-label text-[var(--color-text-hint)]" aria-hidden="true">
+                    {d ? weekdayShort(d.day) : "–"}
+                  </span>
+                  <span className="sr-only">
+                    {d ? `${weekdayShort(d.day)}: ${d.count > 0 ? "gelernt" : "nicht gelernt"}${d.today ? " (heute)" : ""}` : "noch nicht geladen"}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+
+        <section aria-label="Wiederholung" className={`${tile} bento-span-3`}>
+          <div className="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-bg-hint)] text-xl font-bold leading-none text-[var(--color-brand-primary)]"
+            >
+              ↻
+            </span>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2
+                className="text-[15px] font-semibold leading-[19.5px] text-[var(--color-text-primary)]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                {reviewCopy.title}
+              </h2>
+              <p className="text-xs leading-4 text-[var(--color-text-secondary)]">{reviewCopy.text}</p>
+            </div>
           </div>
-        ) : (
-          <DailyGoal className="bento-span-2" summary={summary} dueCount={dueCount} />
-        )}
-
-        <section aria-label="Serie" className="bento-tile bento-span-3">
-          <p className="bento-label">Serie</p>
-          <StatChip
-            kind="serie"
-            value={formatDays(summary === "fehler" ? 0 : summary.streak.days)}
-            label="Serie"
-          />
-          <ol aria-label="Letzte 7 Tage" className="mt-1 flex justify-between gap-1">
-            {(week ?? EMPTY_WEEK).map((d, i) => (
-              <li key={d?.day ?? i} className="flex flex-col items-center gap-1">
-                <span
-                  aria-hidden="true"
-                  className={`h-4 w-4 rounded-full border-2 ${
-                    d && d.count > 0
-                      ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]"
-                      : "border-[var(--color-border-subtle)] bg-transparent"
-                  } ${d?.today ? "outline outline-2 outline-offset-2 outline-[var(--color-bg-hero)]" : ""}`}
-                />
-                <span className="bento-label" aria-hidden="true">
-                  {d ? weekdayShort(d.day) : "–"}
-                </span>
-                <span className="sr-only">
-                  {d ? `${weekdayShort(d.day)}: ${d.count > 0 ? "gelernt" : "nicht gelernt"}${d.today ? " (heute)" : ""}` : "noch nicht geladen"}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section aria-label="Wiederholung" className="bento-tile bento-span-3">
-          <p className="bento-label">Wiederholung</p>
-          <h2
-            className="text-lg font-medium text-[var(--color-text-primary)]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {reviewCopy.title}
-          </h2>
-          <p className="text-sm text-[var(--color-text-secondary)]">{reviewCopy.text}</p>
           <Link
             href="/wiederholung"
-            className="mt-auto inline-flex min-h-11 items-center self-start text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+            className={`inline-flex min-h-11 items-center self-start text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 ${focus}`}
           >
             {dueCount > 0 ? "Wiederholung starten" : "Zur Wiederholung"}
           </Link>
         </section>
 
         {readiness.length > 0 ? (
-          <section aria-label="Prüfungsreife" className="bento-tile bento-span-6">
-            <p className="bento-label">Prüfungsreife je Lernfeld</p>
+          <section aria-label="Prüfungsreife" className={`${tile} bento-span-6`}>
+            <h2
+              className="text-[15px] font-semibold leading-[19.5px] text-[var(--color-text-primary)]"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Prüfungsreife
+            </h2>
             <p className="text-sm text-[var(--color-text-secondary)]">
               Anteil der erledigten Einheiten. Ob du zur Prüfung zugelassen wirst, entscheidet ein Mensch.
             </p>
-            <ul className="mt-2 flex flex-col gap-4">
+            <ul className="mt-1 flex flex-col gap-2.5">
               {readiness.map((r) => (
-                <li key={r.moduleId}>
-                  <div className="mb-1 flex items-baseline justify-between gap-2">
-                    <span className="text-sm text-[var(--color-text-primary)]">
-                      {r.moduleId} · {r.moduleTitle}
-                    </span>
-                    <span className="bento-label">
-                      {r.done}/{r.total}
-                    </span>
-                  </div>
+                <li key={r.moduleId} className="flex items-center gap-2.5">
+                  <span className="mono-label w-8 shrink-0 text-[var(--color-text-secondary)]">
+                    {r.moduleId}
+                  </span>
                   <div
-                    className="h-2 overflow-hidden rounded-full bg-[var(--color-border-subtle)]"
+                    className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-border-subtle)]"
                     role="progressbar"
                     aria-valuenow={r.pct}
                     aria-valuemin={0}
@@ -245,6 +248,9 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
                       style={{ width: `${r.pct}%` }}
                     />
                   </div>
+                  <span className="mono-label w-10 shrink-0 text-right text-[var(--color-text-primary)]">
+                    {r.pct} %
+                  </span>
                 </li>
               ))}
             </ul>
