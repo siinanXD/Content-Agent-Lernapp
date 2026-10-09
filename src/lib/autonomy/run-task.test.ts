@@ -193,3 +193,20 @@ test("stageResult: ohne Ergebnisdatei nennt den Grund", () => {
   assert.equal(r.changed, false);
   assert.match(r.grund, /nichts geschrieben/);
 });
+
+test("SIN-440: lastErrorLine nimmt die letzte Fehlerzeile und maskiert Schlüssel", async () => {
+  const { lastErrorLine } = await import("../../../scripts/autonomy/run-task.mjs");
+  const out = [
+    "secrets { ANTHROPIC_API_KEY: 'PRESENT', OPENAI_API_KEY: 'PRESENT' } chunks=10 units=20",
+    "preflight ~$0.99 (Budget €3, ohne Reparatur)",
+    "Error: Anthropic batch create failed: status 400 invalid_request_error: model not found (key sk-ant-abcdefghijklmnop)",
+    "npm error code 1",
+    "npm error path /home/runner/work",
+  ].join("\n");
+  const line = lastErrorLine(out);
+  assert.match(line, /status 400/);
+  assert.doesNotMatch(line, /abcdefghijklmnop/);
+  assert.equal(lastErrorLine("nur eine Zeile"), "nur eine Zeile");
+  assert.equal(lastErrorLine(""), "keine Ausgabe");
+  assert.doesNotMatch(lastErrorLine("Fehler::x"), /::/);
+});
