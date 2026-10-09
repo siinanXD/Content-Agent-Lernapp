@@ -45,7 +45,9 @@ Playable path (Figma approved by Sinan 2026-10-02; Didaktik D-31):
 4. `/wiederholung` — Leitner 1/3/7/14  
 5. `/pruefung` — schriftliche Teile aus `exam.gradedParts` (MAF PT/PP/WiSo)  
 6. `/ergebnis` — Punkte + Ampel je Gebiet  
-7. `/profil` — Fortschritt, Stapelgröße, Prüfungsreife  
+7. `/profil` — Fortschritt, Stapelgröße, Prüfungsreife
+
+Beispielmodus ohne Konto (SIN-408): `/lernpfad?demo=1` schaltet für die Browser-Sitzung erfundene Beispieldaten ein (Ergebnis, Wiederholung, Profil, Serie). Es wird nichts gespeichert oder gesendet; `?demo=0` beendet ihn. `/quellen` zeigt die Quelle je Einheit mit Abrufdatum. Gruppenansicht: `/ausbilder?demo=1` (SIN-385).  
 
 Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`. Phase-A SVGs: `npm run content:mermaid`.
 
