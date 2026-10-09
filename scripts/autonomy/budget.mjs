@@ -1,11 +1,20 @@
 /**
- * Budget des Dispatchers (SIN-223): Pause bis zum Claude-Reset und Cursor-zuerst.
+ * Budget des Dispatchers (SIN-223): Pause bis zum Claude-Reset; Cursor-Wartezeit nur noch auf Wunsch (SIN-420).
  * Reine Funktionen ohne Netz. Die Pause steht in der Repo-Variable AGENT_PAUSED_UNTIL (ISO-Zeit oder Epoch-Sekunden).
  */
 
 export const FALLBACK_PAUSE_MS = 5 * 60 * 60 * 1000;
-/** So lange hat Cursor Vorrang, bevor Claude ein unberührtes Todo-Issue übernimmt. */
-export const CURSOR_GRACE_MS = 60 * 60 * 1000;
+/**
+ * So lange hat Cursor Vorrang, bevor Claude ein unberührtes Todo-Issue übernimmt.
+ * Seit 09.10.2026 gibt es nur das Claude-Kontingent (SIN-420): Standard 0. Wer Cursor wieder nutzt,
+ * setzt CURSOR_GRACE_MIN (Minuten) in der Umgebung des Dispatchers.
+ */
+/** @param {Record<string, string | undefined>} [env] */
+export function cursorGraceMs(env = process.env) {
+  const min = Number(env.CURSOR_GRACE_MIN ?? 0);
+  return Number.isFinite(min) && min > 0 ? min * 60 * 1000 : 0;
+}
+export const CURSOR_GRACE_MS = cursorGraceMs();
 export const CLAUDE_LABEL = "claude";
 
 /** Pausen-Zeitpunkt als Date, oder null bei leer/ungültig. */
@@ -72,8 +81,8 @@ export function pauseUntilFromLog(raw, now = new Date()) {
 }
 
 /**
- * Cursor zuerst: Claude übernimmt ein Issue nur, wenn es das Label `claude` trägt oder
- * seit CURSOR_GRACE_MS unverändert in Todo liegt und kein offener PR die ID nennt.
+ * Claude übernimmt ein Issue, wenn es das Label `claude` trägt oder seit CURSOR_GRACE_MS (Standard 0)
+ * unverändert in Todo liegt und kein offener PR die ID nennt.
  * `openPrs`: [{ title, head }]. Ohne `updatedAt` (Fixture) zählt das Issue als wartend.
  */
 /** @param {{ identifier: string, updatedAt?: string, labels?: { nodes: { name: string }[] } }} issue

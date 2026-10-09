@@ -82,7 +82,7 @@ export const isHumanIssue = (issue) => labelsOf(issue).some((l) => HUMAN_LABELS.
 export const laneOf = (issue) => LANES.find((l) => labelsOf(issue).includes(l)) ?? "backend";
 
 /**
- * Bis zu `slots` Issues: Status Todo, keine offenen Blocker, kein `design`/Mensch-Issue, `mayTake` (Cursor zuerst).
+ * Bis zu `slots` Issues: Status Todo, keine offenen Blocker, kein `design`/Mensch-Issue, `mayTake` (Cursor-Wartezeit nur mit CURSOR_GRACE_MIN, SIN-420).
  * Spuren wechseln sich ab: Beginn bei der Spur nach der zuletzt gestarteten, danach reihum; innerhalb
  * einer Spur höchste Priorität, dann ältere Nummer. Eine Spur ohne Kandidat wird übersprungen (kein Hungern).
  * Urgent (Priorität 1) kommt vor der Rotation (SIN-327). `waiting`: Kennungen von Issues mit wartendem PR,
