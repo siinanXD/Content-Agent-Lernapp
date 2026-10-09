@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-437 | SIN-437: Goldset-Vergleich aller Modelle (Claude und OpenAI), zwei Richter | [SIN-437-ab-alle-modelle.md](decisions/SIN-437-ab-alle-modelle.md) |
 | SIN-436 | SIN-436 — Abgleich mit Figma: Willkommen, Einwilligung, Schwerpunkt, Lernpfad | [SIN-436-figma-abgleich-onboarding.md](decisions/SIN-436-figma-abgleich-onboarding.md) |
 | SIN-435 | SIN-435 — CodeQL auf main: Altfunde hoher Schwere beheben | [SIN-435-codeql-altfunde.md](decisions/SIN-435-codeql-altfunde.md) |
 | SIN-434 | SIN-434 — Content-Fabrik: Ursache für wenige Einheiten je Lauf ausweisen und Engpass beheben | [SIN-434-fabrik-engpass.md](decisions/SIN-434-fabrik-engpass.md) |

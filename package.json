@@ -18,6 +18,8 @@
     "quality:prompt-vergleich": "node --import tsx scripts/sin432-prompt-vergleich.ts",
     "ap22:ab":"node --import tsx scripts/ap22-ab.ts",
     "ap22:ab:dry": "node --import tsx scripts/ap22-ab.ts --dry-run",
+    "ap22:alle": "node --import tsx scripts/ap22-alle.ts",
+    "ap22:alle:dry": "node --import tsx scripts/ap22-alle.ts --dry-run",
     "ap15:phase-a:dry":"node --import tsx scripts/ap15-phase-a.ts --dry-run",
     "test:a11y": "playwright test",
     "test:lighthouse": "node scripts/lighthouse-gate.mjs --base http://127.0.0.1:43123",

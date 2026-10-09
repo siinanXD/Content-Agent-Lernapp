@@ -43,6 +43,14 @@ export const TASKS = {
     secrets: need("ANTHROPIC_API_KEY", "OPENAI_API_KEY"),
     steps: [["npm", ["run", "ap22:ab"]]],
   },
+  // SIN-437: alle Kandidaten (Claude und OpenAI), zwei Richter, Deckel 6 €. Trockenlauf zeigt Kandidaten und Kostenschätzung.
+  "ab-alle-modelle": {
+    label: "Goldset-Vergleich aller Modelle: Haiku 5.5, Sonnet 5.5, gpt-6-luna, gpt-6.1-sol, chat-latest (20 LF3-Einheiten, zwei Richter, Deckel 6 €)",
+    paid: true,
+    secrets: need("ANTHROPIC_API_KEY", "OPENAI_API_KEY"),
+    steps: [["npm", ["run", "ap22:alle"]]],
+    dryStep: ["npm", ["run", "ap22:alle:dry"]],
+  },
   "cost-report": {
     label: "Kosten pro Kurslauf aus dem Ledger",
     check: "betrieb-kosten",
@@ -336,7 +344,11 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
   else {
     const steps = def.steps.map(([cmd, args]) => [cmd, args.map((a) => a.replaceAll("{out}", out))]);
     mkdirSync(RESULT_DIR, { recursive: true });
-    if (dry) result = { ok: null, ergebnis: `Trockenlauf: ${steps.map(([c, a]) => `${c} ${a.join(" ")}`).join(" && ")}` };
+    if (dry) {
+      // `dryStep`: kostenloser Probelauf (zeigt z. B. Kandidaten und Kostenschätzung); Fehler macht den Trockenlauf rot.
+      const probe = def.dryStep ? sh(def.dryStep[0], def.dryStep[1]) : true;
+      result = { ok: null, ergebnis: `Trockenlauf${probe ? "" : " (Probelauf fehlgeschlagen)"}: ${steps.map(([c, a]) => `${c} ${a.join(" ")}`).join(" && ")}`, ...(probe ? {} : { durchgelaufen: false }) };
+    }
     else {
       const ran = steps.every(([cmd, args]) => sh(cmd, args));
       // Exit-Code 0 = Ziel erreicht. Rot kann Ziel verfehlt oder Infrastruktur heißen: kein Eintrag, der Lauf wird rot und ein Mensch liest das Log.
