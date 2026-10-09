@@ -27,7 +27,7 @@ const KEYWORD = "Maschinen- und Anlagenführer";
 const MODULES = ["LF1", "LF2", "M0", "PA"];
 const UNITS_PER_MODULE = 6;
 const BUDGET_USD = 3.2;
-const TYPES = ["auswahl", "reihenfolge"] as const;
+const TYPES = ["auswahl", "reihenfolge", "rechnen", "zuordnen", "lueckentext"] as const;
 
 function targets(): BatchChunkTarget[] {
   const c = loadMafCurriculum();

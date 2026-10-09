@@ -43,9 +43,22 @@ export const AUSWAHL_REGELN = `Regeln für Fragetyp auswahl und reihenfolge (der
 - reihenfolge: 4–6 Schritte, die Quelle schreibt genau diese Folge zwingend vor. Keine Schritte, die sich vertauschen lassen. Jeder Schritt eine Handlung, gleiche Satzform, keine Nummern im Text.
 - Begründung (explanation) nennt, warum die richtige Antwort gilt und warum eine typische falsche nicht.`;
 
-/** `PROMPT_AUSWAHL_REGELN=aus` erzeugt den Prompt von vor SIN-432 (nur für den Vorher-Lauf im Vergleich). */
+/**
+ * SIN-433: Regeln für rechnen, zuordnen und lueckentext. Verwerfungen nach SIN-432:
+ * maf-metall/PA rechnen (Niveau), LF1 zuordnen (Eindeutigkeit), LF2 lueckentext und zuordnen (Niveau).
+ */
+export const RECHNEN_ZUORDNEN_LUECKE_REGELN = `Regeln für Fragetyp rechnen, zuordnen und lueckentext (der Richter verwirft sonst):
+- rechnen: Betriebssituation mit konkreten Werten und Einheiten (Maschine, Werkstück, Auftrag), kein nacktes "Berechne x". Mindestens zwei Rechenschritte oder eine Umstellung der Formel; Formel aus der zitierten Quelle. Das Ergebnis steht mit Einheit, Rundung und Toleranz in correct. sampleSolution zeigt jeden Schritt, sampleChecklist prüft Formel, Einheit und Ergebnis. Level anwenden, nie erinnern.
+- zuordnen: 4–6 Paare, jedes Element passt nach der Quelle zu genau EINEM Gegenstück. Linke Seite: gleichartige Begriffe (alle Werkstoffe, alle Prüfmittel). Rechte Seite: gleich lange Beschreibungen, die sich nicht überschneiden und nicht mehrere Begriffe treffen. Keine Paare, in denen ein Begriff Oberbegriff eines anderen ist. Keine Zusatzglieder, die zu keinem Paar gehören.
+- zuordnen (Niveau): Rechte Seite beschreibt Funktion, Anwendung oder Folge in einer Situation, nicht die Definition aus dem Merksatz. Namen wortgleich vom Begriff auf die Beschreibung zu übertragen reicht nicht.
+- lueckentext: Satz oder kurzer Absatz mit 1–3 Lücken, jede Lücke hat genau EIN fachlich richtiges Wort nach der Quelle (keine Synonyme möglich, sonst Hinweis in der Aufgabe). Fehlt der Fachbegriff, muss der Rest des Satzes ihn eindeutig bestimmen. Keine Lücke für Artikel, Füllwörter oder Zahlen ohne Bezug. Lücken verlangen Verständnis (Ursache, Zusammenhang, Wirkung), nicht nur Auswendiglernen eines Namens; Stufe verstehen oder anwenden.
+- Alle drei: Begründung (explanation) nennt die Quelle und warum die Lösung gilt.`;
+
+/** `PROMPT_AUSWAHL_REGELN=aus` erzeugt den Prompt von vor SIN-432 und SIN-433 (nur für den Vorher-Lauf im Vergleich). */
 function auswahlRegelnBlock(): string {
-  return process.env.PROMPT_AUSWAHL_REGELN === "aus" ? "" : `\n${AUSWAHL_REGELN}`;
+  return process.env.PROMPT_AUSWAHL_REGELN === "aus"
+    ? ""
+    : `\n${AUSWAHL_REGELN}\n${RECHNEN_ZUORDNEN_LUECKE_REGELN}`;
 }
 
 export function didaktikSchemaHint(): string {
