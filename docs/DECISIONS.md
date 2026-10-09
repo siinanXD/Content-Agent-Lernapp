@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-418 | SIN-418: Reparatur ohne Commit lässt PR nicht mehr liegen | [SIN-418-reparatur-ohne-commit.md](decisions/SIN-418-reparatur-ohne-commit.md) |
 | SIN-414 | SIN-414: Variante 2026, neue Lernenden-Screens N1 bis N5 | [SIN-414-beruf-waehlen.md](decisions/SIN-414-beruf-waehlen.md) |
 | SIN-409 | SIN-409: Kennzahl „Fragen bewertet“ blieb 0 wegen abweichender Frage-ID | [SIN-409-kennzahl-fragen-id.md](decisions/SIN-409-kennzahl-fragen-id.md) |
 | SIN-408 | SIN-408 — Beispieldaten für alle Lern-Ansichten ohne Konto | [SIN-408-demo-lernansichten.md](decisions/SIN-408-demo-lernansichten.md) |

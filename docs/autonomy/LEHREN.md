@@ -95,3 +95,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Kennzahl-Bericht nennt bei leeren PostHog-Daten pauschal drei mögliche Ursachen → Zusatzabfrage „irgendein Ereignis in 7 Tagen“: vorhanden = keine Lernweg-Nutzung, nicht vorhanden = Key fehlt oder keine Einwilligung; Zusatzabfragen einzeln fangen. (SIN-407)
 - Markdown-Tabellenzelle escapt nur `|` → CodeQL `js/incomplete-sanitization` blockt den PR. Richtig: zuerst Backslash verdoppeln, dann `|` escapen (`cell` in `safety-sample.ts`). (SIN-404)
 - Dispatcher wartete 1 h auf Cursor, obwohl es kein Cursor-Kontingent mehr gibt → Wartezeit nur mit `CURSOR_GRACE_MIN`, Standard 0. (SIN-420)
+- Reparatur-Lauf endet ohne Commit → `ci` startet nicht neu, `repair` auch nicht, PR bleibt still liegen. Richtig: `repair.yml` startet `ci` per `gh run rerun` neu, wenn der Head-SHA gleich blieb; der Wächter stößt rote PRs ohne Commit seit 30 Min selbst an (`stalledRepairs`). (SIN-418)

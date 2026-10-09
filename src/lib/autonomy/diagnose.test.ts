@@ -11,6 +11,7 @@ import {
   pendingDecisions,
   renderLinearQuota,
   splitIssue,
+  stalledRepairs,
   stallIssue,
   summarizeExecution,
   tooBig,
@@ -311,4 +312,17 @@ test("Linear Basic (limit: null): kein Prozent, keine Warnung, Planer bremst nic
   assert.ok(!r.incidents.some((i: { key: string }) => i.key === "quota:linear_issues"));
   assert.notEqual(r.refill.bugsOnly, true);
   assert.doesNotMatch(r.refill.reason, /95 %/);
+});
+
+test("Reparatur ohne Commit (SIN-418): rote CI, Commit älter als 30 Min → Anstoß, einmal je Commit", () => {
+  const now = new Date("2026-10-09T01:50:00Z");
+  const pr = { number: 227, head: "claude/sin-404", labels: [] as string[], sha: "abc1234", head_at: "2026-10-09T00:40:00Z", html_url: "u" };
+  const red = { 227: { ci: "failure" } };
+  assert.deepEqual(stalledRepairs([pr], red, [], now).map((k: { pr: number }) => k.pr), [227]);
+  assert.equal(stalledRepairs([{ ...pr, head_at: "2026-10-09T01:40:00Z" }], red, [], now).length, 0);
+  assert.equal(stalledRepairs([pr], { 227: { ci: "success" } }, [], now).length, 0);
+  assert.equal(stalledRepairs([{ ...pr, labels: ["needs-human"] }], red, [], now).length, 0);
+  assert.equal(stalledRepairs([pr], red, [{ name: "repair", status: "in_progress" }], now).length, 0);
+  assert.equal(stalledRepairs([pr], red, [], now, { 227: "abc1234" }).length, 0);
+  assert.equal(stalledRepairs([{ ...pr, head: "dependabot/x" }], red, [], now).length, 0);
 });

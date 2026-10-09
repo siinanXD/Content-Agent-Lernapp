@@ -270,3 +270,35 @@ export function pendingDecisions(prs, comments = {}, { owner = "siinanXD", now =
   }
   return out;
 }
+
+// ---------- Reparatur ohne Commit (SIN-418) ----------
+
+/** Offener Agenten-PR mit roter CI und ohne neuen Commit seit so vielen Minuten gilt als liegengeblieben. */
+export const REPAIR_STALL_MIN = 30;
+
+/**
+ * Agenten-PRs, bei denen die Reparatur still endete: `ci` rot, Head-Commit älter als REPAIR_STALL_MIN, kein
+ * `needs-human`/`no-autorepair`/`gate-bruch`, kein Reparatur-Lauf aktiv. Ohne neuen Commit startet `ci` nicht neu und
+ * damit auch `repair` nicht (Auslöser ist workflow_run von `ci`); der Wächter stößt `ci` dann selbst neu an.
+ * @param {{ number: number, head?: string, labels?: any[], sha?: string, head_at?: string, html_url?: string }[]} openPrs
+ * @param {Record<number, { ci?: string | null }>} checks
+ * @param {{ name: string, status: string }[]} runs
+ * @param {Date} now
+ * @param {Record<string, string>} prevKicks Merker: Head-SHA je PR-Nummer, pro Commit höchstens ein Anstoß
+ * @returns {{ pr: number, sha: string, url: string | null, idleMin: number }[]}
+ */
+export function stalledRepairs(openPrs, checks, runs, now, prevKicks = {}) {
+  if (runs.some((r) => r.name === "repair" && r.status !== "completed")) return [];
+  const out = [];
+  for (const p of openPrs) {
+    const labels = (p.labels ?? []).map((l) => (typeof l === "string" ? l : l.name));
+    if (!/^(claude|cursor)\//.test(p.head ?? "") || !p.sha || !p.head_at) continue;
+    if (checks[p.number]?.ci !== "failure") continue;
+    if (["needs-human", "no-autorepair", "gate-bruch"].some((l) => labels.includes(l))) continue;
+    if (prevKicks[p.number] === p.sha) continue;
+    const idleMin = (now.getTime() - new Date(p.head_at).getTime()) / 60000;
+    if (!(idleMin > REPAIR_STALL_MIN)) continue;
+    out.push({ pr: p.number, sha: p.sha, url: p.html_url ?? null, idleMin });
+  }
+  return out;
+}
