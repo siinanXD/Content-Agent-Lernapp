@@ -60,7 +60,7 @@ Prompt-Gerüst: `buildDidaktikBlockPrompt(curriculum, module, block)` (vier Vari
 
 - `niveau` wird gegen das Modul-Niveau geprüft, nicht gegen einen Kurs-Mittelwert.
 - `safetyFlag` ist bei Blöcken mit Sicherheitsmerkmal vorbelegt; 10 % Stichprobe durch einen Menschen vor `publish`.
-- Goldset-Lücke: Die 70 MAF-Items decken Verordnung und Prüfungsstruktur, kaum Fachinhalt. Für AP-15 mindestens 5 eigene Items pro Modul; für Industriekaufleute ein eigenes Goldset von etwa 20 geprüften Fragen.
+- Goldset-Lücke: Die 70 MAF-Items decken Verordnung und Prüfungsstruktur, kaum Fachinhalt. Für AP-15 mindestens 5 eigene Items pro Modul; für Industriekaufleute ein eigenes Goldset von etwa 20 geprüften Fragen. 35 Fragen in `docs/quality/indkfl-goldset.json` (SIN-447), geprüft durch Sinan am 09.10.2026.
 
 ## Erzeugungsphasen und Kosten
 

@@ -51,6 +51,16 @@ Langfuse dataset name: `maf-goldset-70` (Langfuse Cloud EU).
 
 `ab-haiku-sonnet` und `ab-alle-modelle` schreiben je Modell und Einheit einen Trace im Format der Fabrik (Erzeugen mit Modell, Tokens, Kosten; jede Frage mit Bewertung; Ergebnis). Session `vergleich-<runId>`, Tags `lauf:Modellvergleich` und `modell:<id>`. Bewertung vor der Reparatur; bei `ab-alle-modelle` die kombinierte Bewertung beider Richter. Tokens und Kosten sind je Modell gleichmäßig auf die Einheiten verteilt. Ohne `LANGFUSE_*` wird nichts geschrieben, der Lauf läuft weiter.
 
+## Goldset Industriekaufleute (SIN-447)
+
+`docs/quality/indkfl-goldset.json` — **35 eigene Fragen**, Status **geprüft durch Sinan am 09.10.2026**:
+
+- 12 Fragen zu Verordnung und Prüfung ([IndKflAusbV](https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html), §§ 4, 8, 11, 12, 14)
+- je 5 Fachfragen zu Phase A: `M0` (Anlage, Abschnitt B), `LF1`, `LF2`, `LF3` ([KMK-Rahmenlehrplan 15.12.2023](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf)); `unitId` ist der Block der Map
+- 3 Gegenproben (Feld `gegenprobe`): falsche Zahl (Quellentreue 0), mehrere richtige Antworten (Eindeutigkeit 0), zu leicht und unsauber (Niveau und Sprache unter 4). Der Richter muss sie durchfallen lassen.
+
+Quellen nur aus `docs/content/indkfl.json` (abgerufen 2026-10-03), keine IHK-Prüfungsaufgaben, keine Personendaten. Lader: `src/lib/quality/indkfl-goldset.ts`, Langfuse-Datensatz `indkfl-goldset` (noch nicht angelegt). Tests prüfen Quellen, Abdeckung, Sicherheitsmerkmal und Gegenproben.
+
 ## Commands
 
 ```bash
