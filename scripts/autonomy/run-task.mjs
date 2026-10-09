@@ -52,9 +52,10 @@ export const TASKS = {
     dryStep: ["npm", ["run", "ap22:alle:dry"]],
   },
   // SIN-449: Goldset Industriekaufleute nach Langfuse, Richter dagegen prüfen (35 Fragen, wenige Cent).
+  // SIN-456: kostet unter 0,05 € je Lauf (09.10.: 0,015 $), darum ohne Tagesdeckel; Prüfung nach jeder Richter-Änderung.
   "goldset-indkfl": {
     label: "Goldset Industriekaufleute: Langfuse-Datensatz anlegen und Richter prüfen (35 Fragen inkl. 3 Gegenproben)",
-    paid: true,
+    paid: false,
     secrets: need("OPENAI_API_KEY"),
     steps: [["npm", ["run", "quality:goldset-indkfl"]]],
   },

@@ -7,7 +7,7 @@ import goldsetJson from "../../../docs/quality/indkfl-goldset.json";
 import type { GoldQuestion } from "./maf-goldset-fixture";
 import type { GoldsetFile } from "./maf-goldset";
 
-export type IndkflGoldQuestion = GoldQuestion & { moduleId: string; gegenprobe?: string };
+export type IndkflGoldQuestion = GoldQuestion & { moduleId: string; gegenprobe?: string; zuLeicht?: string };
 
 export type IndkflGoldsetFile = Omit<GoldsetFile, "items"> & {
   status: string;
