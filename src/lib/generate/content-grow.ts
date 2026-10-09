@@ -237,6 +237,23 @@ export function eurPerUnit(history: ReadonlyArray<{ costEur: number; unitsGenera
   return units > 0 && eur > 0 ? eur / units : OLD_REGEN_EUR_PER_UNIT;
 }
 
+/**
+ * SIN-434: Historie für `eurPerUnit` ohne Reparaturkosten. Die Reparatur (AP-21) steht im Bericht
+ * als eigener Posten und wird in der Planung schon als `spentEur` abgezogen; wer sie auch in die
+ * Kosten je Einheit rechnet, zählt sie doppelt und plant zu wenige Einheiten (Lauf 10-08: 2,43 €
+ * gesamt, davon 1,62 € Reparatur, also 0,04 statt 0,12 € je Einheit).
+ */
+export function unitCostHistory(
+  reports: ReadonlyArray<{ costEur: number; generated: number; repair?: { costEur: number } }>,
+): Array<{ costEur: number; unitsGenerated: number }> {
+  return reports
+    .filter((r) => r.generated > 0)
+    .map((r) => ({
+      costEur: Math.max(0, r.costEur - (r.repair?.costEur ?? 0)),
+      unitsGenerated: r.generated,
+    }));
+}
+
 /** Wie viele Einheiten passen noch unter den Stopp-Wert (mit Sicherheitsfaktor)? */
 export function affordableUnits(spentEur: number, perUnitEur: number): number {
   const room = RUN_STOP_EUR - spentEur;
@@ -246,6 +263,43 @@ export function affordableUnits(spentEur: number, perUnitEur: number): number {
 
 export function overBudget(spentEur: number): boolean {
   return spentEur >= RUN_STOP_EUR;
+}
+
+export type NichtVersuchtGrund = "kostendeckel" | "zeitlimit" | "begonnene-module" | "andere-map";
+export type NichtVersucht = { grund: NichtVersuchtGrund; units: number };
+
+/**
+ * SIN-434: Offene Einheiten, die dieser Lauf nicht versucht hat, nach Grund.
+ * - `begonnene-module`: Lücken in Modulen mit veröffentlichten Einheiten; die holt nur die Reparatur.
+ * - `kostendeckel`: unberührte Module hinter dem Plan (er endet bei `affordableUnits`) und das,
+ *   was `trimTargets` abgeschnitten hat (`deferred`).
+ * - `zeitlimit`: der Batch wurde nicht rechtzeitig fertig; `deferred` zählt dann hierher.
+ * - `andere-map`: offene Einheiten der Maps, die dieser Lauf nicht bedient (ein Lauf = eine Map).
+ * Eine Batch-Obergrenze gibt es im Code nicht (Anthropic: bis 100.000 Anfragen), daher kein eigener Grund.
+ */
+export function nichtVersucht(
+  queue: QueueItem[],
+  published: ReadonlySet<string>,
+  discarded: ReadonlySet<string>,
+  planModuleIds: ReadonlySet<string>,
+  deferred: number,
+  timedOut: boolean,
+  otherMapOpen = 0,
+): NichtVersucht[] {
+  let begonnen = 0;
+  let hinterPlan = 0;
+  for (const item of queue) {
+    if (!item.supported || planModuleIds.has(item.module.id)) continue;
+    const pending = pendingSlots(item.module, published, discarded).length;
+    if (slotIds(item.module).some((id) => published.has(id))) begonnen += pending;
+    else hinterPlan += pending;
+  }
+  return [
+    { grund: "kostendeckel" as const, units: hinterPlan + (timedOut ? 0 : deferred) },
+    { grund: "zeitlimit" as const, units: timedOut ? deferred : 0 },
+    { grund: "begonnene-module" as const, units: begonnen },
+    { grund: "andere-map" as const, units: otherMapOpen },
+  ].filter((x) => x.units > 0);
 }
 
 /** Eindeutiger Schlüssel einer Quellenänderung (Bericht `diff.changed`). */
@@ -334,6 +388,8 @@ export type RunReport = {
   discardedUnitIds: string[];
   /** Offen wegen Deckel; kommt im nächsten Lauf. */
   deferred: number;
+  /** SIN-434: offene Einheiten, die dieser Lauf nicht versucht hat, nach Grund. */
+  nichtVersucht?: NichtVersucht[];
   repair: { ran: boolean; costEur: number };
   sourceRefresh: { units: number; replaced: number; changeKeys: string[] };
   model: string;
@@ -349,6 +405,13 @@ export function reportFileName(r: Pick<RunReport, "runId" | "mode">): string {
   return `${r.runId}${r.mode === "dry-run" ? "-dry-run" : ""}.json`;
 }
 
+const NICHT_VERSUCHT_TEXT: Record<NichtVersuchtGrund, string> = {
+  kostendeckel: "Kostendeckel",
+  zeitlimit: "Zeitlimit",
+  "begonnene-module": "begonnenem Modul (Reparatur zuständig)",
+  "andere-map": "anderer Map in diesem Lauf",
+};
+
 /** Kommentar fürs Linear-Projekt: erzeugt, bestanden, verworfen, Kosten, nächstes Modul. */
 export function linearSummary(r: RunReport): string {
   const next = r.nextModuleId ?? "keins (Queue leer oder nicht unterstützt)";
@@ -356,6 +419,8 @@ export function linearSummary(r: RunReport): string {
     `**Content-Lauf ${r.runId}** (${r.mode})`,
     `- Modul: ${r.mapId ?? "–"} / ${r.moduleIds?.length ? r.moduleIds.join(", ") : (r.moduleId ?? "–")}`,
     `- Erzeugt: ${r.generated}, bestanden: ${r.passed}, verworfen: ${r.discarded}, zurückgestellt: ${r.deferred}`,
+    `- Verworfen (Richter unter Schwelle oder nicht geliefert): ${r.discarded}${r.discardedUnitIds.length ? ` (${r.discardedUnitIds.join(", ")})` : ""}`,
+    `- Nicht versucht: ${r.nichtVersucht?.length ? r.nichtVersucht.map((x) => `${x.units} wegen ${NICHT_VERSUCHT_TEXT[x.grund]}`).join("; ") : "nichts offen oder nicht erfasst"}`,
     `- Reparatur (AP-21): ${r.repair.ran ? `€${r.repair.costEur.toFixed(2)}` : "nicht gelaufen"}; Quellen-Neuerzeugung: ${r.sourceRefresh.replaced}/${r.sourceRefresh.units}`,
     `- Kosten: €${r.costEur.toFixed(2)} von €${r.capEur} (Modell ${r.model})`,
     `- Stopp: ${r.stopReason ?? "kein"}`,

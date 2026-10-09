@@ -14,6 +14,10 @@ import {
   MAP_COURSES,
   SUPPORTED_MAP_IDS,
   eurPerUnit,
+  linearSummary,
+  nichtVersucht,
+  unitCostHistory,
+  type RunReport,
   missingSecrets,
   COST_MARGIN,
   nextOpenItem,
@@ -224,4 +228,47 @@ test("Plan eines Laufs bleibt in der gewählten Map, Modulreihenfolge unverände
   const nurIndkfl = beide.filter((q) => q.mapId === "indkfl");
   const plan = nextOpenItems(nurIndkfl, new Set(), new Set(), null, 100);
   assert.deepEqual(plan.map((x) => x.item.module.id), ["M0", "LF1"]);
+});
+
+test("SIN-434: Kosten je Einheit ohne Reparatur (Lauf 10-08: 0,04 statt 0,12 €)", () => {
+  const h = unitCostHistory([
+    { costEur: 2.43, generated: 20, repair: { costEur: 1.62 } },
+    { costEur: 1, generated: 0, repair: { costEur: 1 } },
+    { costEur: 0.5, generated: 10 },
+  ]);
+  assert.deepEqual(h.map((x) => Number(x.costEur.toFixed(2))), [0.81, 0.5]);
+  assert.equal(Number(eurPerUnit(h).toFixed(3)), 0.044);
+  assert.ok(affordableUnits(0, eurPerUnit(h)) > 300);
+  // Mit Reparatur eingerechnet blieben es nur 125 Einheiten je Lauf.
+  assert.equal(affordableUnits(0, 2.43 / 20), 125);
+});
+
+test("SIN-434: nicht versucht nach Grund", () => {
+  const none = new Set<string>();
+  const published = new Set(["LF3-1-u1"]);
+  const planIds = new Set(["M0"]);
+  // M0 im Plan; LF1 unberührt (2) + 1 abgeschnitten = Deckel; LF3 begonnen: 5 - 1 = 4 Lücken.
+  assert.deepEqual(nichtVersucht(queue, published, none, planIds, 1, false, 7), [
+    { grund: "kostendeckel", units: 3 },
+    { grund: "begonnene-module", units: 4 },
+    { grund: "andere-map", units: 7 },
+  ]);
+  assert.deepEqual(nichtVersucht(queue, published, none, planIds, 2, true), [
+    { grund: "kostendeckel", units: 2 },
+    { grund: "zeitlimit", units: 2 },
+    { grund: "begonnene-module", units: 4 },
+  ]);
+  assert.deepEqual(nichtVersucht(queue, none, none, new Set(["M0", "LF1", "LF3"]), 0, false), []);
+});
+
+test("SIN-434: Lauf-Bericht nennt verworfen und nicht versucht mit Grund", () => {
+  const r = {
+    runId: "x", mode: "live", mapId: "maf-metall", moduleId: "ZP", nextModuleId: null, generated: 20, passed: 16,
+    discarded: 4, discardedUnitIds: ["ZP-2-u1"], deferred: 0, repair: { ran: true, costEur: 1.62 },
+    sourceRefresh: { units: 0, replaced: 0, changeKeys: [] }, costEur: 2.43, capEur: 20, model: "m", stopReason: null,
+    nichtVersucht: [{ grund: "kostendeckel", units: 5 }, { grund: "zeitlimit", units: 2 }],
+  } as unknown as RunReport;
+  const text = linearSummary(r);
+  assert.match(text, /Verworfen .*: 4 \(ZP-2-u1\)/);
+  assert.match(text, /Nicht versucht: 5 wegen Kostendeckel; 2 wegen Zeitlimit/);
 });
