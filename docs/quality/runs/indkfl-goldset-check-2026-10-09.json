@@ -1,0 +1,679 @@
+{
+  "runId": "2026-10-09T11-54-24-951Z",
+  "dataset": "indkfl-goldset",
+  "judgeModel": "gpt-5.4-mini",
+  "costUsd": 0.0151,
+  "langfuse": "35 von 35 Einträgen im Datensatz indkfl-goldset",
+  "check": {
+    "total": 35,
+    "judged": 35,
+    "agree": 23,
+    "agreementRate": 0.657,
+    "falseFail": [
+      {
+        "id": "ik-g01",
+        "reasons": [
+          "Frage ist direkt aus § 2 der Verordnung ableitbar.",
+          "Antwort ist eindeutig: drei Jahre.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g02",
+        "reasons": [
+          "Die Frage verlangt ein konkretes Inkrafttretensdatum aus der Verordnung.",
+          "Eindeutige richtige Antwort vorhanden.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g03",
+        "reasons": [
+          "Die genannten Einsatzgebiete sind direkt in der Verordnung aufgezählt.",
+          "Genau eine richtige Aufzählung ist vorgesehen.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g04",
+        "reasons": [
+          "Die Frage prüft eine klare Regelung der Ausbildungsordnung zur Prüfungsart.",
+          "Antwort ist eindeutig: keine Zwischenprüfung, sondern gestreckte Abschlussprüfung.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g05",
+        "reasons": [
+          "Das Ausbildungshalbjahr für Teil 1 ist in der Verordnung festgelegt.",
+          "Nur eine richtige Lösung: viertes Ausbildungshalbjahr.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g06",
+        "reasons": [
+          "Prüfungsbereich und Dauer sind unmittelbar in § 8 geregelt.",
+          "Eindeutig formuliert mit einer richtigen Antwort.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g07",
+        "reasons": [
+          "Die Gewichtung von Teil 1 ist in § 14 festgelegt.",
+          "Antwort ist eindeutig in Prozent angegeben.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g08",
+        "reasons": [
+          "Die Prüfungsdauer ist direkt aus der Verordnung ableitbar.",
+          "Genau eine richtige Zeitangabe.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g09",
+        "reasons": [
+          "Die Gewichte der Prüfungsbereiche sind in § 14 festgelegt.",
+          "Die Frage zielt auf eine eindeutige Verteilung in Prozent.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-g10",
+        "reasons": [
+          "Die Bestandteile und ihre Gewichtung der Fachaufgabe folgen aus der Verordnung.",
+          "Etwas anspruchsvoller als reine Faktenabfrage, aber noch im Ausbildungsordnungs-Niveau.",
+          "niveau_below_4"
+        ]
+      }
+    ],
+    "falsePass": [
+      "ik-x01",
+      "ik-x02"
+    ],
+    "gegenproben": {
+      "total": 3,
+      "erkannt": 1
+    },
+    "missing": []
+  },
+  "judged": [
+    {
+      "questionId": "ik-g01",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 1,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Frage ist direkt aus § 2 der Verordnung ableitbar.",
+        "Antwort ist eindeutig: drei Jahre.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g02",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Frage verlangt ein konkretes Inkrafttretensdatum aus der Verordnung.",
+        "Eindeutige richtige Antwort vorhanden.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g03",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die genannten Einsatzgebiete sind direkt in der Verordnung aufgezählt.",
+        "Genau eine richtige Aufzählung ist vorgesehen.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g04",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Frage prüft eine klare Regelung der Ausbildungsordnung zur Prüfungsart.",
+        "Antwort ist eindeutig: keine Zwischenprüfung, sondern gestreckte Abschlussprüfung.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g05",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Das Ausbildungshalbjahr für Teil 1 ist in der Verordnung festgelegt.",
+        "Nur eine richtige Lösung: viertes Ausbildungshalbjahr.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g06",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Prüfungsbereich und Dauer sind unmittelbar in § 8 geregelt.",
+        "Eindeutig formuliert mit einer richtigen Antwort.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g07",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Gewichtung von Teil 1 ist in § 14 festgelegt.",
+        "Antwort ist eindeutig in Prozent angegeben.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g08",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Prüfungsdauer ist direkt aus der Verordnung ableitbar.",
+        "Genau eine richtige Zeitangabe.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g09",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Gewichte der Prüfungsbereiche sind in § 14 festgelegt.",
+        "Die Frage zielt auf eine eindeutige Verteilung in Prozent.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g10",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 3,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Bestandteile und ihre Gewichtung der Fachaufgabe folgen aus der Verordnung.",
+        "Etwas anspruchsvoller als reine Faktenabfrage, aber noch im Ausbildungsordnungs-Niveau.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-g11",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Antwort folgt direkt aus § 12 IndKflAusbV; zusammen 30 Minuten, Präsentation max. 10 Minuten.",
+        "Genau eine richtige Lösung."
+      ]
+    },
+    {
+      "questionId": "ik-g12",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Bestehensregel folgt direkt aus § 14 Abs. 2 IndKflAusbV.",
+        "Genau eine richtige Lösung."
+      ]
+    },
+    {
+      "questionId": "ik-m0-01",
+      "unitId": "M0-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Frage entspricht der Berufsbildposition zu Arbeits- und Tarifrecht; die richtige Antwort ist eindeutig der Betriebsrat.",
+        "Verständlich und auf Grundstufen-Niveau."
+      ]
+    },
+    {
+      "questionId": "ik-m0-02",
+      "unitId": "M0-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Unterscheidung zwischen Steuern und Sozialversicherungsbeiträgen ist fachlich korrekt und eindeutig.",
+        "Sprache klar und alltagsnah."
+      ]
+    },
+    {
+      "questionId": "ik-m0-03",
+      "unitId": "M0-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": true
+      },
+      "passed": true,
+      "reasons": [
+        "Brandverhalten und Notruf sind sicherheitsrelevant; die Reihenfolge ist fachlich richtig.",
+        "Genau eine sinnvolle Antwort im Ausbildungsrahmen.",
+        "safety_human_sample"
+      ]
+    },
+    {
+      "questionId": "ik-m0-04",
+      "unitId": "M0-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Abfallhierarchie ist fachlich korrekt und eindeutig.",
+        "Grundstufengerechte, klare Formulierung."
+      ]
+    },
+    {
+      "questionId": "ik-m0-05",
+      "unitId": "M0-4",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Datenschutz/Datensicherheit werden korrekt aufgegriffen; private Weiterleitung ist nicht erlaubt.",
+        "Eindeutige Ja/Nein-Frage mit klarer Lösung."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-01",
+      "unitId": "LF1-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Produktionsfaktoren werden passend zur Ausbildungsordnung abgefragt; die Antwort ist fachlich stimmig.",
+        "Genau eine richtige Antwort."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-02",
+      "unitId": "LF1-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Haftung der GmbH ist korrekt beschrieben: Gesellschaftsvermögen, nicht Privatvermögen.",
+        "Eindeutig und für Jahr 1 passend."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-03",
+      "unitId": "LF1-6",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Berechnung Wirtschaftlichkeit = Erträge/Aufwendungen ist korrekt und ergibt 1,2.",
+        "Eine eindeutige Rechenlösung."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-04",
+      "unitId": "LF1-6",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Formel und Ergebnis stimmen mit der angegebenen Quelle/Erklärung überein.",
+        "Für Jahr 1 fachlich passend und eindeutig lösbar."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-05",
+      "unitId": "LF1-4",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Begriffsunterscheidung folgt direkt aus der angegebenen Quelle/Erklärung.",
+        "Genau eine richtige Antwort ist naheliegend."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-01",
+      "unitId": "LF2-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Merkmale eines Projekts entsprechen der Erklärung zur Quelle.",
+        "Für Grundstufe angemessen und eindeutig."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-02",
+      "unitId": "LF2-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "SMART ist in der korrekten Standardbedeutung angegeben.",
+        "Eindeutige Abfrage mit klarer Musterlösung."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-03",
+      "unitId": "LF2-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Reihenfolge entspricht der üblichen Projektphasenlogik und der Erklärung.",
+        "Nur eine richtige Reihenfolge."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-04",
+      "unitId": "LF2-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Definition des Meilensteins folgt der Erklärung zur Quelle.",
+        "Eindeutige Fachdefinition auf Grundstufen-Niveau."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-05",
+      "unitId": "LF2-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Feedbackregel ist inhaltlich passend zur angegebenen Erklärung.",
+        "Genau eine fachlich richtige Kernaussage erwartet."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-01",
+      "unitId": "LF3-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Zustandekommen des Kaufvertrags ist korrekt über Antrag und Annahme beschrieben.",
+        "Eindeutige juristische Standardfrage."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-02",
+      "unitId": "LF3-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Unterscheidung zwischen Besitz und Eigentum ist fachlich korrekt.",
+        "Eindeutig und passend zur angegebenen Quelle."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-03",
+      "unitId": "LF3-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Rechenweg und Ergebnis sind korrekt nachvollziehbar.",
+        "Eindeutige Berechnungsaufgabe auf Grundstufen-Niveau."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-04",
+      "unitId": "LF3-7",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Antwort entspricht dem üblichen Begriff für das Nichtbezahlen einer fälligen Rechnung: Zahlungsverzug.",
+        "Genau eine richtige Fachbezeichnung."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-05",
+      "unitId": "LF3-7",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Frist und der Beginn der regelmäßigen Verjährung sind korrekt wiedergegeben.",
+        "Die Frage hat genau eine richtige Standardantwort nach BGB."
+      ]
+    },
+    {
+      "questionId": "ik-x01",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die 40-Prozent-Bewertung von Teil 1 folgt aus der Ausbildungsverordnung.",
+        "Genau eine richtige Prozentangabe."
+      ]
+    },
+    {
+      "questionId": "ik-x02",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Vertrieb ist als Einsatzgebiet in der Verordnung genannt.",
+        "Die Frage zielt auf ein einzelnes Beispiel mit eindeutiger Lösung."
+      ]
+    },
+    {
+      "questionId": "ik-x03",
+      "unitId": "LF3-1",
+      "scores": {
+        "sourceFidelity": 0,
+        "uniqueness": 1,
+        "niveau": 1,
+        "language": 4,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Antwort ist zu umgangssprachlich und nicht als amtlich abgesicherte Definition aus der Quelle ableitbar.",
+        "Inhaltlich zu allgemein für eine fachliche Prüfungsfrage im Modul.",
+        "source_fidelity_fail",
+        "niveau_below_4"
+      ]
+    }
+  ]
+}
