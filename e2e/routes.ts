@@ -8,6 +8,7 @@ export const routes = [
   "/pruefung/ergebnis",
   "/willkommen",
   "/einwilligung",
+  "/beruf",
   "/schwerpunkt",
   "/lernpfad",
   "/einheit/unit-03",

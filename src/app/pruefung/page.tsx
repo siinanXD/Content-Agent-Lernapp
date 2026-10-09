@@ -14,7 +14,6 @@ import {
 import {
   getExamQuestions,
   listExamParts,
-  mafExamTimesSummary,
   scoreByArea,
 } from "@/lib/learner/exam";
 import { toWrongAnswer, type WrongAnswer } from "@/lib/learner/exam-result";
@@ -206,11 +205,9 @@ function PruefungInner() {
     return (
       <MobileShell>
         <main className="flex flex-1 flex-col gap-[var(--bento-gap)] px-6 pb-6 pt-12">
-          <Tile tone="hero">
+          <Tile tone="hero" className="!p-[var(--bento-pad)]">
             <p className="mono-label text-[var(--color-text-muted-on-dark)]">
-              {part.durationMinutes} Min
-              {part.weightPercent != null ? ` · ${part.weightPercent} %` : ""} ·{" "}
-              {Math.min(8, part.questionTarget)} Fragen
+              {part.durationMinutes} Min · {Math.min(8, part.questionTarget)} Fragen
             </p>
             <h1
               className="text-[28px] font-bold leading-9"
@@ -219,12 +216,9 @@ function PruefungInner() {
               Prüfungsmodus
             </h1>
             <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
-              {mafExamTimesSummary()}
+              Schriftlicher Teil wie in der Abschlussprüfung. Die Zeit läuft sichtbar, Pause ist erlaubt.
             </p>
-            <Button
-              onClick={start}
-              className="mt-2 !bg-[var(--color-brand-accent)] !text-[var(--color-text-primary)]"
-            >
+            <Button onClick={start} className="mt-2">
               Prüfung starten
             </Button>
           </Tile>
@@ -251,10 +245,8 @@ function PruefungInner() {
             <Tile tone="hint" as="div">
               <p className="mono-label">Übung, keine IHK-Prognose</p>
               <p className="text-sm leading-5">
-                Demo: {Math.min(8, part.questionTarget)} Fragen (Ziel laut Vorgabe{" "}
-                {part.questionTarget}). Zeit läuft sichtbar; Pause ist erlaubt.
-                Offene Aufgaben nur mit Musterlösung, keine KI-Bewertung.
-                Praktischer Teil wird nicht nachgebildet.
+                Offene Aufgaben nur mit Musterlösung, keine KI-Bewertung. Der praktische Teil wird
+                nicht nachgebildet.
               </p>
             </Tile>
           </Bento>

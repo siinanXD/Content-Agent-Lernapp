@@ -1,83 +1,85 @@
 import Link from "next/link";
-import { CheckIcon, LockIcon } from "@/components/ui/icons";
 
 export type PathNodeState = "erledigt" | "heute" | "offen" | "gesperrt";
 
-/** Figma 19:265 (Stil E): Erledigt grün, Heute schwarz mit orangem Ring, Offen/Gesperrt weiß. */
-const tone: Record<PathNodeState, string> = {
-  erledigt: "bg-[var(--color-feedback-success)] text-white border-transparent",
-  heute:
-    "bg-[var(--color-bg-hero)] text-[var(--color-text-on-brand)] border-transparent",
-  offen:
-    "bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] border-[var(--color-border-subtle)]",
-  gesperrt:
-    "bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)]",
+const stateLabel: Record<PathNodeState, string> = {
+  erledigt: "Fertig",
+  heute: "Jetzt",
+  offen: "Offen",
+  gesperrt: "Gesperrt",
 };
 
-const stateLabel: Record<PathNodeState, string> = {
-  erledigt: "erledigt",
-  heute: "heute dran",
-  offen: "offen",
-  gesperrt: "gesperrt",
+/** Punkt der Achse (Figma N5, 81:456): fertig schwarz, jetzt orange und größer, offen weiß mit Rand. */
+const dot: Record<PathNodeState, string> = {
+  erledigt: "h-5 w-5 border-[var(--color-bg-hero)] bg-[var(--color-bg-hero)]",
+  heute: "h-7 w-7 border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]",
+  offen: "h-5 w-5 border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]",
+  gesperrt: "h-5 w-5 border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]",
 };
 
 /**
- * PathNode (Figma 19:265): Knoten der Lernpfad-Karte.
- * Varianten Erledigt / Heute / Offen / Gesperrt; Gesperrt ist kein Link.
+ * PathNode (Figma N5, Knoten der Lernpfad-Karte): Punkt auf einer senkrechten Achse mit
+ * Kennung (Geist Mono) und Titel. Zustände Fertig / Jetzt / Offen; „Gesperrt“ ist kein Link.
+ * `last` lässt die Linie nach dem letzten Knoten weg.
  */
 export function PathNode({
   state,
   indexLabel,
   title,
   href,
+  last = false,
 }: {
   state: PathNodeState;
   indexLabel: string;
   title: string;
   href?: string;
+  last?: boolean;
 }) {
-  const circle = (
-    <span
-      className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 text-xl font-bold ${tone[state]} ${
-        state === "heute"
-          ? "ring-4 ring-[var(--color-brand-accent)] ring-offset-2 ring-offset-[var(--color-bg-canvas)]"
-          : ""
-      }`}
-      style={{ fontFamily: "var(--font-mono)" }}
-    >
-      {state === "erledigt" ? (
-        <CheckIcon />
-      ) : state === "gesperrt" ? (
-        <LockIcon />
-      ) : (
-        indexLabel
+  const axis = (
+    <span aria-hidden="true" className="flex w-7 shrink-0 flex-col items-center">
+      <span className={`shrink-0 rounded-full border-2 ${dot[state]}`} />
+      {last ? null : (
+        <span
+          className={`min-h-[18px] w-0.5 flex-1 ${
+            state === "erledigt" ? "bg-[var(--color-bg-hero)]" : "bg-[var(--color-border-subtle)]"
+          }`}
+        />
       )}
     </span>
   );
   const text = (
-    <span className="flex min-w-0 max-w-[150px] flex-col">
+    <span className="flex min-w-0 flex-col gap-0.5 pb-2">
       <span
-        className={`text-[13px] leading-snug text-[var(--color-text-primary)] ${
-          state === "heute" ? "font-medium" : ""
+        className={`mono-label ${
+          state === "heute" ? "text-[var(--color-brand-primary)]" : "text-[var(--color-text-secondary)]"
         }`}
       >
-        {title}
+        {indexLabel} · {stateLabel[state]}
       </span>
-      <span className="text-xs text-[var(--color-text-secondary)]">
-        {stateLabel[state]}
+      <span
+        className={
+          state === "heute"
+            ? "text-[17px] font-bold leading-[22px] text-[var(--color-text-primary)]"
+            : `text-[15px] font-medium leading-5 ${
+                state === "erledigt" ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
+              }`
+        }
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {title}
       </span>
     </span>
   );
   const cls =
-    "flex items-center gap-3 rounded-[var(--radius-md)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-focus-ring)]";
+    "flex min-h-11 items-stretch gap-3.5 rounded-[var(--radius-md)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
   return href && state !== "gesperrt" ? (
     <Link href={href} className={cls} data-state={state}>
-      {circle}
+      {axis}
       {text}
     </Link>
   ) : (
     <div className={cls} data-state={state} aria-disabled={state === "gesperrt"}>
-      {circle}
+      {axis}
       {text}
     </div>
   );

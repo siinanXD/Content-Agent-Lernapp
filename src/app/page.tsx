@@ -35,15 +35,12 @@ export default function StartseitePage() {
         }}
       />
       <header className="flex items-center justify-between px-[22px] pt-[18px] md:px-8">
-        <p
-          className="text-base font-bold"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Lernpfad MAF
+        <p className="text-sm font-bold uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+          Lernpfad
         </p>
         <Link
           href="/anmelden"
-          className={`inline-flex min-h-11 items-center text-[15px] font-medium ${focusRing}`}
+          className={`inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-brand-primary)] ${focusRing}`}
         >
           Anmelden
         </Link>
@@ -54,61 +51,91 @@ export default function StartseitePage() {
           className="bento px-4 pb-10 pt-6 md:px-8 md:pt-8"
           aria-labelledby="start-titel"
         >
-          <div className="bento-tile bento-main md:col-span-6">
-            <p className="bento-label">Für Bildungsträger · Maschinen- und Anlagenführer</p>
+          <div className="bento-tile bento-main !p-7 md:col-span-6 md:!p-8">
+            <p className="bento-label">
+              Für Bildungsträger<span className="hidden md:inline"> · Maschinen- und Anlagenführer</span>
+            </p>
             <h1
               id="start-titel"
-              className="text-[44px] font-bold leading-[44px] tracking-tight md:text-[80px] md:leading-[80px]"
+              className="text-[32px] font-bold leading-[41.6px] tracking-tight md:text-[80px] md:leading-[80px]"
               style={{ fontFamily: "var(--font-display)" }}
             >
               Prüfungsreif in kleinen Schritten.
             </h1>
-            <p className="max-w-[640px] text-base leading-[22px] text-[var(--color-text-soft-on-dark)] md:text-lg md:leading-7">
-              Ihre Teilnehmenden lernen täglich 5–10 Minuten für die
-              Abschlussprüfung. Jede Frage ist aus Ausbildungsordnung und
-              Rahmenlehrplan abgeleitet und zeigt ihre Quelle.
+            <p className="max-w-[640px] text-[15px] leading-[19.5px] text-[var(--color-text-soft-on-dark)] md:text-lg md:leading-7">
+              Jede Frage mit Quelle aus der Ausbildungsordnung. Sie sehen Fortschritt, die App
+              bewertet keine Personen.
             </p>
-            <Link href="/demo" className={`${buttonPrimary} self-start`}>
+            <Link href="/demo" className={`${buttonPrimary} self-start max-md:w-full`}>
               Demo-Zugang anfragen
+            </Link>
+            <Link
+              href="/ausbilder?demo=1"
+              className="inline-flex min-h-11 items-center self-start text-sm font-medium text-[var(--color-text-on-brand)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
+            >
+              Beispielansicht ohne Konto
             </Link>
           </div>
 
-          <Beweis
-            span="md:col-span-2"
-            label="Quelle"
-            titel="Jede Frage zeigt, woher sie kommt."
-            text="Ausbildungsordnung und KMK-Rahmenlehrplan, mit Abrufdatum."
-          />
-          <Beweis
-            span="md:col-span-2"
-            label="Wiederholung · 1 · 3 · 7 Tage"
-            titel="Fehler kommen wieder."
-            text="Falsch beantwortete Fragen tauchen nach 1, 3 und 7 Tagen erneut auf."
-          />
-          <Beweis
-            span="md:col-span-2"
-            label="Prüfung"
-            titel="Keine kopierten IHK-Aufgaben."
-            text="Grundlage: MaschAnlFAusbV und KMK-Rahmenlehrplan."
-          />
-          <Beweis
-            span="md:col-span-3"
-            label="Gruppe"
-            titel="Wer wo steht, ohne KI-Bewertung."
-            text="Die App zeigt Fortschritt und Lernzeit. Entscheidungen treffen Sie."
-          />
-          <div className="bento-tile md:col-span-3">
-            <p className="bento-label">Ablauf</p>
-            <a
-              href="#story"
-              className={`inline-flex min-h-11 items-center text-lg font-semibold underline underline-offset-4 ${focusRing}`}
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              So entsteht eine Frage
-            </a>
-            <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
-              In vier Schritten vom Gesetzestext zur Antwort mit Quelle.
-            </p>
+          {/* Handy (N4): zwei kurze Beweis-Kacheln nebeneinander */}
+          <div className="grid grid-cols-2 gap-3 md:hidden">
+            <Beweis span="" label="Quellen" titel="Jede Frage belegt" />
+            <Beweis span="" label="Pro Tag" titel="5–10 Minuten" />
+          </div>
+          <div className="bento-tile md:hidden">
+            <p className="bento-label">Berufe</p>
+            <ul className="flex flex-col gap-1.5">
+              <li className="text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+                Maschinen- und Anlagenführer/in
+              </li>
+              <li className="text-base font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+                Industriekaufmann/-frau
+              </li>
+            </ul>
+          </div>
+          <p className="rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] p-5 text-[13px] font-medium leading-[17px] text-[var(--color-text-hint)] md:hidden">
+            Zugänge vergeben wir auf Anfrage: Sie nennen die Zahl der Ausbilder und Azubis, wir
+            richten den Zugang ein.
+          </p>
+
+          <div className="hidden md:contents">
+            <Beweis
+              span="md:col-span-2"
+              label="Quelle"
+              titel="Jede Frage zeigt, woher sie kommt."
+              text="Ausbildungsordnung und KMK-Rahmenlehrplan, mit Abrufdatum."
+            />
+            <Beweis
+              span="md:col-span-2"
+              label="Wiederholung · 1 · 3 · 7 Tage"
+              titel="Fehler kommen wieder."
+              text="Falsch beantwortete Fragen tauchen nach 1, 3 und 7 Tagen erneut auf."
+            />
+            <Beweis
+              span="md:col-span-2"
+              label="Prüfung"
+              titel="Keine kopierten IHK-Aufgaben."
+              text="Grundlage: MaschAnlFAusbV und KMK-Rahmenlehrplan."
+            />
+            <Beweis
+              span="md:col-span-3"
+              label="Gruppe"
+              titel="Wer wo steht, ohne KI-Bewertung."
+              text="Die App zeigt Fortschritt und Lernzeit. Entscheidungen treffen Sie."
+            />
+            <div className="bento-tile md:col-span-3">
+              <p className="bento-label">Ablauf</p>
+              <a
+                href="#story"
+                className={`inline-flex min-h-11 items-center text-lg font-semibold underline underline-offset-4 ${focusRing}`}
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                So entsteht eine Frage
+              </a>
+              <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
+                In vier Schritten vom Gesetzestext zur Antwort mit Quelle.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -241,20 +268,22 @@ function Beweis({
   span: string;
   label: string;
   titel: string;
-  text: string;
+  text?: string;
 }) {
   return (
     <div className={`bento-tile ${span}`}>
       <p className="bento-label">{label}</p>
       <p
-        className="text-lg font-semibold leading-6"
+        className="text-base font-bold leading-[21px] md:text-lg md:font-semibold md:leading-6"
         style={{ fontFamily: "var(--font-display)" }}
       >
         {titel}
       </p>
-      <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
-        {text}
-      </p>
+      {text ? (
+        <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
+          {text}
+        </p>
+      ) : null}
     </div>
   );
 }

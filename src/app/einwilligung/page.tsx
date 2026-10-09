@@ -12,14 +12,14 @@ export default function EinwilligungPage() {
 
   function decide(consent: boolean) {
     saveOnboarding({ consent });
-    router.push("/schwerpunkt");
+    router.push("/beruf");
   }
 
   return (
     <MobileShell wide>
       <main className="flex flex-1 flex-col gap-6 px-6 pb-8 pt-14 md:px-12">
         <header>
-          <p className="bento-label">Schritt 1 von 2</p>
+          <p className="bento-label">Schritt 2 von 4</p>
           <h1
             className="mt-2 text-[40px] font-bold leading-[44px] text-[var(--color-text-primary)]"
             style={{ fontFamily: "var(--font-display)" }}

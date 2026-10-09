@@ -5,11 +5,12 @@ import { useState } from "react";
 import { EMPTY_ONBOARDING, loadOnboarding, saveOnboarding } from "@/lib/learner/onboarding";
 import { useAfterMount } from "@/lib/use-after-mount";
 
+// Beide Knöpfe gleich: gleiche Form, Größe und Farbe (Figma N3 „Gleichwertig“).
 const buttonClass =
-  "flex min-h-[53px] flex-1 items-center justify-center rounded-[var(--radius-md)] border-[1.5px] border-[var(--color-brand-primary)] bg-[var(--color-bg-surface)] px-5 text-base font-semibold text-[var(--color-brand-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
+  "flex min-h-[50px] flex-1 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 py-3.5 text-base font-semibold text-[var(--color-text-on-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]";
 
 /**
- * Einwilligungs-Banner für Nutzungsdaten (Figma Screen 25). Erscheint nur, solange
+ * Einwilligungs-Banner für Nutzungsdaten (Figma N3). Erscheint nur, solange
  * noch nicht entschieden wurde. Beide Knöpfe sind gleich groß und gleich sichtbar,
  * es gibt kein Vorab-Häkchen, und die App funktioniert ohne Zustimmung.
  */
@@ -30,32 +31,31 @@ export function ConsentBanner() {
     <section
       data-consent-banner
       aria-labelledby="consent-banner-title"
-      className="fixed inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[390px] flex-col gap-3.5 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-5 pb-8 pt-6"
+      className="fixed inset-x-4 bottom-4 z-10 mx-auto flex max-w-[358px] flex-col gap-2.5 rounded-[var(--radius-xl)] bg-[var(--color-bg-hero)] p-6 text-[var(--color-text-on-brand)]"
     >
+      <p className="mono-label text-[var(--color-text-muted-on-dark)]">Freiwillig</p>
       <h2
         id="consent-banner-title"
-        className="text-xl font-bold leading-[26px] text-[var(--color-text-primary)]"
+        className="text-lg font-bold leading-[23px]"
         style={{ fontFamily: "var(--font-display)" }}
       >
-        Dürfen wir anonym messen, wie die App genutzt wird?
+        Dürfen wir anonym messen, was hilft?
       </h2>
-      <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-        Wir zählen zum Beispiel, wo Lernende abbrechen und welche Fragen zu
-        schwer sind, damit die App besser wird. Ohne Namen, ohne Werbung, Server
-        in der EU. Du kannst es jederzeit in den Einstellungen ändern.
+      <p className="text-sm leading-[18px] text-[var(--color-text-soft-on-dark)]">
+        Nur Klicks und Lernzeit, ohne Namen. Jederzeit in den Einstellungen änderbar.
       </p>
       <Link
         href="/datenschutz"
-        className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+        className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--color-text-on-brand)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
       >
         Details: Datenschutzerklärung
       </Link>
-      <div className="flex gap-2.5">
+      <div className="flex gap-2">
         <button type="button" className={buttonClass} onClick={() => decide(true)}>
-          Einverstanden
+          Ja, erlauben
         </button>
         <button type="button" className={buttonClass} onClick={() => decide(false)}>
-          Ablehnen
+          Nein, danke
         </button>
       </div>
     </section>

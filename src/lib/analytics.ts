@@ -79,7 +79,7 @@ export function trackExplanationReported(properties: {
 }
 
 /** Onboarding: Schritt angezeigt (nur Schrittname, keine Auswahl). */
-export function trackOnboardingStep(properties: { step: "schwerpunkt" }): void {
+export function trackOnboardingStep(properties: { step: "beruf" | "schwerpunkt" }): void {
   capture("onboarding_step", properties);
 }
 
