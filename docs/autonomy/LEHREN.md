@@ -103,6 +103,9 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Gate-Bruch-Erkennung hielt `merge-gate` rot wegen „risk:high wartet auf freigegeben“ für einen Bruch (las nur „exit code 1“) → zwei PRs bekamen `gate-bruch`, Reparatur gesperrt. Richtig: spezifische Fehlerzeile lesen (`pickFailureLine`) und Warten auf Freigabe nie als Bruch zählen (`WAITING_RE`). (SIN-439)
 - Fehlgeschlagener Lauf zeigt nur „Process completed with exit code 1“, Logs und Artefakt nicht lesbar → Ursache unbekannt. Richtig: Skripte schreiben die letzte Fehlerzeile (Schlüssel geschwärzt) als `::error`-Anmerkung, die über die Check-API lesbar ist (`lastErrorLine` in `run-task.mjs`). (SIN-440)
 - Wächter meldet „Migrationen n−1/n“, Secrets und Sicherung sind in Ordnung → die Datei enthält `drop constraint`/`drop`/`rename`, `isAdditive` lässt sie absichtlich liegen. Richtig: nie umschreiben oder selbst anwenden, Sinan-Aufgabe anlegen; neue Migrationen, wo möglich, ohne `drop` formulieren. (SIN-441)
+- Additive Migration, die eine Tabelle aus einer liegengebliebenen nicht additiven Migration voraussetzt → `migrate` scheitert an ihr, der Wächter zeigt weiter n−2. Richtig: Abhängigkeit im Entscheidungstext nennen; erst Sinan die blockierte Migration ausführen lassen, dann `migrate` neu starten. (SIN-443)
+- Tagesdeckel zählte Läufe, die nach Sekunden an einer API-Ablehnung scheiterten (0 € verbraucht) → Tag gesperrt, kein Neustart nach Behebung. Richtig: Fehlschläge unter 3 Minuten zählen nicht, ab dem dritten am Tag doch (`dailyLimitReached`). (SIN-444)
+- Ein Fehler bei einem Modell (mehrzeiliges OpenAI-JSON) brach den ganzen Vergleich nach 8 Min. ab, bezahlte Ergebnisse weg, Anmerkung zeigte nur `"error": {`. Richtig: API-Fehler mit `compactApiError` einzeilig machen; Fehler je Kandidat abfangen und im Bericht unter `failed` führen. (SIN-445)
 
 ## Datenbank-Rechte
 

@@ -116,5 +116,23 @@ describe("Claude-Richter und Bericht (SIN-437)", () => {
     assert.match(md, /Frage\?/);
     assert.match(md, /Merk/);
     assert.match(md, /Wahl trifft Sinan/);
+    assert.doesNotMatch(md, /Fehlgeschlagen/);
+  });
+
+  it("SIN-445: gescheiterte Kandidaten stehen im Bericht, die anderen bleiben", () => {
+    const report: AlleReport = {
+      runId: "2026-10-10",
+      judges: { openai: "gpt-5.4-mini", claude: "claude-haiku-5-5" },
+      unitTarget: 20,
+      totalUsd: 1,
+      totalEur: 0.93,
+      priceNotes: [],
+      published: false,
+      models: [],
+      failed: [{ model: "chat-latest", provider: "openai", error: "invalid_request_error (param x): a | b" }],
+    };
+    const md = renderAlleMarkdown(report);
+    assert.match(md, /## Fehlgeschlagen/);
+    assert.match(md, /\| chat-latest \| openai \| invalid_request_error \(param x\): a \/ b \|/);
   });
 });

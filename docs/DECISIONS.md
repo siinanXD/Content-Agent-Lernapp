@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-443 | SIN-443: Migration 20261014010000 wartet auf 20261013010000 | [SIN-443-migration-416-haengt-an-415.md](decisions/SIN-443-migration-416-haengt-an-415.md) |
 | SIN-441 | SIN-441: Migration 20261013010000 bleibt liegen, Sinan entscheidet | [SIN-441-migration-sin415-nicht-additiv.md](decisions/SIN-441-migration-sin415-nicht-additiv.md) |
 | SIN-438 | SIN-438: Tabellenrechte härten (TRUNCATE, TRIGGER, REFERENCES) | [SIN-438-tabellenrechte.md](decisions/SIN-438-tabellenrechte.md) |
 | SIN-437 | SIN-437: Goldset-Vergleich aller Modelle (Claude und OpenAI), zwei Richter | [SIN-437-ab-alle-modelle.md](decisions/SIN-437-ab-alle-modelle.md) |
