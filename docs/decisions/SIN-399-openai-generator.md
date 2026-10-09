@@ -32,3 +32,20 @@
   1. Docs nachlesen: OpenAI-Modelle, Preise, Batch, Structured Outputs und OSS-Abstraktion mit Beleg in diese Datei (1 h, Lauf mit Web-Zugriff).
   2. Nach dem Haiku-Messlauf: nur bei OpenAI-Preis unter Haiku 5.5 oder klar höherer Bestehensquote den Umbau (23–32 h) und den Richterwechsel beauftragen; Messlauf `ap22:ab` um OpenAI erweitern.
 - **Warum:** Ohne belegte OpenAI-Preise lässt sich ein Umbau von 23–32 h nicht begründen, und Haiku 5.5 senkt die Erzeugungskosten schon um etwa das 20-Fache ohne neuen Anbieter.
+
+## Nachtrag 09.10.2026: OpenAI-Docs gelesen (Option 1 aus PR #225, Sinan)
+
+- **Quellen (abgerufen 09.10.2026):** OpenAI [Preise](https://developers.openai.com/api/docs/pricing), [Abkündigungen](https://developers.openai.com/api/docs/deprecations). Die [Batch-Anleitung](https://developers.openai.com/api/docs/guides/batch) war in diesem Lauf nicht abrufbar; Batch-Format und Structured Outputs im Batch bleiben deshalb **ungeprüft**.
+
+| Modell | Standard: Eingabe / Ausgabe je 1 Mio. | Batch: Eingabe / Ausgabe je 1 Mio. | Cache-Lesen (Batch) |
+| --- | --- | --- | --- |
+| `gpt-6-luna` (OpenAI, Ersatz für `gpt-5.4-nano` laut Abkündigungs-Seite) | 0,10 $ / 0,50 $ | 0,05 $ / 0,25 $ | 0,005 $ |
+| `gpt-6.1-sol` (OpenAI) | 2,00 $ / 10,00 $ | nicht eindeutig belegt | – |
+| Claude Haiku 5.5 (Vergleich, belegt in SIN-398) | – | 0,05 $ / 0,25 $ | 0,1× |
+| Claude Sonnet 5.5 (Vergleich, belegt in SIN-398) | – | 1 $ / 5 $ | 0,05× |
+
+- **Annahme Batch-Spalte:** Die Preisseite hat die Reiter „Standard, Batch, Flex, Fast, Ultrafast“. Die zweite Tabelle nennt genau die Hälfte der Standardpreise; sie ist hier dem Reiter „Batch“ zugeordnet.
+- **Richter `gpt-5.4-mini`:** steht nicht mehr auf der aktuellen Preisseite. Laut Abkündigungs-Seite ist er **nicht** abgekündigt (abgekündigt ist nur `gpt-5.4-nano`, Abschaltung 01.04.2027). Der Preis im Code (0,75 $ / 4,50 $, `cost-guard.ts`) ist damit nicht mehr aus der Preisseite belegbar.
+- **Entscheidung (ersetzt „vorläufig“): Kein Umbau auf OpenAI als Generator.** Der günstigste OpenAI-Kandidat kostet im Batch genauso viel wie Haiku 5.5 (0,05 $ / 0,25 $). Ein Preisvorteil, der 23–32 h Umbau und den Richterwechsel rechtfertigt, besteht nicht.
+- **Neu prüfen, wenn:** der Vergleich `run-task ab-haiku-sonnet` (SIN-398) zeigt, dass Haiku 5.5 die Qualitäts-Schwelle nicht schafft. Dann `gpt-6-luna` als zweiter günstiger Kandidat in `ap22:ab` aufnehmen; der Richter müsste dafür den Anbieter wechseln.
+- **Nicht geprüft, weil kein Umbau:** Mehr-Anbieter-Bibliotheken (Lizenz, Sterne, letzter Commit).
