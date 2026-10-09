@@ -31,7 +31,7 @@ export default function AnmeldenPage() {
         email,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/ausbilder`,
+          emailRedirectTo: `${window.location.origin}/ausbilder/gruppen`,
         },
       });
       setStatus(error && error.status !== 400 && error.status !== 422 ? "fehler" : "gesendet");

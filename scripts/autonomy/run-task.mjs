@@ -299,8 +299,28 @@ export function applyResult(file, task, result, { datum, beleg }) {
 
 // ---- Lauf ----------------------------------------------------------------------------------------------------
 
+/**
+ * Letzte aussagekräftige Zeile einer Ausgabe für eine `::error::`-Anmerkung (SIN-440). Agenten können Lauf-Logs nicht
+ * lesen, Anmerkungen schon. Bevorzugt Zeilen mit Fehlerwort oder HTTP-Status, sonst die letzte Zeile. Schlüssel maskiert.
+ * @param {string} text
+ */
+export function lastErrorLine(text = "") {
+  const lines = String(text).split(/\r?\n/).map((l) => l.trim()).filter(Boolean).filter((l) => !/^npm (ERR!|error) (code|path|command|workingdir|A complete log)/i.test(l));
+  const hit = [...lines].reverse().find((l) => /error|fehler|stop|failed|exception|status \d{3}|\b[45]\d\d\b/i.test(l));
+  const line = hit ?? lines.at(-1) ?? "keine Ausgabe";
+  return line
+    .replace(/(sk-[a-z]*-?)[A-Za-z0-9_-]{8,}/g, "$1…")
+    .replace(/(Bearer\s+)\S+/gi, "$1…")
+    .replace(/::/g, ": ")
+    .slice(0, 300);
+}
+
 function sh(cmd, args) {
-  const r = spawnSync(cmd, args, { stdio: "inherit", env: process.env });
+  // Ausgabe durchreichen und mitschreiben, damit bei Fehler die Ursache als Anmerkung erscheint (SIN-440).
+  const r = spawnSync(cmd, args, { env: process.env, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  if (r.stdout) process.stdout.write(r.stdout);
+  if (r.stderr) process.stderr.write(r.stderr);
+  if (r.status !== 0) console.log(`::error title=${cmd} ${args.join(" ")}::${lastErrorLine(`${r.stdout ?? ""}\n${r.stderr ?? ""}${r.error ? `\n${r.error.message}` : ""}`)}`);
   return r.status === 0;
 }
 

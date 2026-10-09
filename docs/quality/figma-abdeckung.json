@@ -54,6 +54,10 @@
     { "frame": "W9 Profil", "route": "/profil", "code": ["src/app/profil/page.tsx"], "stand": "umgesetzt" },
     { "frame": "W10 Zustände · Offline und Fehler", "route": "Komponente StateView", "code": ["src/components/ui/state-view.tsx"], "stand": "umgesetzt" },
     { "frame": "W11 Ausbilder · Gruppe (Desktop)", "route": "/ausbilder", "code": ["src/app/ausbilder/page.tsx"], "stand": "umgesetzt" },
+    { "frame": "G0 Zugang einlösen · Ausbilder (Link von Sinan)", "route": "/ausbilder/zugang", "code": ["src/app/ausbilder/zugang/page.tsx"], "stand": "umgesetzt" },
+    { "frame": "G5 Meine Gruppen · Ausbilder", "route": "/ausbilder/gruppen", "code": ["src/app/ausbilder/gruppen/page.tsx", "src/components/ausbilder/gruppen-kacheln.tsx"], "stand": "umgesetzt" },
+    { "frame": "G6 Gruppe archivieren · Bestätigung", "route": "/ausbilder/gruppen", "code": ["src/components/ausbilder/archive-sheet.tsx"], "stand": "umgesetzt" },
+    { "frame": "G7 Archiv · Historie der Gruppen", "route": "/ausbilder/archiv", "code": ["src/app/ausbilder/archiv/page.tsx"], "stand": "umgesetzt" },
     { "frame": "Intern · Checkliste vor dem ersten Demo-Zugang", "route": "–", "code": [], "stand": "kein Screen", "notiz": "interne Checkliste für Sinan, keine App-Seite" },
     { "frame": "00 Richtung 2026 · Lern-App", "route": "–", "code": [], "stand": "kein Screen", "notiz": "Richtungsfolie der Variante 2026, kein App-Screen" },
     { "frame": "Bühne · Lern-App 2026", "route": "–", "code": [], "stand": "kein Screen", "notiz": "Präsentationsfläche, kein App-Screen" }

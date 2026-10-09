@@ -47,6 +47,7 @@ export default function AusbilderPage() {
   const [load, setLoad] = useState<Load>({ kind: "laden" });
   const [filter, setFilter] = useState<MemberFilter>("alle");
   const [now] = useState(() => new Date());
+  const router = useRouter();
 
   // `still`: Daten im Hintergrund auffrischen, ohne die Seite auf „Laden“ zu setzen (Formulare bleiben stehen).
   const reload = useCallback(async (still = false) => {
@@ -57,13 +58,17 @@ export default function AusbilderPage() {
     if (!still) setLoad({ kind: "laden" });
     try {
       const token = await getAccessToken();
-      const res = await fetch("/api/ausbilder/gruppe", {
+      // `?gruppe=` wählt eine bestimmte Gruppe, auch archiviert (SIN-415). Ohne: die einzige aktive.
+      const gruppe = new URLSearchParams(window.location.search).get("gruppe");
+      const res = await fetch(gruppe ? `/api/ausbilder/gruppe?id=${encodeURIComponent(gruppe)}` : "/api/ausbilder/gruppe", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         cache: "no-store",
       });
       // Antwort immer ganz lesen, auch bei 401/404: sonst bleibt die Anfrage offen.
       const data: unknown = await res.json().catch(() => null);
       if (res.status === 401 || res.status === 403) return setLoad({ kind: "anmelden" });
+      // Mehrere aktive Gruppen und keine gewählt: zur Auswahl.
+      if (res.status === 409) return router.replace("/ausbilder/gruppen");
       if (res.status === 404) return setLoad({ kind: "ohne-gruppe" });
       const overview = res.ok ? parseOverview(data) : null;
       if (overview) return setLoad({ kind: "bereit", overview, demo: false });
@@ -72,7 +77,7 @@ export default function AusbilderPage() {
     } catch {
       setLoad({ kind: "fehler", text: "Bitte versuchen Sie es noch einmal." });
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Daten laden beim Öffnen der Seite
@@ -183,6 +188,7 @@ function Ansicht({
           <p className="bento-label">
             {group.name}
             {demo ? " · Beispiel" : ""}
+            {group.archivedAt ? " · Archiv" : ""}
           </p>
           <h1
             className="text-[28px] font-bold leading-9 md:text-[48px] md:leading-[52px]"
@@ -245,7 +251,7 @@ function Ansicht({
           )}
         </section>
 
-        {demo ? null : <InviteSection onInvited={onInvited} />}
+        {demo || group.archivedAt ? null : <InviteSection groupId={group.id} onInvited={onInvited} />}
 
         <p className="rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] px-4 py-3 text-[13px] leading-[17px] text-[var(--color-text-hint)]">
           Die App bewertet keine Personen. Sie zeigt nur Fortschritt und
@@ -271,6 +277,14 @@ function Ansicht({
           >
             Als CSV exportieren
           </Button>
+          {demo ? null : (
+            <Link
+              href="/ausbilder/gruppen"
+              className={`inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] border-[1.5px] border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-5 py-3.5 text-base font-semibold text-[var(--color-brand-primary)] ${focusRing}`}
+            >
+              Meine Gruppen
+            </Link>
+          )}
           {demo ? (
             <Link
               href="/demo"
