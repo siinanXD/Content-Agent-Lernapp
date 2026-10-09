@@ -67,7 +67,7 @@ test("Auftragsverarbeiter passen zur Konfiguration im Repo", () => {
   // Regionen: „EU“ nur, wo der Code den EU-Host vorgibt; sonst bleibt der Platzhalter.
   const region = (name: string) => cards.find((c) => c.name === name)?.region.map((r) => r.text).join("");
   const code = (f: string) => readFileSync(f, "utf8");
-  assert.ok(code("src/components/analytics/posthog-provider.tsx").split('"').includes("https://eu.i.posthog.com"));
+  assert.ok(code("src/components/analytics/posthog-provider.tsx").split('"').some((part) => part === "https://eu.i.posthog.com"));
   assert.equal(region("PostHog"), "EU");
   assert.ok(code("src/lib/quality/langfuse-client.ts").includes("LANGFUSE_EU_HOST"));
   assert.equal(region("Langfuse"), "EU");

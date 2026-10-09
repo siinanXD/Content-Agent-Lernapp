@@ -5,6 +5,8 @@
  * Ansehen, Nach dem Merge, Kosten/Folgen, Rückgängig.
  */
 
+import { stripComments } from "./sanitize.mjs";
+
 export const MARKER = "<!-- pr-gate -->";
 export const KEYS_RE = /<!-- pr-gate approved-keys: (\[.*?\]) -->/;
 const LINEAR = "https://linear.app/sinan-kahraman/issue";
@@ -40,7 +42,7 @@ export function diagrammHinweis(files = []) {
 
 /** Zerlegt den PR-Body in Abschnitte. @returns {Record<string, string>} Schlüssel aus SECTIONS */
 export function parseBody(body = "") {
-  const text = String(body).replace(/<!--[\s\S]*?-->/g, "").replace(/\r/g, "");
+  const text = stripComments(body).replace(/\r/g, "");
   const found = {};
   let current = null;
   for (const line of text.split("\n")) {

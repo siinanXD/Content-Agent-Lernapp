@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-435 | SIN-435 — CodeQL auf main: Altfunde hoher Schwere beheben | [SIN-435-codeql-altfunde.md](decisions/SIN-435-codeql-altfunde.md) |
 | SIN-434 | SIN-434 — Content-Fabrik: Ursache für wenige Einheiten je Lauf ausweisen und Engpass beheben | [SIN-434-fabrik-engpass.md](decisions/SIN-434-fabrik-engpass.md) |
 | SIN-433 | SIN-433: Generator-Regeln für rechnen, zuordnen und lückentext | [SIN-433-rechnen-zuordnen-lueckentext.md](decisions/SIN-433-rechnen-zuordnen-lueckentext.md) |
 | SIN-432 | SIN-432: Generator-Prompt für auswahl und reihenfolge, weniger Verwerfungen | [SIN-432-auswahl-prompt.md](decisions/SIN-432-auswahl-prompt.md) |

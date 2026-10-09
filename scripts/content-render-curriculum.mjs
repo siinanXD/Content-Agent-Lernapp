@@ -8,9 +8,9 @@
  */
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { escTableCell as esc } from "./autonomy/sanitize.mjs";
 
 const DIR = path.join(process.cwd(), "docs", "content");
-const esc = (s) => String(s).replace(/\|/g, "\\|");
 const code = (s) => "`" + s + "`";
 const codes = (arr) => arr.map(code).join(", ");
 
