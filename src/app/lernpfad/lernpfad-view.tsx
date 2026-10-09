@@ -55,9 +55,6 @@ const loadWeek = (): WeekDay[] => weekActivity(loadLearningEvents());
 const weekdayShort = (day: string) =>
   new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "");
 
-/** Seitlicher Versatz der Knoten (px) für den Zickzack. */
-const ZIGZAG = [0, 64, 128, 64];
-
 /**
  * Lernpfad. Die Einheiten kommen fertig vom Server (SIN-311), damit der erste Bildaufbau
  * nicht auf einen Abruf wartet und im Regelfall nach dem Laden nichts mehr ausgetauscht wird.
@@ -131,7 +128,12 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
         >
           Lernpfad
         </h1>
-        <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">{subtitle}</p>
+        <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
+          {subtitle}
+          {pathUnits.length > 0
+            ? ` · ${pathUnits.filter((u) => u.status === "done").length} von ${pathUnits.length} Einheiten`
+            : ""}
+        </p>
         <p className="bento-label mt-1">
           {phaseA
             ? `Phase A · ${pathUnits.length} Einheiten (M0, LF1, LF2, PA)`
@@ -277,17 +279,15 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
                     </span>
                   ) : null}
                 </p>
-                {/* 02b Karte: Zickzack-Pfad je Modul */}
-                <ol className="flex flex-col gap-5 py-2">
+                {/* N5 Karte: Punkte fertig / jetzt / offen auf einer Achse */}
+                <ol className="bento-tile !gap-0">
                   {block.units.map((unit, i) => (
-                    <li
-                      key={unit.id}
-                      style={{ paddingLeft: ZIGZAG[i % ZIGZAG.length] }}
-                    >
+                    <li key={unit.id}>
                       <PathNode
                         state={NODE_STATE[unit.status]}
                         indexLabel={unit.indexLabel}
                         title={unit.title}
+                        last={i === block.units.length - 1}
                         href={
                           unit.status === "done"
                             ? undefined

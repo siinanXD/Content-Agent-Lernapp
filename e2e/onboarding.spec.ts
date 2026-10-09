@@ -31,8 +31,18 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   await expect(page).toHaveURL(/\/einwilligung$/);
   await page.getByRole("button", { name: "Ohne Nutzungsdaten weiter" }).click();
 
-  await expect(page).toHaveURL(/\/schwerpunkt$/);
+  await expect(page).toHaveURL(/\/beruf$/);
   const weiter = page.getByRole("button", { name: "Weiter", exact: true });
+  await expect(weiter).toBeDisabled();
+  // Suchfeld filtert nur die vorhandenen Berufe.
+  await page.getByRole("searchbox", { name: "Beruf suchen" }).fill("Industriekauf");
+  await expect(page.getByRole("button", { name: /Maschinen- und Anlagenführer/ })).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "Beruf suchen" }).fill("");
+  await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
+  await weiter.click();
+
+  await expect(page).toHaveURL(/\/schwerpunkt$/);
+  await expect(page.getByText("Schritt 4 von 4")).toBeVisible();
   await expect(weiter).toBeDisabled();
   await page.getByRole("button", { name: "Metall- und Kunststofftechnik" }).click();
   // Zwei Maps: zweite Auswahl (Betrieb) mit Default; kein „Referenzberuf“ mehr (SIN-249)
@@ -70,6 +80,16 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   await expect(page.getByRole("heading", { name: "Einheit geschafft" })).toBeVisible();
 });
 
+test("Industriekaufmann/-frau: kein Schwerpunkt, direkt zum Lernpfad", async ({ page }) => {
+  await page.goto("/beruf");
+  await page.getByRole("button", { name: /Industriekaufmann/ }).click();
+  await page.getByRole("button", { name: "Weiter", exact: true }).click();
+  await expect(page).toHaveURL(/\/lernpfad$/);
+  expect(
+    await page.evaluate(() => JSON.parse(window.localStorage.getItem("cal-onboarding") ?? "{}")),
+  ).toMatchObject({ berufId: "indkfl", mapId: "indkfl", schwerpunktId: null });
+});
+
 test("Einwilligung steuert Nutzungsdaten, Widerruf in den Einstellungen", async ({ page }) => {
   await page.goto("/einwilligung");
   await page.getByRole("button", { name: "Einverstanden" }).click();
@@ -86,6 +106,7 @@ test("Einwilligung steuert Nutzungsdaten, Widerruf in den Einstellungen", async 
 for (const route of [
   "/willkommen",
   "/einwilligung",
+  "/beruf",
   "/schwerpunkt",
   "/einstellungen",
   "/impressum",

@@ -64,6 +64,8 @@ test("Lernweg komplett mit der Tastatur", async ({ page, context }) => {
   await page.goto("/willkommen");
   await activate(page, page.getByRole("link", { name: "Los geht’s" }), "Los geht’s");
   await activate(page, page.getByRole("button", { name: "Ohne Nutzungsdaten weiter" }), "Einwilligung");
+  await activate(page, page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }), "Beruf", "Space");
+  await activate(page, page.getByRole("button", { name: "Weiter", exact: true }), "Beruf bestätigen");
   await activate(page, page.getByRole("button", { name: "Metall- und Kunststofftechnik" }), "Schwerpunkt", "Space");
   await activate(page, page.getByRole("button", { name: "Weiter", exact: true }), "Schwerpunkt bestätigen");
 

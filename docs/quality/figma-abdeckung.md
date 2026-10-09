@@ -6,7 +6,7 @@ Datei `0SWGDO2ioBD3MyXiAnrbRz`. Zuordnung: `docs/quality/figma-abdeckung.json`, 
 
 Abgleich mit der Figma-Datei (Bericht ohne Token erzeugt, Live-Abgleich nur in der Konsole): nicht verfügbar (FIGMA_ACCESS_TOKEN fehlt)
 
-Umgesetzt: 48 von 51 Frames, fehlend: 0, kein App-Screen: 3.
+Umgesetzt: 53 von 56 Frames, fehlend: 0, kein App-Screen: 3.
 
 | Frame | Route/Komponente | Code | Stand |
 | --- | --- | --- | --- |
@@ -50,6 +50,11 @@ Umgesetzt: 48 von 51 Frames, fehlend: 0, kein App-Screen: 3.
 | `W1 Willkommen` | /willkommen | `src/app/willkommen/page.tsx` | umgesetzt |
 | `W2 Einwilligung` | /einwilligung | `src/app/einwilligung/page.tsx` | umgesetzt |
 | `W3 Schwerpunkt` | /schwerpunkt | `src/app/schwerpunkt/page.tsx` | umgesetzt |
+| `N1 Beruf wählen · Onboarding` | /beruf | `src/app/beruf/page.tsx` | umgesetzt |
+| `N2 Prüfungsmodus · Start` | /pruefung | `src/app/pruefung/page.tsx` | umgesetzt |
+| `N3 Einwilligung · Banner (Nutzungsdaten)` | Komponente ConsentBanner | `src/components/learner/consent-banner.tsx` | umgesetzt |
+| `N4 Startseite · Bildungsträger (mobil)` | / | `src/app/page.tsx` | umgesetzt |
+| `N5 Lernpfad · Karte (Variante 2026)` | /lernpfad | `src/app/lernpfad/lernpfad-view.tsx` | umgesetzt |
 | `W4 Einheit · Erklärung` | /einheit/[unitId] | `src/app/einheit/[unitId]/page.tsx` | umgesetzt |
 | `W5 Ergebnis` | /ergebnis | `src/app/ergebnis/page.tsx` | umgesetzt |
 | `W6 Wiederholung` | /wiederholung | `src/app/wiederholung/page.tsx` | umgesetzt |
