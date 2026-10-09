@@ -65,6 +65,27 @@ test("Tagesdeckel: ein kostenpflichtiger Lauf je Aufgabe und Tag", () => {
   assert.equal(dailyLimitReached("lighthouse", [run("Lauf lighthouse", "2026-10-06T06:00:00Z")], now), false);
 });
 
+test("SIN-444: schnelle Fehlschläge (API lehnt ab) sperren den Tag nicht, ab dem dritten schon", () => {
+  const run = (id: number, conclusion: string | null, start: string, end: string) => ({
+    id,
+    display_title: "Lauf ab-alle-modelle",
+    created_at: start,
+    run_started_at: start,
+    updated_at: end,
+    conclusion,
+  });
+  const quick = (id: number) => run(id, "failure", "2026-10-06T08:52:43Z", "2026-10-06T08:53:15Z");
+  assert.equal(dailyLimitReached("ab-alle-modelle", [quick(1)], now), false);
+  assert.equal(dailyLimitReached("ab-alle-modelle", [quick(1), quick(2)], now), false);
+  assert.equal(dailyLimitReached("ab-alle-modelle", [quick(1), quick(2), quick(3)], now), true);
+  // Lange gescheitert (Geld kann verbraucht sein) zählt wie ein Erfolg.
+  assert.equal(dailyLimitReached("ab-alle-modelle", [run(4, "failure", "2026-10-06T08:00:00Z", "2026-10-06T08:30:00Z")], now), true);
+  // Ohne Zeitstempel bleibt es beim alten Verhalten: zählt.
+  assert.equal(dailyLimitReached("ab-alle-modelle", [{ id: 5, display_title: "Lauf ab-alle-modelle", created_at: "2026-10-06T08:00:00Z", conclusion: "failure" }], now), true);
+  // Läuft noch: zählt.
+  assert.equal(dailyLimitReached("ab-alle-modelle", [quick(1), run(6, null, "2026-10-06T09:00:00Z", "2026-10-06T09:00:30Z")], now), true);
+});
+
 test("dispatchRun startet nur ohne Treffer am Tag und über das Agenten-Token", async () => {
   const calls: { url: string; init?: RequestInit }[] = [];
   const mk = (runs: unknown[]) => async (url: string, init?: RequestInit) => {
