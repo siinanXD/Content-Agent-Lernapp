@@ -11,6 +11,7 @@ import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import {
   groupUnitsByModule,
+  withEmptyModules,
   type PathUnit,
   type PathUnitStatus,
 } from "@/lib/learner/playable-path";
@@ -63,7 +64,14 @@ const focus =
  * Lernpfad (Figma 52:377, A1). Die Einheiten kommen fertig vom Server (SIN-311), damit der erste Bildaufbau
  * nicht auf einen Abruf wartet und im Regelfall nach dem Laden nichts mehr ausgetauscht wird.
  */
-export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
+export function LernpfadView({
+  initialUnits,
+  modules = [],
+}: {
+  initialUnits: PathUnit[];
+  /** Alle Module des Kurses; solche ohne Einheiten zeigen den Leerzustand (SIN-452). */
+  modules?: Array<{ id: string; title: string }>;
+}) {
   const hello = useAfterMount<Begruessung | null>(loadGreeting, null);
   // Server-HTML zeigt den Stand ohne Ereignisse statt eines Lade-Zustands: kein Austausch, kein Sprung.
   const summary = useAfterMount<LearningSummary | "fehler">(
@@ -77,6 +85,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
   const reviewCopy = reviewTileCopy(dueCount, stackCount, stack ? nextDueAt(stack) : null);
   const [pathUnits, setPathUnits] = useState(initialUnits);
   const groups = groupUnitsByModule(pathUnits);
+  const pathModules = withEmptyModules(groups, modules);
   const examParts = listExamParts().filter((p) => p.simulated);
   const online = useOnline();
   const days = summary === "fehler" ? 0 : summary.streak.days;
@@ -100,6 +109,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
     pathUnits.find((u) => u.status === "today") ??
     pathUnits.find((u) => u.status === "open");
 
+  // Nur Module mit Einheiten zählen (`groups` enthält keine leeren Module).
   const readiness = groups.map((mod) => {
     const all = mod.blocks.flatMap((b) => b.units);
     const done = all.filter((u) => u.status === "done").length;
@@ -258,7 +268,7 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
         ) : null}
       </div>
 
-      {groups.length === 0 ? (
+      {pathModules.length === 0 ? (
         <StateView
           kind="leer"
           title="Noch keine Einheiten"
@@ -266,15 +276,38 @@ export function LernpfadView({ initialUnits }: { initialUnits: PathUnit[] }) {
         />
       ) : null}
 
-      {groups.map((mod) => {
+      {pathModules.map((mod) => {
         return (
-          <section key={mod.moduleId} className="px-6 pt-8 md:px-12">
+          <section
+            key={mod.moduleId}
+            className="px-6 pt-8 md:px-12"
+            data-module-state={mod.units ? "mit-einheiten" : "leer"}
+          >
             <h2
               className="mb-2 text-lg font-medium text-[var(--color-text-primary)]"
               style={{ fontFamily: "var(--font-display)" }}
             >
               {mod.moduleId} · {mod.moduleTitle}
             </h2>
+            {mod.units === 0 ? (
+              <div
+                tabIndex={0}
+                role="group"
+                aria-label={`Modul ${mod.moduleId}, ${mod.moduleTitle}: Noch keine Einheiten. Hier kannst du noch nichts starten.`}
+                data-testid="modul-leer"
+                className={`${tile} min-h-11 rounded-[var(--radius-md)] ${focus}`}
+              >
+                <p
+                  className="text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Noch keine Einheiten
+                </p>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Dieses Modul wird nach und nach gefüllt. Sobald Einheiten veröffentlicht sind, kannst du hier starten.
+                </p>
+              </div>
+            ) : null}
             {mod.blocks.map((block) => (
               <div key={block.blockId} className="mb-3">
                 <p className="mb-2 text-sm text-[var(--color-text-secondary)]">
