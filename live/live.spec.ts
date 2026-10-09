@@ -98,12 +98,16 @@ for (const route of ["/", "/willkommen", "/lernpfad", "/einheit/M0-1-u1", "/prof
   });
 }
 
-test("UI-04 Onboarding: Willkommen → Einwilligung → Schwerpunkt → Lernpfad", async ({ page, context }) => {
+test("UI-04 Onboarding: Willkommen → Einwilligung → Beruf → Schwerpunkt → Lernpfad", async ({ page, context }) => {
   await stubData(context);
   await page.goto("/willkommen");
   await page.getByRole("link", { name: "Los geht’s" }).click();
   await expect(page).toHaveURL(/\/einwilligung$/);
   await page.getByRole("button", { name: "Ohne Nutzungsdaten weiter" }).click();
+  // N1 Beruf wählen (SIN-414): neuer Schritt vor dem Schwerpunkt.
+  await expect(page).toHaveURL(/\/beruf$/);
+  await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
+  await page.getByRole("button", { name: "Weiter", exact: true }).click();
   await expect(page).toHaveURL(/\/schwerpunkt$/);
   await page.getByRole("button", { name: "Metall- und Kunststofftechnik" }).click();
   await page.getByRole("button", { name: "Weiter", exact: true }).click();
