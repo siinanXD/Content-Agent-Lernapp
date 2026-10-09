@@ -1,7 +1,7 @@
 /**
  * SIN-447: Goldset Industriekaufleute. Maßstab für den Richter, bevor die Fabrik Industriekaufleute erzeugt.
  * 12 Fragen zu Verordnung und Prüfung, je 5 Fachfragen zu Phase A (M0, LF1, LF2, LF3) und 3 Gegenproben,
- * die durchfallen müssen (Feld `gegenprobe`). Status bleibt „Entwurf“, bis Sinan die Fragen durchgesehen hat.
+ * die durchfallen müssen (Feld `gegenprobe`). Geprüft durch Sinan am 09.10.2026.
  */
 import goldsetJson from "../../../docs/quality/indkfl-goldset.json";
 import type { GoldQuestion } from "./maf-goldset-fixture";

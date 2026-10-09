@@ -9,4 +9,4 @@
 - Fakten zu Verordnung und Prüfung stammen aus der Map `docs/content/indkfl.json` (Rechtsstand geprüft 03.10.2026). gesetze-im-internet.de und kmk.org waren in diesem Lauf nicht abrufbar (robots/Proxy); `sourceFetchedAt` ist darum das Abrufdatum der Map.
 - Fachfragen (Kaufvertrag, Verjährung, Kalkulation, Kennzahlen) sind allgemeines Fachwissen zu den Themen des Rahmenlehrplans; die Quelle ist das Lernfeld, das das Thema verlangt (wie beim MAF-Goldset).
 - Erwartete Werte: Niveau 4, Sprache 4 oder 5, Sicherheitsmerkmal nur beim Block mit `safety` (M0-2).
-- **Status Entwurf:** Das Goldset gilt erst als geprüft, wenn Sinan die 35 Fragen durchgesehen hat. Danach: Langfuse-Datensatz `indkfl-goldset` anlegen und den Richter damit kalibrieren.
+- **Status:** Sinan hat die 35 Fragen am 09.10.2026 durchgesehen und freigegeben („passt“). Nächster Schritt: Langfuse-Datensatz `indkfl-goldset` anlegen und den Richter damit kalibrieren.

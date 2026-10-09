@@ -49,7 +49,7 @@ Langfuse dataset name: `maf-goldset-70` (Langfuse Cloud EU).
 
 ## Goldset Industriekaufleute (SIN-447)
 
-`docs/quality/indkfl-goldset.json` — **35 eigene Fragen**, Status **Entwurf, Prüfung durch Sinan offen**:
+`docs/quality/indkfl-goldset.json` — **35 eigene Fragen**, Status **geprüft durch Sinan am 09.10.2026**:
 
 - 12 Fragen zu Verordnung und Prüfung ([IndKflAusbV](https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html), §§ 4, 8, 11, 12, 14)
 - je 5 Fachfragen zu Phase A: `M0` (Anlage, Abschnitt B), `LF1`, `LF2`, `LF3` ([KMK-Rahmenlehrplan 15.12.2023](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf)); `unitId` ist der Block der Map

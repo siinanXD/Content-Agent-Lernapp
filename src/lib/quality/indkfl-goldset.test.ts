@@ -11,7 +11,7 @@ test("SIN-447: Goldset Industriekaufleute ist vollständig und eindeutig", () =>
   assert.equal(INDKFL_GOLDSET.itemCount, INDKFL_GOLDSET_ITEMS.length);
   assert.ok(INDKFL_GOLDSET_ITEMS.length >= 30);
   assert.equal(new Set(INDKFL_GOLDSET_ITEMS.map((q) => q.id)).size, INDKFL_GOLDSET_ITEMS.length);
-  assert.match(INDKFL_GOLDSET.status, /Entwurf/);
+  assert.match(INDKFL_GOLDSET.status, /Geprüft durch Sinan/);
 });
 
 test("SIN-447: jede Frage hat eine amtliche Quelle aus der Map, keine IHK-Aufgabe", () => {
