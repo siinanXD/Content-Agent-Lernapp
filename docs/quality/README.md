@@ -47,6 +47,16 @@ Langfuse dataset name: `maf-goldset-70` (Langfuse Cloud EU).
 
 `docs/quality/maf-goldset-phase-a.json` — 70 AO/BIBB items **plus** ≥5 own items per module `M0`, `LF1`, `LF2`, `PA` (dataset name `maf-goldset-phase-a`). Module baselines: `docs/quality/module-targets-phase-a.json`.
 
+## Goldset Industriekaufleute (SIN-447)
+
+`docs/quality/indkfl-goldset.json` — **35 eigene Fragen**, Status **Entwurf, Prüfung durch Sinan offen**:
+
+- 12 Fragen zu Verordnung und Prüfung ([IndKflAusbV](https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html), §§ 4, 8, 11, 12, 14)
+- je 5 Fachfragen zu Phase A: `M0` (Anlage, Abschnitt B), `LF1`, `LF2`, `LF3` ([KMK-Rahmenlehrplan 15.12.2023](https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf)); `unitId` ist der Block der Map
+- 3 Gegenproben (Feld `gegenprobe`): falsche Zahl (Quellentreue 0), mehrere richtige Antworten (Eindeutigkeit 0), zu leicht und unsauber (Niveau und Sprache unter 4). Der Richter muss sie durchfallen lassen.
+
+Quellen nur aus `docs/content/indkfl.json` (abgerufen 2026-10-03), keine IHK-Prüfungsaufgaben, keine Personendaten. Lader: `src/lib/quality/indkfl-goldset.ts`, Langfuse-Datensatz `indkfl-goldset` (noch nicht angelegt). Tests prüfen Quellen, Abdeckung, Sicherheitsmerkmal und Gegenproben.
+
 ## Commands
 
 ```bash
