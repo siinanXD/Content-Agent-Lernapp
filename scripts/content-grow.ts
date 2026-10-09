@@ -37,12 +37,15 @@ import {
   missingSecrets,
   nextOpenItem,
   nextOpenItems,
+  nichtVersucht,
   overBudget,
+  pendingSlots,
   pickSafetySample,
   reportFileName,
   RUN_CAP_EUR,
   toEvalItems,
   trimTargets,
+  unitCostHistory,
   type RunReport,
 } from "../src/lib/generate/content-grow";
 import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
@@ -209,11 +212,8 @@ async function main() {
   const published = publishedByMap.get(MAP_ID) ?? new Set<string>();
   const discarded = discardedByMap.get(MAP_ID) ?? new Set<string>();
   const handledChanges = new Set(history.flatMap((r) => r.sourceRefresh.changeKeys));
-  const perUnit = eurPerUnit(
-    history
-      .filter((r) => r.generated > 0)
-      .map((r) => ({ costEur: r.costEur, unitsGenerated: r.generated })),
-  );
+  // SIN-434: ohne Reparaturkosten; die zieht die Planung getrennt als `spent` ab.
+  const perUnit = eurPerUnit(unitCostHistory(history));
 
   const queue = usable.filter((q) => q.mapId === MAP_ID);
   const sourceReportPath = argValue("source-report");
@@ -398,7 +398,14 @@ async function main() {
     }
     await flushLangfuseOtel().catch(() => undefined);
   };
+  let timedOut = false;
   const capStop = async (e: unknown) => {
+    // SIN-434: Zeitlimit des Batches ist ein Stopp mit Grund im Bericht, kein Absturz.
+    if (e instanceof Error && /^Batch \S+ timed out/.test(e.message)) {
+      timedOut = true;
+      report.stopReason = `Zeitlimit: ${e.message}; Rest im nächsten Lauf`;
+      return;
+    }
     if (!(e instanceof RunBudgetExceededError)) {
       report.costEur = spentTotal();
       await recordCosts();
@@ -508,6 +515,26 @@ async function main() {
   const after = nextOpenItem(queue, publishedAfter, discardedAfter, report.deferred > 0 ? deferredResume : null);
   report.nextModuleId = after?.item.module.id ?? null;
   report.resumeModuleId = report.deferred > 0 ? (deferredResume ?? next?.item.module.id ?? null) : null;
+
+  // SIN-434: Aufschlüsselung der nicht versuchten Einheiten.
+  if (timedOut && report.generated === 0) report.deferred = Math.max(report.deferred, planPending.size);
+  const none = new Set<string>();
+  const otherMapOpen = usable
+    .filter((q) => q.mapId !== MAP_ID)
+    .reduce(
+      (n, q) =>
+        n + pendingSlots(q.module, publishedByMap.get(q.mapId) ?? none, discardedByMap.get(q.mapId) ?? none).length,
+      0,
+    );
+  report.nichtVersucht = nichtVersucht(
+    queue,
+    publishedAfter,
+    discardedAfter,
+    new Set(plan.map((x) => x.item.module.id)),
+    report.deferred,
+    timedOut,
+    otherMapOpen,
+  );
 
   await recordCosts();
 
