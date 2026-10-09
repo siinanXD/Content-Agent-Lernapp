@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DemoHinweis } from "@/components/learner/demo-hinweis";
 
 /** Centers the Figma 390 mobile composition on larger viewports; `wide` lets 2026 screens grow to desktop. */
 export function MobileShell({
@@ -16,6 +17,7 @@ export function MobileShell({
       <div
         className={`flex w-full max-w-[390px] min-h-full flex-col bg-[var(--color-bg-canvas)] shadow-[0_0_0_1px_var(--color-border-subtle)] ${wide ? "md:max-w-[1120px]" : ""} ${className}`}
       >
+        <DemoHinweis />
         {children}
       </div>
     </div>

@@ -7,6 +7,7 @@ import { TextField } from "@/components/ui/text-field";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { SCHWERPUNKTE } from "@/lib/learner/onboarding";
 import { DEMO_HREF } from "@/lib/ausbilder/demo";
+import { DEMO_LERNEN_HREF } from "@/lib/learner/demo-modus";
 import type { DemoField } from "@/lib/demo/demo-request";
 
 type Status = "offen" | "sendet" | "fertig" | "fehler";
@@ -99,6 +100,16 @@ export default function DemoPage() {
             className="inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-primary)] underline underline-offset-2"
           >
             Beispielansicht öffnen
+          </Link>
+        </p>
+        <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
+          Auch die Lernansichten (Lernpfad, Ergebnis, Wiederholung, Profil)
+          gibt es mit Beispieldaten.{" "}
+          <Link
+            href={DEMO_LERNEN_HREF}
+            className="inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-primary)] underline underline-offset-2"
+          >
+            Lernpfad als Beispiel öffnen
           </Link>
         </p>
 

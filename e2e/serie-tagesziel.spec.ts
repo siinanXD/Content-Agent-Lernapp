@@ -122,12 +122,12 @@ test("Einwilligungs-Banner: gleichwertige Knöpfe, per Tastatur bedienbar, ohne 
   await page.goto("/lernpfad");
 
   const banner = page.getByRole("region", {
-    name: "Dürfen wir anonym messen, wie die App genutzt wird?",
+    name: "Dürfen wir anonym messen, was hilft?",
   });
   await expect(banner).toBeVisible();
   const [ja, nein] = await Promise.all([
-    banner.getByRole("button", { name: "Einverstanden" }).boundingBox(),
-    banner.getByRole("button", { name: "Ablehnen" }).boundingBox(),
+    banner.getByRole("button", { name: "Ja, erlauben" }).boundingBox(),
+    banner.getByRole("button", { name: "Nein, danke" }).boundingBox(),
   ]);
   expect(ja!.width).toBeCloseTo(nein!.width, 0);
   expect(ja!.height).toBeCloseTo(nein!.height, 0);
@@ -136,8 +136,8 @@ test("Einwilligungs-Banner: gleichwertige Knöpfe, per Tastatur bedienbar, ohne 
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
   expect(axe.violations).toEqual([]);
 
-  // Tastatur: Fokus auf „Ablehnen“, Enter entscheidet; die App bleibt benutzbar.
-  await banner.getByRole("button", { name: "Ablehnen" }).focus();
+  // Tastatur: Fokus auf „Nein, danke“, Enter entscheidet; die App bleibt benutzbar.
+  await banner.getByRole("button", { name: "Nein, danke" }).focus();
   await page.keyboard.press("Enter");
   await expect(banner).toHaveCount(0);
   expect(

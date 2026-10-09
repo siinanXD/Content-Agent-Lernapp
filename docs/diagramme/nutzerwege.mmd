@@ -3,7 +3,9 @@
 flowchart LR
   subgraph Azubi
     A1["Onboarding (/willkommen)"] --> A2["Einwilligung (/einwilligung)"]
-    A2 --> A3["Schwerpunkt (/schwerpunkt)"]
+    A2 --> A2b["Beruf wählen (/beruf)"]
+    A2b --> A3["Schwerpunkt (/schwerpunkt)"]
+    A2b -- "Industriekaufmann/-frau" --> A4
     A3 --> A4["Lernpfad (/lernpfad)"]
     A4 --> A5["Einheit (/einheit/id)"]
     A5 --> A6["Ergebnis (/ergebnis)"]
@@ -16,6 +18,7 @@ flowchart LR
   subgraph Bildungsträger
     B1["Startseite (/)"] --> B2["Demo-Zugang anfragen (/demo)"]
     B2 --> B8["Beispielansicht ohne Konto (/ausbilder?demo=1)"]
+    B2 --> B9["Lernansichten mit Beispieldaten (/lernpfad?demo=1)"]
     B2 --> B3["Anmelden (/anmelden)"]
     B3 --> B4["Gruppe anlegen"]
     B4 --> B5["Einladen"]

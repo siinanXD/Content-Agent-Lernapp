@@ -8,6 +8,7 @@
  * Speichern am Ereignis festgehalten, damit ein Zeitzonenwechsel alte Serien
  * nicht umsortiert.
  */
+import { demoEvents, isDemoMode } from "@/lib/learner/demo-modus";
 
 /** Tagesziel in Einheiten (Figma 22: „Tagesziel: 4 Einheiten“). */
 export const DAILY_GOAL = 4;
@@ -116,6 +117,7 @@ export function computeDailyGoal(
 
 /** Wirft, wenn der Speicher gesperrt oder der Inhalt kein gültiges JSON ist. */
 function readLearningEvents(): LearningEvent[] {
+  if (isDemoMode()) return demoEvents(new Date());
   const raw = window.localStorage.getItem(KEY);
   const parsed: unknown = raw ? JSON.parse(raw) : [];
   if (!Array.isArray(parsed)) throw new Error("cal-learn-events ist keine Liste");
@@ -139,6 +141,7 @@ export function recordLearningEvent(
   kind: LearningEventKind,
   now: Date = new Date(),
 ): LearningEvent[] {
+  if (isDemoMode()) return loadLearningEvents();
   const next = [
     ...loadLearningEvents(),
     { at: now.toISOString(), day: dayKey(now), kind },

@@ -87,11 +87,64 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
   },
 ];
 
+export type Beruf = {
+  id: string;
+  title: string;
+  /** Kurzangabe unter dem Titel (Dauer und Gliederung laut Ausbildungsordnung). */
+  facts: string;
+  /** Hinweis auf der Kachel: was als Nächstes kommt. */
+  next: string;
+  /** Suchbegriffe (klein geschrieben); der Titel zählt immer. */
+  suche: string[];
+  /** Ziel nach „Weiter“: Schwerpunkte oder (Monoberuf) direkt der Lernpfad. */
+  nextRoute: "/schwerpunkt" | "/lernpfad";
+  /** Curriculum-Map für Monoberufe ohne Schwerpunkt (docs/content). */
+  mapId?: string;
+  /** Wert für `session.keyword` (Lernpfad-Untertitel). */
+  keyword: string;
+};
+
+/** Die Berufe mit amtlicher Quelle (Screen N1). Weitere kommen erst mit Quelle und geprüften Inhalten. */
+export const BERUFE: Beruf[] = [
+  {
+    id: "maf",
+    title: "Maschinen- und Anlagenführer/in",
+    facts: "2 Jahre · 5 Schwerpunkte",
+    next: "Als Nächstes wählst du deinen Schwerpunkt.",
+    suche: ["maf", "maschinenführer", "anlagenführer", "maschinen und anlagenführer"],
+    nextRoute: "/schwerpunkt",
+    keyword: "Maschinen- und Anlagenführer",
+  },
+  {
+    id: "indkfl",
+    title: "Industriekaufmann/-frau",
+    facts: "3 Jahre · 13 Lernfelder",
+    next: "Monoberuf mit Einsatzgebieten, kein Schwerpunkt nötig.",
+    suche: ["industriekaufmann", "industriekauffrau", "industriekaufleute", "kaufmann", "kauffrau"],
+    nextRoute: "/lernpfad",
+    mapId: "indkfl",
+    keyword: "Industriekaufmann",
+  },
+];
+
+/** Filtert nur die vorhandenen Berufe; leere Eingabe zeigt alle. */
+export function filterBerufe(query: string): Beruf[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return BERUFE;
+  return BERUFE.filter((b) => [b.title.toLowerCase(), ...b.suche].some((t) => t.includes(q)));
+}
+
+export function findBeruf(id: string | null): Beruf | undefined {
+  return BERUFE.find((b) => b.id === id);
+}
+
 export type OnboardingState = {
   /** null = noch nicht gefragt */
   consent: boolean | null;
   /** Zeitpunkt (ISO) der letzten Entscheidung zu `consent`; für „Erteilt am …“ (Figma 26) */
   consentAt: string | null;
+  /** Gewählter Beruf (N1); null bei Altständen vor dem Schritt „Beruf wählen“ */
+  berufId: string | null;
   schwerpunktId: string | null;
   mapId: string | null;
 };
@@ -100,6 +153,7 @@ const KEY = "cal-onboarding";
 export const EMPTY_ONBOARDING: OnboardingState = {
   consent: null,
   consentAt: null,
+  berufId: null,
   schwerpunktId: null,
   mapId: null,
 };
