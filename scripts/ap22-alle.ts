@@ -13,6 +13,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { anthropicFetch } from "../src/lib/anthropic/client";
 import { compactApiError } from "../src/lib/api-error";
+import { flushLangfuseOtel } from "../src/lib/quality/langfuse-otel";
+import { traceVergleich } from "../src/lib/quality/vergleich-traces";
 import { loadMafCurriculum } from "../src/lib/content/curriculum";
 import {
   annotateUnit,
@@ -25,6 +27,7 @@ import {
 import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import {
+  MIN_PASSED_QUESTIONS,
   annotateRepairQuestions,
   applyRepair,
   buildRepairPrompt,
@@ -192,7 +195,7 @@ async function main() {
           );
     const usd = cand.provider === "anthropic" ? claudeStandardUsd(cand.id, r.usage) : openaiUsd(cand.id, r.usage);
     totalUsd += usd;
-    return { text: r.text, usd };
+    return { text: r.text, usd, usage: r.usage };
   };
 
   const bothJudges = async (units: GeneratedUnit[]) => {
@@ -215,8 +218,11 @@ async function main() {
         const r = await generate(cand, chunkPrompt(c, t.module, t.block, t.unitOffset, t.unitCount, KEYWORD), "units");
         return { t, ...r };
       });
+      const genUsage = { input: 0, output: 0 };
       for (const g of gens) {
         cost.generation += g.usd;
+        genUsage.input += g.usage.prompt_tokens;
+        genUsage.output += g.usage.completion_tokens;
         const parsed = parseLernfeldJson(g.text);
         if (!parsed?.units?.length) failedChunks.push(g.t.customId);
         else units.push(...parsed.units.map((u) => annotateUnit(u, { module: g.t.module, block: g.t.block }, c)));
@@ -226,6 +232,18 @@ async function main() {
       cost.judgeOpenai += j.openaiUsd;
       cost.judgeClaude += j.claudeUsd;
       const { combined, disagreement } = combineJudges(j.o, j.cl);
+      // SIN-448: je Einheit ein Langfuse-Trace (Bewertung vor der Reparatur, beide Richter kombiniert).
+      const traces = await traceVergleich({
+        runId,
+        modell: cand.id,
+        modul: MODULE_ID,
+        units,
+        evals: combined,
+        usage: { inputTokens: genUsage.input, outputTokens: genUsage.output, costEur: cost.generation / USD_PER_EUR },
+        richterModell: `${JUDGE_MODEL} + ${CLAUDE_JUDGE_MODEL}`,
+        minBestanden: MIN_PASSED_QUESTIONS,
+      });
+      console.log(`Langfuse: ${traces} Traces für ${cand.id}`);
       const failedUnits = new Set(combined.filter((e) => !e.passed).map((e) => e.unitId));
       const unitsPassing = units.filter((u) => !failedUnits.has(u.id)).length;
 
@@ -315,6 +333,7 @@ async function main() {
   writeFileSync(join(OUT_DIR, `${runId}-alle-report.json`), JSON.stringify(report, null, 2));
   writeFileSync(join(REPORT_DIR, `ab-alle-modelle-${runId.slice(0, 10)}.md`), renderAlleMarkdown(report));
   console.log(JSON.stringify({ ...report, models: report.models.map((m) => ({ ...m, examples: m.examples.length })) }, null, 2));
+  await flushLangfuseOtel().catch(() => undefined);
   if (aborted) process.exit(3);
   // Nur wenn kein Kandidat durchlief, gilt der Lauf als gescheitert (Bericht liegt trotzdem vor).
   if (!models.length && failed.length) process.exit(1);

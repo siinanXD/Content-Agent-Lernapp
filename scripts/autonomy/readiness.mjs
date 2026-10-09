@@ -115,7 +115,7 @@ export function evaluateReadiness({ metrics, issues, confirmations = {}, built =
     },
     fabrik() {
       const s = metrics.content_fabrik_status;
-      if (s !== "läuft" && s !== "hängt" && s !== "steht") return [NA, String(metrics.content_fabrik ?? "kein Supabase-Zugang")];
+      if (s !== "läuft" && s !== "hängt" && s !== "steht" && s !== "pausiert") return [NA, String(metrics.content_fabrik ?? "kein Supabase-Zugang")];
       return [s === "läuft" ? "ok" : "offen", `${s}: ${metrics.content_fabrik}`];
     },
   };

@@ -116,7 +116,7 @@ flowchart TD
   PWS --> Schlange
   PWR --> Repair
   subgraph Inhalte
-    Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll)"] --> Bewertung["Bewertungslauf"]
+    Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll, bei API-Limit pausiert)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
   end
 ```
@@ -139,6 +139,7 @@ flowchart TD
 | Aufgaben für Sinan | `node scripts/autonomy/sinan.mjs sync\|list\|create` (braucht `LINEAR_API_KEY`) | Was nur Sinan tun kann, steht als Linear-Issue mit Label `sinan` (Link, Minuten, Schritte, Prüfung), nicht im PR-Text. Tages-Update und Status-Seite zeigen sie unter „Braucht dich“; der Loop schließt sie selbst, wo er es lesen kann. Entscheidung: [`SIN-310`](docs/decisions/SIN-310-sinan-issues.md). |
 | Projekt-Starter (nur Plan) | `node scripts/autonomy/starter.mjs plan --name N --idee I [--supabase geteilt\|eigen\|aus] [--ohne posthog,langfuse] [--json]` · `starter.mjs sql --schema S` | Baut aus Name und Idee den Plan für ein neues Projekt (Schritte je Dienst, benötigte Konto-Tokens nur als Namen, Prüfung je Schritt, Start-Issues). Führt nichts aus; `--live` ist gesperrt, bis die Konto-Tokens in Infisical liegen und der Loop eine Woche stabil lief. Entscheidung: [`SIN-202`](docs/decisions/SIN-202-projekt-starter.md). |
 | Modellvergleich (SIN-437) | Aufgabe `ab-alle-modelle` in `run-task` (Workflow `run-task.yml`) · lokal `npm run ap22:alle:dry` (kostenlos: Kandidaten und Kostenschätzung), `npm run ap22:alle` · braucht `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | Haiku 5.5, Sonnet 5.5, `gpt-6-luna`, `gpt-6.1-sol` und `chat-latest` gegen dieselben 20 LF3-Einheiten (gleicher Prompt, normale Aufrufe, ein Reparatur-Durchgang). Zwei Richter (`gpt-5.4-mini` und Claude Haiku 5.5): eine Frage besteht nur mit beiden. Bericht `docs/quality/runs/ab-alle-modelle-<Datum>.md` mit Richter-Schnitten, Abweichungen, Kosten je Einheit (USD, EUR) und je 2 Beispielen im Volltext. Deckel 6 €, Abbruch bei Überschreitung. Wechselt kein Standardmodell. Entscheidung: [`SIN-437`](docs/decisions/SIN-437-ab-alle-modelle.md). |
+| Goldset Industriekaufleute (SIN-447, SIN-449) | Aufgabe `goldset-indkfl` in `run-task` · lokal `npm run quality:goldset-indkfl` · braucht `OPENAI_API_KEY`, für den Datensatz `LANGFUSE_*` | 35 von Sinan geprüfte Fragen (`docs/quality/indkfl-goldset.json`, davon 3 Gegenproben). Legt den Langfuse-Datensatz `indkfl-goldset` an und lässt den Richter alle Fragen bewerten. Bericht `docs/quality/runs/indkfl-goldset-check-<Datum>.md`: Urteil wie erwartet, Gegenproben erkannt, abgelehnte gute Fragen. Kosten wenige Cent, Tagesdeckel wie alle bezahlten Läufe. |
 
 Ops / pilot docs: [`docs/ops/HERMES.md`](docs/ops/HERMES.md) · [`docs/pilot/MAF-PILOT.md`](docs/pilot/MAF-PILOT.md) · [`docs/learning/LOOP.md`](docs/learning/LOOP.md) · [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
 
@@ -185,6 +186,7 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 - Der Lauf-Bericht der Content-Fabrik nennt je Lauf erzeugt, bestanden, verworfen und `nichtVersucht` mit Grund (Kostendeckel, Zeitlimit, begonnene Module, andere Map). Die Kosten je Einheit rechnen ohne Reparatur, damit der Deckel nicht doppelt zählt (SIN-434, `docs/decisions/SIN-434-fabrik-engpass.md`).
 - Die Content-Fabrik erzeugt zwei Berufe: MAF Metall und Industriekaufleute (SIN-431, `docs/decisions/SIN-431-indkfl-fabrik.md`). Jeder Lauf bedient eine Map und wechselt zum nächsten Lauf; Kurs und amtliche Quellen für Industriekaufleute legt die Migration `20261012010000` an.
 - Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migrationen `20261007020000`, `20261010010000`), mit Start, Ende und Ergebnis. Auch ein Abbruch (fehlende Secrets, fehlender Kurs, Absturz) hinterlässt eine Zeile mit `stop_reason`. Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
+- Gesperrte Anthropic-API (Ausgabenlimit, SIN-450): Der Lauf endet ohne Wiederholung mit Exit 0 und `stop_reason` „pausiert: API-Limit am <Datum>“; `content_fabrik_status` zeigt „pausiert“ statt „hängt“, der Planer legt kein Issue an, der nächste Lauf startet normal (`docs/decisions/SIN-450-fabrik-pausiert-bei-api-limit.md`).
 - Der Kennzahlen-Bericht nennt die Verwerfungsgründe verworfener Fragen je Modul und Fragetyp (SIN-395). Verworfene Fragen werden in Lernpfad, Wiederholung und Prüfung nie ausgespielt.
 - Der Kennzahlen-Bericht nennt das Datum des letzten Laufs. Nach 8 Tagen ohne Lauf steht dort „überfällig seit N Tagen“, und der Planer erhält die bestehende Stillstand-Regel `fabrik-haengt`.
 
