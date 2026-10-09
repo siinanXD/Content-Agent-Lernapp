@@ -7,6 +7,7 @@ import {
   LEITNER_INTERVALS_DAYS,
   type ReviewItem,
 } from "@/lib/content/didaktik";
+import { demoStack, isDemoMode } from "@/lib/learner/demo-modus";
 
 const KEY = "cal-leitner-stack";
 
@@ -21,6 +22,7 @@ export function emptyStack(): LeitnerStack {
 
 export function loadStack(): LeitnerStack {
   if (typeof window === "undefined") return emptyStack();
+  if (isDemoMode()) return demoStack(new Date());
   try {
     const raw = window.sessionStorage.getItem(KEY);
     if (!raw) return emptyStack();
@@ -31,7 +33,7 @@ export function loadStack(): LeitnerStack {
 }
 
 export function saveStack(stack: LeitnerStack) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || isDemoMode()) return;
   window.sessionStorage.setItem(
     KEY,
     JSON.stringify({ ...stack, updatedAt: new Date().toISOString() }),
