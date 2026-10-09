@@ -1,0 +1,694 @@
+{
+  "name": "indkfl-goldset",
+  "description": "Goldset Industriekaufleute: 12 Fragen zu Verordnung und Prüfung, je 5 Fachfragen zu Phase A (M0, LF1, LF2, LF3) und 3 Gegenproben, die der Richter durchfallen lassen muss. Eigene Fragen, keine IHK-Prüfungsaufgaben, keine Personendaten.",
+  "status": "Geprüft durch Sinan am 09.10.2026",
+  "retrievedAt": "2026-10-03",
+  "itemCount": 35,
+  "sources": [
+    "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html",
+    "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+    "https://www.gesetze-im-internet.de/indkflausbv/__4.html",
+    "https://www.gesetze-im-internet.de/indkflausbv/__8.html",
+    "https://www.gesetze-im-internet.de/indkflausbv/__11.html",
+    "https://www.gesetze-im-internet.de/indkflausbv/__12.html",
+    "https://www.gesetze-im-internet.de/indkflausbv/__14.html",
+    "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf"
+  ],
+  "phaseAModules": [
+    "M0",
+    "LF1",
+    "LF2",
+    "LF3"
+  ],
+  "phaseAItemsPerModule": 5,
+  "items": [
+    {
+      "id": "ik-g01",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Wie lange dauert die Ausbildung zum Industriekaufmann oder zur Industriekauffrau?",
+      "correct": "Drei Jahre",
+      "explanation": "§ 2 IndKflAusbV legt die Ausbildungsdauer auf drei Jahre fest.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g02",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Seit wann gilt die neue Ausbildungsverordnung für Industriekaufleute?",
+      "correct": "Seit dem 1. August 2024 (Verordnung vom 12. März 2024)",
+      "explanation": "Die IndKflAusbV vom 12.03.2024 ersetzt die Verordnung von 2002 ab dem 1. August 2024.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g03",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Welche Einsatzgebiete nennt die Ausbildungsverordnung für Industriekaufleute?",
+      "correct": "Vertrieb, Marketing, Beschaffung, Logistik, Personalwirtschaft, Leistungserstellung sowie kaufmännische Steuerung und Kontrolle",
+      "explanation": "§ 4 Abs. 4 IndKflAusbV nennt diese sieben Einsatzgebiete. Im Einsatzgebiet werden die Berufsbildpositionen A8 und A9 vermittelt.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__4.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g04",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Gibt es für Industriekaufleute nach der Verordnung von 2024 eine Zwischenprüfung?",
+      "correct": "Nein. Es gibt eine gestreckte Abschlussprüfung aus Teil 1 und Teil 2.",
+      "explanation": "Die IndKflAusbV sieht eine gestreckte Abschlussprüfung vor. Teil 1 zählt bereits zur Note.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g05",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "In welchem Ausbildungshalbjahr soll Teil 1 der Abschlussprüfung stattfinden?",
+      "correct": "Im vierten Ausbildungshalbjahr",
+      "explanation": "Laut IndKflAusbV findet Teil 1 im vierten Ausbildungshalbjahr statt und prüft die Inhalte der ersten 15 Monate.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/BJNR05E0A0024.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g06",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Wie heißt der Prüfungsbereich von Teil 1 und wie lange dauert er?",
+      "correct": "Leistungserstellung, Logistik, Beschaffung und Buchhaltung; schriftlich, 90 Minuten",
+      "explanation": "§ 8 IndKflAusbV regelt diesen einzigen Prüfungsbereich von Teil 1 mit 90 Minuten Prüfungszeit.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__8.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g07",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Mit wie viel Prozent geht Teil 1 in das Gesamtergebnis der Abschlussprüfung ein?",
+      "correct": "Mit 25 Prozent",
+      "explanation": "§ 14 IndKflAusbV gewichtet den Prüfungsbereich von Teil 1 mit 25 Prozent.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__14.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g08",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Wie lange dauert die schriftliche Prüfung im Bereich „Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle“?",
+      "correct": "150 Minuten",
+      "explanation": "§ 11 IndKflAusbV legt für diesen Prüfungsbereich von Teil 2 eine Prüfungszeit von 150 Minuten fest.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__11.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g09",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Wie sind die drei Prüfungsbereiche von Teil 2 gewichtet?",
+      "correct": "Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle 35 Prozent, Fachaufgabe im Einsatzgebiet 30 Prozent, Wirtschafts- und Sozialkunde 10 Prozent",
+      "explanation": "§ 14 IndKflAusbV: Zusammen mit Teil 1 (25 Prozent) ergeben sich 100 Prozent.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__14.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g10",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Welche Teile der Fachaufgabe im Einsatzgebiet werden bewertet und wie sind sie gewichtet?",
+      "correct": "Dokumentation, Präsentation und fallbezogenes Fachgespräch im Verhältnis 10 zu 20 zu 70",
+      "explanation": "§ 12 IndKflAusbV: Vor der Fachaufgabe reicht der Prüfling einen Antrag ein; bewertet werden Dokumentation, Präsentation und Fachgespräch.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__12.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g11",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Wie lange dauern Präsentation und fallbezogenes Fachgespräch bei der Fachaufgabe zusammen?",
+      "correct": "Insgesamt 30 Minuten, davon die Präsentation höchstens 10 Minuten",
+      "explanation": "§ 12 IndKflAusbV begrenzt die Präsentation auf 10 Minuten; Präsentation und Fachgespräch dauern zusammen 30 Minuten.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__12.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-g12",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Wann ist die Abschlussprüfung für Industriekaufleute bestanden?",
+      "correct": "Wenn das Gesamtergebnis aus Teil 1 und Teil 2 und das Ergebnis von Teil 2 jeweils mindestens ausreichend sind, mindestens zwei Prüfungsbereiche von Teil 2 mindestens ausreichend sind und kein Prüfungsbereich von Teil 2 ungenügend ist",
+      "explanation": "§ 14 Abs. 2 IndKflAusbV nennt diese Bestehensregeln.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__14.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-m0-01",
+      "moduleId": "M0",
+      "unitId": "M0-1",
+      "prompt": "Wer vertritt im Betrieb die Interessen der Beschäftigten gegenüber dem Arbeitgeber?",
+      "correct": "Der Betriebsrat",
+      "explanation": "Mitbestimmung im Betrieb gehört zur Berufsbildposition „Organisation des Ausbildungsbetriebes, Berufsbildung sowie Arbeits- und Tarifrecht“ (Anlage, Abschnitt B).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-m0-02",
+      "moduleId": "M0",
+      "unitId": "M0-1",
+      "prompt": "Welche zwei Arten von Abzügen stehen auf deiner Entgeltabrechnung zwischen Brutto und Netto?",
+      "correct": "Steuern (Lohnsteuer, gegebenenfalls Solidaritätszuschlag und Kirchensteuer) und Beiträge zur Sozialversicherung",
+      "explanation": "Die Positionen der eigenen Entgeltabrechnung zu erklären, gehört zum Ausbildungsrahmenplan (Anlage, Abschnitt B).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-m0-03",
+      "moduleId": "M0",
+      "unitId": "M0-2",
+      "prompt": "In welcher Reihenfolge handelst du bei einem Brand im Betrieb?",
+      "correct": "Brand melden (Alarm, Notruf 112), Menschen in Sicherheit bringen, dann einen Löschversuch nur ohne eigene Gefährdung",
+      "explanation": "Verhalten bei Bränden und vorbeugender Brandschutz gehören zur Berufsbildposition „Sicherheit und Gesundheit bei der Arbeit“ (Anlage, Abschnitt B).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": true
+      }
+    },
+    {
+      "id": "ik-m0-04",
+      "moduleId": "M0",
+      "unitId": "M0-3",
+      "prompt": "In welcher Rangfolge sollen Abfälle im Betrieb behandelt werden?",
+      "correct": "Zuerst vermeiden, dann wiederverwenden oder verwerten, erst zuletzt beseitigen",
+      "explanation": "Abfälle vermeiden und Stoffe wiederverwerten gehört zur Berufsbildposition „Umweltschutz und Nachhaltigkeit“ (Anlage, Abschnitt B).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-m0-05",
+      "moduleId": "M0",
+      "unitId": "M0-4",
+      "prompt": "Darfst du Kundendaten aus dem Firmensystem an deine private E-Mail-Adresse schicken, um zu Hause weiterzuarbeiten?",
+      "correct": "Nein. Personenbezogene Daten dürfen nur auf den Wegen verarbeitet werden, die der Betrieb dafür freigegeben und gesichert hat.",
+      "explanation": "Datenschutz und Datensicherheit gehören zur Berufsbildposition „digitalisierte Arbeitswelt“ (Anlage, Abschnitt B).",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/anlage.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf1-01",
+      "moduleId": "LF1",
+      "unitId": "LF1-2",
+      "prompt": "Welche betrieblichen Produktionsfaktoren unterscheidet man in einem Industriebetrieb?",
+      "correct": "Ausführende Arbeit, Betriebsmittel und Werkstoffe sowie die dispositive Arbeit (Leitung, Planung, Organisation)",
+      "explanation": "Lernfeld 1 des Rahmenlehrplans: Die Lernenden ordnen ihren Betrieb ein und beschreiben die betrieblichen Produktionsfaktoren.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf1-02",
+      "moduleId": "LF1",
+      "unitId": "LF1-5",
+      "prompt": "Wie haften die Gesellschafter einer GmbH für die Schulden der Gesellschaft?",
+      "correct": "Nicht mit ihrem Privatvermögen. Es haftet das Gesellschaftsvermögen; die Gesellschafter riskieren nur ihre Einlage.",
+      "explanation": "Lernfeld 1 des Rahmenlehrplans: Eigentümerstruktur und Rechtsform des Ausbildungsbetriebes.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf1-03",
+      "moduleId": "LF1",
+      "unitId": "LF1-6",
+      "prompt": "Ein Industriebetrieb hat im Jahr Erträge von 600.000 € und Aufwendungen von 500.000 €. Wie hoch ist die Wirtschaftlichkeit?",
+      "correct": "1,2 (600.000 € geteilt durch 500.000 €)",
+      "explanation": "Lernfeld 1 des Rahmenlehrplans: Produktivität, Wirtschaftlichkeit und Rentabilität berechnen. Wirtschaftlichkeit = Erträge : Aufwendungen.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf1-04",
+      "moduleId": "LF1",
+      "unitId": "LF1-6",
+      "prompt": "Der Gewinn beträgt 50.000 €, das Eigenkapital 400.000 €. Wie hoch ist die Eigenkapitalrentabilität?",
+      "correct": "12,5 Prozent (50.000 € geteilt durch 400.000 €, mal 100)",
+      "explanation": "Lernfeld 1 des Rahmenlehrplans: Rentabilität berechnen. Eigenkapitalrentabilität = Gewinn : Eigenkapital × 100.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf1-05",
+      "moduleId": "LF1",
+      "unitId": "LF1-4",
+      "prompt": "Was unterscheidet Kernprozesse von Supportprozessen?",
+      "correct": "Kernprozesse schaffen direkt Nutzen für die Kundschaft (zum Beispiel die Auftragsabwicklung), Supportprozesse unterstützen sie (zum Beispiel Personal oder IT).",
+      "explanation": "Lernfeld 1 des Rahmenlehrplans: Aufbauorganisation und Geschäftsprozesse, Kern- und Supportprozesse.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf2-01",
+      "moduleId": "LF2",
+      "unitId": "LF2-1",
+      "prompt": "Woran erkennst du ein Projekt im Unterschied zu einer Routineaufgabe?",
+      "correct": "Es ist einmalig, zeitlich begrenzt, hat ein festes Ziel und begrenzte Mittel.",
+      "explanation": "Lernfeld 2 des Rahmenlehrplans: Projektauftrag analysieren, Ziele und Rahmenbedingungen.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf2-02",
+      "moduleId": "LF2",
+      "unitId": "LF2-1",
+      "prompt": "Wofür stehen die Buchstaben SMART bei der Formulierung von Projektzielen?",
+      "correct": "Spezifisch, messbar, attraktiv (akzeptiert), realistisch, terminiert",
+      "explanation": "Lernfeld 2 des Rahmenlehrplans: Ziele des Projektauftrags festlegen.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf2-03",
+      "moduleId": "LF2",
+      "unitId": "LF2-2",
+      "prompt": "Bringe die Projektphasen in die richtige Reihenfolge: Durchführung, Abschluss, Definition, Planung.",
+      "correct": "Definition, Planung, Durchführung, Abschluss",
+      "explanation": "Lernfeld 2 des Rahmenlehrplans: Projektablauf mit einer Projektmanagementmethode planen und strukturieren.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf2-04",
+      "moduleId": "LF2",
+      "unitId": "LF2-2",
+      "prompt": "Was ist ein Meilenstein in einem Projektplan?",
+      "correct": "Ein wichtiges Zwischenergebnis zu einem festen Termin, an dem der Fortschritt geprüft wird",
+      "explanation": "Lernfeld 2 des Rahmenlehrplans: Projektablauf planen, Termine und Zielerreichung überwachen.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf2-05",
+      "moduleId": "LF2",
+      "unitId": "LF2-5",
+      "prompt": "Welche Regel gilt, wenn du im Team Feedback gibst?",
+      "correct": "Ich-Botschaften nutzen und konkretes, beobachtbares Verhalten sachlich beschreiben, ohne zu verallgemeinern",
+      "explanation": "Lernfeld 2 des Rahmenlehrplans: Projektergebnisse präsentieren, Feedbackregeln anwenden.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf3-01",
+      "moduleId": "LF3",
+      "unitId": "LF3-3",
+      "prompt": "Wodurch kommt ein Kaufvertrag zustande?",
+      "correct": "Durch zwei übereinstimmende Willenserklärungen: Antrag und Annahme",
+      "explanation": "Lernfeld 3 des Rahmenlehrplans: Zustandekommen und Inhalte von Kaufverträgen.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf3-02",
+      "moduleId": "LF3",
+      "unitId": "LF3-3",
+      "prompt": "Was ist der Unterschied zwischen Besitz und Eigentum?",
+      "correct": "Besitz ist die tatsächliche Herrschaft über eine Sache, Eigentum die rechtliche Herrschaft.",
+      "explanation": "Lernfeld 3 des Rahmenlehrplans: Besitz und Eigentum beim Kaufvertrag.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf3-03",
+      "moduleId": "LF3",
+      "unitId": "LF3-5",
+      "prompt": "Die Selbstkosten eines Auftrags betragen 400 €, der Gewinnzuschlag 15 Prozent. Wie hoch ist der Barverkaufspreis?",
+      "correct": "460 € (400 € plus 15 Prozent von 400 € = 400 € + 60 €)",
+      "explanation": "Lernfeld 3 des Rahmenlehrplans: Verkaufspreis auf Basis der Selbstkosten kalkulieren.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf3-04",
+      "moduleId": "LF3",
+      "unitId": "LF3-7",
+      "prompt": "Ein Kunde zahlt eine fällige Rechnung nicht. Wie heißt diese Störung des Kaufvertrags?",
+      "correct": "Nicht-Rechtzeitig-Zahlung (Zahlungsverzug)",
+      "explanation": "Lernfeld 3 des Rahmenlehrplans: Kaufvertragsstörungen, Nicht-Rechtzeitig-Zahlung und außergerichtliches Mahnverfahren.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-lf3-05",
+      "moduleId": "LF3",
+      "unitId": "LF3-7",
+      "prompt": "In welcher Frist verjähren Kaufpreisforderungen regelmäßig, und wann beginnt die Frist?",
+      "correct": "Drei Jahre; die Frist beginnt mit dem Schluss des Jahres, in dem die Forderung entstanden ist.",
+      "explanation": "Lernfeld 3 des Rahmenlehrplans: Verjährung. Regelmäßige Verjährungsfrist nach §§ 195 und 199 BGB.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      }
+    },
+    {
+      "id": "ik-x01",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Mit wie viel Prozent geht Teil 1 der Abschlussprüfung in das Gesamtergebnis ein?",
+      "correct": "Mit 40 Prozent",
+      "explanation": "Laut § 14 IndKflAusbV zählt Teil 1 mit 40 Prozent.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__14.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "pruefung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 0,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      },
+      "gegenprobe": "Falsche Zahl: § 14 nennt 25 Prozent. Der Richter muss Quellentreue 0 geben."
+    },
+    {
+      "id": "ik-x02",
+      "moduleId": "VO",
+      "unitId": "ik-vo",
+      "prompt": "Nenne ein Einsatzgebiet aus der Ausbildungsverordnung für Industriekaufleute.",
+      "correct": "Vertrieb",
+      "explanation": "§ 4 Abs. 4 IndKflAusbV nennt Vertrieb als Einsatzgebiet.",
+      "sourceUrl": "https://www.gesetze-im-internet.de/indkflausbv/__4.html",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "ausbildungsordnung",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 0,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      },
+      "gegenprobe": "Sieben Antworten sind richtig, die Frage ist nicht eindeutig. Der Richter muss Eindeutigkeit 0 geben."
+    },
+    {
+      "id": "ik-x03",
+      "moduleId": "LF3",
+      "unitId": "LF3-1",
+      "prompt": "Was ist ein Kunde?",
+      "correct": "Jemand, der was kauft.",
+      "explanation": "Kunden kaufen Sachen.",
+      "sourceUrl": "https://www.kmk.org/fileadmin/Dateien/pdf/Bildung/BeruflicheBildung/rlp/Industriekaufleute_2023-12-15-mitEL.pdf",
+      "sourceFetchedAt": "2026-10-03",
+      "sourceKind": "rahmenlehrplan",
+      "ihkExamCopy": false,
+      "expected": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 2,
+        "language": 2,
+        "safetyFlag": false
+      },
+      "gegenprobe": "Zu leicht und unsauber formuliert. Der Richter muss Niveau und Sprache unter 4 geben."
+    }
+  ]
+}
