@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-455 | SIN-455: Leistungsbudget sichtbar machen, Ausreißer einmal nachmessen | [SIN-455-leistungsbudget-nachmessen.md](decisions/SIN-455-leistungsbudget-nachmessen.md) |
 | SIN-452 | SIN-452: Lernpfad zeigt Module ohne Einheiten als Leerzustand | [SIN-452-lernpfad-leere-module.md](decisions/SIN-452-lernpfad-leere-module.md) |
 | SIN-450 | SIN-450: Content-Fabrik pausiert bei gesperrter Anthropic-API | [SIN-450-fabrik-pausiert-bei-api-limit.md](decisions/SIN-450-fabrik-pausiert-bei-api-limit.md) |
 | SIN-447 | SIN-447: Goldset Industriekaufleute | [SIN-447-goldset-indkfl.md](decisions/SIN-447-goldset-indkfl.md) |
