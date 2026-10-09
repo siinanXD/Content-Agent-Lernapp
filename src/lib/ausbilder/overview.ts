@@ -5,12 +5,16 @@
  */
 
 export type GroupInfo = {
+  /** Kennung der Gruppe (SIN-415); fehlt in der Beispielansicht. */
+  id?: string;
   name: string;
   schwerpunkt: string;
   /** ISO-Datum (YYYY-MM-DD) der Prüfung, falls bekannt. */
   examDate: string | null;
   /** ISO-Datum (YYYY-MM-DD) des Kursbeginns, falls bekannt. */
   startsOn: string | null;
+  /** ISO-Zeitpunkt der Archivierung (SIN-415), `null` bei aktiven Gruppen. */
+  archivedAt?: string | null;
 };
 
 export type MemberRow = {
@@ -163,10 +167,12 @@ export function parseOverview(data: unknown): Overview | null {
   });
   return {
     group: {
+      id: typeof g.id === "string" ? g.id : undefined,
       name: g.name,
       schwerpunkt: g.schwerpunkt,
       examDate: typeof g.examDate === "string" ? g.examDate : null,
       startsOn: typeof g.startsOn === "string" ? g.startsOn : null,
+      archivedAt: typeof g.archivedAt === "string" ? g.archivedAt : null,
     },
     members,
   };

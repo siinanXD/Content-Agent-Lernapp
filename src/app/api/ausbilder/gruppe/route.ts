@@ -1,5 +1,6 @@
 import type { Overview } from "@/lib/ausbilder/overview";
 import { checkGroupInput } from "@/lib/ausbilder/gruppe";
+import { isUuid } from "@/lib/ausbilder/gruppen";
 import { ausbilderClient, fail, noStore } from "@/lib/ausbilder/server";
 
 export const dynamic = "force-dynamic";
@@ -20,22 +21,30 @@ export async function GET(request: Request) {
   if ("response" in auth) return auth.response;
   const { client } = auth;
 
-  const { data: group, error: groupError } = await client
-    .from("trainer_groups")
-    .select("name, schwerpunkt, exam_date, starts_on")
-    .maybeSingle();
+  // Mit `?id=` eine bestimmte Gruppe (auch archiviert, SIN-415). Ohne: die einzige aktive Gruppe.
+  const wanted = new URL(request.url).searchParams.get("id");
+  if (wanted !== null && !isUuid(wanted)) return fail("Bitte prüfen Sie Ihre Angaben.", 400);
+  let query = client.from("trainer_groups").select("id, name, schwerpunkt, exam_date, starts_on, archived_at");
+  query = wanted ? query.eq("id", wanted) : query.is("archived_at", null);
+  const { data: found, error: groupError } = await query.limit(2);
   if (groupError) return fail("Die Gruppe konnte nicht geladen werden.", 503);
-  if (!group) return fail("Ihnen ist noch keine Gruppe zugeordnet.", 404);
+  if (!found?.length) return fail("Ihnen ist noch keine Gruppe zugeordnet.", 404);
+  if (found.length > 1) return fail("Bitte wählen Sie eine Ihrer Gruppen.", 409);
+  const group = found[0];
 
-  const { data: rows, error: rowsError } = await client.rpc("ausbilder_uebersicht");
+  const { data: rows, error: rowsError } = await client.rpc("ausbilder_uebersicht", {
+    p_group_id: group.id,
+  });
   if (rowsError) return fail("Die Gruppe konnte nicht geladen werden.", 503);
 
   const body: Overview = {
     group: {
+      id: group.id,
       name: group.name,
       schwerpunkt: group.schwerpunkt,
       examDate: group.exam_date,
       startsOn: group.starts_on,
+      archivedAt: group.archived_at,
     },
     members: ((rows ?? []) as OverviewRow[]).map((r) => ({
       id: r.member_id,
@@ -66,7 +75,7 @@ export async function POST(request: Request) {
     p_exam_date: examDate,
   });
   if (error) {
-    if (error.code === "23505") return fail("Sie haben bereits eine Gruppe.", 409);
+    if (error.code === "23505") return fail("Eine aktive Gruppe mit diesem Namen gibt es schon.", 409);
     if (error.code === "42501") return fail("Dieser Zugang ist kein Ausbilder-Zugang.", 403);
     if (error.code === "22023") return fail("Bitte prüfen Sie Ihre Angaben.", 400);
     return fail("Die Gruppe konnte nicht angelegt werden. Bitte versuchen Sie es noch einmal.", 503);

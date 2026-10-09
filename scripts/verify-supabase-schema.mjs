@@ -21,6 +21,10 @@ const TABLES = [
   "demo_requests",
   "trainer_groups",
   "group_members",
+  // SIN-415: Organisation mit Kontingent, Ausbilder-Zuordnung, Einladungslinks
+  "organisations",
+  "organisation_trainers",
+  "trainer_access_links",
   // SIN-303: Leitstand (Ereignisse und Schnappschuss des Loops)
   "loop_events",
   "loop_snapshot",
