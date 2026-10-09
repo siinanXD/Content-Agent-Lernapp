@@ -32,5 +32,12 @@ flowchart LR
     B12 --> B10
   end
   B6 -.-> A1
+  subgraph Admin
+    X0["Admin-Konto (Rolle admin, nur Sinan)"] --> X1["Organisationen und Zugänge (/admin)"]
+    X1 --> X2["Neue Organisation anlegen, Einladungslink erzeugen"]
+    X2 --> B0
+    X1 --> X3["Anfragen"]
+    X1 --> X4["Alle Kurse"]
+  end
   classDef offen stroke-dasharray: 4 3
   class B4,B5,B6 offen
