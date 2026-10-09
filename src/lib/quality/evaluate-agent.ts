@@ -20,21 +20,24 @@ import {
 } from "./schemas";
 import { loadMafCurriculum } from "@/lib/content/curriculum";
 import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
+import { withSourceExcerpts } from "./source-excerpt";
 
 /** D-07: independent OpenAI family, cheapest Mini that meets the gate. */
 export const JUDGE_MODEL = "gpt-5.4-mini";
-/** Bump when the judge system prompt in liveJudgeChunkWithUsage changes. */
-export const JUDGE_PROMPT_VERSION = "2026-10-v1";
+/** Bump when the judge system prompt in liveJudgeChunkWithUsage changes. v2: Quellenauszug, berufsneutral (SIN-456). */
+export const JUDGE_PROMPT_VERSION = "2026-10-v2";
 const JUDGE_CHUNK = 10;
 /** Gleichzeitige Richter-Anfragen (SIN-406). */
 const JUDGE_CONCURRENCY = 4;
 
 /** System-Prompt des Richters; auch in Langfuse Prompt Management (SIN-299). */
 export const JUDGE_SYSTEM_PROMPT =
-  "Du bist Richter für Lernfragen zum Maschinen- und Anlagenführer (Ausbildungsordnung, keine IHK-Originale, keine Personendaten). " +
-  "Bewerte jede Frage unabhängig gegen das Modul-Niveau (Jahr 1 = Zwischenprüfung, Jahr 2+ = Abschlussprüfung) — nicht gegen einen Kurs-Mittelwert. " +
-  "Skalen: sourceFidelity 0 oder 1 (1 = Antwort folgt aus der zitierten amtlichen Quelle/Erklärung). " +
-  "uniqueness 0 oder 1 (1 = genau eine richtige Antwort). " +
+  "Du bist Richter für Lernfragen in der dualen Berufsausbildung (Ausbildungsordnung und Rahmenlehrplan, keine IHK-Originale, keine Personendaten). " +
+  "Bewerte jede Frage unabhängig gegen das Modul-Niveau (Jahr 1 = Zwischenprüfung bzw. Teil 1, Jahr 2+ = Abschlussprüfung) — nicht gegen einen Kurs-Mittelwert. " +
+  "Skalen: sourceFidelity 0 oder 1. 1 nur, wenn Antwort und Erklärung sachlich richtig sind und zur zitierten amtlichen Quelle passen. " +
+  "Liegt sourceExcerpt (Auszug aus der Quelle) bei, prüfe jede Zahl, jeden Prozentwert, jede Frist, Dauer, jedes Datum und jeden Paragrafen in Frage, Antwort und Erklärung gegen den Auszug: " +
+  "Widerspricht etwas dem Auszug, gib 0 und nenne die Abweichung in reasons. Steht es nicht im Auszug, prüfe nach gesichertem Fachwissen; Falsches ergibt 0. " +
+  "uniqueness 0 oder 1 (1 = genau eine richtige Antwort). 0, wenn mehrere verschiedene Antworten gleich richtig wären (z. B. „Nenne ein …“ bei mehreren gültigen Lösungen) oder die Frage mehrdeutig ist. " +
   "niveau ganze Zahl 1,2,3,4 oder 5 — 4 = angemessen für das angegebene Modul-Jahr/Niveau, 5 schwerer; Unterstufe 1–3 nur bei offensichtlichen Fehlern. " +
   "language ganze Zahl 1,2,3,4 oder 5 — 4 verständliches Deutsch, 5 sehr klar. " +
   "safetyFlag true bei Maschinen-/Elektrosicherheit oder wenn safety=true vorgegeben ist. " +
@@ -54,6 +57,8 @@ export type EvalItem = {
   niveauHint?: string;
   /** Pre-set when curriculum block/module is marked safety. */
   safety?: boolean;
+  /** SIN-456: passende Absätze der zitierten Quelle (nur im Lauf geladen, nie gespeichert). */
+  sourceExcerpt?: string;
 };
 
 /**
@@ -187,7 +192,9 @@ export async function liveJudgeWithUsage(
   key: string,
   items: EvalItem[],
 ): Promise<{ questions: QuestionEval[]; usage: { prompt_tokens: number; completion_tokens: number } }> {
-  return judgeChunked(items, (chunk) => liveJudgeChunkWithUsage(key, chunk));
+  // SIN-456: Quellenauszug je Frage, damit der Richter Zahlen und Paragrafen gegen den Text prüfen kann.
+  const withExcerpts = await withSourceExcerpts(items);
+  return judgeChunked(withExcerpts, (chunk) => liveJudgeChunkWithUsage(key, chunk));
 }
 
 /** Teilt Fragen in Chunks und ruft einen Richter je Chunk auf (OpenAI oder Claude). */
@@ -285,6 +292,7 @@ export function judgeUserContent(items: EvalItem[]): string {
       year: i.year,
       niveauHint: i.niveauHint,
       safety: i.safety,
+      ...(i.sourceExcerpt ? { sourceExcerpt: i.sourceExcerpt } : {}),
     })),
   );
 }

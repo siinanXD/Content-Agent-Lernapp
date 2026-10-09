@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-456 | SIN-456: Richter prüft Fakten gegen den Quelltext | [SIN-456-richter-quellenauszug.md](decisions/SIN-456-richter-quellenauszug.md) |
 | SIN-455 | SIN-455: Leistungsbudget sichtbar machen, Ausreißer einmal nachmessen | [SIN-455-leistungsbudget-nachmessen.md](decisions/SIN-455-leistungsbudget-nachmessen.md) |
 | SIN-454 | SIN-454: Migrationen 13/15 sind weiter dieselbe Blockade wie SIN-441, SIN-443 und SIN-446 | [SIN-454-migrationen-weiter-offen.md](decisions/SIN-454-migrationen-weiter-offen.md) |
 | SIN-452 | SIN-452: Lernpfad zeigt Module ohne Einheiten als Leerzustand | [SIN-452-lernpfad-leere-module.md](decisions/SIN-452-lernpfad-leere-module.md) |

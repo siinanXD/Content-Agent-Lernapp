@@ -63,7 +63,7 @@ export function checkGoldset(items: GoldItemForCheck[], judged: QuestionEval[]):
 /** Kurzer Bericht für Sinan. */
 export function renderGoldsetCheck(
   c: GoldsetCheck,
-  meta: { dataset: string; judgeModel: string; runId: string; costUsd: number; langfuse: string },
+  meta: { dataset: string; judgeModel: string; runId: string; costUsd: number; langfuse: string; auszug?: string },
   items: GoldItemForCheck[],
 ): string {
   const prompt = new Map(items.map((i) => [i.id, i.prompt]));
@@ -71,7 +71,7 @@ export function renderGoldsetCheck(
   return [
     `# Richter gegen Goldset ${meta.dataset}, Lauf ${meta.runId}`,
     "",
-    `Richter: ${meta.judgeModel}. Kosten: ${meta.costUsd.toFixed(4).replace(".", ",")} USD. Langfuse: ${meta.langfuse}.`,
+    `Richter: ${meta.judgeModel}. Kosten: ${meta.costUsd.toFixed(4).replace(".", ",")} USD. Langfuse: ${meta.langfuse}.${meta.auszug ? ` Quellenauszug: ${meta.auszug}.` : ""}`,
     "",
     `- Urteil wie erwartet: **${c.agree} von ${c.judged}** (${pct(c.agreementRate)})`,
     `- Gegenproben erkannt: **${c.gegenproben.erkannt} von ${c.gegenproben.total}**`,

@@ -1,103 +1,33 @@
 {
-  "runId": "2026-10-09T11-54-24-951Z",
+  "runId": "2026-10-09T12-21-42-978Z",
   "dataset": "indkfl-goldset",
   "judgeModel": "gpt-5.4-mini",
-  "costUsd": 0.0151,
+  "judgePromptVersion": "2026-10-v2",
+  "auszug": "19 von 35 Fragen mit Quellenauszug",
+  "costUsd": 0.0233,
   "langfuse": "35 von 35 Einträgen im Datensatz indkfl-goldset",
   "check": {
     "total": 35,
     "judged": 35,
-    "agree": 23,
-    "agreementRate": 0.657,
-    "falseFail": [
-      {
-        "id": "ik-g01",
-        "reasons": [
-          "Frage ist direkt aus § 2 der Verordnung ableitbar.",
-          "Antwort ist eindeutig: drei Jahre.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g02",
-        "reasons": [
-          "Die Frage verlangt ein konkretes Inkrafttretensdatum aus der Verordnung.",
-          "Eindeutige richtige Antwort vorhanden.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g03",
-        "reasons": [
-          "Die genannten Einsatzgebiete sind direkt in der Verordnung aufgezählt.",
-          "Genau eine richtige Aufzählung ist vorgesehen.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g04",
-        "reasons": [
-          "Die Frage prüft eine klare Regelung der Ausbildungsordnung zur Prüfungsart.",
-          "Antwort ist eindeutig: keine Zwischenprüfung, sondern gestreckte Abschlussprüfung.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g05",
-        "reasons": [
-          "Das Ausbildungshalbjahr für Teil 1 ist in der Verordnung festgelegt.",
-          "Nur eine richtige Lösung: viertes Ausbildungshalbjahr.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g06",
-        "reasons": [
-          "Prüfungsbereich und Dauer sind unmittelbar in § 8 geregelt.",
-          "Eindeutig formuliert mit einer richtigen Antwort.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g07",
-        "reasons": [
-          "Die Gewichtung von Teil 1 ist in § 14 festgelegt.",
-          "Antwort ist eindeutig in Prozent angegeben.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g08",
-        "reasons": [
-          "Die Prüfungsdauer ist direkt aus der Verordnung ableitbar.",
-          "Genau eine richtige Zeitangabe.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g09",
-        "reasons": [
-          "Die Gewichte der Prüfungsbereiche sind in § 14 festgelegt.",
-          "Die Frage zielt auf eine eindeutige Verteilung in Prozent.",
-          "niveau_below_4"
-        ]
-      },
-      {
-        "id": "ik-g10",
-        "reasons": [
-          "Die Bestandteile und ihre Gewichtung der Fachaufgabe folgen aus der Verordnung.",
-          "Etwas anspruchsvoller als reine Faktenabfrage, aber noch im Ausbildungsordnungs-Niveau.",
-          "niveau_below_4"
-        ]
-      }
-    ],
+    "agree": 24,
+    "agreementRate": 0.686,
+    "falseFail": [],
     "falsePass": [
-      "ik-x01",
-      "ik-x02"
+      "ik-g01",
+      "ik-g02",
+      "ik-g03",
+      "ik-g04",
+      "ik-g05",
+      "ik-g06",
+      "ik-g07",
+      "ik-g08",
+      "ik-g09",
+      "ik-g10",
+      "ik-x01"
     ],
     "gegenproben": {
       "total": 3,
-      "erkannt": 1
+      "erkannt": 2
     },
     "missing": []
   },
@@ -108,15 +38,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 1,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Frage ist direkt aus § 2 der Verordnung ableitbar.",
-        "Antwort ist eindeutig: drei Jahre.",
-        "niveau_below_4"
+        "Die Antwort 'Drei Jahre' stimmt mit § 2 des Auszugs überein."
       ]
     },
     {
@@ -125,15 +53,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Die Frage verlangt ein konkretes Inkrafttretensdatum aus der Verordnung.",
-        "Eindeutige richtige Antwort vorhanden.",
-        "niveau_below_4"
+        "Der Auszug nennt ausdrücklich 'Textnachweis ab: 1.8.2024' und das Inkrafttreten am 1. August 2024."
       ]
     },
     {
@@ -142,15 +68,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Die genannten Einsatzgebiete sind direkt in der Verordnung aufgezählt.",
-        "Genau eine richtige Aufzählung ist vorgesehen.",
-        "niveau_below_4"
+        "Die genannten sieben Einsatzgebiete entsprechen wortgleich § 4 Abs. 4 im Auszug."
       ]
     },
     {
@@ -159,15 +83,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Die Frage prüft eine klare Regelung der Ausbildungsordnung zur Prüfungsart.",
-        "Antwort ist eindeutig: keine Zwischenprüfung, sondern gestreckte Abschlussprüfung.",
-        "niveau_below_4"
+        "Der Auszug nennt die Abschlussprüfung als aus Teil 1 und Teil 2 bestehend; eine gesonderte Zwischenprüfung ist nicht vorgesehen."
       ]
     },
     {
@@ -176,15 +98,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Das Ausbildungshalbjahr für Teil 1 ist in der Verordnung festgelegt.",
-        "Nur eine richtige Lösung: viertes Ausbildungshalbjahr.",
-        "niveau_below_4"
+        "Der Auszug nennt ausdrücklich: 'Teil 1 soll im vierten Ausbildungshalbjahr stattfinden.'"
       ]
     },
     {
@@ -193,15 +113,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Prüfungsbereich und Dauer sind unmittelbar in § 8 geregelt.",
-        "Eindeutig formuliert mit einer richtigen Antwort.",
-        "niveau_below_4"
+        "Der Prüfungsbereich heißt im Auszug genau 'Leistungserstellung, Logistik, Beschaffung und Buchhaltung' und die Prüfungszeit beträgt 90 Minuten."
       ]
     },
     {
@@ -210,15 +128,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Die Gewichtung von Teil 1 ist in § 14 festgelegt.",
-        "Antwort ist eindeutig in Prozent angegeben.",
-        "niveau_below_4"
+        "Der Auszug gewichtet den Prüfungsbereich 'Leistungserstellung, Logistik, Beschaffung und Buchhaltung' mit 25 Prozent."
       ]
     },
     {
@@ -227,15 +143,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Die Prüfungsdauer ist direkt aus der Verordnung ableitbar.",
-        "Genau eine richtige Zeitangabe.",
-        "niveau_below_4"
+        "Der Auszug nennt für den Prüfungsbereich 'Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle' eine Prüfungszeit von 150 Minuten."
       ]
     },
     {
@@ -244,15 +158,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 2,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Die Gewichte der Prüfungsbereiche sind in § 14 festgelegt.",
-        "Die Frage zielt auf eine eindeutige Verteilung in Prozent.",
-        "niveau_below_4"
+        "Die Antwort gibt die drei Teil-2-Gewichtungen aus dem Auszug korrekt wieder: 35 Prozent, 30 Prozent und 10 Prozent."
       ]
     },
     {
@@ -261,15 +173,13 @@
       "scores": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 3,
+        "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": false,
+      "passed": true,
       "reasons": [
-        "Die Bestandteile und ihre Gewichtung der Fachaufgabe folgen aus der Verordnung.",
-        "Etwas anspruchsvoller als reine Faktenabfrage, aber noch im Ausbildungsordnungs-Niveau.",
-        "niveau_below_4"
+        "Die Gewichtung im Auszug ist exakt: Dokumentation 10 Prozent, Präsentation 20 Prozent, fallbezogenes Fachgespräch 70 Prozent."
       ]
     },
     {
@@ -284,8 +194,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Antwort folgt direkt aus § 12 IndKflAusbV; zusammen 30 Minuten, Präsentation max. 10 Minuten.",
-        "Genau eine richtige Lösung."
+        "Angaben zu 30 Minuten und max. 10 Minuten stimmen mit § 12 Abs. 7 des Auszugs überein."
       ]
     },
     {
@@ -300,8 +209,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Bestehensregel folgt direkt aus § 14 Abs. 2 IndKflAusbV.",
-        "Genau eine richtige Lösung."
+        "Bestehensregeln stimmen wörtlich mit § 14 Abs. 2 des Auszugs überein."
       ]
     },
     {
@@ -316,8 +224,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Frage entspricht der Berufsbildposition zu Arbeits- und Tarifrecht; die richtige Antwort ist eindeutig der Betriebsrat.",
-        "Verständlich und auf Grundstufen-Niveau."
+        "Der Betriebsrat ist als betriebsverfassungsrechtliches Organ in der Quelle genannt; die Antwort passt sachlich."
       ]
     },
     {
@@ -332,8 +239,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Unterscheidung zwischen Steuern und Sozialversicherungsbeiträgen ist fachlich korrekt und eindeutig.",
-        "Sprache klar und alltagsnah."
+        "Steuern und Sozialversicherungsbeiträge sind typische Abzugsarten zwischen Brutto und Netto; mit dem Ausbildungsrahmenplan vereinbar."
       ]
     },
     {
@@ -348,8 +254,7 @@
       },
       "passed": true,
       "reasons": [
-        "Brandverhalten und Notruf sind sicherheitsrelevant; die Reihenfolge ist fachlich richtig.",
-        "Genau eine sinnvolle Antwort im Ausbildungsrahmen.",
+        "Verhaltensweisen bei Bränden und erste Maßnahmen zur Brandbekämpfung sind in der Quelle genannt; die Reihenfolge ist fachlich richtig und sicherheitsrelevant.",
         "safety_human_sample"
       ]
     },
@@ -365,8 +270,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Abfallhierarchie ist fachlich korrekt und eindeutig.",
-        "Grundstufengerechte, klare Formulierung."
+        "Die Antwort entspricht der in der Quelle genannten Rangfolge: Abfälle vermeiden und einer Wiederverwertung oder Entsorgung zuführen."
       ]
     },
     {
@@ -381,8 +285,7 @@
       },
       "passed": true,
       "reasons": [
-        "Datenschutz/Datensicherheit werden korrekt aufgegriffen; private Weiterleitung ist nicht erlaubt.",
-        "Eindeutige Ja/Nein-Frage mit klarer Lösung."
+        "Datenschutz und Datensicherheit werden in der Quelle ausdrücklich genannt; private ungesicherte Weiterleitung ist sachlich verneint."
       ]
     },
     {
@@ -397,8 +300,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Produktionsfaktoren werden passend zur Ausbildungsordnung abgefragt; die Antwort ist fachlich stimmig.",
-        "Genau eine richtige Antwort."
+        "Die genannten Produktionsfaktoren entsprechen dem in LF 1 üblichen Fachwissen zum Industriebetrieb."
       ]
     },
     {
@@ -413,8 +315,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Haftung der GmbH ist korrekt beschrieben: Gesellschaftsvermögen, nicht Privatvermögen.",
-        "Eindeutig und für Jahr 1 passend."
+        "Die Haftungsbeschreibung einer GmbH ist sachlich richtig: grundsätzlich nur Gesellschaftsvermögen, nicht Privatvermögen der Gesellschafter."
       ]
     },
     {
@@ -429,8 +330,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Berechnung Wirtschaftlichkeit = Erträge/Aufwendungen ist korrekt und ergibt 1,2.",
-        "Eine eindeutige Rechenlösung."
+        "Die Berechnung ist korrekt: 600.000 € / 500.000 € = 1,2."
       ]
     },
     {
@@ -445,8 +345,7 @@
       },
       "passed": true,
       "reasons": [
-        "Formel und Ergebnis stimmen mit der angegebenen Quelle/Erklärung überein.",
-        "Für Jahr 1 fachlich passend und eindeutig lösbar."
+        "Rechnung und Ergebnis 50.000 € / 400.000 € × 100 = 12,5 % sind korrekt."
       ]
     },
     {
@@ -461,8 +360,7 @@
       },
       "passed": true,
       "reasons": [
-        "Begriffsunterscheidung folgt direkt aus der angegebenen Quelle/Erklärung.",
-        "Genau eine richtige Antwort ist naheliegend."
+        "Abgrenzung Kernprozesse/Supportprozesse sachlich richtig und passend zum Thema Geschäftsprozesse."
       ]
     },
     {
@@ -477,8 +375,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Merkmale eines Projekts entsprechen der Erklärung zur Quelle.",
-        "Für Grundstufe angemessen und eindeutig."
+        "Merkmale eines Projekts korrekt genannt: einmalig, zeitlich begrenzt, Ziel und begrenzte Mittel."
       ]
     },
     {
@@ -493,8 +390,7 @@
       },
       "passed": true,
       "reasons": [
-        "SMART ist in der korrekten Standardbedeutung angegeben.",
-        "Eindeutige Abfrage mit klarer Musterlösung."
+        "SMART korrekt wiedergegeben: spezifisch, messbar, attraktiv/akzeptiert, realistisch, terminiert."
       ]
     },
     {
@@ -509,8 +405,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Reihenfolge entspricht der üblichen Projektphasenlogik und der Erklärung.",
-        "Nur eine richtige Reihenfolge."
+        "Reihenfolge der Projektphasen korrekt: Definition, Planung, Durchführung, Abschluss."
       ]
     },
     {
@@ -525,8 +420,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Definition des Meilensteins folgt der Erklärung zur Quelle.",
-        "Eindeutige Fachdefinition auf Grundstufen-Niveau."
+        "Meilenstein als wichtiges Zwischenergebnis zu einem festen Termin korrekt erklärt."
       ]
     },
     {
@@ -541,8 +435,7 @@
       },
       "passed": true,
       "reasons": [
-        "Feedbackregel ist inhaltlich passend zur angegebenen Erklärung.",
-        "Genau eine fachlich richtige Kernaussage erwartet."
+        "Feedbackregel mit Ich-Botschaften und sachlicher Beschreibung beobachtbaren Verhaltens ist korrekt."
       ]
     },
     {
@@ -557,8 +450,7 @@
       },
       "passed": true,
       "reasons": [
-        "Zustandekommen des Kaufvertrags ist korrekt über Antrag und Annahme beschrieben.",
-        "Eindeutige juristische Standardfrage."
+        "Kaufvertrag durch zwei übereinstimmende Willenserklärungen korrekt beschrieben."
       ]
     },
     {
@@ -573,8 +465,7 @@
       },
       "passed": true,
       "reasons": [
-        "Die Unterscheidung zwischen Besitz und Eigentum ist fachlich korrekt.",
-        "Eindeutig und passend zur angegebenen Quelle."
+        "Unterschied Besitz/Eigentum sachlich richtig erklärt."
       ]
     },
     {
@@ -589,8 +480,7 @@
       },
       "passed": true,
       "reasons": [
-        "Rechenweg und Ergebnis sind korrekt nachvollziehbar.",
-        "Eindeutige Berechnungsaufgabe auf Grundstufen-Niveau."
+        "Barverkaufspreis 460 € ist korrekt: 400 € + 15 % von 400 € = 460 €."
       ]
     },
     {
@@ -605,8 +495,8 @@
       },
       "passed": true,
       "reasons": [
-        "Die Antwort entspricht dem üblichen Begriff für das Nichtbezahlen einer fälligen Rechnung: Zahlungsverzug.",
-        "Genau eine richtige Fachbezeichnung."
+        "Sachlich richtig: Die Nichtbezahlung einer fälligen Rechnung ist Zahlungsverzug.",
+        "Passt zum Lernfeld 3 zu Kaufvertragsstörungen und Mahnwesen."
       ]
     },
     {
@@ -621,8 +511,8 @@
       },
       "passed": true,
       "reasons": [
-        "Die Frist und der Beginn der regelmäßigen Verjährung sind korrekt wiedergegeben.",
-        "Die Frage hat genau eine richtige Standardantwort nach BGB."
+        "Sachlich richtig: Regelmäßige Verjährungsfrist beträgt 3 Jahre.",
+        "Fristbeginn ist mit dem Schluss des Jahres, in dem der Anspruch entstanden ist (§§ 195, 199 BGB)."
       ]
     },
     {
@@ -637,8 +527,8 @@
       },
       "passed": true,
       "reasons": [
-        "Die 40-Prozent-Bewertung von Teil 1 folgt aus der Ausbildungsverordnung.",
-        "Genau eine richtige Prozentangabe."
+        "Entspricht dem Auszug: Teil 1 und Teil 2 werden im Gesamtergebnis mit 40 Prozent gewichtet.",
+        "Keine Abweichung bei Prozentwert oder Bezug zur Prüfung."
       ]
     },
     {
@@ -646,15 +536,16 @@
       "unitId": "ik-vo",
       "scores": {
         "sourceFidelity": 1,
-        "uniqueness": 1,
+        "uniqueness": 0,
         "niveau": 4,
         "language": 5,
         "safetyFlag": false
       },
-      "passed": true,
+      "passed": false,
       "reasons": [
-        "Vertrieb ist als Einsatzgebiet in der Verordnung genannt.",
-        "Die Frage zielt auf ein einzelnes Beispiel mit eindeutiger Lösung."
+        "Die Frage ist nicht einzigartig lösbar, da im Auszug mehrere Einsatzgebiete genannt werden (z. B. Vertrieb, Marketing, Beschaffung usw.).",
+        "Die Vorgabe 'Nenne ein Einsatzgebiet' erlaubt mehrere richtige Antworten.",
+        "uniqueness_fail"
       ]
     },
     {
@@ -664,15 +555,16 @@
         "sourceFidelity": 0,
         "uniqueness": 1,
         "niveau": 1,
-        "language": 4,
+        "language": 2,
         "safetyFlag": false
       },
       "passed": false,
       "reasons": [
-        "Die Antwort ist zu umgangssprachlich und nicht als amtlich abgesicherte Definition aus der Quelle ableitbar.",
-        "Inhaltlich zu allgemein für eine fachliche Prüfungsfrage im Modul.",
+        "Die Antwort ist zu ungenau und fachlich nicht sauber: Ein Kunde ist nicht einfach nur 'jemand, der was kauft', sondern eine Person/Organisation, die Waren oder Dienstleistungen bezieht bzw. nachfragt.",
+        "Die Erklärung ist umgangssprachlich und didaktisch schwach; kein belastbarer Bezug zur amtlichen Quelle.",
         "source_fidelity_fail",
-        "niveau_below_4"
+        "niveau_below_4",
+        "language_below_4"
       ]
     }
   ]
