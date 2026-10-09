@@ -20,6 +20,7 @@ on:
           - judge-backfill
           - ab-haiku-sonnet
           - ab-alle-modelle
+          - goldset-indkfl
           - cost-report
           - lighthouse
           - offline-check

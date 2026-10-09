@@ -290,7 +290,19 @@ export async function recordRunCostTrace(payload: {
   });
 }
 
-export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
+/** SIN-449: Datensatz-Angaben; ohne Angabe gilt das MAF-Goldset (AP-06). */
+export type GoldsetDatasetOpts = { name: string; description: string; idPrefix: string; retrievedAt: string };
+const MAF_DATASET_OPTS: GoldsetDatasetOpts = {
+  name: LANGFUSE_DATASET_NAME,
+  description: "70 original MAF practice items from MaschFüAusbV/BIBB (not IHK exam copies).",
+  idPrefix: "maf",
+  retrievedAt: "2026-10-02",
+};
+
+export async function ensureGoldsetDataset(
+  items: GoldQuestion[],
+  opts: GoldsetDatasetOpts = MAF_DATASET_OPTS,
+): Promise<{
   dataset: string;
   upserted: number;
 } | null> {
@@ -302,11 +314,10 @@ export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
 
     try {
       await client.api.datasets.create({
-        name: LANGFUSE_DATASET_NAME,
-        description:
-          "70 original MAF practice items from MaschFüAusbV/BIBB (not IHK exam copies).",
+        name: opts.name,
+        description: opts.description,
         metadata: {
-          retrievedAt: "2026-10-02",
+          retrievedAt: opts.retrievedAt,
           ihkExamCopy: false,
           itemCount: items.length,
         },
@@ -319,8 +330,8 @@ export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
     for (const item of items) {
       try {
         await client.dataset.createItem({
-          datasetName: LANGFUSE_DATASET_NAME,
-          id: `maf-${item.id}`,
+          datasetName: opts.name,
+          id: `${opts.idPrefix}-${item.id}`,
           input: {
             prompt: item.prompt,
             correct: item.correct,
@@ -331,7 +342,7 @@ export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
           expectedOutput: item.expected,
           metadata: {
             sourceFetchedAt:
-              "sourceFetchedAt" in item ? item.sourceFetchedAt : "2026-10-02",
+              "sourceFetchedAt" in item ? item.sourceFetchedAt : opts.retrievedAt,
             ihkExamCopy: false,
           },
           status: "ACTIVE",
@@ -341,7 +352,7 @@ export async function ensureGoldsetDataset(items: GoldQuestion[]): Promise<{
         // skip failed item; continue
       }
     }
-    return { dataset: LANGFUSE_DATASET_NAME, upserted };
+    return { dataset: opts.name, upserted };
   } catch {
     return null;
   }
