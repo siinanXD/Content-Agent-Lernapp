@@ -14,6 +14,19 @@ export const GATE_LABEL = "gate-bruch";
 export const GATE_PREFIX = "Bug: Gate-Bruch auf main:";
 const APPROVAL = ["freigegeben", "approved"];
 const MIN_PRS = 2;
+/**
+ * `merge-gate` ist absichtlich rot, solange ein `risk:high`-PR auf `freigegeben` wartet (pr-gate.yml, Schritt
+ * „Ergebnis des Gates melden“). Das ist kein Gate-Bruch (SIN-439).
+ */
+export const WAITING_RE = /wartet auf das Label freigegeben/i;
+const GENERIC_RE = /^Process completed with exit code/i;
+
+/** Die aussagekräftigste Fehlerzeile: erst die erste spezifische Fehler-Anmerkung, sonst die erste überhaupt. */
+export function pickFailureLine(notes = []) {
+  const failing = notes.filter((n) => n.annotation_level === "failure").map((n) => String(n.message ?? ""));
+  const line = failing.find((m) => !GENERIC_RE.test(m.trim())) ?? failing[0] ?? String(notes[0]?.message ?? "");
+  return line.replace(/\s+/g, " ").slice(0, 200);
+}
 
 const names = (p) => (p.labels ?? []).map((l) => (typeof l === "string" ? l : l.name));
 
@@ -64,6 +77,8 @@ export function detectGateBreaks(prs, known = [], ctx = {}) {
     if (String(p.author ?? "").toLowerCase().startsWith("dependabot")) continue;
     if (!Number.isNaN(since) && p.startedAt && Date.parse(p.startedAt) < since) continue;
     for (const f of p.failures ?? []) {
+      // Warten auf Freigabe (risk:high) ist gewollt rot, kein Bruch (SIN-439).
+      if (WAITING_RE.test(f.lines ?? "")) continue;
       const key = `${f.check} / ${f.step}`;
       const g = groups.get(key) ?? { check: f.check, step: f.step, prs: new Map(), lines: "" };
       g.prs.set(p.number, p.sha);
@@ -172,7 +187,7 @@ export async function collectGateFailures(repo, token, prs, fetchImpl = fetch) {
         let lines = "";
         try {
           const notes = await get(`/repos/${repo}/check-runs/${c.id}/annotations`, token, fetchImpl);
-          lines = String((notes.find((n) => n.annotation_level === "failure") ?? notes[0])?.message ?? "").replace(/\s+/g, " ").slice(0, 200);
+          lines = pickFailureLine(notes);
         } catch {
           /* ohne Zeilen bleibt der Schritt */
         }
