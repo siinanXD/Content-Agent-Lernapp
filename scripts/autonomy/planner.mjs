@@ -202,7 +202,7 @@ export function buildPlannerPrompt(
     "- backend: Pipeline, Datenmodell, Kosten, Stabilität, Sentry-Fehler, Skalierung.",
     "",
     "Content-Regeln (SIN-226):",
-    "- Content-Lücken füllt die Content-Fabrik (AP-23) selbst. Lege dafür KEINE Issues an, außer die Fabrik hängt (2 Läufe ohne neues Modul).",
+    "- Content-Lücken füllt die Content-Fabrik (AP-23) selbst. Lege dafür KEINE Issues an, außer die Fabrik hängt (2 Läufe ohne neues Modul). Steht sie auf „pausiert“ (Anthropic-API-Limit, SIN-450), ist das gewollt: kein Issue.",
     "- Bestehensquote eines Moduls unter 70 %: Issue „Prompt/Didaktik für Modul X verbessern“.",
     "- Alle Maps über 90 % abgedeckt: Issue „Curriculum-Map für nächsten Beruf anlegen“ (amtliche Quelle nötig), höchstens 1 neuer Beruf pro Monat.",
     "- Lern-Schleife (AP-12): ab 50 aktiven Lernenden je Kurs die 5 schwächsten Einheiten als Issue.",

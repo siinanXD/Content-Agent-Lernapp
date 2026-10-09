@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { collectFabrikMetrics, deriveFabrikStatus } from "../../../scripts/autonomy/fabrik.mjs";
-import { contentRuleHints, renderContentSection } from "../../../scripts/autonomy/content-metrics.mjs";
+import { isApiLimitError, limitRegainDate, pauseReason } from "../anthropic/limit-error";
+import { contentRuleHints, renderContentSection, summarizeRuns } from "../../../scripts/autonomy/content-metrics.mjs";
 import { evaluateReadiness } from "../../../scripts/autonomy/readiness.mjs";
 import { recordFactoryRun, toAbortedRunRecord, toFactoryRunRecord } from "../generate/factory-status";
 import { initPipelineSentry } from "../sentry-pipeline";
@@ -158,6 +159,50 @@ test("Fabrik: Tabelle fehlt (404) → spezifische Migrationsmeldung", async () =
   const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
   const m = await collectFabrikMetrics(env as never, { fetchImpl: fetchImpl as never, delays: [] } as never);
   assert.match(String(m.content_fabrik), /Migration 20261007020000 anwenden/);
+});
+
+// SIN-450: Anthropic-Limit pausiert die Fabrik, statt sie rot oder „hängt“ zu melden.
+const LIMIT_BODY = '{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}';
+const paused = (d: number) => ({ ...run(d, false), stop_reason: "pausiert: API-Limit am 2026-10-05 (frei ab 2026-11-01)" });
+
+test("SIN-450: Limit-Fehler der Anthropic-API wird von anderen Fehlern unterschieden", () => {
+  const limit = new Error(`Batch submit 400: ${LIMIT_BODY}`);
+  assert.equal(isApiLimitError(limit), true);
+  assert.equal(isApiLimitError(new Error("Your credit balance is too low to access the Anthropic API")), true);
+  assert.equal(isApiLimitError(new Error('Batch submit 429: {"error":{"type":"rate_limit_error","message":"slow down"}}')), false);
+  assert.equal(isApiLimitError(new Error("Batch submit 500: overloaded")), false);
+  assert.equal(isApiLimitError(new Error("Kostendeckel erreicht")), false);
+  assert.equal(limitRegainDate(limit), "2026-11-01");
+  assert.equal(pauseReason(limit, new Date("2026-10-09T05:00:00Z")), "pausiert: API-Limit am 2026-10-09 (frei ab 2026-11-01)");
+  assert.equal(pauseReason(new Error("credit balance is too low"), new Date("2026-10-09T05:00:00Z")), "pausiert: API-Limit am 2026-10-09");
+});
+
+test("SIN-450: Lauf mit Limit-Fehler ist pausiert mit Grund und Datum, nicht hängt", () => {
+  const s = deriveFabrikStatus([paused(2), paused(9)], NOW);
+  assert.equal(s.status, "pausiert");
+  assert.match(s.detail, /pausiert: API-Limit am 2026-10-05 \(frei ab 2026-11-01\)/);
+  assert.equal(deriveFabrikStatus([paused(2), run(9, false)], NOW).status, "pausiert");
+});
+
+test("SIN-450: pausierter Lauf zählt nicht für hängt; Planer legt kein Content-Issue an", () => {
+  assert.equal(deriveFabrikStatus([run(2, false), paused(9)], NOW).status, "läuft");
+  const reports = [{ passed: 0, stopReason: "pausiert: API-Limit am 2026-10-05" }, { passed: 0, stopReason: "pausiert: API-Limit am 2026-09-28" }];
+  const runs = summarizeRuns(reports, "2026-09-01");
+  assert.equal(runs.fabrikHaengt, false);
+  assert.equal(summarizeRuns([{ passed: 0, stopReason: null }, { passed: 0, stopReason: null }], "2026-09-01").fabrikHaengt, true);
+  const row = evaluateReadiness({ metrics: { content_fabrik_status: "pausiert", content_fabrik: "x" }, issues: [], built: {} }).find((r: { id: string }) => r.id === "betrieb-fabrik");
+  assert.equal(row?.status, "offen");
+});
+
+test("SIN-450: nächster Lauf nach Aufhebung des Limits startet ohne Handarbeit", () => {
+  assert.equal(deriveFabrikStatus([run(1, true), paused(8)], NOW).status, "läuft");
+});
+
+test("SIN-450: Abbruch mit Pausegrund behält den Grund ohne Abbruch-Präfix", () => {
+  const reason = pauseReason(new Error(LIMIT_BODY), new Date("2026-10-09T05:00:00Z"));
+  const rec = toAbortedRunRecord("r", "c", "2026-10-09T05:00:00Z", reason);
+  assert.equal(rec.stopReason, "pausiert: API-Limit am 2026-10-09 (frei ab 2026-11-01)");
+  assert.equal(rec.stopped, true);
 });
 
 test("Pipeline-Sentry: ohne DSN No-op, Optionen schalten Personendaten ab", () => {

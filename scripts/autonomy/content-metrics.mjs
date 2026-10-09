@@ -91,13 +91,15 @@ export function summarizeRuns(runs, weekSince) {
   const sum = (list, k) => list.reduce((s, r) => s + (Number(r[k]) || 0), 0);
   // Die Fabrik hängt, wenn die letzten Läufe keine neue Einheit hervorgebracht haben.
   const last = runs.slice(0, STUCK_RUNS);
+  // SIN-450: pausierte Läufe (API-Limit) zählen nicht als „hängt“.
+  const paused = (r) => String(r.stopReason ?? "").startsWith("pausiert: API-Limit");
   return {
     laeufe: runs.length,
     laeufeWoche: week.length,
     einheitenNeuWoche: sum(week, "passed"),
     kostenWocheEur: Math.round(sum(week, "costEur") * 100) / 100,
     kostenLetzteLaeufe: runs.slice(0, 5).map((r) => ({ runId: r.runId, costEur: r.costEur, passed: r.passed })),
-    fabrikHaengt: last.length >= STUCK_RUNS && last.every((r) => !(Number(r.passed) > 0)),
+    fabrikHaengt: last.length >= STUCK_RUNS && last.every((r) => !(Number(r.passed) > 0) && !paused(r)),
   };
 }
 
