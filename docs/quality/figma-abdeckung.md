@@ -6,7 +6,7 @@ Datei `0SWGDO2ioBD3MyXiAnrbRz`. Zuordnung: `docs/quality/figma-abdeckung.json`, 
 
 Abgleich mit der Figma-Datei (Bericht ohne Token erzeugt, Live-Abgleich nur in der Konsole): nicht verfügbar (FIGMA_ACCESS_TOKEN fehlt)
 
-Umgesetzt: 53 von 56 Frames, fehlend: 0, kein App-Screen: 3.
+Umgesetzt: 57 von 60 Frames, fehlend: 0, kein App-Screen: 3.
 
 | Frame | Route/Komponente | Code | Stand |
 | --- | --- | --- | --- |
@@ -63,6 +63,10 @@ Umgesetzt: 53 von 56 Frames, fehlend: 0, kein App-Screen: 3.
 | `W9 Profil` | /profil | `src/app/profil/page.tsx` | umgesetzt |
 | `W10 Zustände · Offline und Fehler` | Komponente StateView | `src/components/ui/state-view.tsx` | umgesetzt |
 | `W11 Ausbilder · Gruppe (Desktop)` | /ausbilder | `src/app/ausbilder/page.tsx` | umgesetzt |
+| `G0 Zugang einlösen · Ausbilder (Link von Sinan)` | /ausbilder/zugang | `src/app/ausbilder/zugang/page.tsx` | umgesetzt |
+| `G5 Meine Gruppen · Ausbilder` | /ausbilder/gruppen | `src/app/ausbilder/gruppen/page.tsx`, `src/components/ausbilder/gruppen-kacheln.tsx` | umgesetzt |
+| `G6 Gruppe archivieren · Bestätigung` | /ausbilder/gruppen | `src/components/ausbilder/archive-sheet.tsx` | umgesetzt |
+| `G7 Archiv · Historie der Gruppen` | /ausbilder/archiv | `src/app/ausbilder/archiv/page.tsx` | umgesetzt |
 | `Intern · Checkliste vor dem ersten Demo-Zugang` | – | interne Checkliste für Sinan, keine App-Seite | kein Screen |
 | `00 Richtung 2026 · Lern-App` | – | Richtungsfolie der Variante 2026, kein App-Screen | kein Screen |
 | `Bühne · Lern-App 2026` | – | Präsentationsfläche, kein App-Screen | kein Screen |

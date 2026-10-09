@@ -27,7 +27,7 @@ async function authHeaders(): Promise<Record<string, string>> {
  * Teilnehmende einladen (SIN-356): ein Anzeigename (Vorname + Initial) ergibt einen Beitrittscode.
  * Die App versendet nichts; die Ausbilder geben die Codes selbst weiter.
  */
-export function InviteSection({ onInvited }: { onInvited: () => void }) {
+export function InviteSection({ groupId, onInvited }: { groupId?: string; onInvited: () => void }) {
   const [list, setList] = useState<List>({ kind: "laden" });
   const [name, setName] = useState("");
   const [error, setError] = useState("");
@@ -36,7 +36,7 @@ export function InviteSection({ onInvited }: { onInvited: () => void }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/ausbilder/einladungen", {
+      const res = await fetch(groupId ? `/api/ausbilder/einladungen?gruppe=${groupId}` : "/api/ausbilder/einladungen", {
         headers: await authHeaders(),
         cache: "no-store",
       });
@@ -45,7 +45,7 @@ export function InviteSection({ onInvited }: { onInvited: () => void }) {
     } catch {
       setList({ kind: "fehler" });
     }
-  }, []);
+  }, [groupId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Einladungen laden beim Öffnen
@@ -64,7 +64,7 @@ export function InviteSection({ onInvited }: { onInvited: () => void }) {
       const res = await fetch("/api/ausbilder/einladungen", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-        body: JSON.stringify({ names: names.value }),
+        body: JSON.stringify({ names: names.value, ...(groupId ? { groupId } : {}) }),
       });
       const data: unknown = await res.json().catch(() => null);
       if (res.ok) {

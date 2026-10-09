@@ -253,3 +253,8 @@ html[data-consent="decided"] [data-consent-banner] {
     transition: height 250ms ease-out, width 250ms ease-out;
   }
 }
+
+/* Bestätigungsdialog (SIN-415, Figma G6): Hintergrund abdunkeln, nur mit Token. */
+.archive-sheet::backdrop {
+  background: color-mix(in srgb, var(--color-bg-hero) 60%, transparent);
+}

@@ -1,4 +1,5 @@
 import { checkNames, type Invitation } from "@/lib/ausbilder/gruppe";
+import { isUuid } from "@/lib/ausbilder/gruppen";
 import { ausbilderClient, fail, noStore } from "@/lib/ausbilder/server";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +13,11 @@ export async function GET(request: Request) {
   const auth = await ausbilderClient(request, NOT_CONFIGURED);
   if ("response" in auth) return auth.response;
 
-  const { data, error } = await auth.client
-    .from("group_invitations")
-    .select("code, member_id, group_members(display_name)")
-    .order("created_at", { ascending: true });
+  const groupId = new URL(request.url).searchParams.get("gruppe");
+  if (groupId !== null && !isUuid(groupId)) return fail("Bitte prüfen Sie Ihre Angaben.", 400);
+  let query = auth.client.from("group_invitations").select("code, member_id, group_members(display_name)");
+  if (groupId) query = query.eq("group_id", groupId);
+  const { data, error } = await query.order("created_at", { ascending: true });
   if (error) return fail("Die Einladungen konnten nicht geladen werden.", 503);
 
   const invitations: Invitation[] = (
@@ -36,15 +38,19 @@ export async function POST(request: Request) {
   const auth = await ausbilderClient(request, NOT_CONFIGURED);
   if ("response" in auth) return auth.response;
 
-  const body = (await request.json().catch(() => null)) as { names?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { names?: unknown; groupId?: unknown } | null;
   const names = checkNames(body?.names);
   if (!names.ok) return fail(names.error, 400);
+  // Mit mehreren Gruppen (SIN-415) gehört jede Einladung zu einer bestimmten, aktiven Gruppe.
+  if (body?.groupId !== undefined && !isUuid(body.groupId)) return fail("Bitte prüfen Sie Ihre Angaben.", 400);
+  const groupId = body?.groupId;
 
   const invitations: Invitation[] = [];
   for (const name of names.value) {
-    const { data, error } = await auth.client.rpc("ausbilder_einladung_erzeugen", {
-      p_display_name: name,
-    });
+    const { data, error } = await auth.client.rpc(
+      "ausbilder_einladung_erzeugen",
+      groupId ? { p_group_id: groupId, p_display_name: name } : { p_display_name: name },
+    );
     if (error) {
       // Bereits erzeugte Einladungen bleiben gültig; die Antwort nennt sie, damit nichts verloren geht.
       const message =
@@ -52,12 +58,14 @@ export async function POST(request: Request) {
           ? "Legen Sie zuerst eine Gruppe an."
           : error.code === "54000"
             ? "Die Gruppe ist voll (höchstens 100 Teilnehmende)."
+            : error.code === "54001"
+              ? "Es sind nicht genug Zugänge frei. Mehr Zugänge bekommen Sie auf Anfrage."
             : error.code === "42501"
               ? "Dieser Zugang ist kein Ausbilder-Zugang."
               : error.code === "22023"
                 ? "Bitte prüfen Sie die Namen."
                 : "Die Einladungen konnten nicht erzeugt werden. Bitte versuchen Sie es noch einmal.";
-      const status = error.code === "P0002" ? 404 : error.code === "42501" ? 403 : error.code === "22023" ? 400 : error.code === "54000" ? 409 : 503;
+      const status = error.code === "P0002" ? 404 : error.code === "42501" ? 403 : error.code === "22023" ? 400 : error.code === "54000" || error.code === "54001" ? 409 : 503;
       return Response.json({ error: message, invitations }, { status, headers: noStore });
     }
     const row = (data as InviteRow[] | null)?.[0];
