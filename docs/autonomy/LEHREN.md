@@ -107,3 +107,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Tagesdeckel zählte Läufe, die nach Sekunden an einer API-Ablehnung scheiterten (0 € verbraucht) → Tag gesperrt, kein Neustart nach Behebung. Richtig: Fehlschläge unter 3 Minuten zählen nicht, ab dem dritten am Tag doch (`dailyLimitReached`). (SIN-444)
 - Ein Fehler bei einem Modell (mehrzeiliges OpenAI-JSON) brach den ganzen Vergleich nach 8 Min. ab, bezahlte Ergebnisse weg, Anmerkung zeigte nur `"error": {`. Richtig: API-Fehler mit `compactApiError` einzeilig machen; Fehler je Kandidat abfangen und im Bericht unter `failed` führen. (SIN-445)
 - Anthropic-Ausgabenlimit (HTTP 400 „API usage limits“) ließ die Content-Fabrik rot enden und löste Reparatur und „hängt“ aus → Limit ist kein Qualitätsfehler. Richtig: `isApiLimitError` erkennt es, der Lauf endet mit Exit 0 und Status „pausiert: API-Limit am <Datum>“; kein Merker, der nächste Lauf startet normal. (SIN-450)
+
+## Datenbank-Rechte
+
+- Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)

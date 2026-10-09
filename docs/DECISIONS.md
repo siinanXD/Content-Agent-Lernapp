@@ -18,6 +18,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-446 | SIN-446: Migrationen 13/15 sind dieselbe Blockade wie SIN-441 und SIN-443 | [SIN-446-migrationen-weiter-offen.md](decisions/SIN-446-migrationen-weiter-offen.md) |
 | SIN-443 | SIN-443: Migration 20261014010000 wartet auf 20261013010000 | [SIN-443-migration-416-haengt-an-415.md](decisions/SIN-443-migration-416-haengt-an-415.md) |
 | SIN-441 | SIN-441: Migration 20261013010000 bleibt liegen, Sinan entscheidet | [SIN-441-migration-sin415-nicht-additiv.md](decisions/SIN-441-migration-sin415-nicht-additiv.md) |
+| SIN-438 | SIN-438: Tabellenrechte härten (TRUNCATE, TRIGGER, REFERENCES) | [SIN-438-tabellenrechte.md](decisions/SIN-438-tabellenrechte.md) |
 | SIN-437 | SIN-437: Goldset-Vergleich aller Modelle (Claude und OpenAI), zwei Richter | [SIN-437-ab-alle-modelle.md](decisions/SIN-437-ab-alle-modelle.md) |
 | SIN-436 | SIN-436 — Abgleich mit Figma: Willkommen, Einwilligung, Schwerpunkt, Lernpfad | [SIN-436-figma-abgleich-onboarding.md](decisions/SIN-436-figma-abgleich-onboarding.md) |
 | SIN-435 | SIN-435 — CodeQL auf main: Altfunde hoher Schwere beheben | [SIN-435-codeql-altfunde.md](decisions/SIN-435-codeql-altfunde.md) |
