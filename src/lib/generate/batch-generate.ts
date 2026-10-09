@@ -109,13 +109,15 @@ Keine anderen Einheiten. (Kurs-Stichwort: ${keyword})`;
 
 export async function submitChunkTargets(opts: {
   keyword: string;
+  /** Map des Kurses (SIN-431); Standard: MAF Metall. */
+  curriculum?: Curriculum;
   targets: BatchChunkTarget[];
   /** Default: GENERATOR_MODEL (Config). */
   model?: string;
   /** Gemeinsamer Präfix, optional mit cache_control (Prompt Caching). */
   system?: Array<{ type: "text"; text: string; cache_control?: { type: "ephemeral" } }>;
 }): Promise<BatchSubmitResult> {
-  const c = loadMafCurriculum();
+  const c = opts.curriculum ?? loadMafCurriculum();
   if (opts.targets.length === 0) throw new Error("No chunks to submit");
   const unitTarget = opts.targets.reduce((s, t) => s + t.unitCount, 0);
 
@@ -188,9 +190,10 @@ export function missingChunkTargets(
 
 export async function submitRegenBatch(opts: {
   keyword: string;
+  curriculum?: Curriculum;
   unitSpecs: Array<{ moduleId: string; blockId: string; unitId: string; titleHint?: string }>;
 }): Promise<BatchSubmitResult> {
-  const c = loadMafCurriculum();
+  const c = opts.curriculum ?? loadMafCurriculum();
   const requests = [];
   for (const spec of opts.unitSpecs) {
     const mod = c.modules.find((m) => m.id === spec.moduleId);
@@ -378,9 +381,11 @@ export async function collectRepairQuestions(
   return { questions, failedCustomIds, ledger };
 }
 
-export async function collectBatchUnits(batchId: string): Promise<BatchPollResult> {
+export async function collectBatchUnits(
+  batchId: string,
+  c: Curriculum = loadMafCurriculum(),
+): Promise<BatchPollResult> {
   const { status, rows } = await fetchBatchRows(batchId);
-  const c = loadMafCurriculum();
   const units: GeneratedUnit[] = [];
   const failedCustomIds: string[] = [];
   let ledger = emptyLedger();
@@ -402,7 +407,7 @@ export async function collectBatchUnits(batchId: string): Promise<BatchPollResul
     }
     const meta = resolveCustomId(customId, c);
     for (const u of parsed.units) {
-      units.push(annotateUnit(u, meta));
+      units.push(annotateUnit(u, meta, c));
     }
   }
 
@@ -429,15 +434,15 @@ function resolveCustomId(
   return null;
 }
 
-function annotateUnit(
+export function annotateUnit(
   u: GeneratedUnit,
   meta: { module: CurriculumModule; block: CurriculumBlock } | null,
+  c: Curriculum,
 ): GeneratedUnit {
-  const c = loadMafCurriculum();
   const defaultUrl =
     (meta ? blockSources(c, meta.block)[0]?.url : undefined) ??
     c.sources[0]?.url ??
-    "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";
+    (c.family === "maf" ? "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html" : "");
   const fetched =
     (meta ? blockSources(c, meta.block)[0]?.fetchedAt : undefined) ??
     c.version ??
@@ -480,16 +485,20 @@ function annotateUnit(
   };
 }
 
-export function mergePhaseLernfeld(units: GeneratedUnit[]): GeneratedLernfeld {
+export function mergePhaseLernfeld(
+  units: GeneratedUnit[],
+  /** Kopf des Kurses (SIN-431); Standard: MAF Metall Phase A. */
+  head: Partial<Pick<GeneratedLernfeld, "id" | "title" | "focus">> = {},
+): GeneratedLernfeld {
   const sorted = [...units].sort((a, b) => a.id.localeCompare(b.id, "de"));
   // Dedupe by id — regen wins if appended later
   const byId = new Map<string, GeneratedUnit>();
   for (const u of sorted) byId.set(u.id, u);
   const merged = [...byId.values()].sort((a, b) => a.id.localeCompare(b.id, "de"));
   return {
-    id: "phase-a-maf-metall",
-    title: "Phase A — M0, LF1, LF2, PA",
-    focus: "Pilot-Kern: Querschnitt, Fertigen von Hand und mit Maschinen, Produktionsanlagen",
+    id: head.id ?? "phase-a-maf-metall",
+    title: head.title ?? "Phase A — M0, LF1, LF2, PA",
+    focus: head.focus ?? "Pilot-Kern: Querschnitt, Fertigen von Hand und mit Maschinen, Produktionsanlagen",
     moduleId: "PHASE-A",
     blockId: "PHASE-A",
     units: merged,

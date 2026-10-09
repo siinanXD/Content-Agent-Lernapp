@@ -17,7 +17,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GENERATOR_MODEL } from "../src/lib/anthropic/client";
-import { loadAllCurricula, loadMafCurriculum } from "../src/lib/content/curriculum";
+import { loadAllCurricula, type Curriculum } from "../src/lib/content/curriculum";
 import {
   collectBatchUnits,
   mergePhaseLernfeld,
@@ -30,8 +30,10 @@ import {
   affectedUnitIds,
   affordableUnits,
   buildQueue,
+  chooseRunMap,
   eurPerUnit,
   linearSummary,
+  MAP_COURSES,
   missingSecrets,
   nextOpenItem,
   nextOpenItems,
@@ -59,7 +61,6 @@ import { recordEvaluationTrace } from "../src/lib/quality/langfuse-client";
 import { flushLangfuseOtel } from "../src/lib/quality/langfuse-otel";
 import { createGrowTracer } from "../src/lib/quality/grow-traces";
 import {
-  DEFAULT_BERUF,
   kurslaufSessionId,
   PROMPT_NAMEN,
   traceTitel,
@@ -80,10 +81,14 @@ import { recordFactoryRun, toAbortedRunRecord, toFactoryRunRecord } from "../src
 const ROOT = process.cwd();
 const OUT_DIR = join(ROOT, "docs", "ops", "content-runs");
 const REPAIR_DIR = join(ROOT, "docs", "ops", "ap15-runs");
-/** Kurs der Metall-Map (Phase A, D-40). Die Einheiten liegen in `courses.generated`. */
-const COURSE = "e22073de-7020-4380-9002-c70d46c25e25";
-const MAP_ID = "maf-metall";
-const KEYWORD = "Maschinen- und Anlagenführer";
+/**
+ * Kurs, Map und Stichwort des Laufs (SIN-431). Ein Lauf bedient genau eine Map; main() wählt sie
+ * abwechselnd (chooseRunMap). Bis dahin gilt MAF Metall (Phase A, D-40) für Abbruch-Zeilen.
+ */
+let MAP_ID = "maf-metall";
+let COURSE = MAP_COURSES[MAP_ID]!.courseId;
+let KEYWORD = MAP_COURSES[MAP_ID]!.keyword;
+let CURRICULUM: Curriculum | undefined;
 
 const hasFlag = (name: string) => process.argv.includes(`--${name}`);
 const argValue = (name: string) =>
@@ -161,25 +166,56 @@ async function main() {
     console.error("::error::COURSE_STORAGE=supabase nötig (Mock veröffentlicht nichts)");
     return abortRun("COURSE_STORAGE=supabase nötig", 2);
   }
-  const course = await storage.getCourse(COURSE);
-  if (!course) {
+  const curricula = loadAllCurricula();
+  const queueAll = buildQueue(curricula);
+
+  // Kurse aller unterstützten Maps laden. Fehlt ein Kurs (Migration noch nicht angewendet), fällt
+  // nur diese Map aus; fehlt der Metall-Kurs, bricht der Lauf wie bisher ab.
+  const unitsByMap = new Map<string, GeneratedUnit[]>();
+  for (const [mapId, mc] of Object.entries(MAP_COURSES)) {
+    const c = await storage.getCourse(mc.courseId);
+    if (!c) {
+      console.error(`::warning::Kurs fehlt für ${mapId}: ${mc.courseId}`);
+      continue;
+    }
+    unitsByMap.set(mapId, (c.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? []);
+  }
+  if (!unitsByMap.has("maf-metall")) {
     console.error("::error::Kurs fehlt:", COURSE);
     return abortRun("Kurs fehlt", 2);
   }
-  const priorUnits = (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [];
-  const published = new Set(priorUnits.map((u) => u.id));
+  const publishedByMap = new Map([...unitsByMap].map(([m, us]) => [m, new Set(us.map((u) => u.id))]));
 
   const history = loadHistory();
-  const discarded = new Set(history.flatMap((r) => r.discardedUnitIds));
+  // Einheiten-IDs wiederholen sich zwischen den Maps (M0-1-u1): Verworfene gehören zur Map ihres Laufs.
+  const discardedByMap = new Map<string, Set<string>>();
+  for (const r of history) {
+    const key = r.mapId ?? "maf-metall";
+    const set = discardedByMap.get(key) ?? new Set<string>();
+    r.discardedUnitIds.forEach((id) => set.add(id));
+    discardedByMap.set(key, set);
+  }
+  const lastLive = [...history].reverse().filter((r) => r.mode === "live");
+  const lastMapId = lastLive.find((r) => r.mapId)?.mapId ?? null;
+  const resumeModuleId = lastLive[0]?.resumeModuleId ?? null;
+  // Nur Maps mit Kurs kommen in Frage.
+  const usable = queueAll.filter((q) => unitsByMap.has(q.mapId));
+  const chosen = chooseRunMap(usable, publishedByMap, discardedByMap, lastMapId, resumeModuleId);
+  if (chosen) MAP_ID = chosen;
+  COURSE = MAP_COURSES[MAP_ID]!.courseId;
+  KEYWORD = MAP_COURSES[MAP_ID]!.keyword;
+  CURRICULUM = curricula.find((c) => c.id === MAP_ID);
+  const priorUnits = unitsByMap.get(MAP_ID) ?? [];
+  const published = publishedByMap.get(MAP_ID) ?? new Set<string>();
+  const discarded = discardedByMap.get(MAP_ID) ?? new Set<string>();
   const handledChanges = new Set(history.flatMap((r) => r.sourceRefresh.changeKeys));
-  const resumeModuleId = [...history].reverse().find((r) => r.mode === "live")?.resumeModuleId ?? null;
   const perUnit = eurPerUnit(
     history
       .filter((r) => r.generated > 0)
       .map((r) => ({ costEur: r.costEur, unitsGenerated: r.generated })),
   );
 
-  const queue = buildQueue(loadAllCurricula());
+  const queue = usable.filter((q) => q.mapId === MAP_ID);
   const sourceReportPath = argValue("source-report");
   const sourceReport = sourceReportPath && existsSync(sourceReportPath)
     ? (JSON.parse(readFileSync(sourceReportPath, "utf8")) as Parameters<typeof affectedUnitIds>[0])
@@ -281,7 +317,7 @@ async function main() {
   }
 
   const openaiKey = process.env.OPENAI_API_KEY!.trim();
-  const curriculum = loadMafCurriculum();
+  const curriculum = CURRICULUM!;
   let ledger: CostLedger = emptyLedger();
   const spentTotal = () => spent + refreshLedger(ledger).eurEstimate;
   const allEvals: QuestionEval[] = [];
@@ -289,7 +325,7 @@ async function main() {
 
   // SIN-380: Traces je Schritt, sofort gesendet (nicht erst am Laufende).
   const erzeugerLink = await promptLink(PROMPT_NAMEN.erzeuger);
-  const common = { beruf: DEFAULT_BERUF, schwerpunkt: "Metall", modul: report.moduleId ?? undefined };
+  const common = { beruf: MAP_COURSES[MAP_ID]!.beruf, schwerpunkt: MAP_COURSES[MAP_ID]!.schwerpunkt, modul: report.moduleId ?? undefined };
   const tracer = createGrowTracer({
     runId,
     courseId: COURSE,
@@ -377,10 +413,10 @@ async function main() {
       const u = priorUnits.find((x) => x.id === id)!;
       return { moduleId: u.moduleId ?? id.split("-")[0]!, blockId: u.blockId ?? id.replace(/-u\d+$/, ""), unitId: id, titleHint: u.title };
     });
-    const sub = await submitRegenBatch({ keyword: KEYWORD, unitSpecs: specs });
+    const sub = await submitRegenBatch({ keyword: KEYWORD, curriculum, unitSpecs: specs });
     report.batchIds.push(sub.batchId);
     await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
-    const got = await collectBatchUnits(sub.batchId);
+    const got = await collectBatchUnits(sub.batchId, curriculum);
     ledger = addClaudeLedger(ledger, got.ledger);
     tracer.batchFertig(got.units, got.ledger, "reparatur");
     if (got.units.length > 0) {
@@ -416,11 +452,11 @@ async function main() {
       report.stopReason = "Deckel: keine Einheit mehr bezahlbar; Rest im nächsten Lauf";
     } else {
       assertWithinRunCap(spentTotal(), RUN_CAP_EUR);
-      const sub = await submitChunkTargets({ keyword: KEYWORD, targets, system: cachedSystem() });
+      const sub = await submitChunkTargets({ keyword: KEYWORD, curriculum, targets, system: cachedSystem() });
       report.batchIds.push(sub.batchId);
       console.log("Batch", sub.batchId, "Einheiten", units, "Modell", GENERATOR_MODEL);
       await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
-      const got = await collectBatchUnits(sub.batchId);
+      const got = await collectBatchUnits(sub.batchId, curriculum);
       ledger = addClaudeLedger(ledger, got.ledger);
       tracer.batchFertig(got.units, got.ledger, "neuesModul");
       // Nur Einheiten, die zum Modul gehören und noch offen sind.
@@ -451,7 +487,12 @@ async function main() {
   // Veröffentlichen: erst jetzt, alles in einem Schritt.
   const liveIds = new Set(live.map((u) => u.id));
   if (live.length > 0) {
-    const merged = mergePhaseLernfeld([...priorUnits.filter((u) => !liveIds.has(u.id)), ...live]);
+    const merged = mergePhaseLernfeld(
+      [...priorUnits.filter((u) => !liveIds.has(u.id)), ...live],
+      MAP_ID === "maf-metall"
+        ? {}
+        : { id: `${MAP_ID}-fabrik`, title: curriculum.title, focus: "Content-Fabrik (SIN-431)" },
+    );
     await storage.setGenerated(COURSE, merged);
     await storage.setStatus(COURSE, "published");
   }

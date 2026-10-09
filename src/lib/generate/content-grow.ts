@@ -16,8 +16,29 @@ export const RUN_STOP_EUR = 19;
 /** Sicherheitsfaktor auf die Kosten je Einheit bei der Vorab-Rechnung. */
 export const COST_MARGIN = 1.25;
 
-/** Der Generator liest bisher nur die Metall-Map (loadMafCurriculum). Andere Maps folgen mit der Kurswahl. */
-export const SUPPORTED_MAP_IDS: readonly string[] = ["maf-metall"];
+/**
+ * Maps, die die Fabrik erzeugt (SIN-431): vorerst zwei Berufe, MAF Metall und Industriekaufleute.
+ * Die anderen MAF-Schwerpunkte und die Weiterbildung folgen später.
+ */
+export const SUPPORTED_MAP_IDS: readonly string[] = ["maf-metall", "indkfl"];
+
+/** Kurs, Stichwort und Langfuse-Kontext je Map. Die Einheiten liegen in `courses.generated` des Kurses. */
+export type MapCourse = { courseId: string; keyword: string; beruf: string; schwerpunkt: string };
+export const MAP_COURSES: Record<string, MapCourse> = {
+  "maf-metall": {
+    courseId: "e22073de-7020-4380-9002-c70d46c25e25",
+    keyword: "Maschinen- und Anlagenführer",
+    beruf: "MAF Metall",
+    schwerpunkt: "Metall",
+  },
+  // Kurs und Quellen legt die Migration 20261012010000_sin431_kurs_indkfl.sql an.
+  indkfl: {
+    courseId: "5a1f0c52-3d6e-4b8a-9e47-2c8d1b7f6a31",
+    keyword: "Industriekaufmann",
+    beruf: "Industriekaufleute",
+    schwerpunkt: "Industriekaufmann/-frau",
+  },
+};
 
 /** Secrets laut SIN-220; der Workflow prüft sie vor allem anderen mit scripts/check-env.mjs. */
 export const REQUIRED_SECRETS = [
@@ -85,6 +106,44 @@ export function buildQueue(
     out.push(...items);
   }
   return out;
+}
+
+/**
+ * SIN-431: Welche Map ein Lauf bedient. Abwechselnd je Lauf, damit Industriekaufleute nicht
+ * erst nach allen Metall-Einheiten drankommt. Ein angefangenes Modul (`resumeModuleId`) läuft
+ * zuerst weiter. Sonst kommt nach `lastMapId` die nächste Map mit offenen Einheiten
+ * (Reihenfolge der Schlange); ohne letzten Lauf die erste.
+ */
+export function chooseRunMap(
+  queue: QueueItem[],
+  published: ReadonlyMap<string, ReadonlySet<string>>,
+  discarded: ReadonlyMap<string, ReadonlySet<string>>,
+  lastMapId?: string | null,
+  resumeModuleId?: string | null,
+): string | null {
+  const none: ReadonlySet<string> = new Set();
+  const order = [...new Set(queue.filter((q) => q.supported).map((q) => q.mapId))];
+  const withOpen = order.filter((mapId) =>
+    queue.some(
+      (q) =>
+        q.mapId === mapId &&
+        q.supported &&
+        pendingSlots(q.module, published.get(mapId) ?? none, discarded.get(mapId) ?? none).length > 0,
+    ),
+  );
+  if (withOpen.length === 0) return null;
+  // Modul-Kennungen können in zwei Maps vorkommen: die Map des letzten Laufs gilt zuerst.
+  const resumeCandidates = resumeModuleId
+    ? queue.filter((q) => withOpen.includes(q.mapId) && q.module.id === resumeModuleId)
+    : [];
+  const resumed = resumeCandidates.find((q) => q.mapId === lastMapId) ?? resumeCandidates[0];
+  if (resumed) return resumed.mapId;
+  const last = lastMapId ? order.indexOf(lastMapId) : -1;
+  for (let i = 1; i <= order.length; i++) {
+    const id = order[(last + i + order.length) % order.length]!;
+    if (withOpen.includes(id)) return id;
+  }
+  return withOpen[0]!;
 }
 
 /** Einheiten, die ein Modul noch braucht: nicht veröffentlicht und nicht schon verworfen. */
