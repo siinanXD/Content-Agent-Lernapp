@@ -36,6 +36,8 @@ export const LAUF_ARTEN = {
   grundbestand: "Grundbestand",
   reparatur: "Reparatur",
   neuesModul: "neues Modul",
+  /** SIN-448: Modellvergleich, nichts davon geht live. */
+  vergleich: "Modellvergleich",
 } as const;
 export type LaufArt = keyof typeof LAUF_ARTEN;
 

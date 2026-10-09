@@ -26,7 +26,9 @@ import { didaktikSchemaHint, variantRules } from "../src/lib/generate/didaktik-p
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { loadMafCurriculum } from "../src/lib/content/curriculum";
 import { AB_MODELS } from "../src/lib/anthropic/client";
-import { applyRepair, planFromEvals } from "../src/lib/generate/repair-questions";
+import { applyRepair, MIN_PASSED_QUESTIONS, planFromEvals } from "../src/lib/generate/repair-questions";
+import { flushLangfuseOtel } from "../src/lib/quality/langfuse-otel";
+import { traceVergleich } from "../src/lib/quality/vergleich-traces";
 import {
   addOpenAIUsage,
   claudeBatchUsd,
@@ -191,6 +193,24 @@ async function main() {
     totalUsd += judgeUsd;
     const rate = unitPassRate(r.got.units, judged.questions);
     const l = r.got.ledger;
+    // SIN-448: je Einheit ein Langfuse-Trace (Bewertung vor der Reparatur).
+    const traces = await traceVergleich({
+      runId,
+      modell: r.model,
+      modul: MODULE_ID,
+      units: r.got.units,
+      evals: judged.questions,
+      usage: {
+        inputTokens: l.claudeInputTokens,
+        outputTokens: l.claudeOutputTokens,
+        cacheCreationTokens: l.claudeCacheCreationTokens,
+        cacheReadTokens: l.claudeCacheReadTokens,
+        costEur: r.generationUsd / USD_PER_EUR,
+      },
+      richterModell: JUDGE_MODEL,
+      minBestanden: MIN_PASSED_QUESTIONS,
+    });
+    console.log(`Langfuse: ${traces} Traces für ${r.model}`);
     const passingUnits = rate.passing;
 
     // Eine Reparatur-Runde: nur durchgefallene Fragen ersetzen (wie im Produktivlauf, AP-21).
@@ -290,6 +310,7 @@ async function main() {
   };
   writeFileSync(join(OUT_DIR, `${runId}-ab-report.json`), JSON.stringify(out, null, 2));
   console.log(JSON.stringify(out, null, 2));
+  await flushLangfuseOtel().catch(() => undefined);
 }
 
 main().catch((e) => {
