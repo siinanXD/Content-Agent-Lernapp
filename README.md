@@ -70,7 +70,7 @@ A11y gates (axe über alle Routen, Tastatur, Lighthouse a11y ≥ 0.9) laufen im 
 Quelle: [`docs/diagramme/pipeline.mmd`](docs/diagramme/pipeline.mmd), Nutzerwege: [`docs/diagramme/nutzerwege.mmd`](docs/diagramme/nutzerwege.mmd). Der Block unten ist eine Kopie von `pipeline.mmd` (ein Test prüft das). FigJam wird in einer Claude-Sitzung aus den `.mmd` nachgezogen, das Tages-Update meldet „Diagramme geändert“.
 
 ```mermaid
-%% Pipeline-Ablauf des Loops, Stand main 08.10. (SIN-376). Quelle für das FigJam-Board „Pipeline-Ablauf“.
+%% Pipeline-Ablauf des Loops, Stand main 09.10. (SIN-376). Quelle für das FigJam-Board „Pipeline-Ablauf“.
 %% Ändern sich .github/workflows/ oder scripts/autonomy/, diese Datei im selben PR anpassen.
 flowchart TD
   subgraph Planung
@@ -79,7 +79,7 @@ flowchart TD
   end
   Schlange --> Dispatcher["Dispatcher (dispatch.yml): Urgent zuerst, sofort nach Merge, höchstens 2 parallel"]
   Dispatcher --> Worker["Worker (worker.yml, Claude)"]
-  Worker --> PR["Pull Request"]
+  Worker --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
   subgraph Prüfung
     PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Lighthouse, Leistungsbudget"]
     PR --> CodeQL["CodeQL"]
@@ -107,6 +107,14 @@ flowchart TD
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
   Waechter --> Leitstand["Leitstand: Start/Ende jedes Schritts und Schnappschuss in Supabase (SIN-303)"]
   Worker -.-> Leitstand
+  subgraph Projektwaechter["Projekt-Wächter (Leitstand-Repo, waechter.yml, stündlich, alle Projekte In Progress mit GitHub-Link)"]
+    PW["Projekt-Wächter"] --> PWS["Schlange leer: Backlog rückt nach, sonst Planungs-Issue"]
+    PW --> PWH["Hänger: über 6 h In Progress ohne PR, nur Label claude: Todo, beim 2. Mal needs-human"]
+    PW --> PWU["Projekt-Update in Linear, einmal am Tag"]
+    PW --> PWR["Roter PR, 30 Min ohne Commit: @claude, Runde zählt mit"]
+  end
+  PWS --> Schlange
+  PWR --> Repair
   subgraph Inhalte
     Fabrik["Content-Fabrik (content-grow.yml, montags, jeder Lauf im Statusprotokoll)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
