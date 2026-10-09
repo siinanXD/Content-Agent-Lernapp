@@ -47,6 +47,10 @@ Langfuse dataset name: `maf-goldset-70` (Langfuse Cloud EU).
 
 `docs/quality/maf-goldset-phase-a.json` — 70 AO/BIBB items **plus** ≥5 own items per module `M0`, `LF1`, `LF2`, `PA` (dataset name `maf-goldset-phase-a`). Module baselines: `docs/quality/module-targets-phase-a.json`.
 
+## Modellvergleiche in Langfuse (SIN-448)
+
+`ab-haiku-sonnet` und `ab-alle-modelle` schreiben je Modell und Einheit einen Trace im Format der Fabrik (Erzeugen mit Modell, Tokens, Kosten; jede Frage mit Bewertung; Ergebnis). Session `vergleich-<runId>`, Tags `lauf:Modellvergleich` und `modell:<id>`. Bewertung vor der Reparatur; bei `ab-alle-modelle` die kombinierte Bewertung beider Richter. Tokens und Kosten sind je Modell gleichmäßig auf die Einheiten verteilt. Ohne `LANGFUSE_*` wird nichts geschrieben, der Lauf läuft weiter.
+
 ## Commands
 
 ```bash
