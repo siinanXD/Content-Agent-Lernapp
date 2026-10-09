@@ -119,7 +119,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 ## Claude als Ersatz-Agent (SIN-205)
 
-- Cursor zuerst. Hat Cursor kein Guthaben, setze das Label `claude` auf das Issue oder kommentiere `@claude`.
+- Worker ist Claude (seit 09.10.2026 nur Claude-Kontingent, SIN-420). Der Dispatcher startet Todo-Issues sofort. Cursor bekommt nur Vorrang, wenn `CURSOR_GRACE_MIN` (Minuten) gesetzt ist.
 - Der Workflow `.github/workflows/claude.yml` startet Claude (`claude-code-action@v1`, nur für Nutzer mit Schreibrechten).
 - Draft-PR nur, solange du noch arbeitest. Fertig und lokal geprüft: auf „Ready for review" stellen. Draft-PRs werden nie automatisch gemerged.
 - Nie selbst mergen. Das übernimmt der Auto-Merge (siehe Abschnitt Pull Requests und Merge).

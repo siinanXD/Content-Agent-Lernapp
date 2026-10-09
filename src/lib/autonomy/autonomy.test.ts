@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { approvalStillValid, classifyRisk, fetchDependencyInfo, newDependencies } from "../../../scripts/autonomy/risk.mjs";
-import { claudeMayTake, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
+import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
 import { DESIGN_VORLAGEN_BLOCK, MAX_ISSUES_PER_WEEK,extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
@@ -357,15 +357,22 @@ test("Budget: Pause nur bei echtem Limit, nie bei max-turns oder anderen Fehlern
   assert.equal(pauseUntilFromLog("[]", now), null);
 });
 
-test("Cursor zuerst: Claude nimmt nur Label, alte Todos ohne PR", () => {
+test("Cursor-Wartezeit (wenn gesetzt): Claude nimmt nur Label, alte Todos ohne PR", () => {
   const now = new Date("2026-10-05T10:00:00Z");
   const base = { identifier: "SIN-7", updatedAt: "2026-10-05T09:30:00Z", labels: { nodes: [] } };
-  assert.equal(claudeMayTake(base, { now }), false);
+  assert.equal(claudeMayTake(base, { now, graceMs: 60 * 60 * 1000 }), false);
+  assert.equal(claudeMayTake(base, { now, graceMs: 0 }), true); // nur Claude (SIN-420)
   assert.equal(claudeMayTake({ ...base, updatedAt: "2026-10-05T08:00:00Z" }, { now }), true);
   assert.equal(claudeMayTake({ ...base, labels: { nodes: [{ name: "claude" }] } }, { now }), true);
   const old = { ...base, updatedAt: "2026-10-05T08:00:00Z" };
   assert.equal(claudeMayTake(old, { now, openPrs: [{ title: "feat: x (SIN-7)", head: "cursor/x-85a9" }] }), false);
   assert.equal(claudeMayTake(old, { now, openPrs: [{ title: "feat: y (SIN-70)", head: "b" }] }), true); // SIN-70 ist ein anderes Issue
+});
+
+test("cursorGraceMs: Standard 0, sonst Minuten aus CURSOR_GRACE_MIN (SIN-420)", () => {
+  assert.equal(cursorGraceMs({}), 0);
+  assert.equal(cursorGraceMs({ CURSOR_GRACE_MIN: "60" }), 3_600_000);
+  assert.equal(cursorGraceMs({ CURSOR_GRACE_MIN: "abc" }), 0);
 });
 
 test("Abgleich: gemergter PR → Done, ohne Merge geschlossen → Todo, sonst unverändert (SIN-237)", () => {

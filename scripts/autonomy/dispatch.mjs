@@ -197,7 +197,7 @@ export async function main(argv) {
     dry,
     fixtureAt >= 0 ? undefined : await fetchRunningWorkers(),
   );
-  // Budget: nicht pausiert; Cursor hat zuerst Vorrang; höchstens 2 parallel (pickNext).
+  // Budget: nicht pausiert; Cursor-Wartezeit nur mit CURSOR_GRACE_MIN (SIN-420); höchstens 2 parallel (pickNext).
   if (isPaused(process.env.AGENT_PAUSED_UNTIL)) {
     console.log(`Nichts zu starten: pausiert bis ${parsePausedUntil(process.env.AGENT_PAUSED_UNTIL).toISOString()}`);
     output("found", "false");
