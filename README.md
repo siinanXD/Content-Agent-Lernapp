@@ -172,6 +172,7 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 ### Supabase persistence (AP-17)
 
 - Migrations: `supabase/migrations/` (additive SQL + RLS). Runbook: [`docs/ops/SUPABASE.md`](docs/ops/SUPABASE.md).
+- Tabellenrechte prüfen (SIN-438): `scripts/verify-table-grants.sql` im SQL-Editor oder per `psql`; meldet „ok“ oder nennt offene Rechte für `anon` und `authenticated`.
 - With `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`: API routes persist via Supabase (service role, server-only).
 - Without those secrets (or `COURSE_STORAGE=mock`): in-memory `mock-store` — tests stay green.
 - Verify tables (when keys present): `npm run supabase:verify`.
