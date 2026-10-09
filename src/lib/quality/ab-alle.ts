@@ -85,6 +85,9 @@ export type ModelReport = {
   examples: GeneratedUnit[];
 };
 
+/** SIN-445: Kandidat, der mit einem Fehler abbrach (API, Modellname, Parameter). Die anderen laufen weiter. */
+export type FailedCandidate = { model: string; provider: "anthropic" | "openai"; error: string };
+
 export type AlleReport = {
   runId: string;
   judges: { openai: string; claude: string };
@@ -94,6 +97,7 @@ export type AlleReport = {
   aborted?: string;
   priceNotes: string[];
   models: ModelReport[];
+  failed?: FailedCandidate[];
   published: false;
 };
 
@@ -155,11 +159,14 @@ export function renderAlleMarkdown(r: AlleReport): string {
         `| ${m.model} | ${num(m.costUsd.generation)} | ${num(m.costUsd.repair)} | ${num(m.costUsd.judgeOpenai)} | ${num(m.costUsd.judgeClaude)} | ${num(m.costUsd.total)} |`,
     ),
   ];
+  const failed = r.failed?.length
+    ? ["", "## Fehlgeschlagen", "", "| Modell | Anbieter | Fehler |", "| --- | --- | --- |", ...r.failed.map((f) => `| ${f.model} | ${f.provider} | ${f.error.replace(/\|/g, "/")} |`)]
+    : [];
   const ex = r.models.flatMap((m) => [
     "",
     `## Beispiele ${m.model}`,
     "",
     ...(m.examples.length ? m.examples.map(unitMarkdown) : ["Keine Einheit erzeugt."]),
   ]);
-  return [...head, ...rows, ...dis, ...ex, ""].join("\n");
+  return [...head, ...rows, ...failed, ...dis, ...ex, ""].join("\n");
 }

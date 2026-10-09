@@ -230,4 +230,7 @@ test("SIN-440: lastErrorLine nimmt die letzte Fehlerzeile und maskiert Schlüsse
   assert.equal(lastErrorLine("nur eine Zeile"), "nur eine Zeile");
   assert.equal(lastErrorLine(""), "keine Ausgabe");
   assert.doesNotMatch(lastErrorLine("Fehler::x"), /::/);
+  // SIN-445: JSON-Bruchstück als Treffer → die folgenden Zeilen mit der Meldung gehören dazu.
+  const json = ["Kandidat gpt-6-luna", "OpenAI 400 (gpt-6-luna): {", '  "error": {', '    "message": "Unsupported parameter: max_tokens",', '    "param": "max_tokens"', "  }", "}"].join("\n");
+  assert.match(lastErrorLine(json), /"error": \{ "message": "Unsupported parameter: max_tokens"/);
 });

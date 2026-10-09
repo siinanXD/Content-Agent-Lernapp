@@ -3,6 +3,7 @@
  * Skalen wie der OpenAI-Richter (`JUDGE_SYSTEM_PROMPT`); die Auswertung teilt `judgeQuestionsFromText`.
  */
 import { anthropicFetch } from "@/lib/anthropic/client";
+import { compactApiError } from "@/lib/api-error";
 import {
   JUDGE_SYSTEM_PROMPT,
   judgeChunked,
@@ -31,7 +32,7 @@ export async function claudeJudgeChunk(
       messages: [{ role: "user", content: judgeUserContent(items) }],
     }),
   });
-  if (!res.ok) throw new Error(`Anthropic ${res.status} (${model}): ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Anthropic ${res.status} (${model}): ${compactApiError(await res.text().catch(() => ""))}`);
   const data = (await res.json()) as {
     content?: Array<{ type: string; text?: string }>;
     usage?: { input_tokens?: number; output_tokens?: number };

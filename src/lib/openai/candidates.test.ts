@@ -48,6 +48,17 @@ describe("OpenAI-Anfrage (SIN-437)", () => {
     );
   });
 
+  it("SIN-445: mehrzeiliges JSON von OpenAI wird eine Zeile mit Code und Meldung", async () => {
+    const body = JSON.stringify({ error: { message: "max_completion_tokens is too large: 32000. This model supports at most 16384.", type: "invalid_request_error", param: "max_completion_tokens", code: null } }, null, 2);
+    await assert.rejects(
+      () => openaiGenerate("k", { model: "gpt-6-luna", system: "", user: "", schema: null }, async () => new Response(body, { status: 400 })),
+      (e: unknown) =>
+        e instanceof OpenAIError &&
+        !e.message.includes("\n") &&
+        /400 \(gpt-6-luna\): invalid_request_error \(param max_completion_tokens\): max_completion_tokens is too large/.test(e.message),
+    );
+  });
+
   it("400 mit Schema: einmal mit JSON-Modus wiederholen", async () => {
     const formats: string[] = [];
     const r = await openaiGenerate("k", { model: "chat-latest", system: "", user: "", schema: { name: "units", schema: UNITS_JSON_SCHEMA } }, async (_u, init) => {

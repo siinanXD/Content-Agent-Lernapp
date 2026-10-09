@@ -3,6 +3,7 @@
  * Modellnamen und Preise: docs/decisions/SIN-399-openai-generator.md (OpenAI-Preisseite, abgerufen 09.10.2026).
  * Kein Standardmodell: nur der Vergleich nutzt diese Liste.
  */
+import { compactApiError } from "@/lib/api-error";
 
 export const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -113,7 +114,7 @@ export class OpenAIError extends Error {
     body: string,
   ) {
     // Fehlertext von OpenAI mitgeben (Modellname, Parameter, Kontingent); nie den Schlüssel.
-    super(`OpenAI ${status} (${model}): ${body.slice(0, 300)}`);
+    super(`OpenAI ${status} (${model}): ${compactApiError(body)}`);
   }
 }
 

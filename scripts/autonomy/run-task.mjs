@@ -319,8 +319,12 @@ export function applyResult(file, task, result, { datum, beleg }) {
  */
 export function lastErrorLine(text = "") {
   const lines = String(text).split(/\r?\n/).map((l) => l.trim()).filter(Boolean).filter((l) => !/^npm (ERR!|error) (code|path|command|workingdir|A complete log)/i.test(l));
-  const hit = [...lines].reverse().find((l) => /error|fehler|stop|failed|exception|status \d{3}|\b[45]\d\d\b/i.test(l));
-  const line = hit ?? lines.at(-1) ?? "keine Ausgabe";
+  const re = /error|fehler|stop|failed|exception|status \d{3}|\b[45]\d\d\b/i;
+  let idx = -1;
+  for (let i = lines.length - 1; i >= 0; i--) if (re.test(lines[i])) { idx = i; break; }
+  // SIN-445: Kurze Treffer wie `"error": {` sind JSON-Bruchstücke; die folgenden Zeilen tragen die Meldung.
+  let line = idx >= 0 ? lines[idx] : (lines.at(-1) ?? "keine Ausgabe");
+  if (idx >= 0 && line.length < 60) line = lines.slice(idx, idx + 6).join(" ");
   return line
     .replace(/(sk-[a-z]*-?)[A-Za-z0-9_-]{8,}/g, "$1…")
     .replace(/(Bearer\s+)\S+/gi, "$1…")
