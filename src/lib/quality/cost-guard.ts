@@ -48,6 +48,20 @@ export function claudeBatchUsd(
   return Math.round(usd * 10000) / 10000;
 }
 
+/**
+ * Standard-Preis (kein Batch) eines Claude-Modells: das Doppelte des Batch-Preises (Batch = 50 %).
+ * Für normale Aufrufe außerhalb der Batch-API (SIN-437: Vergleich mit OpenAI zu gleichen Bedingungen).
+ */
+export function claudeStandardUsd(
+  model: string,
+  usage: { prompt_tokens: number; completion_tokens: number },
+): number {
+  const p = CLAUDE_BATCH_PRICES[model];
+  if (!p) throw new Error(`Kein Preis für Modell ${model}`);
+  const usd = ((usage.prompt_tokens / 1e6) * p.in + (usage.completion_tokens / 1e6) * p.out) * 2;
+  return Math.round(usd * 1e6) / 1e6;
+}
+
 /** gpt-5.4-mini: $0.75 / $4.50 per 1M */
 export const GPT_JUDGE_IN_PER_MTOK = 0.75;
 export const GPT_JUDGE_OUT_PER_MTOK = 4.5;

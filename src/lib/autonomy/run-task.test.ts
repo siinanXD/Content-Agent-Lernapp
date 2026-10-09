@@ -32,8 +32,15 @@ test("missingTables: meldet fehlende Pflicht-Tabellen (SIN-347)", () => {
   assert.deepEqual(missingTables(REQUIRED_TABLES), []);
 });
 
+test("ab-alle-modelle: bezahlt, beide Schlüssel nötig, Probelauf kostenlos (SIN-437)", () => {
+  assert.equal(TASKS["ab-alle-modelle"].paid, true);
+  assert.deepEqual(TASKS["ab-alle-modelle"].steps, [["npm", ["run", "ap22:alle"]]]);
+  assert.deepEqual(TASKS["ab-alle-modelle"].dryStep, ["npm", ["run", "ap22:alle:dry"]]);
+  assert.deepEqual(missingSecrets("ab-alle-modelle", {}), ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"]);
+});
+
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {
-  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "cost-report", "lighthouse", "offline-check", "migrate", "safety-sample"]);
+  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "ab-alle-modelle", "cost-report", "lighthouse", "offline-check", "migrate", "safety-sample"]);
   await assert.rejects(() => runTask("rm -rf /", { env: {}, now }), /Unbekannte Aufgabe/);
   const yml = readFileSync(".github/workflows/run-task.yml", "utf8");
   for (const id of TASK_IDS) assert.match(yml, new RegExp(`- ${id}\\n`));

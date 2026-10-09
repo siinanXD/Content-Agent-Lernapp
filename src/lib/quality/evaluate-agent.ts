@@ -187,6 +187,14 @@ export async function liveJudgeWithUsage(
   key: string,
   items: EvalItem[],
 ): Promise<{ questions: QuestionEval[]; usage: { prompt_tokens: number; completion_tokens: number } }> {
+  return judgeChunked(items, (chunk) => liveJudgeChunkWithUsage(key, chunk));
+}
+
+/** Teilt Fragen in Chunks und ruft einen Richter je Chunk auf (OpenAI oder Claude). */
+export async function judgeChunked(
+  items: EvalItem[],
+  judgeChunkFn: (chunk: EvalItem[]) => Promise<JudgeChunkResult>,
+): Promise<{ questions: QuestionEval[]; usage: { prompt_tokens: number; completion_tokens: number } }> {
   // SIN-406: Chunks mit begrenzter Parallelität statt nacheinander; die Reihenfolge der Ergebnisse bleibt.
   const chunks: EvalItem[][] = [];
   for (let i = 0; i < items.length; i += JUDGE_CHUNK) chunks.push(items.slice(i, i + JUDGE_CHUNK));
@@ -195,7 +203,7 @@ export async function liveJudgeWithUsage(
   const worker = async () => {
     while (cursor < chunks.length) {
       const i = cursor++;
-      results[i] = await liveJudgeChunkWithUsage(key, chunks[i]!);
+      results[i] = await judgeChunkFn(chunks[i]!);
     }
   };
   await Promise.all(Array.from({ length: Math.min(JUDGE_CONCURRENCY, chunks.length) }, worker));
@@ -238,20 +246,7 @@ export async function liveJudgeChunkWithUsage(
         },
         {
           role: "user",
-          content: JSON.stringify(
-            items.map((i) => ({
-              id: i.id,
-              prompt: i.prompt,
-              correct: i.correct,
-              explanation: i.explanation,
-              sourceUrl: i.sourceUrl,
-              moduleId: i.moduleId,
-              blockId: i.blockId,
-              year: i.year,
-              niveauHint: i.niveauHint,
-              safety: i.safety,
-            })),
-          ),
+          content: judgeUserContent(items),
         },
       ],
     }),
@@ -266,7 +261,37 @@ export async function liveJudgeChunkWithUsage(
     usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
   const text = data.choices?.[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(text) as {
+  const questions = judgeQuestionsFromText(text, items);
+  return {
+    questions,
+    usage: {
+      prompt_tokens: data.usage?.prompt_tokens ?? 0,
+      completion_tokens: data.usage?.completion_tokens ?? 0,
+    },
+  };
+}
+
+/** Nutzer-Nachricht an jeden Richter (OpenAI und Claude sehen dieselben Felder, SIN-437). */
+export function judgeUserContent(items: EvalItem[]): string {
+  return JSON.stringify(
+    items.map((i) => ({
+      id: i.id,
+      prompt: i.prompt,
+      correct: i.correct,
+      explanation: i.explanation,
+      sourceUrl: i.sourceUrl,
+      moduleId: i.moduleId,
+      blockId: i.blockId,
+      year: i.year,
+      niveauHint: i.niveauHint,
+      safety: i.safety,
+    })),
+  );
+}
+
+/** Antwort-JSON eines Richters → Bewertung je Frage (fehlende Id: Heuristik wie bisher). */
+export function judgeQuestionsFromText(text: string, items: EvalItem[]): QuestionEval[] {
+  let parsed: {
     items?: Array<{
       id: string;
       sourceFidelity: 0 | 1;
@@ -276,9 +301,14 @@ export async function liveJudgeChunkWithUsage(
       safetyFlag: boolean;
       reasons?: string[];
     }>;
-  };
+  } = {};
+  try {
+    parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
+  } catch {
+    parsed = {};
+  }
   const byId = new Map((parsed.items ?? []).map((i) => [i.id, i]));
-  const questions = items.map((item) => {
+  return items.map((item) => {
     const j = byId.get(item.id);
     const scores: QualityScores = j
       ? {
@@ -291,13 +321,6 @@ export async function liveJudgeChunkWithUsage(
       : heuristicScores(item);
     return toQuestionEval(item, scores, j?.reasons ?? []);
   });
-  return {
-    questions,
-    usage: {
-      prompt_tokens: data.usage?.prompt_tokens ?? 0,
-      completion_tokens: data.usage?.completion_tokens ?? 0,
-    },
-  };
 }
 
 function clampScore(n: number): number {

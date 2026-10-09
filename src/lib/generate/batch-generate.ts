@@ -505,7 +505,7 @@ export function mergePhaseLernfeld(
   };
 }
 
-function parseLernfeldJson(text: string): GeneratedLernfeld | null {
+export function parseLernfeldJson(text: string): GeneratedLernfeld | null {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
   try {
