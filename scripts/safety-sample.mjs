@@ -6,6 +6,7 @@
  *   node --import tsx scripts/safety-sample.mjs --url https://<app> [--seed 272] [--size 15]
  *   node --import tsx scripts/safety-sample.mjs --live --review-page   (SIN-278: URL aus docs/autonomy/config.json, Prüfseite für Sinan)
  *
+ * --json <datei>: zusätzlich die Anzahlen als JSON schreiben (SIN-404, Lauf-Auftrag safety-sample).
  * --review-page --langfuse: zusätzlich die Fragen in die Langfuse-Warteschlange stellen (SIN-299).
  * --units: JSON-Datei mit { units: [...] } oder [...] (z. B. Antwort von /api/learner/phase-a).
  * --url:   Basis-URL der App; liest /api/learner/phase-a.
@@ -17,7 +18,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const { loadAllCurricula } = await import("../src/lib/content/curriculum.ts");
-const { buildSafetySample, renderReport } = await import("../src/lib/quality/safety-sample.ts");
+const { buildSafetySample, renderReport, sampleCounts } = await import("../src/lib/quality/safety-sample.ts");
 const { buildQuestionSample, renderReviewPage } = await import("../src/lib/quality/review-page.ts");
 
 const argv = process.argv.slice(2);
@@ -77,6 +78,9 @@ if (argv.includes("--review-page")) {
 const result = buildSafetySample(units, loadAllCurricula(), { seed, size, today });
 const out = path.join(process.cwd(), "docs", "quality", "sicherheits-stichprobe-maf-metall.md");
 writeFileSync(out, renderReport(result, { date: today, source }));
+// SIN-404: Anzahlen für den Lauf-Auftrag (run-task, Aufgabe safety-sample); keine Einheiten-Inhalte.
+const jsonFile = opt("json", null);
+if (jsonFile) writeFileSync(jsonFile, `${JSON.stringify(sampleCounts(result))}\n`);
 
 const problems = result.checks.filter((c) => c.problems.length).length;
 console.log(`${result.checks.length} von ${result.safetyUnits} sicherheitsrelevanten Einheiten gezogen (Seed ${seed}), ${problems} mit Befund. Bericht: ${path.relative(process.cwd(), out)}`);

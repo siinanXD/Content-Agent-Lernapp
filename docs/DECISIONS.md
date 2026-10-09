@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-409 | SIN-409: Kennzahl „Fragen bewertet“ blieb 0 wegen abweichender Frage-ID | [SIN-409-kennzahl-fragen-id.md](decisions/SIN-409-kennzahl-fragen-id.md) |
 | SIN-407 | SIN-407: Abbruchstellen im Kennzahlen-Bericht | [SIN-407-abbruchstellen.md](decisions/SIN-407-abbruchstellen.md) |
 | SIN-406 | SIN-406 — Content-Fabrik: Durchsatz je Lauf erhöhen | [SIN-406-fabrik-durchsatz.md](decisions/SIN-406-fabrik-durchsatz.md) |
+| SIN-404 | SIN-404: Sicherheits-Stichprobe als Lauf-Auftrag | [SIN-404-sicherheits-lauf.md](decisions/SIN-404-sicherheits-lauf.md) |
 | SIN-403 | SIN-403 Fehler-, Leer- und Ladezustände für alle Routen | [SIN-403-zustaende-routen.md](decisions/SIN-403-zustaende-routen.md) |
 | SIN-402 | SIN-402: Kennzahlen aus einheitlicher Quelle | [SIN-402-kennzahlen-abfrage.md](decisions/SIN-402-kennzahlen-abfrage.md) |
 | SIN-399 | SIN-399: OpenAI als Content-Generator prüfen (Preis, Qualität, Aufwand) | [SIN-399-openai-generator.md](decisions/SIN-399-openai-generator.md) |

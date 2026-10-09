@@ -7,6 +7,7 @@ import {
   drawSample,
   isSafetyUnit,
   renderReport,
+  sampleCounts,
   type SampleUnit,
 } from "./safety-sample";
 
@@ -70,5 +71,12 @@ describe("SIN-272 Sicherheits-Stichprobe", () => {
   it("leere Stichprobe ist im Bericht kein Beleg", () => {
     const r = buildSafetySample([], curricula, { seed: 1, size: 5, today: "2026-10-06" });
     assert.match(renderReport(r, { date: "2026-10-06", source: "Test" }), /kein Beleg/);
+  });
+
+  it("Zahlen für den Lauf-Bericht: Anzahlen und Befunde, keine Einheiten-Inhalte (SIN-404)", () => {
+    const units = [unit("s1", { safetyFlag: true }), unit("s2", { safetyFlag: true, sourceUrl: "" }), unit("n1")];
+    const z = sampleCounts(buildSafetySample(units, curricula, { seed: 272, size: 5, today: "2026-10-06" }));
+    assert.deepEqual(z, { seed: 272, angefragt: 5, veroeffentlicht: 3, sicherheitsrelevant: 2, gezogen: 2, befunde: 1 });
+    assert.ok(!JSON.stringify(z).includes("Einheit"));
   });
 });

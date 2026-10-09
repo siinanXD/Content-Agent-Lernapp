@@ -147,6 +147,18 @@ export function buildSafetySample(
   };
 }
 
+/** Nur Anzahlen für den Lauf-Bericht (SIN-404): keine Einheiten-Inhalte, keine Personendaten. */
+export function sampleCounts(r: SafetySampleResult) {
+  return {
+    seed: r.seed,
+    angefragt: r.requested,
+    veroeffentlicht: r.publishedUnits,
+    sicherheitsrelevant: r.safetyUnits,
+    gezogen: r.checks.length,
+    befunde: r.checks.filter((c) => c.problems.length > 0).length,
+  };
+}
+
 const PROBLEM_TEXT: Record<SourceProblem, string> = {
   "quelle-fehlt": "Quelle fehlt",
   "quelle-keine-url": "Quelle ist keine URL",
@@ -156,7 +168,7 @@ const PROBLEM_TEXT: Record<SourceProblem, string> = {
   "quelle-nicht-in-lehrplan": "Quelle steht nicht in der Quellenliste der Lehrplan-Karte",
 };
 
-const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
+const cell = (s: string) => s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
 
 /** Markdown-Bericht. Spalte „Mensch“ bleibt leer, bis eine Person geprüft hat. */
 export function renderReport(r: SafetySampleResult, meta: { date: string; source: string }): string {

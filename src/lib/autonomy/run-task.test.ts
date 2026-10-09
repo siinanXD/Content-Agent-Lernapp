@@ -18,6 +18,7 @@ import {
   missingSecrets,
   pendingMigrations,
   runTask,
+  safetySample,
   stageResult,
   taskForCheck,
 } from "../../../scripts/autonomy/run-task.mjs";
@@ -32,7 +33,7 @@ test("missingTables: meldet fehlende Pflicht-Tabellen (SIN-347)", () => {
 });
 
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {
-  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "cost-report", "lighthouse", "offline-check", "migrate"]);
+  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "cost-report", "lighthouse", "offline-check", "migrate", "safety-sample"]);
   await assert.rejects(() => runTask("rm -rf /", { env: {}, now }), /Unbekannte Aufgabe/);
   const yml = readFileSync(".github/workflows/run-task.yml", "utf8");
   for (const id of TASK_IDS) assert.match(yml, new RegExp(`- ${id}\\n`));
@@ -138,6 +139,24 @@ test("Ergebnis → Produktreife-Datei: erfüllt oder gelaufen, ohne Messwert nic
   assert.deepEqual(applyResult(file, "cost-report", { ok: null, ergebnis: "leer" }, { datum: "x", beleg: "y" }), file);
   assert.deepEqual(applyResult(file, "judge-backfill", { ok: true, ergebnis: "x" }, { datum: "x", beleg: "y" }), file);
   assert.ok(TASKS.migrate.secrets.includes("SUPABASE_ACCESS_TOKEN"));
+});
+
+test("Sicherheits-Stichprobe (SIN-404): nur gelaufen, nie bestaetigt; Grund bei Ausfall im Beleg", () => {
+  const file = { gebaut: { "content-safety": { datum: "d", beleg: "b" } }, bestaetigt: {} };
+  assert.equal(TASKS["safety-sample"].check, "content-safety");
+  assert.deepEqual(TASKS["safety-sample"].secrets, []);
+  const ran = applyResult(file, "safety-sample", { ok: null, ergebnis: "15 von 30 geprüft, 2 mit Befund" }, { datum: "2026-10-08", beleg: "Lauf 9" });
+  assert.equal(ran.bestaetigt["content-safety"], undefined);
+  assert.equal(ran.gelaufen["content-safety"].ergebnis, "15 von 30 geprüft, 2 mit Befund");
+  const failed = applyResult(file, "safety-sample", { ok: null, ergebnis: "Nicht gelaufen: App nicht erreichbar" }, { datum: "2026-10-08", beleg: "Lauf 10" });
+  assert.match(failed.gelaufen["content-safety"].ergebnis, /App nicht erreichbar/);
+  assert.equal(failed.bestaetigt["content-safety"], undefined);
+});
+
+test("Sicherheits-Stichprobe: Trockenlauf startet nichts und nennt den Befehl", () => {
+  const r = safetySample("2026-10-08", { dry: true });
+  assert.equal(r.ok, null);
+  assert.match(r.ergebnis, /safety-sample\.mjs --live --json/);
 });
 
 test("stageResult: fehlender Pfad (ap22-runs) verwirft die übrigen nicht (SIN-397)", () => {
