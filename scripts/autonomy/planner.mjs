@@ -28,6 +28,7 @@ import { collectPostHogMetrics } from "./posthog.mjs";
 import { collectFabrikMetrics } from "./fabrik.mjs";
 import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error.mjs";
 import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
+import { collectMigrations } from "./migrationen.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection, ratedQuestions, fetchAll } from "./content-metrics.mjs";
@@ -107,6 +108,7 @@ export async function collectMetrics(env = process.env, http = {}) {
     content_fabrik: "nicht verfügbar",
     content_fabrik_status: "nicht verfügbar",
     content_fabrik_ueberfaellig_tage: "nicht verfügbar",
+    migrationen: "nicht verfügbar",
   };
   if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
     const h = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
@@ -150,6 +152,8 @@ export async function collectMetrics(env = process.env, http = {}) {
       }
     }
   }
+  // SIN-451: Migrationsstand über die Management-API (SQL), nicht über PostgREST: kein Schema-Cache-Fehler.
+  m.migrationen = (await collectMigrations(env).catch(() => null))?.line.replace(/^Migrationen: /, "") ?? "nicht verfügbar";
   Object.assign(m, await collectSentryMetrics(env, http.fetchImpl, http));
   Object.assign(m, await collectFabrikMetrics(env, http));
   Object.assign(m, await collectPostHogMetrics(env, http.fetchImpl, http));

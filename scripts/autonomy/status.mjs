@@ -16,13 +16,13 @@ import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
 import { collectBackup } from "./backup.mjs";
-import { collectMigrations, migrationIncident } from "./migrationen.mjs";
+import { collectMigrations, migrationIncident, sinanTaskForMigrations } from "./migrationen.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { buildSnapshot, sendSnapshot } from "./leitstand.mjs";
 import { sendTelegramPlain } from "./telegram.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
-import { renderSinan, syncSinan } from "./sinan.mjs";
+import { SEED, renderSinan, syncSinan } from "./sinan.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, stalledRepairs, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
 import { GATE_LABEL, GATE_PREFIX, collectGateFailures, collectMainChecks, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
@@ -692,7 +692,9 @@ export async function main(argv, env = process.env) {
     const liveCheck = await collectLiveCheck(repo, gh);
     const migrations = await collectMigrations(env).catch(() => null);
     // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
-    const sinanIssues = linearOk ? (await syncSinan({ dry }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
+    // SIN-451: nicht additive Migrationen legt der Wächter als Sinan-Aufgabe an (Doppelte überspringt createSinanIssues).
+    const migrationTask = sinanTaskForMigrations(migrations);
+    const sinanIssues = linearOk ? (await syncSinan({ dry, seed: migrationTask ? [...SEED, migrationTask] : SEED }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
     snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);

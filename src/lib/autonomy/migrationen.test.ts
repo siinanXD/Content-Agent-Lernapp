@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { collectMigrations, duplicateVersions, migrationIncident, migrationStatus, readMigrationFiles } from "../../../scripts/autonomy/migrationen.mjs";
-import { recordVersionSql } from "../../../scripts/autonomy/run-task.mjs";
+import { collectMigrations, duplicateVersions, migrationIncident, migrationStatus, readMigrationFiles, sinanTaskForMigrations } from "../../../scripts/autonomy/migrationen.mjs";
+import { migrationStand, recordVersionSql } from "../../../scripts/autonomy/run-task.mjs";
 
 test("Migrationen: keine doppelte Versionsnummer im Repo (SIN-374)", () => {
   const names = readMigrationFiles().map((f: { name: string }) => f.name);
@@ -59,4 +59,32 @@ test("Migrationen: migrate.yml läuft nach Merge auf supabase/migrations und vor
   assert.match(wf, /run-task\.mjs --task migrate/);
   assert.match(wf, /SUPABASE_PROJECT_REF: \$\{\{ secrets\.SUPABASE_PROJECT_REF \|\| vars\.SUPABASE_PROJECT_REF \}\}/);
   assert.match(readFileSync(".github/workflows/production-deploy.yml", "utf8"), /migrationen\.mjs --check/);
+});
+
+test("Migrationen: nicht additiv ergibt Sinan-Aufgabe statt Bug-Issue (SIN-451)", () => {
+  const files = [
+    { name: "20261013010000_sin415_gruppen.sql", sql: "alter table public.trainer_groups drop constraint if exists k;" },
+    { name: "20261014010000_sin416_orgs.sql", sql: "alter table public.organisations add column x int;" },
+  ];
+  const none = { tables: new Set<string>(), versions: new Set<string>() };
+  const nurNichtAdditiv = migrationStatus(files.slice(0, 1), none);
+  assert.deepEqual(nurNichtAdditiv.blockedMissing, ["20261013010000_sin415_gruppen.sql"]);
+  assert.deepEqual(nurNichtAdditiv.additiveMissing, []);
+  assert.equal(migrationIncident(nurNichtAdditiv).bug, null);
+  const task = sinanTaskForMigrations(nurNichtAdditiv);
+  assert.match(task!.titel, /sin415_gruppen/);
+  assert.equal(task!.schritte.length, 3);
+
+  const gemischt = migrationStatus(files, none);
+  assert.deepEqual(gemischt.additiveMissing, ["20261014010000_sin416_orgs.sql"]);
+  assert.deepEqual(gemischt.blockedMissing, ["20261013010000_sin415_gruppen.sql"]);
+  assert.ok(migrationIncident(gemischt).bug);
+
+  const ok = migrationStatus(files, { tables: new Set<string>(), versions: new Set(["20261013010000", "20261014010000"]) });
+  assert.equal(sinanTaskForMigrations(ok), null);
+});
+
+test("Migrationen: Lauf meldet n/n angewandt oder abweichend (SIN-451)", () => {
+  assert.equal(migrationStand(15, 0), "Migrationen: 15/15 angewandt");
+  assert.equal(migrationStand(15, 2), "Migrationen: 13/15 abweichend");
 });

@@ -249,6 +249,9 @@ export function recordVersionSql(fileName) {
   return `insert into supabase_migrations.schema_migrations (version, name) values ('${version}', '${rest.join("_")}') on conflict (version) do nothing`;
 }
 
+/** Kurzmeldung „Migrationen: 15/15 angewandt“ oder „Migrationen: 13/15 abweichend“ (SIN-451). */
+export const migrationStand = (total, offen) => `Migrationen: ${total - offen}/${total} ${offen ? "abweichend" : "angewandt"}`;
+
 async function migrate(env, { dry }) {
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.endsWith(".sql"))
@@ -289,6 +292,8 @@ async function migrate(env, { dry }) {
     for (const t of REQUIRED_TABLES) console.log(`${fehlend.includes(t) ? "FEHLT" : "ok   "} ${t}`);
     lines.push(fehlend.length ? `Tabellen fehlen weiter: ${fehlend.join(", ")}` : `Tabellen vorhanden: ${REQUIRED_TABLES.join(", ")}`);
   }
+  // SIN-451: Stand als n/n, „angewandt“ nur ohne Rest, sonst „abweichend“ (Trockenlauf: Stand vor dem Lauf).
+  lines.unshift(migrationStand(files.length, pending.length - applied.length));
   return { ok: blocked.length === 0 && fehlend.length === 0, ergebnis: lines.join("; "), applied, blocked: blocked.map((b) => b.name) };
 }
 
