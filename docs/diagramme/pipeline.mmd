@@ -23,7 +23,7 @@ flowchart TD
   Freigabe --> Merge
   Gate -- "risk:medium" --> Merge["Auto-Merge (Squash)"]
   Merge --> Dispatcher
-  Merge --> Migr["Migrationen anwenden (SIN-374)"]
+  Merge --> Migr["Migrationen anwenden: additiv automatisch, sonst Sinan-Aufgabe (SIN-374, SIN-451)"]
   Merge --> Bruch{"gate-bruch-Erkennung"}
   Bruch -- "CI auf main rot" --> Revert["revert-guard: Revert-PR"]
   Migr --> Deploy["production-deploy (höchstens 1× pro Stunde)"]

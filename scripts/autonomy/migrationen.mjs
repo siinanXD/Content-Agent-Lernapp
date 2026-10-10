@@ -35,6 +35,7 @@ export function migrationStatus(files, { tables, versions }) {
     applied,
     missing: pending.map((p) => p.name),
     additiveMissing: pending.filter((p) => p.additiv).map((p) => p.name),
+    blockedMissing: pending.filter((p) => !p.additiv).map((p) => p.name),
     ok: pending.length === 0,
     line: pending.length
       ? `Migrationen: ${applied}/${total} angewendet, fehlen: ${pending.map((p) => p.name.replace(/\.sql$/, "")).join(", ")}`
@@ -73,13 +74,35 @@ export async function collectMigrations(/** @type {Record<string, string | undef
   }
 }
 
-/** Meldung für die Status-Seite: Vorfall und Bug-Issue, wenn Migrationen fehlen. */
+/** Sinan-Aufgabe für nicht additive Migrationen (SIN-451): sie werden nie automatisch angewandt. Ohne solche Dateien null. */
+export function sinanTaskForMigrations(m) {
+  if (!m?.blockedMissing?.length) return null;
+  const names = m.blockedMissing.map((n) => n.replace(/\.sql$/, ""));
+  return {
+    titel: `Nicht additive Migration prüfen und anwenden: ${names.join(", ")}`,
+    wo: "Supabase-Dashboard (SQL-Editor) und GitHub Actions",
+    link: "https://supabase.com/dashboard",
+    minuten: 15,
+    schritte: [
+      `Datei(en) unter supabase/migrations/ lesen: ${names.map((n) => `\`${n}.sql\``).join(", ")}. Sie enthalten drop, delete, truncate oder rename und werden nie automatisch angewandt.`,
+      "Ist der Inhalt unkritisch: Sicherung prüfen (Actions → backup), dann das SQL im SQL-Editor in einer Transaktion ausführen.",
+      "Danach in GitHub Actions den Workflow migrate per „Run workflow“ starten: er trägt die Version ein und wendet davon abhängige additive Migrationen an.",
+    ],
+    pruefung: `Der Wächter meldet „Migrationen: ${m.total}/${m.total} angewendet“. Du schließt das Issue danach selbst.`,
+  };
+}
+
+/** Meldung für die Status-Seite: Vorfall und Bug-Issue, wenn Migrationen fehlen. Fehlen nur nicht additive Dateien: Sinan-Aufgabe statt Bug. */
 export function migrationIncident(m) {
   if (!m || m.ok) return { incident: null, bug: null };
   const names = m.missing.join(", ");
+  const nurSinan = !m.additiveMissing.length;
   return {
-    incident: { key: `migrationen:${m.missing.join("|")}`, text: `Migrationen: ${m.applied}/${m.total} angewendet, es fehlen ${names}. Bug-Issue angelegt, Workflow migrate.yml prüfen.` },
-    bug: {
+    incident: {
+      key: `migrationen:${m.missing.join("|")}`,
+      text: `Migrationen: ${m.applied}/${m.total} angewendet, es fehlen ${names}. ${nurSinan ? "Nicht additiv: Aufgabe für Sinan angelegt." : "Bug-Issue angelegt, Workflow migrate.yml prüfen."}`,
+    },
+    bug: nurSinan ? null : {
       lane: "backend",
       priority: 1,
       labels: ["claude", "Bug"],
