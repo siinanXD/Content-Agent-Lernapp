@@ -128,6 +128,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - `freigegeben` fiel nach Merge-Commits aus main weg, ohne dass der Grund sichtbar war → `pr-gate` bewertet nur den Diff Basis…Kopf (`compareCommitsWithBasehead`), `newReasons` nennt neue High-Gründe, beim Entzug folgt ein Kommentar mit Datei und Regel. (SIN-511)
 - Kennzahl `content_fabrik_ueberfaellig_tage` wurde nur bei überfälliger Fabrik gesetzt und stand sonst auf „nicht verfügbar“ → bei gelesener Quelle jede Kennzahl immer mit Zahl füllen (0 = nicht betroffen), „nicht verfügbar“ nur ohne Quelle. (SIN-515)
 - Video-Agent hing im ersten Lauf bis zum Test-Timeout (120 s), ohne Hinweis auf den Schritt: die Schleife kannte nur Auswahlfragen, Lücken-, Zuordnen- und Rechenfragen haben keine `aria-pressed`-Knöpfe, „Antwort prüfen“ blieb gesperrt → je Fragetyp antworten (`beantworte`), `actionTimeout` setzen, Test-Timeout nach Fragenanzahl, optionale Klicks nur wenn sichtbar, bei Fehlern `video-ergebnis/dateien/**` als Artefakt hochladen. (SIN-518)
+- Neues Unterpaket mit eigenen Abhängigkeiten (`video/schnitt`, Revideo) fiel in `**/*.tsx` der `tsconfig.json`, `next build` scheiterte mit „requires the module path …/jsx-runtime“ (Gate `bildvergleich`) → Unterpakete ohne Installation im Haupt-`npm ci` sofort in `exclude` der `tsconfig.json` eintragen und `npm run build` prüfen. (SIN-519)
 
 ## Datenbank-Rechte
 
