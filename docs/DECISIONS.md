@@ -15,8 +15,10 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | --- | --- | --- |
 | SIN-502 | SIN-502: revert-guard nimmt nur zurück, wenn derselbe Schritt davor grün war | [SIN-502-revert-guard-nur-bei-gruenem-eltern-schritt.md](decisions/SIN-502-revert-guard-nur-bei-gruenem-eltern-schritt.md) |
 | SIN-500 | SIN-500: Leistungsbudget `/` – Prefetch der Startseiten-Links aus | [SIN-500-startseite-prefetch.md](decisions/SIN-500-startseite-prefetch.md) |
+| SIN-498 | SIN-498: Sentry – ungelöster Fehler (7 Tage) | [SIN-498-sentry-ungeloester-fehler.md](decisions/SIN-498-sentry-ungeloester-fehler.md) |
 | SIN-497 | SIN-497: Structured Outputs abschaltbar, Batch-Fehler sichtbar, Lauf rot bei 0 Einheiten | [SIN-497-structured-outputs-schalter.md](decisions/SIN-497-structured-outputs-schalter.md) |
 | SIN-496 | SIN-496 — Stillstand `ohne-start`: Grund des Dispatchers im Bericht | [SIN-496-dispatch-grund.md](decisions/SIN-496-dispatch-grund.md) |
+| SIN-493 | SIN-493: Großen Batch in Teilbatches zerlegen, Kosten nach jedem Teil prüfen | [SIN-493-teilbatches.md](decisions/SIN-493-teilbatches.md) |
 | SIN-490 | SIN-490: Richter mit festem Antwortschema (json_schema, strict) | [SIN-490-richter-schema.md](decisions/SIN-490-richter-schema.md) |
 | SIN-489 | SIN-489: Structured Outputs der Claude-API | [SIN-489-structured-outputs.md](decisions/SIN-489-structured-outputs.md) |
 | SIN-481 | SIN-481 — Agenten-Rollen: Register und Feld `agent` in `loop_events` | [SIN-481-agenten-rollen.md](decisions/SIN-481-agenten-rollen.md) |

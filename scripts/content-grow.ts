@@ -38,6 +38,9 @@ import {
   COST_MARGIN,
   judgeReserveEur,
   linearSummary,
+  measuredPerUnit,
+  partGate,
+  splitTargets,
   MAP_COURSES,
   mapPlan,
   missingSecrets,
@@ -510,7 +513,7 @@ async function main() {
   if (report.stopReason) {
     report.deferred = planPending.size;
   } else if (next && !overBudget(spentTotal())) {
-    const { targets, units, leftOver } = trimTargets(
+    const { targets, leftOver } = trimTargets(
       planTargets(),
       planPending,
       affordableUnits(spentTotal(), perUnit),
@@ -523,27 +526,45 @@ async function main() {
     if (targets.length === 0) {
       report.stopReason = "Deckel: keine Einheit mehr bezahlbar; Rest im nächsten Lauf";
     } else {
-      assertWithinRunCap(spentTotal() + units * perUnit * COST_MARGIN, RUN_CAP_EUR);
-      const sub = await submitChunkTargets({ keyword: KEYWORD, curriculum, targets, system: cachedSystem() });
-      report.batchIds.push(sub.batchId);
-      console.log("Batch", sub.batchId, "Einheiten", units, "Modell", GENERATOR_MODEL);
-      await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
-      const got = await collectBatchUnits(sub.batchId, curriculum);
-      ledger = addClaudeLedger(ledger, got.ledger);
-      batchSent += targets.length;
-      batchUnitsGot += got.units.length;
-      batchFailedCount += got.failedCustomIds.length;
-      batchErrors.push(...got.errors);
-      tracer.batchFertig(got.units, got.ledger, "neuesModul");
-      // Nur Einheiten, die zum Modul gehören und noch offen sind.
+      // SIN-493: Teilbatches; vor jedem Teil die gemessenen Kosten gegen den Deckel prüfen.
       const wanted = planPending;
-      generatedUnits.push(...(await schemaGate(got.units.filter((u) => wanted.has(u.id)))));
+      const sentTargets: BatchChunkTarget[] = [];
+      let partPerUnit = perUnit;
+      const parts = splitTargets(targets);
+      for (const [i, part] of parts.entries()) {
+        const partUnits = part.reduce((n, t) => n + t.unitCount, 0);
+        const gate = partGate(spentTotal(), partUnits, partPerUnit, generatedUnits.length);
+        if (!gate.ok) {
+          report.deferred += parts.slice(i).flat().reduce((n, t) => n + t.unitCount, 0);
+          deferredResume = resumeFor(sentTargets);
+          report.stopReason = `Deckel: Teil ${i + 1} von ${parts.length} nicht gestartet (bisher ${spentTotal().toFixed(2)} €, erwartet ${gate.expectedEur.toFixed(2)} € > ${RUN_CAP_EUR} €); Rest im nächsten Lauf`;
+          console.log(`::notice::${report.stopReason}`);
+          break;
+        }
+        const before = spentTotal();
+        const sub = await submitChunkTargets({ keyword: KEYWORD, curriculum, targets: part, system: cachedSystem() });
+        report.batchIds.push(sub.batchId);
+        console.log("Batch", sub.batchId, `Teil ${i + 1}/${parts.length}`, "Einheiten", partUnits, "Modell", GENERATOR_MODEL);
+        sentTargets.push(...part);
+        await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
+        const got = await collectBatchUnits(sub.batchId, curriculum);
+        ledger = addClaudeLedger(ledger, got.ledger);
+        batchSent += part.length;
+        batchUnitsGot += got.units.length;
+        batchFailedCount += got.failedCustomIds.length;
+        batchErrors.push(...got.errors);
+        tracer.batchFertig(got.units, got.ledger, "neuesModul");
+        // Nur Einheiten, die zum Modul gehören und noch offen sind.
+        generatedUnits.push(...(await schemaGate(got.units.filter((u) => wanted.has(u.id)))));
+        partPerUnit = measuredPerUnit(partPerUnit, spentTotal() - before, partUnits);
+      }
+      // Bereits erzeugte Einheiten laufen weiter durch Richter und Veröffentlichung.
       const evals = generatedUnits.length > 0 ? await judge(generatedUnits, "grow") : [];
       const { ok, dropped } = keepPassing(generatedUnits, evals);
       live.push(...ok);
       const gotIds = new Set(generatedUnits.map((u) => u.id));
       // Nie gelieferte Einheiten (Batch-Fehler) zählen als verworfen, damit der Lauf nicht ewig daran hängt.
-      const missingIds = targets.flatMap((t) =>
+      const missingIds = sentTargets.flatMap((t) =>
         Array.from({ length: t.unitCount }, (_, i) => `${t.block.id}-u${t.unitOffset + i + 1}`),
       ).filter((id) => wanted.has(id) && !gotIds.has(id));
       report.generated = generatedUnits.length;
