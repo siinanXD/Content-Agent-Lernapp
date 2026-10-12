@@ -32,14 +32,13 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   await page.getByRole("button", { name: "Ablehnen" }).click();
 
   await expect(page).toHaveURL(/\/beruf$/);
-  const weiter = page.getByRole("button", { name: "Weiter", exact: true });
-  await expect(weiter).toBeDisabled();
+  // Die Wahl führt direkt weiter, kein „Weiter“-Knopf (SIN-476).
+  await expect(page.getByRole("button", { name: "Weiter", exact: true })).toHaveCount(0);
   // Suchfeld filtert nur die vorhandenen Berufe.
   await page.getByRole("searchbox", { name: "Beruf suchen" }).fill("Industriekauf");
   await expect(page.getByRole("button", { name: /Maschinen- und Anlagenführer/ })).toHaveCount(0);
   await page.getByRole("searchbox", { name: "Beruf suchen" }).fill("");
   await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
-  await weiter.click();
 
   await expect(page).toHaveURL(/\/schwerpunkt$/);
   await expect(page.getByText("Schritt 4 von 4")).toBeVisible();
@@ -84,7 +83,6 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
 test("Industriekaufmann/-frau: kein Schwerpunkt, direkt zum Lernpfad", async ({ page }) => {
   await page.goto("/beruf");
   await page.getByRole("button", { name: /Industriekaufmann/ }).click();
-  await page.getByRole("button", { name: "Weiter", exact: true }).click();
   await expect(page).toHaveURL(/\/lernpfad$/);
   expect(
     await page.evaluate(() => JSON.parse(window.localStorage.getItem("cal-onboarding") ?? "{}")),

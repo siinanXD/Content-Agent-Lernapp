@@ -94,7 +94,6 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
   await page.getByRole("link", { name: "Los geht’s" }).click();
   await page.getByRole("button", { name: "Ablehnen" }).click();
   await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
-  await page.getByRole("button", { name: "Weiter", exact: true }).click();
   await page.getByRole("button", { name: "Metall + Kunststoff" }).click();
   await page.getByRole("button", { name: "Lernpfad erstellen", exact: true }).click();
 
