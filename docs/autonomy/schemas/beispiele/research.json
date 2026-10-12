@@ -1,0 +1,23 @@
+{
+  "schema": "../research.schema.json",
+  "thema": "Beispiel: Spaced Repetition",
+  "erstellt": "2026-10-12",
+  "wunsch": "Lernende wiederholen Fragen zum richtigen Zeitpunkt.",
+  "konkurrenten": [
+    { "name": "Beispiel-App", "url": "https://example.com", "staerken": ["Karteikarten"], "schwaechen": ["keine amtlichen Quellen"] }
+  ],
+  "bausteine": [
+    { "name": "Beispiel-Bibliothek", "url": "https://example.com/lib", "lizenz": "MIT", "sterne": null, "letzterCommit": null }
+  ],
+  "modelle": [
+    {
+      "id": "claude-haiku-5-5",
+      "preisEingabeUsdProMio": 0,
+      "preisAusgabeUsdProMio": 0,
+      "quelle": "https://example.com/preise",
+      "abgerufen": "2026-10-12"
+    }
+  ],
+  "kosten": { "einmaligEur": null, "proMonatEur": null, "annahme": "Beispiel, keine echten Preise." },
+  "empfehlung": { "entscheidung": "beobachten", "begruendung": "Nur ein Beispiel für den Schema-Test." }
+}
