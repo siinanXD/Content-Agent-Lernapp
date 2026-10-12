@@ -5,7 +5,12 @@
  */
 import type { Curriculum, CurriculumModule } from "@/lib/content/curriculum";
 import { neutralSharedModuleIds } from "@/lib/content/shared-modules";
-import { OLD_REGEN_EUR_PER_UNIT } from "@/lib/quality/cost-guard";
+import {
+  EUR_PER_USD,
+  GPT_JUDGE_IN_PER_MTOK,
+  GPT_JUDGE_OUT_PER_MTOK,
+  OLD_REGEN_EUR_PER_UNIT,
+} from "@/lib/quality/cost-guard";
 import type { EvalItem } from "@/lib/quality/evaluate-agent";
 import type { GeneratedUnit } from "./maf-lernfeld-seed";
 import type { BatchChunkTarget } from "./batch-generate";
@@ -20,6 +25,13 @@ export const WEEK_CAP_EUR = 60;
 export const MAX_RUNS_PER_DAY = 1;
 /** Sicherheitsfaktor auf die Kosten je Einheit bei der Vorab-Rechnung. */
 export const COST_MARGIN = 1.25;
+/**
+ * SIN-478: Reserve für die Reparaturstufe. Sie läuft vor der Fabrik und kostete im Lauf 10-12 2,90 €;
+ * ihr letzter Batch darf höchstens so viel kosten, dann bleibt der Lauf unter 20 €.
+ */
+export const REPAIR_BATCH_RESERVE_EUR = 3;
+/** SIN-478: Stopp der Reparaturstufe (als `--stop-eur` an scripts/ap15-regen-dropped.ts). */
+export const REPAIR_STOP_EUR = RUN_CAP_EUR - REPAIR_BATCH_RESERVE_EUR;
 
 /**
  * Maps, die die Fabrik erzeugt (SIN-431): vorerst zwei Berufe, MAF Metall und Industriekaufleute.
@@ -277,6 +289,28 @@ export function eurPerUnit(history: ReadonlyArray<{ costEur: number; unitsGenera
   const units = history.reduce((s, r) => s + r.unitsGenerated, 0);
   const eur = history.reduce((s, r) => s + r.costEur, 0);
   return units > 0 && eur > 0 ? eur / units : OLD_REGEN_EUR_PER_UNIT;
+}
+
+/**
+ * SIN-478: Kosten je Einheit für die Vorab-Rechnung. Ein Batch wird erst nach dem Absenden gemessen,
+ * also plant die Fabrik mit dem teuersten bisherigen Lauf. Der Durchschnitt (`eurPerUnit`) reichte nicht:
+ * Lauf 10-08 kostete 0,041 € je Einheit, Lauf 10-12 0,059 €; mit 0,041 geplant lief er auf 21,78 €.
+ */
+export function planEurPerUnit(history: ReadonlyArray<{ costEur: number; unitsGenerated: number }>): number {
+  const perRun = history
+    .filter((r) => r.unitsGenerated > 0 && r.costEur > 0)
+    .map((r) => r.costEur / r.unitsGenerated);
+  return perRun.length > 0 ? Math.max(...perRun) : OLD_REGEN_EUR_PER_UNIT;
+}
+
+/**
+ * SIN-478: Richter-Kosten für `units` Einheiten vor dem Richter-Aufruf (OpenAI). Gleiche Annahme wie
+ * `phaseAPreflightUsd`: 6 Fragen je Einheit, 1200 Eingabe- und 200 Ausgabe-Token je Frage, plus Sicherheitsfaktor.
+ */
+export function judgeReserveEur(units: number, questionsPerUnit = 6): number {
+  const q = units * questionsPerUnit;
+  const usd = ((q * 1200) / 1e6) * GPT_JUDGE_IN_PER_MTOK + ((q * 200) / 1e6) * GPT_JUDGE_OUT_PER_MTOK;
+  return Math.round(usd * EUR_PER_USD * COST_MARGIN * 100) / 100;
 }
 
 /**

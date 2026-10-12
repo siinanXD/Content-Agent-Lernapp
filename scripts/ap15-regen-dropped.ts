@@ -68,7 +68,12 @@ const OUT_DIR = join(ROOT, "docs", "ops", "ap15-runs");
 const COURSE = "e22073de-7020-4380-9002-c70d46c25e25";
 const KEYWORD = "Maschinen- und Anlagenführer";
 /** Deckel gilt je Lauf (AGENTS.md: 20 € je Kurslauf); Phase-A-Kosten sind abgerechnet. */
-const STOP_EUR = 19.0;
+/** SIN-478: `--stop-eur` setzt den Stopp niedriger (content-grow reserviert Platz für den letzten Batch). */
+const STOP_EUR = (() => {
+  const i = process.argv.indexOf("--stop-eur");
+  const v = i >= 0 ? Number(process.argv[i + 1]) : NaN;
+  return Number.isFinite(v) && v > 0 ? v : 19.0;
+})();
 const MAX_REPAIR_ROUNDS = 2;
 const PHASE_A_REPORT = "2026-10-03T15-08-17-881Z-regen-report.json";
 

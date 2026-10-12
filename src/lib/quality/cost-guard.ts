@@ -81,7 +81,8 @@ export type CostLedger = {
   stopReason?: string;
 };
 
-const EUR_PER_USD = 20 / 21.5;
+/** Umrechnung für die Guard-Schätzung (SIN-478: cost_usd und cost_eur daraus, nie getrennt rechnen). */
+export const EUR_PER_USD = 20 / 21.5;
 
 export function emptyLedger(): CostLedger {
   return {

@@ -14,7 +14,11 @@ import {
   MAP_COURSES,
   SUPPORTED_MAP_IDS,
   eurPerUnit,
+  judgeReserveEur,
   linearSummary,
+  planEurPerUnit,
+  REPAIR_BATCH_RESERVE_EUR,
+  REPAIR_STOP_EUR,
   nichtVersucht,
   unitCostHistory,
   type RunReport,
@@ -269,6 +273,31 @@ test("SIN-434: Kosten je Einheit ohne Reparatur (Lauf 10-08: 0,04 statt 0,12 €
   assert.ok(affordableUnits(0, eurPerUnit(h)) > 300);
   // Mit Reparatur eingerechnet blieben es nur 125 Einheiten je Lauf.
   assert.equal(affordableUnits(0, 2.43 / 20), 125);
+});
+
+test("SIN-478: Lauf mit Reparaturstufe endet bei höchstens 20 € (Lauf 10-12 kostete 21,78 €)", () => {
+  // Historie wie in docs/ops/content-runs: 10-08 = 0,041 €/Einheit, 10-12 = 0,059 €/Einheit (Reparatur 2,90 € abgezogen).
+  const history = unitCostHistory([
+    { costEur: 2.43, generated: 20, repair: { costEur: 1.62 } },
+    { costEur: 21.78, generated: 318, repair: { costEur: 2.9 } },
+  ]);
+  const actualPerUnit = 18.88 / 318;
+  const spent = 2.9;
+  // Alte Planung mit dem Durchschnitt hätte 318 Einheiten geplant und den Deckel gerissen.
+  assert.ok(spent + 318 * actualPerUnit > RUN_CAP_EUR);
+  const perUnit = planEurPerUnit(history);
+  assert.ok(perUnit >= actualPerUnit);
+  const n = affordableUnits(spent, perUnit);
+  assert.ok(n > 0);
+  assert.ok(spent + n * actualPerUnit <= RUN_CAP_EUR);
+  // Richter-Reserve wächst mit der Zahl der Einheiten (das Gate prüft sie vor dem Richter-Aufruf).
+  assert.ok(judgeReserveEur(n) > 0);
+  assert.equal(judgeReserveEur(0), 0);
+});
+
+test("SIN-478: Reparatur stoppt früh genug, dass ihr letzter Batch im Deckel bleibt", () => {
+  assert.equal(REPAIR_STOP_EUR + REPAIR_BATCH_RESERVE_EUR, RUN_CAP_EUR);
+  assert.ok(REPAIR_BATCH_RESERVE_EUR >= 2.9);
 });
 
 test("SIN-434: nicht versucht nach Grund", () => {

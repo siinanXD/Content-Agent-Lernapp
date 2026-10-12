@@ -6,7 +6,7 @@
  */
 import { getStorage } from "@/lib/storage";
 import { getServiceSupabase } from "@/lib/storage/supabase-client";
-import { BUDGET_EUR, refreshLedger, type CostLedger } from "./cost-guard";
+import { BUDGET_EUR, EUR_PER_USD, refreshLedger, type CostLedger } from "./cost-guard";
 import { recordRunCostTrace } from "./langfuse-client";
 import { kurslaufSessionId, traceTitel, type TraceKontext } from "./langfuse-names";
 
@@ -57,6 +57,8 @@ export function toRunCostRecord(
   const l = refreshLedger(input.ledger);
   const capEur = input.capEur ?? BUDGET_EUR;
   const costEur = Math.round((input.totalEur ?? l.eurEstimate) * 100) / 100;
+  // SIN-478: USD aus derselben Summe wie EUR (inkl. Reparatur), sonst passen cost_usd und cost_eur nicht zusammen.
+  const costUsd = Math.round((costEur / EUR_PER_USD) * 10000) / 10000;
   const stopped = l.stopped || costEur >= capEur;
   return {
     id: crypto.randomUUID(),
@@ -69,7 +71,7 @@ export function toRunCostRecord(
     claudeCacheReadTokens: l.claudeCacheReadTokens,
     openaiInputTokens: l.openaiInputTokens,
     openaiOutputTokens: l.openaiOutputTokens,
-    costUsd: l.usdEstimate,
+    costUsd,
     costEur,
     capEur,
     stopped,
