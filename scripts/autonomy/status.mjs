@@ -462,6 +462,26 @@ async function ghText(path, { token = process.env.GITHUB_TOKEN, fetchImpl = fetc
   return res.text();
 }
 
+/** Zeilen des Dispatcher-Logs, die den Grund für „nichts gestartet“ nennen (SIN-496); leer, wenn nicht lesbar. */
+export function dispatchReasonLines(log) {
+  return String(log ?? "")
+    .split("\n")
+    .map((l) => l.replace(/^\S+Z\s+/, "").trim())
+    .filter((l) => /^(?:\[dry-run\] )?(?:Nichts zu starten:|SIN-\d+ wartet |Abgleich:|Nächstes Issue:)/.test(l))
+    .slice(-6)
+    .join("\n");
+}
+
+async function dispatchReason(repo, runId, { call, text }) {
+  try {
+    const { jobs } = await call(`/repos/${repo}/actions/runs/${runId}/jobs?per_page=20`);
+    const job = jobs.find((j) => j.name === "dispatch") ?? jobs[0];
+    return job ? dispatchReasonLines(await text(`/repos/${repo}/actions/jobs/${job.id}/logs`)) : "";
+  } catch {
+    return "";
+  }
+}
+
 /**
  * Logs für die Selbst-Diagnose (SIN-291): je Workflow (planner, dispatch, worker) der letzte abgeschlossene Lauf;
  * nur wenn er fehlgeschlagen ist (ein späterer Erfolg heilt den Vorfall). Letzte 6000 Zeichen des roten Jobs.
@@ -478,7 +498,9 @@ export async function collectLogs(repo, runs, { call = gh, text = ghText } = {})
     if (!last || last.conclusion !== "failure") {
       // Kein roter Lauf: sonst bliebe der Wächter ohne Log und meldete „Ursache nicht erkennbar“ (SIN-328).
       const what = last ? `Letzter Lauf #${last.id} ${last.conclusion ?? last.status} am ${last.created_at}` : "Kein Lauf gefunden (Zeitplan feuert nicht?)";
-      out.push({ workflow, runId: last?.id, url: last?.html_url, text: `Kein roter Lauf: ${workflow}. ${what}`, at: last?.created_at ?? "" });
+      // SIN-496: Der grüne Dispatcher-Lauf sagt selbst, warum er nichts startete („Nichts zu starten: …“, „… wartet …“).
+      const why = last && workflow === "dispatch" ? await dispatchReason(repo, last.id, { call, text }) : "";
+      out.push({ workflow, runId: last?.id, url: last?.html_url, text: `Kein roter Lauf: ${workflow}. ${what}${why ? `\n${why}` : ""}`, at: last?.created_at ?? "" });
       continue;
     }
     try {
