@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { approvalStillValid, classifyRisk, fetchDependencyInfo, newDependencies } from "../../../scripts/autonomy/risk.mjs";
+import { approvalStillValid, classifyRisk, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
@@ -174,6 +174,18 @@ test("Freigabe bleibt bei Folge-Commits, außer neuer High-Grund", () => {
   const b = risk([file("docs/PRODUCT.md"), file("src/lib/stripe/x.ts")]).reasons;
   assert.equal(approvalStillValid(keys, b), false);
   assert.equal(approvalStillValid(keys, []), true);
+});
+
+test("Freigabe bleibt, wenn nur main in den PR gemergt wird (SIN-511)", () => {
+  const sql = file("supabase/migrations/20260101_a.sql", "+revoke truncate on x from anon;", "added");
+  const keys = risk([sql]).reasons.map((r: { key: string }) => r.key);
+  // Diff Basis…Kopf nach dem Merge aus main: dieselben PR-Dateien, nichts aus main.
+  const after = risk([sql]).reasons;
+  assert.equal(approvalStillValid(keys, after), true);
+  assert.deepEqual(newReasons(keys, after), []);
+  const added = risk([sql, file("docs/PRODUCT.md")]).reasons;
+  assert.equal(approvalStillValid(keys, added), false);
+  assert.equal(newReasons(keys, added)[0].text, "grundsatz: docs/PRODUCT.md");
 });
 
 const issue = (identifier: string, priority: number, over = {}) => ({
