@@ -126,6 +126,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Ein einziger Batch mit über 300 Einheiten machte die Kosten erst nach dem Absenden sichtbar (Deckel nur per Schätzung) → Erzeugung in Teilbatches (≤ 100 Einheiten, `splitTargets`), vor jedem Teil `partGate` mit gemessenen Kosten je Einheit (`measuredPerUnit`) und Richter-Reserve; Stopp steht als `stopReason` im Bericht. (SIN-493)
 - Quote 94,9 % → 86,1 % verglich zwei Zählungen: dieselbe Frage steht in `question_evaluations` als `<id>` und `<unit_id>-<id>`, die View `question_quality_latest` zählt sie doppelt und `ratedQuestions` nahm die letzte Zeile in ID-Reihenfolge statt der neuesten → ID vereinheitlichen, je Frage nach `created_at` die neueste wählen (`npm run quality:quote`), Quoten nur aus derselben Zählung vergleichen. (SIN-507)
 - `freigegeben` fiel nach Merge-Commits aus main weg, ohne dass der Grund sichtbar war → `pr-gate` bewertet nur den Diff Basis…Kopf (`compareCommitsWithBasehead`), `newReasons` nennt neue High-Gründe, beim Entzug folgt ein Kommentar mit Datei und Regel. (SIN-511)
+- Kennzahl `content_fabrik_ueberfaellig_tage` wurde nur bei überfälliger Fabrik gesetzt und stand sonst auf „nicht verfügbar“ → bei gelesener Quelle jede Kennzahl immer mit Zahl füllen (0 = nicht betroffen), „nicht verfügbar“ nur ohne Quelle. (SIN-515)
 
 ## Datenbank-Rechte
 
