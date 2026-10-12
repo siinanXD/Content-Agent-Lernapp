@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-466 | SIN-466: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-466-migrationen-dublette.md](decisions/SIN-466-migrationen-dublette.md) |
 | SIN-465 | SIN-465: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-465-migrationen-dublette.md](decisions/SIN-465-migrationen-dublette.md) |
 | SIN-464 | SIN-464: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-464-migrationen-dublette.md](decisions/SIN-464-migrationen-dublette.md) |
 | SIN-463 | SIN-463: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-463-migrationen-dublette.md](decisions/SIN-463-migrationen-dublette.md) |
