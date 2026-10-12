@@ -12,7 +12,7 @@ import {
   type ExamSet,
   type TrafficLight,
 } from "@/lib/content/didaktik";
-import type { GeneratedQuestion } from "@/lib/generate/maf-lernfeld-seed";
+import { normalizeQuestions } from "@/lib/learner/normalize-question";
 import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
 import { activePathUnits, type PathQuestion } from "@/lib/learner/playable-path";
 import {
@@ -105,28 +105,8 @@ function collectQuestionsForPart(part: CatalogExamPart): PathQuestion[] {
   return seed.units.flatMap((u) =>
     u.questions
       .filter((q) => (q.examAreas ?? []).some((a) => areaIds.has(a)))
-      .map(seedQuestionToPath),
+      .flatMap((q) => normalizeQuestions([q])),
   );
-}
-
-function seedQuestionToPath(q: GeneratedQuestion): PathQuestion {
-  return {
-    id: q.id,
-    type: q.type,
-    level: q.level ?? "verstehen",
-    prompt: q.prompt,
-    choices: q.choices,
-    pairs: q.pairs,
-    steps: q.steps,
-    blanks: q.blanks,
-    correct: q.correct,
-    explanation: q.explanation,
-    sourceUrl: q.sourceUrl,
-    examAreas: q.examAreas ?? [],
-    image: q.image,
-    sampleSolution: q.sampleSolution,
-    sampleChecklist: q.sampleChecklist,
-  };
 }
 
 export function getExamQuestions(partId: string): PathQuestion[] {

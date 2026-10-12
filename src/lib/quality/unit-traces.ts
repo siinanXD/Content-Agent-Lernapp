@@ -21,6 +21,7 @@ import {
   umgebungsName,
   type TraceKontext,
 } from "./langfuse-names";
+import { answerText, normalizeQuestion } from "@/lib/learner/normalize-question";
 import type { QuestionEval } from "./schemas";
 
 export type ScoreFn = (
@@ -52,15 +53,19 @@ export type EinheitTraceInput = {
   score?: ScoreFn;
 };
 
-const text = (v: string | string[]) => (Array.isArray(v) ? v.join(" | ") : v);
+const text = (v: unknown) =>
+  Array.isArray(v) ? v.map((x) => answerText(x) ?? "").join(" | ") : (answerText(v) ?? "");
 
 /** Fragetext inkl. Antwortmöglichkeiten, wie die Lernenden ihn sehen. */
-function frageText(q: GeneratedQuestion): string {
+function frageText(raw: GeneratedQuestion): string {
+  const q = normalizeQuestion(raw);
+  if (!q) return raw.prompt;
   const teile = [q.prompt];
   if (q.choices?.length) teile.push(...q.choices.map((c, i) => `${String.fromCharCode(65 + i)}) ${c}`));
   if (q.pairs?.length) teile.push(...q.pairs.map(([a, b]) => `${a} → ${b}`));
   if (q.steps?.length) teile.push(...q.steps.map((s, i) => `${i + 1}. ${s}`));
-  if (q.blanks?.length) teile.push(`Wortbank: ${q.blanks.join(", ")}`);
+  const bank = q.gaps?.flatMap((g) => g.options) ?? [];
+  if (bank.length) teile.push(`Wortbank: ${bank.join(", ")}`);
   return teile.join("\n");
 }
 

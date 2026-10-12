@@ -10,6 +10,7 @@ import {
   type GeneratedQuestion,
   type QuestionType,
 } from "@/lib/generate/maf-lernfeld-seed";
+import { normalizeQuestions } from "@/lib/learner/normalize-question";
 
 export type PathUnitStatus = "done" | "today" | "open";
 
@@ -21,7 +22,8 @@ export type PathQuestion = {
   choices?: string[];
   pairs?: Array<[string, string]>;
   steps?: string[];
-  blanks?: string[];
+  /** Lücken (SIN-384): `options` als Auswahl, `accepted` als richtige Werte; ohne `options` freie Eingabe. */
+  gaps?: Array<{ id: string; options: string[]; accepted: string[] }>;
   correct: string | string[];
   explanation: string;
   sourceUrl: string;
@@ -30,10 +32,6 @@ export type PathQuestion = {
   sampleSolution?: string;
   sampleChecklist?: string[];
 };
-
-function requireLevel(level: QuestionLevel | undefined): QuestionLevel {
-  return level ?? "verstehen";
-}
 
 export type PathUnit = {
   id: string;
@@ -69,23 +67,7 @@ export type PathModuleGroup = {
 const seed = mafSeedLernfeldSicherheit();
 
 function mapQuestions(questions: GeneratedQuestion[]): PathQuestion[] {
-  return questions.map((q) => ({
-    id: q.id,
-    type: q.type,
-    level: requireLevel(q.level),
-    prompt: q.prompt,
-    choices: q.choices,
-    pairs: q.pairs,
-    steps: q.steps,
-    blanks: q.blanks,
-    correct: q.correct,
-    explanation: q.explanation,
-    sourceUrl: q.sourceUrl,
-    examAreas: q.examAreas ?? [],
-    image: q.image,
-    sampleSolution: q.sampleSolution,
-    sampleChecklist: q.sampleChecklist,
-  }));
+  return normalizeQuestions(questions);
 }
 
 /** Figma-aligned path; questions from Sicherheit seed + didactic fields (AP-18). */
