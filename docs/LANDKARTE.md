@@ -54,7 +54,6 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Leitstand: Ereignisse und Schnappschuss nach Supabase `loop_events`, `loop_snapshot` (SIN-303) | `scripts/autonomy/leitstand.mjs` (`ereignis`, `sendSnapshot`), Migration `20261011010000_sin303_leitstand.sql`, Schritte „Leitstand Start/Ende“ in den Workflows |
 | Agenten-Rollen: Register aller Workflows, Feld `agent` in `loop_events` (SIN-481) | `docs/autonomy/agents.json`, `scripts/autonomy/agents.mjs`, Test `src/lib/autonomy/agents.test.ts` (neuer Workflow muss ins Register) |
 | Video-Agent: Tutorial-Video aus dem Klickweg (SIN-483) | `.github/workflows/video.yml`, Aufnahme `video/aufnahme.spec.ts` + `playwright.video.config.ts`, Schnitt `video/schnitt/` (Revideo, eigenes Paket), Hilfen `scripts/autonomy/video.mjs`, Tabelle `werbemittel` (Migration `20261018010000_sin483_werbemittel.sql`) |
-| Übergabe-Verträge: JSON-Schema je Agenten-Ausgabe, CI-Prüfung (SIN-491) | `docs/autonomy/schemas/*.schema.json` (Beispiele in `beispiele/`), `scripts/autonomy/vertraege.mjs` (`validate`), Test `src/lib/autonomy/vertraege.test.ts`; Berichte tragen das Feld `schema`, neue Agenten-Ausgabe → Schema + Eintrag `ausgabeSchema` im Register |
 | Projekt-Starter, nur Plan (SIN-202) | `scripts/autonomy/starter.mjs` (`plan`, `sql`), Entscheidung `docs/decisions/SIN-202-projekt-starter.md` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
