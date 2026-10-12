@@ -122,11 +122,19 @@ export async function fetchDependencyInfo(names, fetchFn = fetch, githubToken = 
   return out;
 }
 
+/** SIN-516: Secret-Namen (nie Werte) aus Workflow-Texten, z. B. aller Dateien unter .github/workflows/ auf main. */
+export function secretNames(texts) {
+  const names = new Set();
+  for (const t of texts) for (const m of t.matchAll(/\bsecrets\.([A-Za-z0-9_]+)/g)) names.add(m[1]);
+  return [...names];
+}
+
 /**
- * @param {{ files: GateFile[], labels?: string[], isFork?: boolean, secretLeak?: boolean, depInfo?: Record<string, { license: string, stars: number } | null> }} input
+ * @param {{ files: GateFile[], labels?: string[], isFork?: boolean, secretLeak?: boolean, depInfo?: Record<string, { license: string, stars: number } | null>, knownSecrets?: string[] }} input
  * @returns {{ risk: "risk:medium" | "risk:high", reasons: { key: string, category: string, text: string }[] }}
  */
-export function classifyRisk({ files, labels = [], isFork = false, secretLeak = false, depInfo = {} }) {
+export function classifyRisk({ files, labels = [], isFork = false, secretLeak = false, depInfo = {}, knownSecrets = [] }) {
+  const known = new Set(knownSecrets);
   const reasons = [];
   const add = (category, detail) =>
     reasons.push({ key: `${category}:${detail}`, category, text: `${category}: ${detail}` });
@@ -176,7 +184,7 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
         if (/^\s*pull_request_target\s*:/.test(l)) add("sicherheit", `pull_request_target neu in ${f.filename}`);
         for (const m of l.matchAll(/\bsecrets\.([A-Za-z0-9_]+)/g)) {
           const wasUsed = new RegExp(`secrets\\.${m[1]}\\b`).test(beforeText);
-          if (m[1] !== "GITHUB_TOKEN" && !wasUsed) add("workflow-recht", `neues Secret ${m[1]} in ${f.filename}`);
+          if (m[1] !== "GITHUB_TOKEN" && !wasUsed && !known.has(m[1])) add("workflow-recht", `neues Secret ${m[1]} in ${f.filename}`);
         }
         if (/allowed[_-]?(tools|bots)/i.test(l) && tokens(l).some((t) => !beforeTokens.has(t))) {
           add("workflow-recht", `allowedTools/allowed_bots erweitert in ${f.filename}: ${l.trim().slice(0, 80)}`);
