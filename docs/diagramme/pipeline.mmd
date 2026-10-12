@@ -9,7 +9,7 @@ flowchart TD
   Dispatcher --> Worker["Worker (worker.yml, Claude)"]
   Worker --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
   subgraph Prüfung
-    PR --> CI["CI: Berichte gegen Schema, Lint, Typecheck, Tests, Build, axe, Lighthouse, Leistungsbudget"]
+    PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Lighthouse, Leistungsbudget"]
     PR --> CodeQL["CodeQL"]
     PR --> Review["Review-Agent (zweites Modell)"]
     CI --> Gate{"pr-gate: Risiko"}
