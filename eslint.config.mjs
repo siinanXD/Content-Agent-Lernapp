@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Eigenes Paket mit Revideo (SIN-483), nicht Teil der App.
+    "video/schnitt/**",
   ]),
 ]);
 

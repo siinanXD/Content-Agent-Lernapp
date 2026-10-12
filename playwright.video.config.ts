@@ -1,0 +1,23 @@
+import { defineConfig } from "@playwright/test";
+
+// Video-Agent (SIN-483): nimmt den Klickweg gegen die laufende App auf (PLAYWRIGHT_BASE_URL, z. B. Production).
+const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+if (!baseURL) throw new Error("PLAYWRIGHT_BASE_URL fehlt (z. B. https://content-agent-ashen-nu.vercel.app).");
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
+export default defineConfig({
+  testDir: "video",
+  testMatch: "aufnahme.spec.ts",
+  outputDir: "video-ergebnis/dateien",
+  retries: 1,
+  workers: 1,
+  timeout: 120_000,
+  reporter: [["list"]],
+  use: {
+    baseURL,
+    browserName: "chromium",
+    viewport: { width: 1280, height: 720 },
+    video: { mode: "on", size: { width: 1280, height: 720 } },
+    extraHTTPHeaders: bypass ? { "x-vercel-protection-bypass": bypass, "x-vercel-set-bypass-cookie": "true" } : undefined,
+  },
+});

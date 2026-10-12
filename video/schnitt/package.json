@@ -1,0 +1,18 @@
+{
+  "name": "video-schnitt",
+  "private": true,
+  "type": "module",
+  "description": "Revideo-Schnitt für das Tutorial-Video (SIN-483). Eigenes Paket, damit Revideo nicht in den App-Abhängigkeiten landet.",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "@revideo/2d": "^0.10.4",
+    "@revideo/core": "^0.10.4",
+    "@revideo/renderer": "^0.10.4",
+    "@revideo/vite-plugin": "^0.10.4"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
