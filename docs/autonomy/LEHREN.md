@@ -121,6 +121,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Batch lief mit 10 von 10 abgelehnten Anfragen (0 Einheiten) durch und meldete „bestanden“, der API-Fehlertext ging verloren → je gescheiterter Zeile `result.error` mitschreiben (`rowError`, 3 im Log, alle im Bericht); 0 Einheiten oder über 50 % gescheitert = Exit 1 (`failedRunReason`); neue API-Parameter (Structured Outputs) hinter Schalter `STRUCTURED_OUTPUTS`, Standard aus, bis 1 echte Anfrage sie belegt. (SIN-497)
 - Stillstand „Läufe ohne Fehler, aber kein Worker gestartet“ nannte nur den Lauf-Stand, nicht den Grund → bei grünem dispatch-Lauf liest `collectLogs` die Zeilen „Nichts zu starten/wartet/Abgleich“ aus dem Job-Log (`dispatchReasonLines`) und hängt sie an. (SIN-496)
 - Startseite `/` schwankte im Leistungsbudget zwischen 178 und 204 KB JS (Grenze 190), Nachmessung half nicht → Ursache war der Viewport-Prefetch der `Link`-Ziele. Richtig: auf Seiten mit Links zu schweren Seiten `prefetch={false}`, Grenze nie anheben. (SIN-500)
+- Ein einziger Batch mit über 300 Einheiten machte die Kosten erst nach dem Absenden sichtbar (Deckel nur per Schätzung) → Erzeugung in Teilbatches (≤ 100 Einheiten, `splitTargets`), vor jedem Teil `partGate` mit gemessenen Kosten je Einheit (`measuredPerUnit`) und Richter-Reserve; Stopp steht als `stopReason` im Bericht. (SIN-493)
 
 ## Datenbank-Rechte
 
