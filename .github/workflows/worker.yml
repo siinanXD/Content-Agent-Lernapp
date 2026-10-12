@@ -174,7 +174,7 @@ jobs:
 
       - name: Screenshots als Artefakt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: screenshots
           path: screenshots/
@@ -196,7 +196,7 @@ jobs:
         id: protokoll
         if: always() && (steps.claude.outcome == 'failure' || steps.claude.outcome == 'success')
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: laufprotokoll
           path: laufprotokoll/

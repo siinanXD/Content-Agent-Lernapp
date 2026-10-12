@@ -37,7 +37,9 @@ import {
   judgeReserveEur,
   linearSummary,
   MAP_COURSES,
+  mapPlan,
   missingSecrets,
+  resolveCourseId,
   nextOpenItem,
   nextOpenItems,
   nichtVersucht,
@@ -185,12 +187,16 @@ async function main() {
   // Kurse aller unterstützten Maps laden. Fehlt ein Kurs (Migration noch nicht angewendet), fällt
   // nur diese Map aus; fehlt der Metall-Kurs, bricht der Lauf wie bisher ab.
   const unitsByMap = new Map<string, GeneratedUnit[]>();
-  for (const [mapId, mc] of Object.entries(MAP_COURSES)) {
-    const c = await storage.getCourse(mc.courseId);
-    if (!c) {
-      console.error(`::warning::Kurs fehlt für ${mapId}: ${mc.courseId}`);
+  const allCourses = await storage.listCourses();
+  const courseIdByMap = new Map<string, string>();
+  for (const mapId of Object.keys(MAP_COURSES)) {
+    const id = resolveCourseId(mapId, allCourses);
+    const c = id ? await storage.getCourse(id) : undefined;
+    if (!id || !c) {
+      console.error(`::warning::Kurs fehlt für ${mapId}: ${id ?? MAP_COURSES[mapId]!.courseKeyword}`);
       continue;
     }
+    courseIdByMap.set(mapId, id);
     unitsByMap.set(mapId, (c.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? []);
   }
   if (!unitsByMap.has("maf-metall")) {
@@ -223,7 +229,7 @@ async function main() {
   const usable = queueAll.filter((q) => unitsByMap.has(q.mapId));
   const chosen = chooseRunMap(usable, publishedByMap, discardedByMap, lastMapId, resumeModuleId);
   if (chosen) MAP_ID = chosen;
-  COURSE = MAP_COURSES[MAP_ID]!.courseId;
+  COURSE = courseIdByMap.get(MAP_ID) ?? MAP_COURSES[MAP_ID]!.courseId;
   KEYWORD = MAP_COURSES[MAP_ID]!.keyword;
   CURRICULUM = curricula.find((c) => c.id === MAP_ID);
   const priorUnits = unitsByMap.get(MAP_ID) ?? [];
@@ -278,6 +284,7 @@ async function main() {
     stopReason: null,
     safetySampleUnitIds: [],
     batchIds: [],
+    mapPlan: mapPlan(curricula, queueAll, publishedByMap, discardedByMap),
   };
 
   console.log(
@@ -293,6 +300,7 @@ async function main() {
       pendingUnits: planPending.size,
     }),
   );
+  console.table(report.mapPlan);
 
   const finish = async (code = 0) => {
     report.costEur = Math.round(report.costEur * 100) / 100;
