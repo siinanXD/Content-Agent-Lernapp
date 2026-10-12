@@ -1,5 +1,6 @@
 {
-  "hinweis": "Einzige Quelle für Agenten-Rollen (SIN-481). Ein Agent ist eine Rolle, unter der bestehende Workflows gebündelt werden, keine neue KI-Ebene. Workflow = Dateiname in .github/workflows/ ohne .yml. budget: null = kein eigenes Limit festgelegt (nichts erfunden).",
+  "hinweis": "Einzige Quelle für Agenten-Rollen (SIN-481). ausgabeSchema = JSON-Schema der Ausgabe, ereignisSchema = loop_events-Ereignis aller Agenten, vertrag = Vertrag ohne JSON (SIN-491). Ein Agent ist eine Rolle, unter der bestehende Workflows gebündelt werden, keine neue KI-Ebene. Workflow = Dateiname in .github/workflows/ ohne .yml. budget: null = kein eigenes Limit festgelegt (nichts erfunden).",
+  "ereignisSchema": "docs/autonomy/schemas/ereignis.schema.json",
   "agents": [
     {
       "id": "research",
@@ -11,7 +12,8 @@
       "modell": "claude-sonnet-5-5",
       "budget": { "proLauf": null, "proWoche": null },
       "eingabe": "Web, amtliche Quellen, Produktwunsch",
-      "ausgabe": "Berichte in docs/research/, Hinweise im Tages-Update"
+      "ausgabe": "Berichte in docs/research/, Hinweise im Tages-Update",
+      "ausgabeSchema": "docs/autonomy/schemas/research.schema.json"
     },
     {
       "id": "planer",
@@ -22,7 +24,8 @@
       "modell": "claude-sonnet-5-5",
       "budget": { "proLauf": null, "proWoche": "höchstens 5 neue Issues" },
       "eingabe": "PRODUCT.md, Linear-Backlog, Berichte",
-      "ausgabe": "Linear-Issues mit Größe und Blockern"
+      "ausgabe": "Linear-Issues mit Größe und Blockern",
+      "ausgabeSchema": "docs/autonomy/schemas/planer.schema.json"
     },
     {
       "id": "design",
@@ -44,7 +47,8 @@
       "modell": "claude-haiku-5-5 (klein), claude-sonnet-5-5 (mittel, gross)",
       "budget": { "proLauf": "30/80/150 Runden je Größe, 3 Reparatur-Runden", "proWoche": null },
       "eingabe": "Linear-Issue, Repo",
-      "ausgabe": "Pull Request"
+      "ausgabe": "Pull Request",
+      "vertrag": "Kein JSON: PR-Titel-Check, Risiko-Label und Tests (SIN-491)"
     },
     {
       "id": "pruefen",
@@ -77,7 +81,8 @@
       "modell": "claude-sonnet-5-5",
       "budget": { "proLauf": "20 Euro je Kurslauf", "proWoche": null },
       "eingabe": "Curriculum-Maps, amtliche Quellen",
-      "ausgabe": "Lerneinheiten mit Quelle und Abrufdatum"
+      "ausgabe": "Lerneinheiten mit Quelle und Abrufdatum",
+      "ausgabeSchema": "docs/autonomy/schemas/content.schema.json"
     },
     {
       "id": "video",
@@ -89,7 +94,8 @@
       "modell": null,
       "budget": { "proLauf": null, "proWoche": null },
       "eingabe": "Playwright-Läufe, Produkt-Screens",
-      "ausgabe": "Tutorial-Videos"
+      "ausgabe": "Tutorial-Videos",
+      "ausgabeSchema": "docs/autonomy/schemas/video.schema.json"
     },
     {
       "id": "marketing",
@@ -101,7 +107,8 @@
       "modell": null,
       "budget": { "proLauf": null, "proWoche": null },
       "eingabe": "Produktstand, Kanäle",
-      "ausgabe": "Freigegebene Texte"
+      "ausgabe": "Freigegebene Texte",
+      "ausgabeSchema": "docs/autonomy/schemas/marketing.schema.json"
     }
   ]
 }

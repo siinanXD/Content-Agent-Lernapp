@@ -44,7 +44,9 @@ import {
   nextOpenItems,
   nichtVersucht,
   overBudget,
+  partAllowed,
   pendingSlots,
+  splitParts,
   pickSafetySample,
   planEurPerUnit,
   REPAIR_STOP_EUR,
@@ -516,23 +518,54 @@ async function main() {
     if (targets.length === 0) {
       report.stopReason = "Deckel: keine Einheit mehr bezahlbar; Rest im nächsten Lauf";
     } else {
-      assertWithinRunCap(spentTotal() + units * perUnit * COST_MARGIN, RUN_CAP_EUR);
-      const sub = await submitChunkTargets({ keyword: KEYWORD, curriculum, targets, system: cachedSystem() });
-      report.batchIds.push(sub.batchId);
-      console.log("Batch", sub.batchId, "Einheiten", units, "Modell", GENERATOR_MODEL);
-      await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
-      const got = await collectBatchUnits(sub.batchId, curriculum);
-      ledger = addClaudeLedger(ledger, got.ledger);
-      tracer.batchFertig(got.units, got.ledger, "neuesModul");
-      // Nur Einheiten, die zum Modul gehören und noch offen sind.
+      // SIN-493: Teilbatches. Nach jedem Teil die gemessenen Kosten lesen, vor dem nächsten gegen den Deckel prüfen.
+      // Bereits erzeugte Teile laufen auch nach einem Stopp durch Richter und Veröffentlichung.
       const wanted = planPending;
-      generatedUnits.push(...(await schemaGate(got.units.filter((u) => wanted.has(u.id)))));
+      const sentTargets: BatchChunkTarget[] = [];
+      let measuredPerUnit = perUnit;
+      let sentUnits = 0;
+      try {
+        for (const part of splitParts(targets)) {
+          const partUnits = part.reduce((n, t) => n + t.unitCount, 0);
+          const gate = partAllowed({
+            spentEur: spentTotal(),
+            perUnitEur: measuredPerUnit,
+            partUnits,
+            generatedUnits: generatedUnits.length,
+          });
+          if (!gate.ok) {
+            report.stopReason = `Deckel: Teilbatch mit ${partUnits} Einheiten hätte ${gate.expectedEur.toFixed(2)} € ergeben (Deckel ${RUN_CAP_EUR} €); Rest im nächsten Lauf`;
+            break;
+          }
+          const before = spentTotal();
+          const sub = await submitChunkTargets({ keyword: KEYWORD, curriculum, targets: part, system: cachedSystem() });
+          report.batchIds.push(sub.batchId);
+          console.log("Batch", sub.batchId, "Einheiten", partUnits, "Modell", GENERATOR_MODEL);
+          await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
+          const got = await collectBatchUnits(sub.batchId, curriculum);
+          ledger = addClaudeLedger(ledger, got.ledger);
+          tracer.batchFertig(got.units, got.ledger, "neuesModul");
+          // Nur Einheiten, die zum Modul gehören und noch offen sind.
+          generatedUnits.push(...(await schemaGate(got.units.filter((u) => wanted.has(u.id)))));
+          sentTargets.push(...part);
+          sentUnits += partUnits;
+          const measured = (spentTotal() - before) / partUnits;
+          measuredPerUnit = Math.max(measuredPerUnit, measured);
+          console.log(`Teilbatch fertig: ${partUnits} Einheiten, gemessen ${measured.toFixed(4)} €/Einheit, Summe ${spentTotal().toFixed(2)} €`);
+        }
+      } catch (e) {
+        await capStop(e);
+      }
+      if (sentUnits < units) {
+        report.deferred += units - sentUnits;
+        deferredResume = resumeFor(sentTargets);
+      }
       const evals = generatedUnits.length > 0 ? await judge(generatedUnits, "grow") : [];
       const { ok, dropped } = keepPassing(generatedUnits, evals);
       live.push(...ok);
       const gotIds = new Set(generatedUnits.map((u) => u.id));
       // Nie gelieferte Einheiten (Batch-Fehler) zählen als verworfen, damit der Lauf nicht ewig daran hängt.
-      const missingIds = targets.flatMap((t) =>
+      const missingIds = sentTargets.flatMap((t) =>
         Array.from({ length: t.unitCount }, (_, i) => `${t.block.id}-u${t.unitOffset + i + 1}`),
       ).filter((id) => wanted.has(id) && !gotIds.has(id));
       report.generated = generatedUnits.length;
