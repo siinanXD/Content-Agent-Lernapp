@@ -132,9 +132,14 @@ jobs:
             const fs = require("node:fs");
             const path = require("node:path");
             const { owner, repo } = context.repo;
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner, repo, pull_number: context.payload.pull_request.number, per_page: 100,
+            // SIN-511: Diff Basis…Kopf (drei Punkte, ab Merge-Basis). Was ein Merge aus main hereinbringt,
+            // steht dort nicht und löst keinen neuen High-Grund aus.
+            const { data: prNow } = await github.rest.pulls.get({
+              owner, repo, pull_number: context.payload.pull_request.number,
             });
+            const files = await github.paginate(github.rest.repos.compareCommitsWithBasehead, {
+              owner, repo, basehead: `${prNow.base.sha}...${prNow.head.sha}`, per_page: 100,
+            }, (res) => res.data.files);
             const dir = path.join(process.env.RUNNER_TEMP, "pr-diff");
             fs.mkdirSync(dir, { recursive: true });
             files.forEach((f, i) => {
@@ -172,6 +177,7 @@ jobs:
             const fs = require("node:fs");
             const riskModule = await import(`${process.env.GITHUB_WORKSPACE}/scripts/autonomy/risk.mjs`);
             const { classifyRisk, approvalStillValid } = riskModule;
+            const newReasons = typeof riskModule.newReasons === "function" ? riskModule.newReasons : () => [];
             // risk.mjs kommt aus der Basis (main). Neue Exporte sind optional: Die neuen Regeln greifen erst
             // nach dem Merge, vorher fällt das Gate auf den alten Stand zurück statt zu crashen.
             const newDependencies = typeof riskModule.newDependencies === "function" ? riskModule.newDependencies : () => [];
@@ -288,9 +294,14 @@ jobs:
               const hasLabel = APPROVALS.some((l) => labels.includes(l));
               approved = hasLabel && approvalStillValid(approvedKeys, reasons);
               if (hasLabel && !approved) {
+                const fresh = newReasons(approvedKeys, reasons);
                 await removeApprovals();
                 approvedKeys = null;
-                note = note || "Es gibt einen neuen High-Grund seit der Freigabe. Bitte `freigegeben` neu setzen.";
+                // SIN-511: konkreter Grund (Datei + Regel), damit Sinan sieht, warum die Freigabe wegfiel.
+                const why = fresh.length ? fresh.slice(0, 5).map((r) => `\`${r.text}\``).join("; ") : "keine Angabe";
+                note = note || `Neuer High-Grund seit der Freigabe: ${why}. Bitte \`freigegeben\` neu setzen.`;
+                await github.rest.issues.createComment({ owner, repo, issue_number: pr.number,
+                  body: `Freigabe entzogen, weil seit dem Label ein neuer High-Grund dazukam: ${why}.` });
               }
             }
             const allowAutoMerge = !pr.draft && !labels.includes(NO_AUTOMERGE)

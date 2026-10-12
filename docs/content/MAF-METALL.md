@@ -1,6 +1,6 @@
 # Curriculum-Map: Maschinen- und Anlagenführer/in – Schwerpunkt Metall- und Kunststofftechnik (Referenz Industriemechaniker)
 
-Stand: 2026-10-03 · Status: **Entwurf – Freigabe durch Sinan offen** · Familie: `maf` · Map-ID: `maf-metall` · Maschinenlesbar: [`maf-metall.json`](maf-metall.json) · Vorgaben für die Agenten: [README](README.md)
+Stand: 2026-10-03 · Status: **Freigegeben – Sinan, 12.10.2026** · Familie: `maf` · Map-ID: `maf-metall` · Maschinenlesbar: [`maf-metall.json`](maf-metall.json) · Vorgaben für die Agenten: [README](README.md)
 
 > Diese Datei wird aus der JSON erzeugt (`node scripts/content-render-curriculum.mjs`). Änderungen gehören in die JSON.
 

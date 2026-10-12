@@ -230,3 +230,13 @@ export function approvalStillValid(approvedKeys, current) {
   const known = new Set(approvedKeys);
   return current.every((r) => known.has(r.key));
 }
+
+/**
+ * Die High-Gründe, die zur Freigabe noch nicht galten (SIN-511). Leer = Freigabe bleibt.
+ * @param {string[] | null} approvedKeys
+ * @param {{ key: string, text: string }[]} current
+ */
+export function newReasons(approvedKeys, current) {
+  const known = new Set(approvedKeys ?? []);
+  return current.filter((r) => !known.has(r.key));
+}

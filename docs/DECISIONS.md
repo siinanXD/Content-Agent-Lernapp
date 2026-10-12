@@ -13,6 +13,10 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-511 | SIN-511: `freigegeben` bleibt, wenn nur main in den PR gemergt wird | [SIN-511-freigabe-merge-main.md](decisions/SIN-511-freigabe-merge-main.md) |
+| SIN-507 | SIN-507: Bestehensquote Metall, Messfehler durch zwei Frage-ID-Schreibweisen | [SIN-507-bestehensquote.md](decisions/SIN-507-bestehensquote.md) |
+| SIN-506 | SIN-506: Content-Maps und Didaktik freigegeben | [SIN-506-maps-freigegeben.md](decisions/SIN-506-maps-freigegeben.md) |
+| SIN-502 | SIN-502: revert-guard nimmt nur zurück, wenn derselbe Schritt davor grün war | [SIN-502-revert-guard-nur-bei-gruenem-eltern-schritt.md](decisions/SIN-502-revert-guard-nur-bei-gruenem-eltern-schritt.md) |
 | SIN-500 | SIN-500: Leistungsbudget `/` – Prefetch der Startseiten-Links aus | [SIN-500-startseite-prefetch.md](decisions/SIN-500-startseite-prefetch.md) |
 | SIN-498 | SIN-498: Sentry – ungelöster Fehler (7 Tage) | [SIN-498-sentry-ungeloester-fehler.md](decisions/SIN-498-sentry-ungeloester-fehler.md) |
 | SIN-497 | SIN-497: Structured Outputs abschaltbar, Batch-Fehler sichtbar, Lauf rot bei 0 Einheiten | [SIN-497-structured-outputs-schalter.md](decisions/SIN-497-structured-outputs-schalter.md) |
@@ -53,6 +57,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-446 | SIN-446: Migrationen 13/15 sind dieselbe Blockade wie SIN-441 und SIN-443 | [SIN-446-migrationen-weiter-offen.md](decisions/SIN-446-migrationen-weiter-offen.md) |
 | SIN-443 | SIN-443: Migration 20261014010000 wartet auf 20261013010000 | [SIN-443-migration-416-haengt-an-415.md](decisions/SIN-443-migration-416-haengt-an-415.md) |
 | SIN-441 | SIN-441: Migration 20261013010000 bleibt liegen, Sinan entscheidet | [SIN-441-migration-sin415-nicht-additiv.md](decisions/SIN-441-migration-sin415-nicht-additiv.md) |
+| SIN-438 | SIN-438: Tabellenrechte härten (TRUNCATE, TRIGGER, REFERENCES) | [SIN-438-tabellenrechte.md](decisions/SIN-438-tabellenrechte.md) |
 | SIN-437 | SIN-437: Goldset-Vergleich aller Modelle (Claude und OpenAI), zwei Richter | [SIN-437-ab-alle-modelle.md](decisions/SIN-437-ab-alle-modelle.md) |
 | SIN-436 | SIN-436 — Abgleich mit Figma: Willkommen, Einwilligung, Schwerpunkt, Lernpfad | [SIN-436-figma-abgleich-onboarding.md](decisions/SIN-436-figma-abgleich-onboarding.md) |
 | SIN-435 | SIN-435 — CodeQL auf main: Altfunde hoher Schwere beheben | [SIN-435-codeql-altfunde.md](decisions/SIN-435-codeql-altfunde.md) |

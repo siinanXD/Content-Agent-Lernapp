@@ -2,7 +2,10 @@
 # automatisch einen Revert-PR. Der PR läuft normal durch pr-gate (`risk:medium`, Auto-Merge bei grünen Checks).
 # Das ist das Sicherheitsnetz dafür, dass weniger PRs von Hand freigegeben werden.
 #
-# Regeln: nur ein Revert-PR je Commit; kein Revert eines Reverts (sonst Endlosschleife); Merge-Commits und
+# Regeln (SIN-502, scripts/autonomy/revert-guard.mjs): Revert nur, wenn der rote Schritt auf dem Eltern-Commit grün
+# war (sonst Gate-Bruch-Issue); höchstens 1 Revert je Stunde, danach Meldung an Sinan (Label `sinan`); ein roter
+# Revert-Commit stoppt die Kette ebenfalls mit Meldung.
+# Außerdem: nur ein Revert-PR je Commit; kein Revert eines Reverts (sonst Endlosschleife); Merge-Commits und
 # Commits ohne Squash-Form werden nicht angefasst, dort meldet der Lauf nur. Der Hinweis im PR-Text taucht im
 # Tages-Update (SIN-246) auf, weil der PR-Titel mit `revert:` beginnt.
 # Live-Check (SIN-319): Wird `nach-deploy` nach einem Production-Deploy rot (Auslöser deployment_status, nicht der
@@ -38,6 +41,9 @@ jobs:
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_NAME: ${{ github.event.workflow_run.name }}
       SHA: ${{ github.event.workflow_run.head_sha }}
       REASON: ${{ github.event.workflow_run.name == 'nach-deploy' && 'der Live-Check nach dem Production-Deploy rot war' || 'die CI auf main rot wurde' }}
     steps:
@@ -56,10 +62,15 @@ jobs:
           fi
           title=$(git log -1 --format=%s "$SHA")
           parents=$(git log -1 --format=%p "$SHA" | wc -w)
-          case "$title" in
-            revert:*|Revert*) echo "Der rote Commit ist selbst ein Revert, Stopp: $title"; exit 0 ;;
-          esac
           if [ "$parents" -ne 1 ]; then echo "Merge-Commit, kein automatischer Revert."; exit 0; fi
+
+          # SIN-502: Revert nur, wenn derselbe Schritt auf dem Eltern-Commit grün war; höchstens 1 Revert je Stunde.
+          # Sonst Gate-Bruch-Issue bzw. Meldung an Sinan (Logik: scripts/autonomy/revert-guard.mjs).
+          decision=$(node scripts/autonomy/revert-guard.mjs --sha "$SHA" --run "$RUN_ID" --name "$RUN_NAME" --title "$title" | tail -1)
+          echo "$decision"
+          if [ "$(printf '%s' "$decision" | jq -r .aktion)" != "revert" ]; then
+            echo "Kein Revert: $(printf '%s' "$decision" | jq -r .grund)"; exit 0
+          fi
 
           branch="claude/revert-${SHA:0:7}"
           if [ -n "$(gh pr list --head "$branch" --state all --json number --jq '.[0].number')" ]; then
