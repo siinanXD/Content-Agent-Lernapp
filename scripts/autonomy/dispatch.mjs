@@ -21,7 +21,7 @@ import { MAX_NO_PR, needsHumanComment, noPrComment, noPrStreak, splitIssue, summ
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
 import { collectPrStates, waitingIssues } from "./warten.mjs";
-import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, addLabel, buildPrompt, comment, createLinearIssues, fetchComments, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
+import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, addLabel, buildPrompt, comment, createLinearIssues, fetchBacklogIdeas, fetchComments, fetchProjectIssues, fetchRecentIdeaStarts, ideaSlotFree, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -78,7 +78,8 @@ async function syncWithPrs(issues, prs, dry, runningWorkers) {
 
 async function findByIdentifier(identifier) {
   const issues = await fetchProjectIssues();
-  const issue = issues.find((i) => i.identifier === identifier);
+  // Eine Idee wechselt erst beim Start vom Backlog nach In Progress (SIN-528): nur dann nachladen.
+  const issue = issues.find((i) => i.identifier === identifier) ?? (await fetchBacklogIdeas().catch(() => [])).find((i) => i.identifier === identifier);
   if (!issue) throw new Error(`${identifier} nicht im Projekt gefunden (oder schon abgeschlossen)`);
   return issue;
 }
@@ -225,14 +226,20 @@ export async function main(argv) {
   const prStates = fixtureAt >= 0 || !repo || !token || !running ? [] : await collectPrStates(repo, token).catch(() => []);
   const waiting = waitingIssues(issues, prStates, running ?? []);
   for (const [id, w] of waiting) console.log(`${id} wartet (PR #${w.pr}: ${w.reason}), belegt keinen Platz`);
-  const { issues: picked, reason } = pickMany(issues, MAX_PARALLEL, may, new Set(waiting.keys()));
+  // Ideen (SIN-528): Backlog-Ideen sind Kandidaten, aber höchstens eine je Woche und erst nach allen v1-Issues.
+  // Ist der Wochenstand unlesbar, startet keine Idee.
+  const backlogIdeas = fixtureAt >= 0 ? [] : await fetchBacklogIdeas().catch(() => []);
+  const ideaSlot = fixtureAt >= 0 ? true : await fetchRecentIdeaStarts().then((t) => ideaSlotFree(t), () => false);
+  const queue = [...issues, ...backlogIdeas];
+  const order = { ideaSlot };
+  const { issues: picked, reason } = pickMany(queue, MAX_PARALLEL, may, new Set(waiting.keys()), order);
   if (!picked.length) {
     console.log(`Nichts zu starten: ${reason}`);
     output("found", "false");
     return;
   }
   // Kleinkram desselben Bereichs läuft als ein Lauf mit einem PR (SIN-320).
-  const runs = bundle(picked, startOrder(issues, may), laneOf);
+  const runs = bundle(picked, startOrder(queue, may, order), laneOf);
   for (const { lead, rest } of runs) {
     for (const issue of [lead, ...rest]) {
       console.log(`${dry ? "[dry-run] " : ""}Nächstes Issue: ${issue.identifier} (${issue.title}), Spur ${laneOf(issue)}, Größe ${sizeOf(issue)}, Priorität ${issue.priority}${issue === lead ? "" : ` (gebündelt mit ${lead.identifier})`}`);

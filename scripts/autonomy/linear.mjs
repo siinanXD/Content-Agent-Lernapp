@@ -24,8 +24,9 @@ export async function linear(query, variables = {}, { key = process.env.LINEAR_A
 }
 
 const ISSUE_FIELDS = `
-  id identifier title description priority url updatedAt createdAt
+  id identifier title description priority url updatedAt createdAt startedAt
   labels { nodes { name } }
+  projectMilestone { name }
   state { id name type }
   team { id }
   inverseRelations { nodes { type issue { identifier state { type } } } }`;
@@ -40,6 +41,65 @@ export async function fetchProjectIssues(call = linear, project = PROJECT_NAME) 
     { project },
   );
   return data.issues.nodes;
+}
+
+/** Meilensteine je Projekt (SIN-528): v1 ist das Grundgerüst aus der Fertig-Liste, v2 sammelt Ideen. */
+export const MILESTONE_V1 = "v1 Grundgerüst";
+export const MILESTONE_V2 = "v2 Ideen";
+export const LABEL_IDEE = "idee";
+export const LABEL_DRINGEND = "dringend";
+/** Höchstens eine Idee startet je Zeitfenster (Tage). */
+export const IDEA_WINDOW_DAYS = 7;
+
+/** Ideen im Backlog (der Standard-Abruf liest nur Todo und In Progress): Kandidaten für den Wochen-Slot. */
+export async function fetchBacklogIdeas(call = linear, project = PROJECT_NAME) {
+  const data = await call(
+    `query($project: String!, $label: String!) {
+       issues(first: 100, filter: { project: { name: { eq: $project } }, state: { type: { eq: "backlog" } }, labels: { name: { eqIgnoreCase: $label } } }) {
+         nodes { ${ISSUE_FIELDS} }
+       }
+     }`,
+    { project, label: LABEL_IDEE },
+  );
+  return data.issues.nodes;
+}
+
+/** Startzeiten (ISO) der Ideen, die in den letzten `IDEA_WINDOW_DAYS` Tagen begonnen wurden (offen oder erledigt). */
+export async function fetchRecentIdeaStarts(call = linear, { project = PROJECT_NAME, now = new Date() } = {}) {
+  const since = new Date(now.getTime() - IDEA_WINDOW_DAYS * 24 * 3600 * 1000).toISOString();
+  const data = await call(
+    `query($project: String!, $label: String!, $since: DateTimeOrDuration!) {
+       issues(first: 50, filter: { project: { name: { eq: $project } }, labels: { name: { eqIgnoreCase: $label } }, startedAt: { gte: $since } }) {
+         nodes { startedAt }
+       }
+     }`,
+    { project, label: LABEL_IDEE, since },
+  );
+  return data.issues.nodes.map((n) => n.startedAt).filter(Boolean);
+}
+
+/** Frei, wenn in den letzten `IDEA_WINDOW_DAYS` Tagen keine Idee gestartet wurde (SIN-528: 1 Idee pro Woche). */
+export const ideaSlotFree = (startedAts, now = new Date()) =>
+  !startedAts.some((t) => now.getTime() - new Date(t).getTime() < IDEA_WINDOW_DAYS * 24 * 3600 * 1000);
+
+/** Fortschritt je Projekt aus Linear (SIN-528): erledigte und alle v1-Issues, offene Ideen. Abgebrochene zählen nicht. */
+export async function fetchProgress(call = linear, project = PROJECT_NAME) {
+  const data = await call(
+    `query($project: String!) {
+       issues(first: 250, filter: { project: { name: { eq: $project } }, state: { type: { nin: ["canceled"] } } }) {
+         nodes { state { type } labels { nodes { name } } projectMilestone { name } }
+       }
+     }`,
+    { project },
+  );
+  return progressOf(data.issues.nodes);
+}
+
+/** Zählt v1-Fortschritt und offene Ideen. Reine Funktion. */
+export function progressOf(issues) {
+  const v1 = issues.filter((i) => !isIdea(i));
+  const open = (i) => i.state?.type !== "completed" && i.state?.type !== "canceled";
+  return { fertig_v1: v1.filter((i) => i.state?.type === "completed").length, gesamt_v1: v1.length, ideen_offen: issues.filter((i) => isIdea(i) && open(i)).length };
 }
 
 /** In den letzten `days` Tagen erledigte Issues des Projekts (Duplikat-Schutz des Planers, SIN-292). */
@@ -77,7 +137,10 @@ export const LANES = ["frontend", "content", "backend"];
 export const HUMAN_LABELS = ["design", "abnahme", "needs-human", "research", "sinan"];
 
 const labelsOf = (issue) => (issue.labels?.nodes ?? []).map((l) => l.name.toLowerCase());
-export const isHumanIssue = (issue) => labelsOf(issue).some((l) => HUMAN_LABELS.includes(l));
+/** Idee: Label `idee` oder Meilenstein „v2 …“ (SIN-528). Alles andere zählt zum Grundgerüst v1. */
+export const isIdea = (issue) => labelsOf(issue).includes(LABEL_IDEE) || /^v2\b/i.test(issue.projectMilestone?.name ?? "");
+export const isUrgentLabel = (issue) => labelsOf(issue).includes(LABEL_DRINGEND);
+export const isHumanIssue =(issue) => labelsOf(issue).some((l) => HUMAN_LABELS.includes(l));
 /** Spur eines Issues; ohne Spur-Label zählt es als `backend`. */
 export const laneOf = (issue) => LANES.find((l) => labelsOf(issue).includes(l)) ?? "backend";
 
@@ -88,13 +151,13 @@ export const laneOf = (issue) => LANES.find((l) => labelsOf(issue).includes(l)) 
  * Urgent (Priorität 1) kommt vor der Rotation (SIN-327). `waiting`: Kennungen von Issues mit wartendem PR,
  * sie belegen keinen der `MAX_PARALLEL` Plätze.
  */
-export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true, waiting = new Set()) {
+export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true, waiting = new Set(), opts = {}) {
   // Wartende PRs (SIN-327) belegen keinen Platz: nur Issues mit Worker oder PR in Arbeit zählen.
   const started = issues.filter((i) => i.state.type === "started" && !waiting.has(i.identifier));
   const free = Math.max(0, MAX_PARALLEL - started.length);
   const want = Math.min(slots, free);
   if (want === 0) return { issues: [], reason: `${started.length} Issues laufen schon (max. ${MAX_PARALLEL})` };
-  const picked = startOrder(issues, mayTake).slice(0, want);
+  const picked = startOrder(issues, mayTake, opts).slice(0, want);
   return picked.length
     ? { issues: picked, reason: "ok" }
     : { issues: [], reason: "kein freies Todo (Blocker, Design/Mensch, oder Cursor hat noch Vorrang)" };
@@ -104,24 +167,30 @@ export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true, wai
  * Alle startbaren Todo-Issues in der Reihenfolge, in der der Dispatcher sie wählt (Spuren reihum, je Spur
  * Priorität, dann Nummer), unabhängig von freien Slots. Der Loop-Status (SIN-238) zeigt damit die Schlange.
  */
-export function startOrder(issues, mayTake = () => true) {
+export function startOrder(issues, mayTake = () => true, /** @type {{ ideaSlot?: boolean }} */ { ideaSlot = true } = {}) {
   const started = issues.filter((i) => i.state.type === "started");
   const queues = Object.fromEntries(LANES.map((l) => [l, []]));
-  const todo = issues
-    .filter((i) => i.state.name === "Todo" && !isHumanIssue(i) && !hasOpenBlockers(i) && mayTake(i))
+  const startable = issues.filter(
+    (i) => (i.state.name === "Todo" || (i.state.name === "Backlog" && isIdea(i))) && !isHumanIssue(i) && !hasOpenBlockers(i) && mayTake(i),
+  );
+  // SIN-528: `dringend` zuerst (überspringt alles), dann v1; Ideen erst danach, höchstens eine je Woche (`ideaSlot`), älteste zuerst.
+  const dringend = startable.filter(isUrgentLabel).sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b));
+  const ideas = startable.filter((i) => !isUrgentLabel(i) && isIdea(i)).sort((a, b) => numberOf(a) - numberOf(b));
+  const todo = startable
+    .filter((i) => !isUrgentLabel(i) && !isIdea(i))
     .sort((a, b) => rank(a.priority) - rank(b.priority) || numberOf(a) - numberOf(b));
   // Urgent zuerst, älteste Nummer zuerst; die Rotation gilt erst ab Priorität 2 (SIN-327).
   const urgent = todo.filter((i) => i.priority === 1);
   todo.filter((i) => i.priority !== 1).forEach((i) => queues[laneOf(i)].push(i));
   const last = [...started].sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")))[0];
   let lane = last ? (LANES.indexOf(laneOf(last)) + 1) % LANES.length : 0;
-  const ordered = [...urgent];
+  const ordered = [...dringend, ...urgent];
   while (LANES.some((l) => queues[l].length)) {
     const next = queues[LANES[lane]].shift();
     if (next) ordered.push(next);
     lane = (lane + 1) % LANES.length;
   }
-  return ordered;
+  return ideaSlot && ideas.length ? [...ordered, ideas[0]] : ordered;
 }
 
 /** Das nächste einzelne Issue (wie `pickMany` mit einem Slot). @returns {{ issue: any, reason: string }} */
@@ -239,23 +308,51 @@ export async function doneTitlesSince(prefix, now = new Date(), call = linear) {
   return data.issues.nodes.map((n) => n.title);
 }
 
+/** ID eines Meilensteins im Projekt (SIN-528); `null`, wenn es ihn nicht gibt (dann bleibt das Issue ohne Meilenstein). */
+export async function milestoneIdByName(projectId, name, call = linear) {
+  const data = await call(`query($p: String!) { project(id: $p) { projectMilestones { nodes { id name } } } }`, { p: projectId });
+  return data.project?.projectMilestones?.nodes?.find((m) => m.name.toLowerCase() === name.toLowerCase())?.id ?? null;
+}
+
 /**
- * Legt Issues als Todo an (Labels, die es gibt; Priorität; optional `parentId`). Gibt die Kennungen zurück.
- * @param {{ title: string, description: string, priority: number, labels?: string[], parentId?: string }[]} items
+ * Einordnung neuer Issues (SIN-528): Ideen (`idee: true`) bekommen Label `idee`, Meilenstein „v2 Ideen“ und Status Backlog,
+ * alles andere (Lücke der Fertig-Liste) Meilenstein „v1 Grundgerüst“. `dringend` bleibt immer v1 und startet sofort.
+ * @returns {{ labels: string[], state: string, milestone: string }}
+ */
+export function classifyNew(/** @type {{ idee?: boolean, labels?: string[] }} */ { idee = false, labels = [] } = {}) {
+  const dringend = labels.some((l) => l.toLowerCase() === LABEL_DRINGEND);
+  const asIdea = idee && !dringend;
+  return {
+    labels: asIdea && !labels.includes(LABEL_IDEE) ? [...labels, LABEL_IDEE] : labels,
+    state: asIdea ? "Backlog" : "Todo",
+    milestone: asIdea ? MILESTONE_V2 : MILESTONE_V1,
+  };
+}
+
+/**
+ * Legt Issues als Todo an (Labels, die es gibt; Priorität; optional `parentId`; `idee` → Backlog, v2). Gibt die Kennungen zurück.
+ * @param {{ title: string, description: string, priority: number, labels?: string[], parentId?: string, idee?: boolean }[]} items
  */
 export async function createLinearIssues(items, call = linear) {
   if (!items.length) return [];
   const { teamId, projectId } = await linearTeamAndProject(call);
-  const stateId = await stateIdByName(teamId, "Todo", call);
+  const stateIds = {};
+  const milestoneIds = {};
   const created = [];
-  for (const it of items) {
+  for (const raw of items) {
+    const cls = classifyNew(raw);
+    const it = { ...raw, labels: cls.labels };
+    stateIds[cls.state] ??= await stateIdByName(teamId, cls.state, call);
+    milestoneIds[cls.milestone] ??= await milestoneIdByName(projectId, cls.milestone, call);
+    const stateId = stateIds[cls.state];
+    const projectMilestoneId = milestoneIds[cls.milestone];
     const labelIds = [];
     for (const n of it.labels ?? []) {
       const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: teamId, n });
       labelIds.push(...found.issueLabels.nodes.map((l) => l.id));
     }
     const data = await call(`mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { identifier url } } }`, {
-      i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds, ...(it.parentId ? { parentId: it.parentId } : {}) },
+      i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds, ...(projectMilestoneId ? { projectMilestoneId } : {}), ...(it.parentId ? { parentId: it.parentId } : {}) },
     });
     const { identifier, url } = data.issueCreate.issue;
     console.log(`Angelegt: ${identifier} ${url}`);

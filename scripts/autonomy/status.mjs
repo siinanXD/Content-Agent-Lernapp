@@ -29,6 +29,8 @@ import { GATE_LABEL, GATE_PREFIX, collectGateFailures, collectMainChecks, detect
 import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.mjs";
 import {
   MAX_PARALLEL,
+  PROJECT_NAME,
+  fetchProgress,
   linear,
   comment,
   countIssues,
@@ -761,7 +763,9 @@ export async function main(argv, env = process.env) {
   if (!live) return res;
 
   // Leitstand (SIN-303): Schnappschuss je Projekt; ohne Secrets oder bei Fehler nur eine Warnung.
-  const snapRes = await sendSnapshot(buildSnapshot({ quotas: res.quotaRows, queue: res.queue, openPrs: res.openPrList }, env), env);
+  // Fortschritt v1/Ideen (SIN-528) aus Linear; nicht lesbar → Spalten bleiben unberührt.
+  const progress = await fetchProgress(linear, env.LINEAR_PROJEKT || PROJECT_NAME).catch((e) => (console.log(`::warning::Fortschritt nicht lesbar: ${e.message}`), null));
+  const snapRes = await sendSnapshot(buildSnapshot({ quotas: res.quotaRows, queue: res.queue, openPrs: res.openPrList, progress }, env), env);
   if (!snapRes.ok) console.log(`::warning::Leitstand: Schnappschuss nicht gespeichert (${snapRes.grund})`);
 
   // Roter Deploy-Alarm (SIN-332): zusätzlich Telegram, einmal je Vorfall (wie die Erwähnung). Ohne Secrets still.

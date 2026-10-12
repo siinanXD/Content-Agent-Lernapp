@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-528 | SIN-528 — Fertig-Liste steuert den Loop: v1 Grundgerüst zuerst, Ideen nach und nach | [SIN-528-fertig-liste-steuert-loop.md](decisions/SIN-528-fertig-liste-steuert-loop.md) |
 | SIN-523 | SIN-523: Layout-Prüfer (Gate) und KI-Sichtprüfung (Hinweis) | [SIN-523-layout-pruefer.md](decisions/SIN-523-layout-pruefer.md) |
 | SIN-522 | SIN-522: Tutorial-Video im Handy-Format, Text neben der App | [SIN-522-video-handyformat.md](decisions/SIN-522-video-handyformat.md) |
 | SIN-519 | SIN-519 — Gate-Bruch bildvergleich: Revideo-JSX im Build | [SIN-519-bildvergleich-revideo.md](decisions/SIN-519-bildvergleich-revideo.md) |
