@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-470 | SIN-470: Migrationen 13/15 – Dublette von SIN-458 | [SIN-470-migrationen-13-von-15.md](decisions/SIN-470-migrationen-13-von-15.md) |
 | SIN-468 | SIN-468: Migrations-Wächter legt keine Dubletten an | [SIN-468-migrations-dubletten.md](decisions/SIN-468-migrations-dubletten.md) |
 | SIN-467 | SIN-467: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-467-migrationen-dublette.md](decisions/SIN-467-migrationen-dublette.md) |
 | SIN-466 | SIN-466: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-466-migrationen-dublette.md](decisions/SIN-466-migrationen-dublette.md) |
