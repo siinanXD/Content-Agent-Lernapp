@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-519 | SIN-519 — Gate-Bruch bildvergleich: Revideo-JSX im Build | [SIN-519-bildvergleich-revideo.md](decisions/SIN-519-bildvergleich-revideo.md) |
 | SIN-518 | SIN-518 — Video-Agent: Klickweg hängt im ersten Lauf | [SIN-518-video-klickweg.md](decisions/SIN-518-video-klickweg.md) |
 | SIN-516 | SIN-516: Bekannte Secrets in Workflows sind kein High-Grund mehr | [SIN-516-bekannte-secrets.md](decisions/SIN-516-bekannte-secrets.md) |
 | SIN-511 | SIN-511: `freigegeben` bleibt, wenn nur main in den PR gemergt wird | [SIN-511-freigabe-merge-main.md](decisions/SIN-511-freigabe-merge-main.md) |
