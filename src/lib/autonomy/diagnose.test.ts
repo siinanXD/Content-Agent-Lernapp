@@ -7,7 +7,10 @@ import {
   linearQuota,
   linearQuotaIssue,
   newStallIssue,
+  MAX_NO_PR,
+  needsHumanComment,
   noPrComment,
+  noPrStreak,
   pendingDecisions,
   renderLinearQuota,
   splitIssue,
@@ -16,6 +19,7 @@ import {
   summarizeExecution,
   tooBig,
 } from "../../../scripts/autonomy/diagnose.mjs";
+import { isInstantAbort, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { analyze, buildQuotaRows, collectLogs } from "../../../scripts/autonomy/status.mjs";
 import { limitAlerts } from "../../../scripts/autonomy/limits.mjs";
 import { decideRefill } from "../../../scripts/autonomy/refill.mjs";
@@ -325,4 +329,31 @@ test("Reparatur ohne Commit (SIN-418): rote CI, Commit älter als 30 Min → Ans
   assert.equal(stalledRepairs([pr], red, [{ name: "repair", status: "in_progress" }], now).length, 0);
   assert.equal(stalledRepairs([pr], red, [], now, { 227: "abc1234" }).length, 0);
   assert.equal(stalledRepairs([{ ...pr, head: "dependabot/x" }], red, [], now).length, 0);
+});
+
+test("SIN-362: Sofortabbruch ohne Verbrauch zählt als Claude-Limit (Fixture aus der Nacht 07./08.10.)", () => {
+  const raw = readFileSync("docs/autonomy/fixture-claude-sofortabbruch.json", "utf8");
+  const now = new Date("2026-10-08T00:00:00Z");
+  assert.equal(pauseUntilFromLog(raw, now), "2026-10-08T05:00:00.000Z");
+  // Echter Fehler mit Verbrauch oder max-turns bleibt ohne Pause.
+  const real = JSON.stringify([{ type: "result", subtype: "error_during_execution", is_error: true, result: "Build failed", total_cost_usd: 0.4, modelUsage: { "claude-sonnet-5-5": {} } }]);
+  assert.equal(pauseUntilFromLog(real, now), null);
+  assert.equal(isInstantAbort({ is_error: true, subtype: "error_max_turns", total_cost_usd: 0 }), false);
+  assert.equal(isInstantAbort({ is_error: true, result: "x" }), false); // ohne Kosten und Nutzung kein sicheres Zeichen
+  assert.equal(isInstantAbort({ is_error: true, modelUsage: {} }), true);
+});
+
+test("SIN-362: zweiter Lauf in Folge ohne PR → needs-human; Limit-Läufe und frühere PRs zählen nicht", () => {
+  const s = summarizeExecution("");
+  const kein = (t: string, limit = false) => ({ body: noPrComment("SIN-348", s, { limit }), createdAt: t });
+  assert.equal(noPrStreak([]), 0);
+  assert.equal(noPrStreak([kein("2026-10-08T01:00:00Z")]), 1);
+  assert.equal(noPrStreak([kein("2026-10-08T01:00:00Z"), kein("2026-10-08T02:00:00Z")]), 2);
+  assert.equal(noPrStreak([kein("2026-10-08T01:00:00Z", true), kein("2026-10-08T02:00:00Z", true)]), 0);
+  const fertig = { body: "Worker fertig: https://github.com/x/pull/1", createdAt: "2026-10-08T01:30:00Z" };
+  assert.equal(noPrStreak([kein("2026-10-08T01:00:00Z"), fertig, kein("2026-10-08T02:00:00Z")]), 1);
+  assert.equal(MAX_NO_PR, 2);
+  const c = needsHumanComment("SIN-348", { ...s, lastOutput: "darf den Workflow run-task nicht starten" });
+  assert.match(c, /needs-human/);
+  assert.match(c, /run-task nicht starten/);
 });

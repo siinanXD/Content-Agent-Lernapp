@@ -50,7 +50,22 @@ function limitText(raw) {
   const result = entries.filter((e) => e?.type === "result").pop();
   if (!result) return "";
   if (result.subtype === "error_max_turns" || result.is_error === false) return "";
-  return typeof result.result === "string" ? result.result : JSON.stringify(result);
+  const text = typeof result.result === "string" ? result.result : JSON.stringify(result);
+  return isInstantAbort(result) ? `${INSTANT_ABORT_TEXT} ${text}` : text;
+}
+
+/** Marker im Limit-Text, wenn nur das Muster (nicht der Wortlaut) ein leeres Kontingent verrät. */
+export const INSTANT_ABORT_TEXT = "usage limit reached (Sofortabbruch ohne Verbrauch, SIN-362)";
+
+/**
+ * Leeres Kontingent ohne Limit-Text (SIN-362, Nacht 07./08.10.): Das Ergebnis ist ein Fehler, hat aber nichts verbraucht
+ * (`total_cost_usd` 0 oder `modelUsage` leer). Fehlen beide Felder, ist es kein sicheres Zeichen.
+ */
+export function isInstantAbort(result) {
+  if (result?.is_error !== true || result.subtype === "error_max_turns") return false;
+  const noCost = typeof result.total_cost_usd === "number" && result.total_cost_usd === 0;
+  const noUsage = result.modelUsage != null && typeof result.modelUsage === "object" && Object.keys(result.modelUsage).length === 0;
+  return noCost || noUsage;
 }
 
 /**

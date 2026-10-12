@@ -225,3 +225,13 @@ test("Status (SIN-309): hängende Production → Meldung, Bug-Issue ohne Duplika
   const dup = analyze({ ...snap, issues: [...snap.issues, { ...snap.issues[0], title: (bug as { issue: { title: string } }).issue.title }] }, limits, {});
   assert.equal(dup.actions.filter((a: Act) => a.issue?.title.startsWith("Bug: Production-Deploy")).length, 0);
 });
+
+test("SIN-362: Loop-Status zählt gescheiterte Worker und nennt das Claude-Limit", () => {
+  const snap = fixture();
+  snap.runs = [{ ...snap.runs[0], id: 9, conclusion: "failure" }];
+  snap.failures = { 9: "Claude-Lauf für SIN-348 ohne PR beendet (Ergebnis: success). Claude-Limit erkannt, Pause bis 2026-10-08T05:00:00.000Z." };
+  const r = analyze(snap, limits, {});
+  assert.match(r.body, /Fehlgeschlagene Worker \(Actions-Läufe\): 1/);
+  assert.match(r.body, /Claude-Limit erkannt: 1 Läufe, keine Pause gesetzt/);
+  assert.ok(keys(r).includes("claude-limit"));
+});

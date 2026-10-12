@@ -50,6 +50,9 @@ import {
 } from "./readiness.mjs";
 
 export const MAX_PER_LANE = 3;
+/** Aufträge, die nur ein Mensch erledigt (der Dispatcher überspringt `needs-human`), und Bereich der Lauf-Aufträge (SIN-362). */
+const HUMAN_LABEL = "needs-human";
+const RUN_AREA = "lauf";
 export const MAX_DESIGN_PER_WEEK = 1;
 /** Höchstens 3 je Spur (zusammen 9); dazu höchstens 1 Design-Paket. */
 export const MAX_ISSUES_PER_WEEK = MAX_PER_LANE * LANES.length;
@@ -308,6 +311,8 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
       continue;
     }
     const area = size === "klein" && typeof p.area === "string" && /^[a-z0-9-]{2,30}$/i.test(p.area.trim()) ? p.area.trim().toLowerCase() : "";
+    // Lauf-Aufträge brauchen Workflows mit echten Secrets; der Worker darf sie nicht starten (SIN-362): direkt an einen Menschen.
+    const forHuman = p.lane !== "design" && (Boolean(p.runOrder) || area === RUN_AREA);
     const blockedBy = typeof p.blockedBy === "string" ? p.blockedBy.trim() : "";
     if (p.needsDesign) {
       if (p.lane !== "frontend") throw new Error(`Eintrag ${i}: needsDesign nur für frontend`);
@@ -324,7 +329,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
       title: p.title.trim(),
       priority: p.priority,
       labels: [
-        ...(p.lane === "design" ? ["design", "frontend"] : [p.lane, "claude"]),
+        ...(p.lane === "design" ? ["design", "frontend"] : [p.lane, forHuman ? HUMAN_LABEL : "claude"]),
         ...((observing || bugsOnly) && p.lane === "backend" ? ["bug"] : []),
         ...(planning ? [PLAN_LABEL] : []),
         ...(p.runOrder ? [RUN_LABEL] : []),

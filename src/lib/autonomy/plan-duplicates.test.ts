@@ -94,3 +94,13 @@ test("Duplikat-Schutz: ähnlicher Titel trifft, anderes Thema nicht", () => {
   assert.equal(hit?.issue.identifier, "SIN-257");
   assert.equal(findDuplicate({ lane: "frontend", title: "Impressum anlegen", acceptance: ["x"], priority: 2 }, issues, { now }), null);
 });
+
+test("SIN-362: Lauf-Auftrag geht direkt an einen Menschen, nicht an den Worker", () => {
+  const [item] = validatePlan([bauEintrag], [], { readiness, built });
+  assert.ok(item.labels.includes("needs-human"));
+  assert.ok(!item.labels.includes("claude"));
+  const [klein] = validatePlan([{ lane: "backend", title: "Bewertungslauf", acceptance: ["x"], priority: 3, size: "klein", area: "lauf" }]);
+  assert.ok(klein.labels.includes("needs-human") && klein.labels.includes("bereich:lauf"));
+  const [normal] = validatePlan([{ lane: "backend", title: "Etwas", acceptance: ["x"], priority: 3 }]);
+  assert.ok(normal.labels.includes("claude") && !normal.labels.includes("needs-human"));
+});

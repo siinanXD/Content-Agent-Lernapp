@@ -291,6 +291,11 @@ jobs:
           fi
       - name: Lauf ohne PR als fehlgeschlagen markieren
         if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
+        env:
+          LIMIT_UNTIL: ${{ steps.limit.outputs.until }}
         run: |
-          echo "::error::Claude-Lauf für $IDENTIFIER ohne PR beendet (Ergebnis: ${{ steps.claude2.outcome == 'skipped' && steps.claude.outcome || steps.claude2.outcome }})."
+          # Der Loop-Status liest „Claude-Limit erkannt“ aus dieser Zeile (SIN-362).
+          note=""
+          [ -n "$LIMIT_UNTIL" ] && note=" Claude-Limit erkannt, Pause bis $LIMIT_UNTIL."
+          echo "::error::Claude-Lauf für $IDENTIFIER ohne PR beendet (Ergebnis: ${{ steps.claude2.outcome == 'skipped' && steps.claude.outcome || steps.claude2.outcome }}).$note"
           exit 1
