@@ -12,6 +12,8 @@ import {
   changeKey,
   chooseRunMap,
   MAP_COURSES,
+  mapBilanz,
+  resolveCourseIds,
   SUPPORTED_MAP_IDS,
   eurPerUnit,
   linearSummary,
@@ -45,7 +47,8 @@ function map(id: string, family: string, modules: CurriculumModule[]): Curriculu
 }
 
 const metall = map("maf-metall", "maf", [mod("LF3", 3, [2, 3]), mod("M0", 0, [2]), mod("LF1", 1, [2])]);
-const kunststoff = map("maf-kunststoff", "maf", [mod("M0", 0, [2]), mod("LF1", 1, [2])]);
+// Eine Map, die die Fabrik nicht bedient (nicht in SUPPORTED_MAP_IDS).
+const kunststoff = map("maf-unbekannt", "maf", [mod("M0", 0, [2]), mod("LF1", 1, [2])]);
 const queue = buildQueue([kunststoff, metall], ["M0"]);
 
 test("slotIds zählt Einheiten je Block", () => {
@@ -55,7 +58,7 @@ test("slotIds zählt Einheiten je Block", () => {
 test("Queue: Metall zuerst, Shared-Modul vor Schwerpunkt, Shared nur einmal", () => {
   assert.deepEqual(
     queue.map((q) => `${q.mapId}:${q.module.id}`),
-    ["maf-metall:M0", "maf-metall:LF1", "maf-metall:LF3", "maf-kunststoff:LF1"],
+    ["maf-metall:M0", "maf-metall:LF1", "maf-metall:LF3", "maf-unbekannt:LF1"],
   );
   assert.equal(queue[0]!.shared, true);
   assert.equal(queue[3]!.supported, false);
@@ -198,11 +201,63 @@ test("indkfl ist unterstützt und hat einen eigenen Kurs", () => {
   assert.ok(SUPPORTED_MAP_IDS.every((id) => MAP_COURSES[id]));
 });
 
-test("Queue enthält indkfl-Module (Shared gilt nur für MAF), andere MAF-Schwerpunkte bleiben aus", () => {
+test("Queue enthält indkfl-Module (Shared gilt nur für MAF), Schwerpunkte sind unterstützt (SIN-479)", () => {
   const ik = beide.filter((q) => q.mapId === "indkfl");
   assert.deepEqual(ik.map((q) => q.module.id), ["M0", "LF1"]);
   assert.ok(ik.every((q) => q.supported && !q.shared));
-  assert.equal(beide.find((q) => q.mapId === "maf-kunststoff")!.supported, false);
+  assert.equal(beide.find((q) => q.mapId === "maf-unbekannt")!.supported, false);
+  assert.ok(["maf-kunststoff", "maf-textil", "maf-textilveredelung", "maf-lebensmittel", "maf-druckverarbeitung", "maf-packmittel"].every((id) => SUPPORTED_MAP_IDS.includes(id)));
+});
+
+// SIN-479: Gemeinsame Module nur einmal (in Metall), Schwerpunkte erzeugen nur ihre eigenen.
+const kunststoffMitLf = map("maf-kunststoff", "maf", [mod("M0", 0, [1]), mod("LF1", 1, [2])]);
+const textilMitLf = map("maf-textil", "maf", [mod("M0", 0, [1]), mod("TX1", 1, [3])]);
+const alle = buildQueue([textilMitLf, indkfl, kunststoffMitLf, metall], ["M0"]);
+
+test("SIN-479: Reihenfolge Metall, indkfl, dann die Schwerpunkte; geteilte Module nicht erneut", () => {
+  const maps = [...new Set(alle.map((q) => q.mapId))];
+  assert.deepEqual(maps, ["maf-metall", "indkfl", "maf-kunststoff", "maf-textil"]);
+  for (const id of ["maf-kunststoff", "maf-textil"]) {
+    assert.ok(!alle.some((q) => q.mapId === id && q.module.id === "M0"));
+  }
+  assert.equal(alle.filter((q) => q.mapId !== "indkfl" && q.module.id === "M0").length, 1);
+});
+
+test("SIN-479: Schwerpunkte erst, wenn Metall und indkfl nichts mehr offen haben", () => {
+  const ids = (mapId: string) =>
+    new Set(alle.filter((q) => q.mapId === mapId).flatMap((q) => slotIds(q.module)));
+  const prio = new Map([["maf-metall", ids("maf-metall")], ["indkfl", ids("indkfl")]]);
+  assert.equal(chooseRunMap(alle, metallBegonnen, keine, "maf-kunststoff"), "maf-metall");
+  assert.equal(chooseRunMap(alle, prio, keine, null), "maf-kunststoff");
+  assert.equal(chooseRunMap(alle, prio, keine, "maf-kunststoff"), "maf-textil");
+  assert.equal(chooseRunMap(alle, prio, keine, "maf-textil"), "maf-kunststoff");
+});
+
+test("SIN-479: Bilanz je Map nennt Ziel, vorhanden, geteilt und neu ohne die geteilten Module", () => {
+  const pub = new Map([["maf-textil", new Set(["TX1-1-u1"])]]);
+  const b = mapBilanz([metall, kunststoffMitLf, textilMitLf], alle, pub, new Map());
+  const t = b.find((x) => x.mapId === "maf-textil")!;
+  assert.deepEqual(t, { mapId: "maf-textil", ziel: 4, vorhanden: 1, geteilt: 1, neu: 2 });
+  const k = b.find((x) => x.mapId === "maf-kunststoff")!;
+  assert.deepEqual([k.ziel, k.vorhanden, k.geteilt, k.neu], [3, 0, 1, 2]);
+  assert.match(linearSummary({
+      runId: "x", mode: "dry-run", startedAt: "", mapId: null, moduleId: null, nextModuleId: null, resumeModuleId: null,
+      generated: 0, passed: 0, discarded: 0, discardedUnitIds: [], deferred: 0, repair: { ran: false, costEur: 0 },
+      sourceRefresh: { units: 0, replaced: 0, changeKeys: [] }, model: "m", costEur: 0, capEur: 20, stopReason: null,
+      safetySampleUnitIds: [], batchIds: [], maps: b,
+    }), /maf-textil: 4 \/ 1 \/ 1 \/ 2/);
+});
+
+test("SIN-479: Kurse der Schwerpunkte werden über den Namen aufgelöst, Mock-Kurse ignoriert", () => {
+  const name = MAP_COURSES["maf-packmittel"]!.courseKeyword!;
+  const ids = resolveCourseIds([
+    { id: "mock-1", keyword: name, mock: true },
+    { id: "echt-1", keyword: name, mock: false },
+  ]);
+  assert.equal(ids.get("maf-packmittel"), "echt-1");
+  assert.equal(ids.get("maf-metall"), MAP_COURSES["maf-metall"]!.courseId);
+  assert.equal(ids.has("maf-textil"), false);
+  assert.equal(new Set(Object.values(MAP_COURSES).map((m) => m.courseKeyword ?? m.courseId)).size, 8);
 });
 
 // Jedes Metall-Modul hat eine veröffentlichte Einheit: keines ist unberührt, der Vorrang entfällt (SIN-469).
