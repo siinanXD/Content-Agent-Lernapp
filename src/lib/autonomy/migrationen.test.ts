@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { collectMigrations, duplicateVersions, migrationIncident, migrationStatus, readMigrationFiles, sinanTaskForMigrations } from "../../../scripts/autonomy/migrationen.mjs";
+import { collectMigrations, duplicateVersions, migrationBugPlan, migrationIncident, migrationStatus, readMigrationFiles, sinanTaskForMigrations } from "../../../scripts/autonomy/migrationen.mjs";
 import { migrationStand, recordVersionSql } from "../../../scripts/autonomy/run-task.mjs";
 
 test("Migrationen: keine doppelte Versionsnummer im Repo (SIN-374)", () => {
@@ -87,4 +87,59 @@ test("Migrationen: nicht additiv ergibt Sinan-Aufgabe statt Bug-Issue (SIN-451)"
 test("Migrationen: Lauf meldet n/n angewandt oder abweichend (SIN-451)", () => {
   assert.equal(migrationStand(15, 0), "Migrationen: 15/15 angewandt");
   assert.equal(migrationStand(15, 2), "Migrationen: 13/15 abweichend");
+});
+
+test("Migrationen: offenes Issue mit gleicher Liste → Kommentar mit Datum, kein neues Issue (SIN-468)", () => {
+  const files = [
+    { name: "20261003030000_a.sql", sql: "create table if not exists public.courses (id int);" },
+    { name: "20261014010000_b.sql", sql: "alter table public.organisations add column x int;" },
+  ];
+  const m = migrationStatus(files, { tables: new Set(["courses"]), versions: new Set() });
+  const bug = migrationIncident(m).bug!;
+  const offen = { id: "iss-1", title: bug.title, description: bug.description };
+
+  const plan = migrationBugPlan(m, [offen], { now: new Date("2026-10-12T08:07:00Z") });
+  assert.equal(plan.create, null);
+  assert.equal(plan.comment?.issueId, "iss-1");
+  assert.match(plan.comment!.body, /^2026-10-12: /);
+  assert.deepEqual(plan.state, { issueId: "iss-1", day: "2026-10-12" });
+
+  // Gleicher Tag mit gespeichertem Merker: still.
+  const gleicherTag = migrationBugPlan(m, [offen], { now: new Date("2026-10-12T15:00:00Z"), lastComment: plan.state });
+  assert.equal(gleicherTag.comment, null);
+  assert.equal(gleicherTag.create, null);
+
+  // Anderer Tag: wieder ein Kommentar, weiterhin kein Issue.
+  const naechsterTag = migrationBugPlan(m, [offen], { now: new Date("2026-10-13T08:00:00Z"), lastComment: plan.state });
+  assert.match(naechsterTag.comment!.body, /^2026-10-13: /);
+  assert.equal(naechsterTag.create, null);
+});
+
+test("Migrationen: geänderte Liste oder kein offenes Issue → neues Bug-Issue (SIN-468)", () => {
+  const files = [
+    { name: "20261003030000_a.sql", sql: "create table if not exists public.courses (id int);" },
+    { name: "20261014010000_b.sql", sql: "alter table public.organisations add column x int;" },
+    { name: "20261015010000_c.sql", sql: "alter table public.courses add column y int;" },
+  ];
+  const none = { tables: new Set(["courses"]), versions: new Set<string>() };
+  const alt = migrationStatus(files.slice(0, 2), none);
+  const altBug = migrationIncident(alt).bug!;
+  const offen = [{ id: "iss-1", title: altBug.title, description: altBug.description }];
+
+  // Gleiche Anzahl, andere Datei: kein Kommentar am alten Issue, sondern ein neues.
+  const andere = migrationStatus([files[0], files[2]], none);
+  const planAnders = migrationBugPlan(andere, offen);
+  assert.equal(planAnders.comment, null);
+  assert.match(planAnders.create!.title, /\(1\/2\)/);
+
+  // Zusätzlich fehlende Datei: neues Issue.
+  const mehr = migrationStatus(files, none);
+  assert.equal(migrationBugPlan(mehr, offen).comment, null);
+  assert.ok(migrationBugPlan(mehr, offen).create);
+
+  // Kein offenes Issue: neues Issue.
+  assert.ok(migrationBugPlan(alt, []).create);
+  // Alles angewendet: weder Issue noch Kommentar.
+  const ok = migrationStatus(files.slice(0, 1), none);
+  assert.deepEqual(migrationBugPlan(ok, offen), { create: null, comment: null, state: null });
 });
