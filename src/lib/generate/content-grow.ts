@@ -123,13 +123,16 @@ export function runAllowed(
   history: ReadonlyArray<Pick<RunReport, "mode" | "startedAt" | "costEur" | "generated">>,
   now: Date = new Date(),
 ): { ok: true } | { ok: false; reason: string } {
-  const live = history.filter((r) => r.mode === "live" && (r.costEur > 0 || r.generated > 0));
+  const live = history
+    .filter((r) => r.mode === "live" && (r.costEur > 0 || r.generated > 0))
+    .map((r) => ({ ...r, at: Date.parse(r.startedAt) }))
+    .filter((r) => Number.isFinite(r.at));
   const today = now.toISOString().slice(0, 10);
-  if (live.filter((r) => r.startedAt.startsWith(today)).length >= MAX_RUNS_PER_DAY) {
+  if (live.filter((r) => new Date(r.at).toISOString().slice(0, 10) === today).length >= MAX_RUNS_PER_DAY) {
     return { ok: false, reason: `heute (${today}) schon gelaufen: höchstens ${MAX_RUNS_PER_DAY} Lauf je Tag` };
   }
   const since = now.getTime() - 7 * 86_400_000;
-  const week = live.filter((r) => Date.parse(r.startedAt) > since).reduce((s, r) => s + r.costEur, 0);
+  const week = live.filter((r) => r.at > since).reduce((s, r) => s + r.costEur, 0);
   if (week >= WEEK_CAP_EUR) {
     return { ok: false, reason: `Wochendeckel erreicht: ${week.toFixed(2)} € von ${WEEK_CAP_EUR} € in 7 Tagen` };
   }
