@@ -128,7 +128,7 @@ test("SIN-378: Fabrik nach 8 Tagen überfällig, mit Datum des letzten Laufs", (
   assert.match(s.detail, /^überfällig seit 4 Tagen \(letzter Lauf am 2026-09-25/);
   const ok = deriveFabrikStatus([run(2, true)], NOW);
   assert.match(ok.detail, /^letzter Lauf am 2026-10-05 \(vor 2 Tagen\)/);
-  assert.equal(ok.overdueDays, undefined);
+  assert.equal(ok.overdueDays, 0);
   assert.equal(deriveFabrikStatus([run(8, true)], NOW).status, "läuft");
 });
 
@@ -196,6 +196,48 @@ test("SIN-450: pausierter Lauf zählt nicht für hängt; Planer legt kein Conten
 
 test("SIN-450: nächster Lauf nach Aufhebung des Limits startet ohne Handarbeit", () => {
   assert.equal(deriveFabrikStatus([run(1, true), paused(8)], NOW).status, "läuft");
+});
+
+// SIN-515: Kennzahl `content_fabrik_ueberfaellig_tage` darf bei vorhandenem Statusprotokoll nie „nicht verfügbar“ bleiben.
+const supabaseWith = (rows: unknown, status = 200) => {
+  const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
+  const fetchImpl = async () => ({ ok: status < 400, status, json: async () => rows, headers: new Headers() });
+  return collectFabrikMetrics(env as never, { fetchImpl: fetchImpl as never, delays: [] } as never);
+};
+const agoIso = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
+const fresh = (d: number, extra: object = {}) => ({ created_at: agoIso(d), new_module: true, queue_open: true, stop_reason: null, ...extra });
+
+test("SIN-515: laufende Fabrik liefert 0 Tage statt „nicht verfügbar“", async () => {
+  const m = await supabaseWith([fresh(2)]);
+  assert.equal(m.content_fabrik_status, "läuft");
+  assert.equal(m.content_fabrik_ueberfaellig_tage, 0);
+});
+
+test("SIN-515: überfällige Fabrik liefert die Tage über der Frist", async () => {
+  const m = await supabaseWith([fresh(12)]);
+  assert.equal(m.content_fabrik_status, "steht");
+  assert.equal(m.content_fabrik_ueberfaellig_tage, 4);
+});
+
+test("SIN-515: pausierte Fabrik liefert 0 Tage und Status „pausiert“", async () => {
+  const m = await supabaseWith([fresh(2, { stop_reason: "pausiert: API-Limit am 2026-10-05 (frei ab 2026-11-01)" }), fresh(9)]);
+  assert.equal(m.content_fabrik_status, "pausiert");
+  assert.equal(m.content_fabrik_ueberfaellig_tage, 0);
+});
+
+test("SIN-515: hängende Fabrik liefert 0 Tage (kein Überfall, Frist gilt noch)", async () => {
+  const m = await supabaseWith([fresh(2, { new_module: false }), fresh(9, { new_module: false })]);
+  assert.equal(m.content_fabrik_status, "hängt");
+  assert.equal(m.content_fabrik_ueberfaellig_tage, 0);
+});
+
+test("SIN-515: Quelle nicht lesbar oder leeres Protokoll bleibt „nicht verfügbar“", async () => {
+  const denied = await supabaseWith({}, 401);
+  assert.equal(denied.content_fabrik_status, "nicht verfügbar");
+  assert.equal(denied.content_fabrik_ueberfaellig_tage, "nicht verfügbar");
+  const empty = await supabaseWith([]);
+  assert.equal(empty.content_fabrik_status, "steht");
+  assert.equal(empty.content_fabrik_ueberfaellig_tage, "nicht verfügbar");
 });
 
 test("SIN-450: Abbruch mit Pausegrund behält den Grund ohne Abbruch-Präfix", () => {

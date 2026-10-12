@@ -4,7 +4,8 @@
  * - läuft wöchentlich: jüngster Lauf höchstens 8 Tage alt
  * - hängt: die letzten 2 Läufe brachten kein neues Modul, obwohl die Queue nicht leer war
  * - pausiert: der jüngste Lauf endete wegen Anthropic-Limit (SIN-450), kein Issue; der nächste Lauf startet normal
- * Ohne Supabase-Zugang oder ohne Tabelle: „nicht verfügbar“.
+ * `content_fabrik_ueberfaellig_tage` ist eine Zahl, sobald ein Statusprotokoll gelesen wurde (SIN-515):
+ * 0 wenn nicht überfällig oder pausiert, sonst die Tage über der Frist. Ohne Lauf oder ohne Zugang: „nicht verfügbar“.
  */
 import { fetchJson } from "./http.mjs";
 import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error.mjs";
@@ -31,18 +32,19 @@ export function deriveFabrikStatus(rows, now = Date.now()) {
     return { status: "steht", detail: `überfällig seit ${overdueDays} Tagen (letzter Lauf am ${lastDate}, erwartet: wöchentlich)`, overdueDays };
   }
   // SIN-450: Gesperrte API ist keine Störung der Fabrik. Der jüngste Lauf entscheidet; ein späterer Lauf hebt es auf.
-  if (isPaused(rows[0])) return { status: "pausiert", detail: `${rows[0].stop_reason} (Lauf am ${lastDate})` };
+  if (isPaused(rows[0])) return { status: "pausiert", detail: `${rows[0].stop_reason} (Lauf am ${lastDate})`, overdueDays: 0 };
   const last = rows.slice(0, STUCK_AFTER_RUNS);
   if (last.length === STUCK_AFTER_RUNS && last.every((r) => !r.new_module && r.queue_open && !isPaused(r))) {
-    return { status: "hängt", detail: `${STUCK_AFTER_RUNS} Läufe ohne neues Modul` };
+    return { status: "hängt", detail: `${STUCK_AFTER_RUNS} Läufe ohne neues Modul`, overdueDays: 0 };
   }
-  return { status: "läuft", detail: `letzter Lauf am ${lastDate} (vor ${ageDays} Tagen)` };
+  return { status: "läuft", detail: `letzter Lauf am ${lastDate} (vor ${ageDays} Tagen)`, overdueDays: 0 };
 }
 
 function apply(out, { status, detail, overdueDays }) {
   out.content_fabrik = detail;
   out.content_fabrik_status = status;
-  if (overdueDays !== undefined) out.content_fabrik_ueberfaellig_tage = overdueDays;
+  // SIN-515: vorher nur bei überfälliger Fabrik gesetzt, sonst blieb „nicht verfügbar“ stehen.
+  out.content_fabrik_ueberfaellig_tage = overdueDays ?? NA;
 }
 
 /** Kennzahlen `content_fabrik` (Text), `content_fabrik_status` (Code) und `content_fabrik_ueberfaellig_tage` (SIN-378). */
