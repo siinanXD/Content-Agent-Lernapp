@@ -1,6 +1,6 @@
 # Didaktik-Vorgabe: Lernen, Üben, Prüfen (AP-18)
 
-Stand 2026-10-03 · Status: **Entwurf, Freigabe durch Sinan offen** · Linear [SIN-196](https://linear.app/sinan-kahraman/issue/SIN-196) · Entscheidung D-31 in `docs/DECISIONS.md` · gilt für alle Maps in `docs/content/*.json`.
+Stand 2026-10-03 · Status: **Freigegeben – Sinan, 12.10.2026** · Linear [SIN-196](https://linear.app/sinan-kahraman/issue/SIN-196) · Entscheidung D-31 in `docs/DECISIONS.md` · gilt für alle Maps in `docs/content/*.json`.
 
 Diese Vorgabe legt fest, wie eine Lerneinheit aufgebaut ist, wie Wissen abgefragt wird, wie Wiederholung funktioniert, wie die Prüfungsvorbereitung aussieht und wo Bilder eingesetzt werden. Sie ist die Schablone für den Inhalts-Agenten (AP-14, AP-15) und die Vorlage für die Screens (Figma, AP-07/AP-08). Ohne diese Schablone würden die 280 Einheiten der Phase A nach einer Form erzeugt, die danach geändert wird, und müssten neu erzeugt werden.
 
