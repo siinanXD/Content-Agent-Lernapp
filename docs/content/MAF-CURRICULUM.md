@@ -1,6 +1,6 @@
 # Curriculum-Map: Maschinen- und Anlagenführer/in (Schwerpunkt Metall- und Kunststofftechnik)
 
-Stand: 2026-10-03 · Status: **Entwurf, Freigabe durch Sinan offen** · Linear: [SIN-191 (AP-13)](https://linear.app/sinan-kahraman/issue/SIN-191) · Maschinenlesbar: [`maf-curriculum.json`](maf-curriculum.json)
+Stand: 2026-10-03 · Status: **Freigegeben – Sinan, 12.10.2026** · Linear: [SIN-191 (AP-13)](https://linear.app/sinan-kahraman/issue/SIN-191) · Maschinenlesbar: [`maf-curriculum.json`](maf-curriculum.json)
 
 Diese Map ist die Vorgabe, nach der Plan-Agent und Inhalts-Agent den kompletten Kurs für den Pilotberuf erzeugen. Sie legt fest, **was** in welcher Reihenfolge und in welchem Umfang entsteht. Die Fragen selbst entstehen erst in den Folge-Issues (AP-14, AP-15).
 
