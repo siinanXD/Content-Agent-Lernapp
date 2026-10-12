@@ -88,7 +88,7 @@ const unit = {
     sourceFetchedAt: str,
     questions: { type: "array", items: question, minItems: 1 },
   },
-  required: ["id", "title", "minutes", "sections", "explanation", "sourceUrl", "questions"],
+  required: ["id", "title", "minutes", "sections", "explanation", "sourceUrl", "sourceFetchedAt", "questions"],
   additionalProperties: false,
 } as const;
 
