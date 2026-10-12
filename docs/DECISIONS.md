@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-458 | SIN-458: Migrationen 13/15 – SIN-415 wartet auf Sinan, SIN-416 hängt daran | [SIN-458-migrationen-415-416.md](decisions/SIN-458-migrationen-415-416.md) |
 | SIN-457 | SIN-457: Migrationen 415/416 fehlen in Supabase | [SIN-457-migrationen-415-416.md](decisions/SIN-457-migrationen-415-416.md) |
 | SIN-456 | SIN-456: Richter prüft Fakten gegen den Quelltext | [SIN-456-richter-quellenauszug.md](decisions/SIN-456-richter-quellenauszug.md) |
 | SIN-455 | SIN-455: Leistungsbudget sichtbar machen, Ausreißer einmal nachmessen | [SIN-455-leistungsbudget-nachmessen.md](decisions/SIN-455-leistungsbudget-nachmessen.md) |
