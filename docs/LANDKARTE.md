@@ -29,6 +29,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Erzeugen, Prüfen, Richter | `src/lib/generate/`, `src/lib/quality/`, `src/lib/anthropic/` |
 | Langfuse: Namen, Session, Scores, Queue, Dashboard (SIN-299) | `src/lib/quality/langfuse-names.ts`, `langfuse-verwaltung.ts`, `scripts/langfuse-setup.ts`, `docs/ops/langfuse-dashboard.md` |
 | Langfuse: ein Trace je Einheit mit Fragen und Bewertung (SIN-383) | `src/lib/quality/unit-traces.ts`, `grow-traces.ts`, Test `grow-traces.test.ts` |
+| Structured Outputs: API-Schema für Batch-Anfragen (SIN-489) | `src/lib/generate/api-schema.ts` (`UNITS_API_SCHEMA`, `REPAIR_API_SCHEMA`), Test `api-schema.test.ts` |
 | Hermes (Quellen-Monitor) | `src/lib/hermes/`, `docs/ops/HERMES.md` |
 | Skripte (Kurslauf, Goldset, Pilot) | `scripts/*.ts`, `scripts/*.mjs` |
 | API-Vertrag | `docs/api/openapi.yaml`, `docs/api/postman-collection.json` |
