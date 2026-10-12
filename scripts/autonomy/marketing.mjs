@@ -161,7 +161,13 @@ function rest(env) {
 /** Liest den veröffentlichten Kurs mit Einheiten, Quellen, Fragen. Nur Status `published`. */
 export async function ladeFakten(env, keyword) {
   const q = rest(env);
-  const kurse = await q(`courses?status=eq.published&keyword=ilike.*${encodeURIComponent(keyword)}*&order=updated_at.desc&limit=1&select=id,keyword,status,lernfeld`);
+  const kw = encodeURIComponent(keyword);
+  const sel = "select=id,keyword,status,lernfeld";
+  let kurse = await q(`courses?status=eq.published&keyword=eq.${kw}&order=updated_at.desc&limit=1&${sel}`);
+  if (!kurse.length) {
+    kurse = await q(`courses?status=eq.published&keyword=ilike.*${kw}*&order=updated_at.desc&limit=2&${sel}`);
+    if (kurse.length > 1) throw new Error(`Stichwort „${keyword}“ ist mehrdeutig, bitte den genauen Kursnamen angeben.`);
+  }
   if (!kurse.length) throw new Error(`Kein veröffentlichter Kurs zu „${keyword}“.`);
   const id = kurse[0].id;
   const [units, sources, fragen] = await Promise.all([
