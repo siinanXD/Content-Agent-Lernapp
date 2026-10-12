@@ -43,6 +43,7 @@ import {
   pickSafetySample,
   reportFileName,
   RUN_CAP_EUR,
+  runAllowed,
   toEvalItems,
   trimTargets,
   unitCostHistory,
@@ -191,6 +192,14 @@ async function main() {
   const publishedByMap = new Map([...unitsByMap].map(([m, us]) => [m, new Set(us.map((u) => u.id))]));
 
   const history = loadHistory();
+  // SIN-469: mehrere Läufe pro Woche, aber höchstens einer je Tag und unter dem Wochendeckel (nur echte Läufe).
+  if (!dry) {
+    const allowed = runAllowed(history);
+    if (!allowed.ok) {
+      console.log(`Fabrik übersprungen: ${allowed.reason}`);
+      process.exit(0);
+    }
+  }
   // Einheiten-IDs wiederholen sich zwischen den Maps (M0-1-u1): Verworfene gehören zur Map ihres Laufs.
   const discardedByMap = new Map<string, Set<string>>();
   for (const r of history) {
