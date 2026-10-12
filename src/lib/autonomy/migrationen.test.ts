@@ -78,7 +78,13 @@ test("Migrationen: nicht additiv ergibt Sinan-Aufgabe statt Bug-Issue (SIN-451)"
   const gemischt = migrationStatus(files, none);
   assert.deepEqual(gemischt.additiveMissing, ["20261014010000_sin416_orgs.sql"]);
   assert.deepEqual(gemischt.blockedMissing, ["20261013010000_sin415_gruppen.sql"]);
-  assert.ok(migrationIncident(gemischt).bug);
+  // SIN-472: SIN-416 folgt auf die nicht additive SIN-415, daher kein Bug-Issue, nur die Sinan-Aufgabe.
+  assert.deepEqual(gemischt.waitingMissing, ["20261014010000_sin416_orgs.sql"]);
+  assert.equal(migrationIncident(gemischt).bug, null);
+  assert.ok(sinanTaskForMigrations(gemischt));
+  // Eine ältere additive Datei, die selbst fehlt, bleibt ein Bug.
+  const alt = [{ name: "20261001010000_x.sql", sql: "alter table public.a add column y int;" }, ...files];
+  assert.ok(migrationIncident(migrationStatus(alt, none)).bug);
 
   const ok = migrationStatus(files, { tables: new Set<string>(), versions: new Set(["20261013010000", "20261014010000"]) });
   assert.equal(sinanTaskForMigrations(ok), null);

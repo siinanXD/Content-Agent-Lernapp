@@ -36,6 +36,8 @@ export function migrationStatus(files, { tables, versions }) {
     missing: pending.map((p) => p.name),
     additiveMissing: pending.filter((p) => p.additiv).map((p) => p.name),
     blockedMissing: pending.filter((p) => !p.additiv).map((p) => p.name),
+    // Additiv, aber nach einer nicht additiven Datei: wartet auf Sinan, kein Fehler von migrate.yml (SIN-472).
+    waitingMissing: pending.filter((p) => p.additiv && pending.some((b) => !b.additiv && b.name < p.name)).map((p) => p.name),
     ok: pending.length === 0,
     line: pending.length
       ? `Migrationen: ${applied}/${total} angewendet, fehlen: ${pending.map((p) => p.name.replace(/\.sql$/, "")).join(", ")}`
@@ -101,11 +103,11 @@ export const fehlendZeile = (missing) => `Fehlend: ${missing.join(", ")}`;
 export function migrationIncident(m) {
   if (!m || m.ok) return { incident: null, bug: null };
   const names = m.missing.join(", ");
-  const nurSinan = !m.additiveMissing.length;
+  const nurSinan = !m.additiveMissing.some((n) => !m.waitingMissing?.includes(n));
   return {
     incident: {
       key: `migrationen:${m.missing.join("|")}`,
-      text: `Migrationen: ${m.applied}/${m.total} angewendet, es fehlen ${names}. ${nurSinan ? "Nicht additiv: Aufgabe für Sinan angelegt." : "Bug-Issue angelegt, Workflow migrate.yml prüfen."}`,
+      text: `Migrationen: ${m.applied}/${m.total} angewendet, es fehlen ${names}. ${nurSinan ? "Nicht additiv (oder davon abhängig): Aufgabe für Sinan angelegt." : "Bug-Issue angelegt, Workflow migrate.yml prüfen."}`,
     },
     bug: nurSinan ? null : {
       lane: "backend",
