@@ -15,6 +15,7 @@ import { join } from "node:path";
 import {
   chunkPrompt,
   collectBatchUnits,
+  failedRunReason,
   collectRepairQuestions,
   pollBatchUntilDone,
   submitChunkTargets,
@@ -179,6 +180,16 @@ async function main() {
   }
   if (totalUsd > BUDGET_USD) throw new Error(`Budget nach Generierung überschritten: $${totalUsd}`);
 
+  // SIN-497: 0 Einheiten oder über 50 % gescheiterte Teilaufträge = Lauf rot, nie „bestanden“. Alle Fehlertexte in den Bericht.
+  const broken = results.flatMap((r) => {
+    const reason = failedRunReason(r.got.units.length, r.got.failedCustomIds.length, targets.length);
+    return reason ? [{ model: r.model, batchId: r.batchId, reason, errors: r.got.errors }] : [];
+  });
+  if (broken.length > 0) {
+    writeFileSync(join(OUT_DIR, `${runId}-ab-failed.json`), JSON.stringify({ runId, broken }, null, 2));
+    throw new Error(`Lauf rot: ${broken.map((b) => `${b.model}: ${b.reason}`).join("; ")}`);
+  }
+
   const key = process.env.OPENAI_API_KEY!.trim();
   const report = [];
   for (const r of results) {
@@ -261,6 +272,7 @@ async function main() {
       batchId: r.batchId,
       units: r.got.units.length,
       failedChunks: r.got.failedCustomIds,
+      failedChunkErrors: r.got.errors,
       unitsPassing: passingUnits,
       unitPassRate: Number(rate.rate.toFixed(3)),
       questions: judged.questions.length,
