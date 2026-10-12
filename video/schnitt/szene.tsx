@@ -2,7 +2,7 @@
 import { Img, Rect, Txt, Video, makeScene2D } from "@revideo/2d";
 import { all, createRef, useScene, waitFor } from "@revideo/core";
 
-// Titel (3 s) → Aufnahme mit Texteinblendung je Schritt → Abspann mit Logo und KI-Hinweis (3 s).
+// Titel (3 s) → Handy-Aufnahme im Rahmen, Schritt-Text daneben (nie über der App, SIN-522) → Abspann mit Logo und KI-Hinweis (3 s).
 // Farben und Texte kommen als Variablen aus den Design-Tokens (render.mjs), nichts ist hier fest.
 const INTRO = 3;
 const OUTRO = 3;
@@ -38,15 +38,19 @@ export default makeScene2D("szene", function* (view) {
   titel().remove();
 
   // Aufnahme
+  const HOEHE = 1000;
+  const BREITE = Math.round((HOEHE * 390) / 844);
   const clip = createRef<Video>();
-  const band = createRef<Rect>();
+  const rahmen = createRef<Rect>();
+  const spalte = createRef<Rect>();
   const zeile = createRef<Txt>();
   const kopf = createRef<Txt>();
-  yield view.add(<Video ref={clip} src="/aufnahme.mp4" size={[1280, 720]} play />);
+  view.add(<Rect ref={rahmen} x={-560} width={BREITE + 24} height={HOEHE + 24} radius={36} stroke={f.akzent} lineWidth={6} fill={f.hero} />);
+  yield view.add(<Video ref={clip} src="/aufnahme.mp4" size={[BREITE, HOEHE]} x={-560} radius={24} clip play />);
   view.add(
-    <Rect ref={band} width={1280} height={120} y={300} fill={f.hero} opacity={0.92} layout direction="column" justifyContent="center" alignItems="center" gap={4}>
-      <Txt ref={kopf} text="" fontFamily={schrift} fontSize={22} fill={f.akzent} />
-      <Txt ref={zeile} text="" fontFamily={schrift} fontSize={36} fill={f.textAufDunkel} />
+    <Rect ref={spalte} x={330} width={900} layout direction="column" alignItems="start" gap={24}>
+      <Txt ref={kopf} text="" fontFamily={schrift} fontSize={32} fill={f.akzent} />
+      <Txt ref={zeile} text="" fontFamily={schrift} fontSize={60} fill={f.textAufDunkel} width={900} textWrap />
     </Rect>,
   );
   yield* all(
@@ -63,7 +67,8 @@ export default makeScene2D("szene", function* (view) {
     })(),
   );
   clip().remove();
-  band().remove();
+  rahmen().remove();
+  spalte().remove();
 
   // Abspann: Logo und Hinweis
   const logo = createRef<Img>();

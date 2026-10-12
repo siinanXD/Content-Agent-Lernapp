@@ -19,8 +19,10 @@ export default defineConfig({
     browserName: "chromium",
     actionTimeout: 20_000, // ein hängender Klick scheitert mit Namen, nicht erst nach dem Test-Timeout (SIN-518)
     trace: "retain-on-failure",
-    viewport: { width: 1280, height: 720 },
-    video: { mode: "on", size: { width: 1280, height: 720 } },
+    // Handy-Format wie im Bildvergleich (SIN-300); Video in doppelter Auflösung (SIN-522).
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    video: { mode: "on", size: { width: 780, height: 1688 } },
     extraHTTPHeaders: bypass ? { "x-vercel-protection-bypass": bypass, "x-vercel-set-bypass-cookie": "true" } : undefined,
   },
 });

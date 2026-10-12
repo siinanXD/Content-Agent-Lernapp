@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-522 | SIN-522: Tutorial-Video im Handy-Format, Text neben der App | [SIN-522-video-handyformat.md](decisions/SIN-522-video-handyformat.md) |
 | SIN-520 | SIN-520 — Werbeclip: Higgsfield-API-Aufruf, Status, Download, Einblendung „KI“ | [SIN-520-werbeclip-api-aufruf.md](decisions/SIN-520-werbeclip-api-aufruf.md) |
 | SIN-519 | SIN-519 — Gate-Bruch bildvergleich: Revideo-JSX im Build | [SIN-519-bildvergleich-revideo.md](decisions/SIN-519-bildvergleich-revideo.md) |
 | SIN-518 | SIN-518 — Video-Agent: Klickweg hängt im ersten Lauf | [SIN-518-video-klickweg.md](decisions/SIN-518-video-klickweg.md) |
