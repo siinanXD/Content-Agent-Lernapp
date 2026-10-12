@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-506 | SIN-506: Content-Maps und Didaktik freigegeben | [SIN-506-maps-freigegeben.md](decisions/SIN-506-maps-freigegeben.md) |
 | SIN-500 | SIN-500: Leistungsbudget `/` – Prefetch der Startseiten-Links aus | [SIN-500-startseite-prefetch.md](decisions/SIN-500-startseite-prefetch.md) |
 | SIN-498 | SIN-498: Sentry – ungelöster Fehler (7 Tage) | [SIN-498-sentry-ungeloester-fehler.md](decisions/SIN-498-sentry-ungeloester-fehler.md) |
 | SIN-497 | SIN-497: Structured Outputs abschaltbar, Batch-Fehler sichtbar, Lauf rot bei 0 Einheiten | [SIN-497-structured-outputs-schalter.md](decisions/SIN-497-structured-outputs-schalter.md) |
