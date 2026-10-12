@@ -52,10 +52,11 @@
       "auftrag": "Bewertet Risiko, Tests, Sicherheit und Optik und macht Fehler auf main rückgängig.",
       "ausloeser": "Pull Request, Push auf main, Deploy",
       "workflows": ["pr-gate", "ci", "codeql", "visual", "nach-deploy", "revert-guard"],
+      "schritte": ["REVERT"],
       "modell": "keins (Code)",
       "budget": { "proLauf": null, "proWoche": null },
       "eingabe": "Pull Request, Build, Live-Seite",
-      "ausgabe": "Labels, Checks, Revert-PR"
+      "ausgabe": "Labels, Checks, Revert-PR, Linear-Issue zurück auf Todo (SIN-492)"
     },
     {
       "id": "betrieb",
