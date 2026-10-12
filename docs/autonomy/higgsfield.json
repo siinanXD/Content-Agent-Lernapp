@@ -1,11 +1,38 @@
 {
-  "hinweis": "Modell-IDs, Endpunkte und Preise je Sekunde müssen aus https://docs.higgsfield.ai belegt werden (SIN-485). null = nicht belegt: der Trockenlauf nennt es, ein bezahlter Aufruf wird verweigert. Nichts geraten.",
-  "basisUrl": null,
-  "pfadErzeugen": null,
-  "pfadStatus": null,
+  "hinweis": "Belegt am 12.10.2026 aus docs.higgsfield.ai und open.higgsfield.ai/pricing (Konto Sinan, Preis „Your current price“). Modell = Endpoint-ID; Erzeugen = POST basisUrl + '/' + modell, Status = GET status_url aus der Antwort (pfadStatus als Vorlage). Auth-Header: `Authorization: Key <KEY_ID>:<KEY_SECRET>`. Für den Deckel zählt der Listenpreis (konservativ), der aktuelle Rabattpreis steht daneben. Preise sind „ab“-Preise je Sekunde; Seedance hängt von der Auflösung ab, daher Endstufe mit 720p und ohne Ton. Erster echter Lauf: Kosten in open.higgsfield.ai/analytics mit `kosten_eur` abgleichen.",
+  "quellen": {
+    "kling": "https://docs.higgsfield.ai/docs/models/kling-2-5-turbo/pro-text-to-video",
+    "seedance": "https://docs.higgsfield.ai/docs/models/seedance-2/text-to-video",
+    "status": "https://docs.higgsfield.ai/docs/api-reference/requests/get-request-status",
+    "preise": "https://open.higgsfield.ai/pricing",
+    "rechte": "https://higgsfield.ai/creator-hub/help-center/account-and-privacy/who-owns-my-generations-and-can-i-use-them-commercially",
+    "abgerufen": "2026-10-12"
+  },
+  "basisUrl": "https://api.higgsfield.ai",
+  "pfadErzeugen": "/{modell}",
+  "pfadStatus": "/requests/{request_id}/status",
   "stufen": {
-    "entwurf": { "modell": null, "preisProSekundeUsd": null, "nutzungsrechteWerbung": null },
-    "final": { "modell": null, "preisProSekundeUsd": null, "nutzungsrechteWerbung": null }
+    "entwurf": {
+      "modell": "kling-video/v2.5-turbo/pro/text-to-video",
+      "preisProSekundeUsd": 0.07,
+      "aktuellerPreisProSekundeUsd": 0.06,
+      "parameter": {
+        "duration": 5
+      },
+      "nutzungsrechteWerbung": "ja: Nutzer besitzt die Ausgaben, kommerzielle Nutzung inkl. Werbung erlaubt (ToS 4.4); nicht zum Training anderer KI nutzen (5.1 iii); Rechte Dritter beachten (5.1 ii b); IP-Freistellung nur Enterprise"
+    },
+    "final": {
+      "modell": "bytedance/seedance-2.0/text-to-video",
+      "preisProSekundeUsd": 0.141,
+      "aktuellerPreisProSekundeUsd": 0.12,
+      "parameter": {
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "16:9",
+        "generate_audio": false
+      },
+      "nutzungsrechteWerbung": "ja: wie Entwurf (gilt laut Hilfeartikel für alle Nutzer des Dienstes)"
+    }
   },
   "entwuerfe": 3,
   "sekundenEntwurf": 5,

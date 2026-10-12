@@ -23,3 +23,14 @@
 ## Warum
 
 Die Prüfung vor dem Aufruf und der Trockenlauf sind ohne Key testbar; geratene Preise würden den Deckel wertlos machen.
+
+## Nachtrag 12.10.2026: Belege eingetragen
+
+Docs und Preise im Konto gelesen (Links in `docs/autonomy/higgsfield.json`, Feld `quellen`).
+
+- **Entwurf:** `kling-video/v2.5-turbo/pro/text-to-video`, 5 s (erlaubt 5 oder 10), Listenpreis 0,070 $/s, aktuell 0,060 $/s, 1080p.
+- **Final:** `bytedance/seedance-2.0/text-to-video`, 8 s (erlaubt 4–15), ab 0,141 $/s Liste, aktuell 0,120 $/s; 720p, `generate_audio: false`.
+- **Ablauf:** POST `https://api.higgsfield.ai/<Endpoint-ID>` mit Header `Authorization: Key <KEY_ID>:<KEY_SECRET>`, Antwort `request_id` und `status_url`; Status bis `completed`, Ergebnis in `video.url`. Ausgaben liegen mindestens 7 Tage bei Higgsfield.
+- **Rechte:** Ausgaben gehören dem Nutzer, Werbung ist erlaubt (ToS 4.4); nicht zum Training anderer KI-Modelle nutzen; IP-Freistellung nur Enterprise.
+- **Deckel:** Rechnet mit dem Listenpreis (konservativ). Trockenlauf: 3 × 0,33 € + 1,05 € = 2,03 € (Deckel 5 €).
+- **Offen:** Seedance-Preis je Auflösung steht nur als „ab“-Wert; nach dem ersten echten Lauf Kosten in open.higgsfield.ai/analytics gegen `kosten_eur` prüfen. Der HTTP-Aufruf bleibt Folge-Issue.
