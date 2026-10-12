@@ -1,8 +1,24 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { phaseAChunks, UNITS_PER_CHUNK, mergePhaseLernfeld } from "./batch-generate";
+import { chunkBatchRequests, phaseAChunks, UNITS_PER_CHUNK, mergePhaseLernfeld } from "./batch-generate";
+import { loadMafCurriculum } from "@/lib/content/curriculum";
 import { phaseAPreflightUsd, BUDGET_EUR } from "@/lib/quality/cost-guard";
 import { assertPhaseAGoldsetCoverage } from "@/lib/quality/maf-goldset-phase-a";
+
+describe("SIN-489 Structured Outputs", () => {
+  it("Trockenlauf: Anfrage enthält output_config.format mit json_schema", () => {
+    const c = loadMafCurriculum();
+    const { targets } = phaseAChunks("A", c);
+    const reqs = chunkBatchRequests({ keyword: "t", curriculum: c, targets: targets.slice(0, 2) });
+    assert.equal(reqs.length, 2);
+    for (const r of reqs) {
+      const f = r.params.output_config.format;
+      assert.equal(f.type, "json_schema");
+      assert.equal((f.schema as { additionalProperties: boolean }).additionalProperties, false);
+      assert.ok(!("output_format" in r.params));
+    }
+  });
+});
 
 describe("AP-15 Phase A batch chunks", () => {
   it("covers 280 units across M0/LF1/LF2/PA", () => {
