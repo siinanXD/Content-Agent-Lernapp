@@ -410,6 +410,48 @@ export function judgeReserveEur(units: number, questionsPerUnit = 6): number {
   return Math.round(usd * EUR_PER_USD * COST_MARGIN * 100) / 100;
 }
 
+/** SIN-493: Höchstens so viele Einheiten je Teilbatch; nach jedem Teil werden die Kosten gemessen. */
+export const PART_MAX_UNITS = 100;
+
+/** SIN-493: Ziele in Teilbatches zerlegen. Ein Ziel (höchstens 2 Einheiten) bleibt ganz; Reihenfolge bleibt. */
+export function splitTargets(targets: BatchChunkTarget[], maxUnits = PART_MAX_UNITS): BatchChunkTarget[][] {
+  const parts: BatchChunkTarget[][] = [];
+  let cur: BatchChunkTarget[] = [];
+  let units = 0;
+  for (const t of targets) {
+    if (cur.length > 0 && units + t.unitCount > maxUnits) {
+      parts.push(cur);
+      cur = [];
+      units = 0;
+    }
+    cur.push(t);
+    units += t.unitCount;
+  }
+  if (cur.length > 0) parts.push(cur);
+  return parts;
+}
+
+/**
+ * SIN-493: Darf der nächste Teilbatch starten? Summe (inkl. Reparatur, schon gemessen) plus erwartete
+ * Kosten des Teils (mit Sicherheitsfaktor) plus Richter-Reserve für alle bis dahin erzeugten Einheiten
+ * muss im Deckel bleiben. Sonst startet er nicht; der Grund steht im Lauf-Bericht.
+ */
+export function partGate(
+  spentEur: number,
+  partUnits: number,
+  perUnitEur: number,
+  unitsSoFar: number,
+  capEur = RUN_CAP_EUR,
+): { ok: boolean; expectedEur: number } {
+  const expectedEur = spentEur + partUnits * perUnitEur * COST_MARGIN + judgeReserveEur(unitsSoFar + partUnits);
+  return { ok: expectedEur <= capEur, expectedEur };
+}
+
+/** SIN-493: Kosten je Einheit nach einem Teil: der höhere Wert aus Plan und Messung (nie optimistischer werden). */
+export function measuredPerUnit(plannedEur: number, partCostEur: number, partUnits: number): number {
+  return partUnits > 0 && partCostEur > 0 ? Math.max(plannedEur, partCostEur / partUnits) : plannedEur;
+}
+
 /**
  * SIN-434: Historie für `eurPerUnit` ohne Reparaturkosten. Die Reparatur (AP-21) steht im Bericht
  * als eigener Posten und wird in der Planung schon als `spentEur` abgezogen; wer sie auch in die
