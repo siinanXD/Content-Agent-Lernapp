@@ -30,7 +30,7 @@ jobs:
     outputs:
       severe: ${{ steps.review.outputs.severe }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.ref }}
       - uses: actions/setup-node@v4
@@ -98,7 +98,7 @@ jobs:
             core.setOutput("round", String(next));
             core.setOutput("title", pr.title);
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.round.outputs.go == 'true'
         with:
           token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}

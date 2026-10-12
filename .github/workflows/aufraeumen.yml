@@ -33,7 +33,7 @@ jobs:
         run: |
           n=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --search "chore(aufraeumen) in:title" --json number --jq 'length')
           echo "offen=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: steps.offen.outputs.offen != 'true'
         with:
           token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}

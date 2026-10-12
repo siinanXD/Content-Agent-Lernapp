@@ -41,7 +41,7 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GENERATOR_MODEL: ${{ vars.GENERATOR_MODEL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
       - uses: actions/setup-node@v4

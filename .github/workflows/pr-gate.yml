@@ -106,7 +106,7 @@ jobs:
       waiting: ${{ steps.decide.outputs.waiting }}
     steps:
       # Basis, nie PR-Code: Regeln (risk.mjs) kommen aus dem Ziel-Branch.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
 
