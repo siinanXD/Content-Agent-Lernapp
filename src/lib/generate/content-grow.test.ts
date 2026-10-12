@@ -19,6 +19,10 @@ import {
   mapPlan,
   eurPerUnit,
   judgeReserveEur,
+  measuredPerUnit,
+  partGate,
+  PART_MAX_UNITS,
+  splitTargets,
   linearSummary,
   planEurPerUnit,
   REPAIR_BATCH_RESERVE_EUR,
@@ -302,6 +306,44 @@ test("SIN-478: Lauf mit Reparaturstufe endet bei höchstens 20 € (Lauf 10-12 k
 test("SIN-478: Reparatur stoppt früh genug, dass ihr letzter Batch im Deckel bleibt", () => {
   assert.equal(REPAIR_STOP_EUR + REPAIR_BATCH_RESERVE_EUR, RUN_CAP_EUR);
   assert.ok(REPAIR_BATCH_RESERVE_EUR >= 2.9);
+});
+
+test("SIN-493: splitTargets teilt in Teile mit höchstens 100 Einheiten", () => {
+  const targets = Array.from({ length: 250 }, (_, i) => target("B", i * 2, 2)); // 500 Einheiten
+  const parts = splitTargets(targets);
+  assert.equal(parts.length, 5);
+  for (const p of parts) assert.ok(p.reduce((n, t) => n + t.unitCount, 0) <= PART_MAX_UNITS);
+  assert.deepEqual(parts.flat(), targets);
+  assert.deepEqual(splitTargets([]), []);
+});
+
+test("SIN-493: teurerer Teilbatch stoppt den Lauf unter 20 €", () => {
+  // 5 Teile à 100 Einheiten, geplant mit 0,041 €/Einheit; tatsächlich 0,09 €/Einheit (9 € je Teil).
+  const parts = splitTargets(Array.from({ length: 250 }, (_, i) => target("B", i * 2, 2)));
+  let spent = 2.9; // Reparatur
+  let perUnit = 0.041;
+  let units = 0;
+  let sent = 0;
+  for (const part of parts) {
+    const n = part.reduce((s, t) => s + t.unitCount, 0);
+    if (!partGate(spent, n, perUnit, units).ok) break;
+    const before = spent;
+    spent += 9;
+    units += n;
+    sent++;
+    perUnit = measuredPerUnit(perUnit, spent - before, n);
+  }
+  assert.equal(sent, 1); // nach Teil 1 ist die Messung 0,09 €/Einheit; Teil 2 würde 20 € reißen
+  assert.ok(spent <= RUN_CAP_EUR);
+});
+
+test("SIN-493: partGate und measuredPerUnit", () => {
+  const gate = partGate(2.9, 100, 0.059, 0);
+  assert.ok(gate.ok);
+  assert.ok(gate.expectedEur > 2.9 + 100 * 0.059);
+  assert.equal(measuredPerUnit(0.05, 3, 100), 0.05);
+  assert.equal(measuredPerUnit(0.05, 9, 100), 0.09);
+  assert.equal(measuredPerUnit(0.05, 0, 100), 0.05);
 });
 
 test("SIN-434: nicht versucht nach Grund", () => {
