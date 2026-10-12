@@ -13,6 +13,10 @@ import type { BatchChunkTarget } from "./batch-generate";
 /** Deckel je Lauf (AGENTS.md); Stopp schon bei 19 €, weil der Richter nach dem Batch noch läuft (D-45). */
 export const RUN_CAP_EUR = 20;
 export const RUN_STOP_EUR = 19;
+/** SIN-469: Wochendeckel über alle Live-Läufe der letzten 7 Tage (3 Läufe × 20 €). */
+export const WEEK_CAP_EUR = 60;
+/** SIN-469: Mehrere Läufe pro Woche, aber höchstens einer je UTC-Tag. */
+export const MAX_RUNS_PER_DAY = 1;
 /** Sicherheitsfaktor auf die Kosten je Einheit bei der Vorab-Rechnung. */
 export const COST_MARGIN = 1.25;
 
@@ -109,6 +113,33 @@ export function buildQueue(
 }
 
 /**
+ * SIN-469: Darf die Fabrik jetzt laufen? Zählt Live-Läufe mit Kosten oder Ergebnis (ein Lauf, der
+ * nach Sekunden an der API-Sperre endete, hinterlässt keinen Bericht und zählt nicht).
+ * - höchstens ein Lauf je UTC-Tag
+ * - Kosten der letzten 7 Tage unter `WEEK_CAP_EUR`
+ * Beides ist ein sauberes Überspringen (Exit 0), kein Fehler.
+ */
+export function runAllowed(
+  history: ReadonlyArray<Pick<RunReport, "mode" | "startedAt" | "costEur" | "generated">>,
+  now: Date = new Date(),
+): { ok: true } | { ok: false; reason: string } {
+  const live = history
+    .filter((r) => r.mode === "live" && (r.costEur > 0 || r.generated > 0))
+    .map((r) => ({ ...r, at: Date.parse(r.startedAt) }))
+    .filter((r) => Number.isFinite(r.at));
+  const today = now.toISOString().slice(0, 10);
+  if (live.filter((r) => new Date(r.at).toISOString().slice(0, 10) === today).length >= MAX_RUNS_PER_DAY) {
+    return { ok: false, reason: `heute (${today}) schon gelaufen: höchstens ${MAX_RUNS_PER_DAY} Lauf je Tag` };
+  }
+  const since = now.getTime() - 7 * 86_400_000;
+  const week = live.filter((r) => r.at > since).reduce((s, r) => s + r.costEur, 0);
+  if (week >= WEEK_CAP_EUR) {
+    return { ok: false, reason: `Wochendeckel erreicht: ${week.toFixed(2)} € von ${WEEK_CAP_EUR} € in 7 Tagen` };
+  }
+  return { ok: true };
+}
+
+/**
  * SIN-431: Welche Map ein Lauf bedient. Abwechselnd je Lauf, damit Industriekaufleute nicht
  * erst nach allen Metall-Einheiten drankommt. Ein angefangenes Modul (`resumeModuleId`) läuft
  * zuerst weiter. Sonst kommt nach `lastMapId` die nächste Map mit offenen Einheiten
@@ -138,6 +169,16 @@ export function chooseRunMap(
     : [];
   const resumed = resumeCandidates.find((q) => q.mapId === lastMapId) ?? resumeCandidates[0];
   if (resumed) return resumed.mapId;
+  // SIN-469: MAF Metall mit Modulen ohne veröffentlichte Einheit (z. B. LF3 bis LF6) kommt vor dem Wechsel.
+  const metallPub = published.get("maf-metall") ?? none;
+  const metallUntouched = queue.some(
+    (q) =>
+      q.mapId === "maf-metall" &&
+      q.supported &&
+      !slotIds(q.module).some((id) => metallPub.has(id)) &&
+      pendingSlots(q.module, metallPub, discarded.get("maf-metall") ?? none).length > 0,
+  );
+  if (metallUntouched) return "maf-metall";
   const last = lastMapId ? order.indexOf(lastMapId) : -1;
   for (let i = 1; i <= order.length; i++) {
     const id = order[(last + i + order.length) % order.length]!;

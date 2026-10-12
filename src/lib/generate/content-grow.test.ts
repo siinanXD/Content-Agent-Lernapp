@@ -26,6 +26,8 @@ import {
   pickSafetySample,
   RUN_CAP_EUR,
   RUN_STOP_EUR,
+  runAllowed,
+  WEEK_CAP_EUR,
   slotIds,
   trimTargets,
 } from "./content-grow";
@@ -203,10 +205,36 @@ test("Queue enthält indkfl-Module (Shared gilt nur für MAF), andere MAF-Schwer
   assert.equal(beide.find((q) => q.mapId === "maf-kunststoff")!.supported, false);
 });
 
+// Jedes Metall-Modul hat eine veröffentlichte Einheit: keines ist unberührt, der Vorrang entfällt (SIN-469).
+const metallBegonnen = new Map<string, ReadonlySet<string>>([
+  ["maf-metall", new Set(beide.filter((q) => q.mapId === "maf-metall").map((q) => slotIds(q.module)[0]!))],
+]);
+
 test("Lauf wechselt die Map ab: nach Metall kommt indkfl, danach wieder Metall", () => {
-  assert.equal(chooseRunMap(beide, keine, keine, null), "maf-metall");
-  assert.equal(chooseRunMap(beide, keine, keine, "maf-metall"), "indkfl");
+  assert.equal(chooseRunMap(beide, metallBegonnen, keine, null), "maf-metall");
+  assert.equal(chooseRunMap(beide, metallBegonnen, keine, "maf-metall"), "indkfl");
+  assert.equal(chooseRunMap(beide, metallBegonnen, keine, "indkfl"), "maf-metall");
+});
+
+test("SIN-469: Metall mit Modulen ohne Einheiten (LF3 bis LF6) geht vor dem Wechsel zu indkfl", () => {
+  assert.equal(chooseRunMap(beide, keine, keine, "maf-metall"), "maf-metall");
   assert.equal(chooseRunMap(beide, keine, keine, "indkfl"), "maf-metall");
+});
+
+test("SIN-469: Läufe pro Woche: einer je Tag, Wochendeckel 60 €", () => {
+  const lauf = (startedAt: string, costEur: number, generated = 10) => ({ mode: "live" as const, startedAt, costEur, generated });
+  const now = new Date("2026-10-14T05:47:00Z");
+  assert.deepEqual(runAllowed([], now), { ok: true });
+  assert.deepEqual(runAllowed([lauf("2026-10-12T05:50:00Z", 12)], now), { ok: true });
+  assert.equal(runAllowed([lauf("2026-10-14T01:00:00Z", 5)], now).ok, false);
+  // Probelauf und Lauf ohne Kosten und Ergebnis (API gesperrt) zählen nicht.
+  assert.deepEqual(runAllowed([{ ...lauf("2026-10-14T01:00:00Z", 5), mode: "dry-run" as const }], now), { ok: true });
+  assert.deepEqual(runAllowed([lauf("2026-10-14T01:00:00Z", 0, 0)], now), { ok: true });
+  const voll = [lauf("2026-10-09T05:00:00Z", 20), lauf("2026-10-10T05:00:00Z", 20), lauf("2026-10-12T05:00:00Z", 20)];
+  assert.equal(runAllowed(voll, now).ok, false);
+  // Älter als 7 Tage fällt aus der Wochensumme.
+  assert.deepEqual(runAllowed([lauf("2026-10-06T05:00:00Z", 20), ...voll.slice(1)], now), { ok: true });
+  assert.equal(WEEK_CAP_EUR, 60);
 });
 
 test("Lauf: fertige Map wird übersprungen, nichts offen ergibt null, Fortsetzung zuerst", () => {
