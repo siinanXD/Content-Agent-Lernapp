@@ -1,0 +1,118 @@
+{
+  "runId": "2026-10-12T14-06-45-093Z",
+  "judge": {
+    "model": "gpt-5.4-mini",
+    "promptVersion": "2026-10-v2"
+  },
+  "module": "LF3",
+  "unitTarget": 20,
+  "totalUsd": 0,
+  "totalEur": 0,
+  "report": [
+    {
+      "model": "claude-haiku-5-5",
+      "batchId": "msgbatch_01T31WjcgHYL4J2ZGjPs165e",
+      "units": 0,
+      "failedChunks": [
+        "ab-LF3-1-u4-5",
+        "ab-LF3-1-u6-7",
+        "ab-LF3-1-u8-9",
+        "ab-LF3-2-u2-3",
+        "ab-LF3-2-u6-7",
+        "ab-LF3-2-u4-5",
+        "ab-LF3-2-u0-1",
+        "ab-LF3-1-u2-3",
+        "ab-LF3-1-u0-1",
+        "ab-LF3-3-u0-1"
+      ],
+      "unitsPassing": 0,
+      "unitPassRate": 0,
+      "questions": 0,
+      "questionPassRate": 0,
+      "scores": {
+        "sourceFidelity": 0,
+        "uniqueness": 0,
+        "niveau": 0,
+        "language": 0,
+        "safetyFlag": false
+      },
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cache_creation_input": 0,
+        "cache_read_input": 0
+      },
+      "generationUsd": 0,
+      "judgeUsd": 0,
+      "usdPerPassingUnit": null,
+      "repair": {
+        "unitsRepaired": 0,
+        "failedBatchRequests": [],
+        "repairUsd": 0,
+        "repairJudgeUsd": 0
+      },
+      "afterRepair": {
+        "unitsPublishable": 0,
+        "unitsDiscarded": 0,
+        "publishableRate": 0,
+        "totalUsd": 0,
+        "usdPerUnit": null,
+        "eurPerUnit": null,
+        "usdPerPublishableUnit": null
+      }
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "batchId": "msgbatch_01LnPdQ5AgqcWuWudEZtxr62",
+      "units": 0,
+      "failedChunks": [
+        "ab-LF3-2-u4-5",
+        "ab-LF3-2-u2-3",
+        "ab-LF3-1-u2-3",
+        "ab-LF3-3-u0-1",
+        "ab-LF3-1-u8-9",
+        "ab-LF3-2-u0-1",
+        "ab-LF3-1-u0-1",
+        "ab-LF3-1-u4-5",
+        "ab-LF3-2-u6-7",
+        "ab-LF3-1-u6-7"
+      ],
+      "unitsPassing": 0,
+      "unitPassRate": 0,
+      "questions": 0,
+      "questionPassRate": 0,
+      "scores": {
+        "sourceFidelity": 0,
+        "uniqueness": 0,
+        "niveau": 0,
+        "language": 0,
+        "safetyFlag": false
+      },
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cache_creation_input": 0,
+        "cache_read_input": 0
+      },
+      "generationUsd": 0,
+      "judgeUsd": 0,
+      "usdPerPassingUnit": null,
+      "repair": {
+        "unitsRepaired": 0,
+        "failedBatchRequests": [],
+        "repairUsd": 0,
+        "repairJudgeUsd": 0
+      },
+      "afterRepair": {
+        "unitsPublishable": 0,
+        "unitsDiscarded": 0,
+        "publishableRate": 0,
+        "totalUsd": 0,
+        "usdPerUnit": null,
+        "eurPerUnit": null,
+        "usdPerPublishableUnit": null
+      }
+    }
+  ],
+  "published": false
+}
