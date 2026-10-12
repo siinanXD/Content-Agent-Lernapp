@@ -12,10 +12,13 @@ export default defineConfig({
   retries: 1,
   workers: 1,
   timeout: 120_000,
+  expect: { timeout: 15_000 },
   reporter: [["list"]],
   use: {
     baseURL,
     browserName: "chromium",
+    actionTimeout: 20_000, // ein hängender Klick scheitert mit Namen, nicht erst nach dem Test-Timeout (SIN-518)
+    trace: "retain-on-failure",
     viewport: { width: 1280, height: 720 },
     video: { mode: "on", size: { width: 1280, height: 720 } },
     extraHTTPHeaders: bypass ? { "x-vercel-protection-bypass": bypass, "x-vercel-set-bypass-cookie": "true" } : undefined,
