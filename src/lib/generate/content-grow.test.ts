@@ -13,6 +13,10 @@ import {
   chooseRunMap,
   MAP_COURSES,
   SUPPORTED_MAP_IDS,
+  SCHWERPUNKT_MAP_IDS,
+  supportedMapIds,
+  resolveCourseId,
+  mapPlan,
   eurPerUnit,
   judgeReserveEur,
   linearSummary,
@@ -328,4 +332,71 @@ test("SIN-434: Lauf-Bericht nennt verworfen und nicht versucht mit Grund", () =>
   const text = linearSummary(r);
   assert.match(text, /Verworfen .*: 4 \(ZP-2-u1\)/);
   assert.match(text, /Nicht versucht: 5 wegen Kostendeckel; 2 wegen Zeitlimit/);
+});
+
+// SIN-479: die 6 weiteren MAF-Schwerpunkte
+const textil = map("maf-textil", "maf", [mod("M0", 0, [2]), mod("LF1", 1, [3])]);
+const alle = buildQueue([indkfl, metall, kunststoff, textil], ["M0"], [...SUPPORTED_MAP_IDS, ...SCHWERPUNKT_MAP_IDS]);
+const slotsOf = (mapId: string) => new Set(alle.filter((q) => q.mapId === mapId).flatMap((q) => slotIds(q.module)));
+
+test("SIN-479: alle 6 Schwerpunkte haben einen Kurs-Eintrag", () => {
+  assert.equal(SCHWERPUNKT_MAP_IDS.length, 6);
+  for (const id of SCHWERPUNKT_MAP_IDS) {
+    assert.match(MAP_COURSES[id]!.courseKeyword!, /^Maschinen- und Anlagenführer – Schwerpunkt /);
+    assert.ok(!SUPPORTED_MAP_IDS.includes(id));
+  }
+});
+
+test("SIN-479: Schwerpunkte laufen nur mit Schalter; Kurs wird über das Stichwort gefunden", () => {
+  assert.deepEqual(supportedMapIds({}), SUPPORTED_MAP_IDS);
+  assert.deepEqual(supportedMapIds({ CONTENT_GROW_SCHWERPUNKTE: "1" }), [...SUPPORTED_MAP_IDS, ...SCHWERPUNKT_MAP_IDS]);
+  const kurse = [
+    { id: "k-mock", keyword: MAP_COURSES["maf-kunststoff"]!.courseKeyword!, mock: true },
+    { id: "k-echt", keyword: MAP_COURSES["maf-kunststoff"]!.courseKeyword!, mock: false },
+  ];
+  assert.equal(resolveCourseId("maf-kunststoff", kurse), "k-echt");
+  assert.equal(resolveCourseId("maf-textil", kurse), null);
+  assert.equal(resolveCourseId("maf-metall", kurse), MAP_COURSES["maf-metall"]!.courseId);
+});
+
+test("SIN-479: gemeinsame Module werden nicht erneut erzeugt, nur in der Metall-Queue geplant", () => {
+  for (const mapId of ["maf-kunststoff", "maf-textil"]) {
+    assert.ok(alle.filter((q) => q.mapId === mapId).every((q) => q.module.id !== "M0" && !q.shared));
+  }
+  assert.ok(alle.some((q) => q.mapId === "maf-metall" && q.module.id === "M0" && q.shared));
+  const plan = mapPlan([metall, kunststoff, textil], alle, keine, keine, ["maf-kunststoff", "maf-textil"]);
+  assert.deepEqual(plan, [
+    { mapId: "maf-kunststoff", ziel: 4, vorhanden: 0, geteilt: 2, neu: 2 },
+    { mapId: "maf-textil", ziel: 5, vorhanden: 0, geteilt: 2, neu: 3 },
+  ]);
+  // Veröffentlichte und verworfene Einheiten zählen nicht als neu.
+  const pub = new Map([["maf-textil", new Set(["LF1-1-u1"])]]);
+  const verworfen = new Map([["maf-textil", new Set(["LF1-1-u2"])]]);
+  assert.deepEqual(mapPlan([textil], alle, pub, verworfen, ["maf-textil"]), [
+    { mapId: "maf-textil", ziel: 5, vorhanden: 1, geteilt: 2, neu: 1 },
+  ]);
+});
+
+test("SIN-479: erst Metall, dann Industriekaufleute, dann die Schwerpunkte", () => {
+  const metallFertig = new Map([["maf-metall", slotsOf("maf-metall")]]);
+  const beideFertig = new Map([...metallFertig, ["indkfl", slotsOf("indkfl")]]);
+  assert.equal(chooseRunMap(alle, keine, keine, null), "maf-metall");
+  assert.equal(chooseRunMap(alle, metallFertig, keine, "maf-metall"), "indkfl");
+  assert.equal(chooseRunMap(alle, beideFertig, keine, "indkfl"), "maf-kunststoff");
+  assert.equal(chooseRunMap(alle, beideFertig, keine, "maf-kunststoff"), "maf-kunststoff");
+  const kunststoffFertig = new Map([...beideFertig, ["maf-kunststoff", slotsOf("maf-kunststoff")]]);
+  assert.equal(chooseRunMap(alle, kunststoffFertig, keine, "maf-kunststoff"), "maf-textil");
+  // Ohne Schalter bleiben die Schwerpunkte außen vor.
+  assert.equal(chooseRunMap(buildQueue([indkfl, metall, kunststoff, textil], ["M0"], SUPPORTED_MAP_IDS), beideFertig, keine, null), null);
+});
+
+test("SIN-479: Lauf-Bericht nennt je Map Ziel, vorhanden, geteilt, neu", () => {
+  const r = {
+    runId: "x", mode: "dry-run", startedAt: "2026-10-12T00:00:00Z", mapId: null, moduleId: null,
+    nextModuleId: null, resumeModuleId: null, generated: 0, passed: 0, discarded: 0, discardedUnitIds: [],
+    deferred: 0, repair: { ran: false, costEur: 0 }, sourceRefresh: { units: 0, replaced: 0, changeKeys: [] },
+    model: "m", costEur: 0, capEur: 20, stopReason: null, safetySampleUnitIds: [], batchIds: [],
+    mapPlan: [{ mapId: "maf-textil", ziel: 5, vorhanden: 1, geteilt: 2, neu: 1 }],
+  } as unknown as RunReport;
+  assert.match(linearSummary(r), /maf-textil: 5 \/ 1 \/ 2 \/ 1/);
 });
