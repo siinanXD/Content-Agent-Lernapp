@@ -163,8 +163,10 @@ function build(raw: unknown): PathQuestion | string {
   if (!id || prompt === null) return "Id oder Fragetext fehlt";
   const type = TYPE_ALIASES[String(raw.type ?? "").trim().toLowerCase()];
   if (!type) return `unbekannter Typ ${String(raw.type)}`;
-  const correct = normalizeCorrect(raw.correct);
-  if (correct === null) return "unbekannte Form von correct";
+  const correctShape = normalizeCorrect(raw.correct);
+  // SIN-477: Zuordnen nutzt nur `pairs`. `correct` kommt dort oft als Paarliste und wird nicht gebraucht.
+  if (correctShape === null && type !== "zuordnen") return "unbekannte Form von correct";
+  const correct = correctShape ?? "";
   const choices = raw.choices === undefined ? undefined : strList(raw.choices);
   if (choices === null) return "unbekannte Form von choices";
 
