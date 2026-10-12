@@ -39,6 +39,7 @@ export default function StartseitePage() {
           Lernpfad
         </p>
         <Link
+          prefetch={false}
           href="/anmelden"
           className={`inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-brand-primary)] ${focusRing}`}
         >
@@ -66,10 +67,11 @@ export default function StartseitePage() {
               Jede Frage mit Quelle aus der Ausbildungsordnung. Sie sehen Fortschritt, die App
               bewertet keine Personen.
             </p>
-            <Link href="/demo" className={`${buttonPrimary} self-start max-md:w-full`}>
+            <Link prefetch={false} href="/demo" className={`${buttonPrimary} self-start max-md:w-full`}>
               Demo-Zugang anfragen
             </Link>
             <Link
+              prefetch={false}
               href="/ausbilder?demo=1"
               className="inline-flex min-h-11 items-center self-start text-sm font-medium text-[var(--color-text-on-brand)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
             >
@@ -244,7 +246,7 @@ export default function StartseitePage() {
             Wir richten einen Demo-Zugang für bis zu 10 Teilnehmende ein. Sie
             sehen nach zwei Wochen, wer wie weit ist.
           </p>
-          <Link href="/demo" className={`${buttonPrimary} self-start`}>
+          <Link prefetch={false} href="/demo" className={`${buttonPrimary} self-start`}>
             Demo-Zugang anfragen
           </Link>
         </section>
@@ -291,6 +293,7 @@ function Beweis({
 function FooterLink({ href, children }: { href: string; children: string }) {
   return (
     <Link
+      prefetch={false}
       href={href}
       className={`inline-flex min-h-11 items-center ${focusRing}`}
     >

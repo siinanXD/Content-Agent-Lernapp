@@ -571,6 +571,9 @@ export type RunReport = {
   costEur: number;
   capEur: number;
   stopReason: string | null;
+  /** SIN-497: gescheiterte Batch-Teilaufträge mit Fehlertext der API; Grund, wenn der Lauf deshalb rot ist. */
+  batchFailures?: { sent: number; failed: number; errors: Array<{ customId: string; resultType: string; error: string }> };
+  failReason?: string | null;
   safetySampleUnitIds: string[];
   batchIds: string[];
   langfuseTraceId?: string;
@@ -603,6 +606,10 @@ export function linearSummary(r: RunReport): string {
     `- Reparatur (AP-21): ${r.repair.ran ? `€${r.repair.costEur.toFixed(2)}` : "nicht gelaufen"}; Quellen-Neuerzeugung: ${r.sourceRefresh.replaced}/${r.sourceRefresh.units}`,
     `- Kosten: €${r.costEur.toFixed(2)} von €${r.capEur} (Modell ${r.model})`,
     `- Stopp: ${r.stopReason ?? "kein"}`,
+    ...(r.failReason ? [`- **Rot (SIN-497): ${r.failReason}**`] : []),
+    ...(r.batchFailures?.errors.length
+      ? [`- API-Fehler je Teilauftrag: ${r.batchFailures.errors.slice(0, 3).map((e) => `${e.customId}: ${e.error}`).join(" | ")}${r.batchFailures.errors.length > 3 ? ` (+${r.batchFailures.errors.length - 3} im Bericht)` : ""}`]
+      : []),
     `- Nächstes Modul: ${next}`,
     ...(r.mapPlan?.length
       ? [
