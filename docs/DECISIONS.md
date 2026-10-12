@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-506 | SIN-506: Content-Maps und Didaktik freigegeben | [SIN-506-maps-freigegeben.md](decisions/SIN-506-maps-freigegeben.md) |
 | SIN-502 | SIN-502: revert-guard nimmt nur zurück, wenn derselbe Schritt davor grün war | [SIN-502-revert-guard-nur-bei-gruenem-eltern-schritt.md](decisions/SIN-502-revert-guard-nur-bei-gruenem-eltern-schritt.md) |
 | SIN-500 | SIN-500: Leistungsbudget `/` – Prefetch der Startseiten-Links aus | [SIN-500-startseite-prefetch.md](decisions/SIN-500-startseite-prefetch.md) |
 | SIN-498 | SIN-498: Sentry – ungelöster Fehler (7 Tage) | [SIN-498-sentry-ungeloester-fehler.md](decisions/SIN-498-sentry-ungeloester-fehler.md) |
