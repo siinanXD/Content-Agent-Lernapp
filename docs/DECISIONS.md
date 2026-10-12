@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-497 | SIN-497: Structured Outputs abschaltbar, Batch-Fehler sichtbar, Lauf rot bei 0 Einheiten | [SIN-497-structured-outputs-schalter.md](decisions/SIN-497-structured-outputs-schalter.md) |
 | SIN-496 | SIN-496 — Stillstand `ohne-start`: Grund des Dispatchers im Bericht | [SIN-496-dispatch-grund.md](decisions/SIN-496-dispatch-grund.md) |
 | SIN-493 | SIN-493: Content-Fabrik sendet den Batch in Teilbatches und prüft die Kosten nach jedem Teil | [SIN-493-teilbatches.md](decisions/SIN-493-teilbatches.md) |
 | SIN-491 | SIN-491: Übergabe-Verträge, ein JSON-Schema je Agenten-Ausgabe | [SIN-491-uebergabe-vertraege.md](decisions/SIN-491-uebergabe-vertraege.md) |

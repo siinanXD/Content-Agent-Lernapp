@@ -20,6 +20,8 @@ import { GENERATOR_MODEL } from "../src/lib/anthropic/client";
 import { loadAllCurricula, type Curriculum } from "../src/lib/content/curriculum";
 import {
   collectBatchUnits,
+  failedRunReason,
+  type BatchRowError,
   collectRepairQuestions,
   submitQuestionRepairBatch,
   mergePhaseLernfeld,
@@ -451,6 +453,11 @@ async function main() {
     await flushLangfuseOtel().catch(() => undefined);
   };
   let timedOut = false;
+  // SIN-497: Teilaufträge der Erzeugung zählen; 0 Einheiten oder über 50 % gescheitert = Lauf rot.
+  let batchSent = 0;
+  let batchUnitsGot = 0;
+  let batchFailedCount = 0;
+  const batchErrors: BatchRowError[] = [];
   const capStop = async (e: unknown) => {
     // SIN-434: Zeitlimit des Batches ist ein Stopp mit Grund im Bericht, kein Absturz.
     if (e instanceof Error && /^Batch \S+ timed out/.test(e.message)) {
@@ -544,6 +551,10 @@ async function main() {
           await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
           const got = await collectBatchUnits(sub.batchId, curriculum);
           ledger = addClaudeLedger(ledger, got.ledger);
+          batchSent += part.length;
+          batchUnitsGot += got.units.length;
+          batchFailedCount += got.failedCustomIds.length;
+          batchErrors.push(...got.errors);
           tracer.batchFertig(got.units, got.ledger, "neuesModul");
           // Nur Einheiten, die zum Modul gehören und noch offen sind.
           generatedUnits.push(...(await schemaGate(got.units.filter((u) => wanted.has(u.id)))));
@@ -631,6 +642,10 @@ async function main() {
 
   await recordCosts();
 
+  report.batchFailures = { sent: batchSent, failed: batchFailedCount, errors: batchErrors };
+  report.failReason = failedRunReason(batchUnitsGot, batchFailedCount, batchSent);
+  if (report.failReason) console.error(`::error::Lauf rot: ${report.failReason}`);
+
   // SIN-299: Schritte des Kurslaufs als fachlich benannte Traces in einer Session.
   // SIN-383: „erzeugen“ und „prüfen“ stehen je Einheit im Einheiten-Trace (tracer).
   const sessionId = kurslaufSessionId(runId);
@@ -656,7 +671,7 @@ async function main() {
   });
   await flushLangfuseOtel().catch(() => undefined);
 
-  finish(0);
+  finish(report.failReason ? 1 : 0);
 }
 
 initPipelineSentry("content-grow");

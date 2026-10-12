@@ -1,22 +1,63 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { chunkBatchRequests, phaseAChunks, UNITS_PER_CHUNK, mergePhaseLernfeld } from "./batch-generate";
+import { chunkBatchRequests, failedRunReason, phaseAChunks, rowError, UNITS_PER_CHUNK, mergePhaseLernfeld } from "./batch-generate";
 import { loadMafCurriculum } from "@/lib/content/curriculum";
 import { phaseAPreflightUsd, BUDGET_EUR } from "@/lib/quality/cost-guard";
 import { assertPhaseAGoldsetCoverage } from "@/lib/quality/maf-goldset-phase-a";
 
 describe("SIN-489 Structured Outputs", () => {
-  it("Trockenlauf: Anfrage enthält output_config.format mit json_schema", () => {
-    const c = loadMafCurriculum();
-    const { targets } = phaseAChunks("A", c);
-    const reqs = chunkBatchRequests({ keyword: "t", curriculum: c, targets: targets.slice(0, 2) });
-    assert.equal(reqs.length, 2);
-    for (const r of reqs) {
-      const f = r.params.output_config.format;
-      assert.equal(f.type, "json_schema");
-      assert.equal((f.schema as { additionalProperties: boolean }).additionalProperties, false);
-      assert.ok(!("output_format" in r.params));
+  const c = loadMafCurriculum();
+  const { targets } = phaseAChunks("A", c);
+  const build = () => chunkBatchRequests({ keyword: "t", curriculum: c, targets: targets.slice(0, 2) });
+  const withEnv = (value: string | undefined, f: () => void) => {
+    const old = process.env.STRUCTURED_OUTPUTS;
+    if (value === undefined) delete process.env.STRUCTURED_OUTPUTS;
+    else process.env.STRUCTURED_OUTPUTS = value;
+    try {
+      f();
+    } finally {
+      if (old === undefined) delete process.env.STRUCTURED_OUTPUTS;
+      else process.env.STRUCTURED_OUTPUTS = old;
     }
+  };
+
+  it("Standard (SIN-497): ohne Schalter kein output_config", () => {
+    withEnv(undefined, () => {
+      for (const r of build()) assert.ok(!("output_config" in r.params));
+    });
+  });
+
+  it("STRUCTURED_OUTPUTS=1: Anfrage enthält output_config.format mit json_schema", () => {
+    withEnv("1", () => {
+      const reqs = build();
+      assert.equal(reqs.length, 2);
+      for (const r of reqs) {
+        const f = (r.params as { output_config: { format: { type: string; schema: unknown } } }).output_config.format;
+        assert.equal(f.type, "json_schema");
+        assert.equal((f.schema as { additionalProperties: boolean }).additionalProperties, false);
+        assert.ok(!("output_format" in r.params));
+      }
+    });
+  });
+});
+
+describe("SIN-497 Fehler gescheiterter Batch-Zeilen", () => {
+  it("rowError liest Typ und Text, auch verschachtelt", () => {
+    const flat = rowError({ custom_id: "a", result: { type: "errored", error: { type: "invalid_request_error", message: "Schema\n zu komplex" } } });
+    assert.equal(flat.error, "invalid_request_error: Schema zu komplex");
+    const nested = rowError({
+      custom_id: "b",
+      result: { type: "errored", error: { type: "error", error: { type: "invalid_request_error", message: "x" } } },
+    });
+    assert.equal(nested.error, "invalid_request_error: x");
+    assert.equal(rowError({ custom_id: "c", result: { type: "expired" } }).error, "unbekannt");
+  });
+
+  it("Lauf rot bei 0 Einheiten oder über 50 % gescheitert", () => {
+    assert.match(failedRunReason(0, 10, 10) ?? "", /0 Einheiten/);
+    assert.match(failedRunReason(4, 6, 10) ?? "", /über 50 %/);
+    assert.equal(failedRunReason(8, 5, 10), null);
+    assert.equal(failedRunReason(0, 0, 0), null);
   });
 });
 
