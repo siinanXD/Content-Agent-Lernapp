@@ -33,14 +33,39 @@ export const REPAIR_BATCH_RESERVE_EUR = 3;
 /** SIN-478: Stopp der Reparaturstufe (als `--stop-eur` an scripts/ap15-regen-dropped.ts). */
 export const REPAIR_STOP_EUR = RUN_CAP_EUR - REPAIR_BATCH_RESERVE_EUR;
 
-/**
- * Maps, die die Fabrik erzeugt (SIN-431): vorerst zwei Berufe, MAF Metall und Industriekaufleute.
- * Die anderen MAF-Schwerpunkte und die Weiterbildung folgen später.
- */
+/** Maps, die die Fabrik immer erzeugt (SIN-431): MAF Metall und Industriekaufleute. */
 export const SUPPORTED_MAP_IDS: readonly string[] = ["maf-metall", "indkfl"];
 
+/**
+ * SIN-479: Die 6 weiteren MAF-Schwerpunkte. Sie kommen erst nach Metall und Industriekaufleuten
+ * dran (chooseRunMap) und nur mit `CONTENT_GROW_SCHWERPUNKTE=1`, also nach dem Modellvergleich
+ * `ab-haiku-sonnet`. Der Trockenlauf plant sie immer mit.
+ */
+export const SCHWERPUNKT_MAP_IDS: readonly string[] = [
+  "maf-kunststoff",
+  "maf-textil",
+  "maf-textilveredelung",
+  "maf-lebensmittel",
+  "maf-druckverarbeitung",
+  "maf-packmittel",
+];
+export const SCHWERPUNKTE_ENV = "CONTENT_GROW_SCHWERPUNKTE";
+
+/** Maps, die dieser Lauf erzeugen darf. */
+export function supportedMapIds(env: Record<string, string | undefined> = process.env): readonly string[] {
+  return env[SCHWERPUNKTE_ENV]?.trim() === "1" ? [...SUPPORTED_MAP_IDS, ...SCHWERPUNKT_MAP_IDS] : SUPPORTED_MAP_IDS;
+}
+
 /** Kurs, Stichwort und Langfuse-Kontext je Map. Die Einheiten liegen in `courses.generated` des Kurses. */
-export type MapCourse = { courseId: string; keyword: string; beruf: string; schwerpunkt: string };
+export type MapCourse = {
+  /** Leer, wenn die Datenbank die Kennung vergeben hat: dann löst `resolveCourseId` über `courseKeyword` auf. */
+  courseId: string;
+  /** Kurs-Stichwort in `courses.keyword` (Migration 20261005020000_ap20_shared_modules.sql). */
+  courseKeyword?: string;
+  keyword: string;
+  beruf: string;
+  schwerpunkt: string;
+};
 export const MAP_COURSES: Record<string, MapCourse> = {
   "maf-metall": {
     courseId: "e22073de-7020-4380-9002-c70d46c25e25",
@@ -55,7 +80,35 @@ export const MAP_COURSES: Record<string, MapCourse> = {
     beruf: "Industriekaufleute",
     schwerpunkt: "Industriekaufmann/-frau",
   },
+  // SIN-479: Die Kurse legte AP-20 an (Kennung zufällig), darum Auflösung über das Stichwort.
+  "maf-kunststoff": schwerpunktKurs("Kunststoff"),
+  "maf-textil": schwerpunktKurs("Textil"),
+  "maf-textilveredelung": schwerpunktKurs("Textilveredelung"),
+  "maf-lebensmittel": schwerpunktKurs("Lebensmittel"),
+  "maf-druckverarbeitung": schwerpunktKurs("Druckverarbeitung"),
+  "maf-packmittel": schwerpunktKurs("Packmittel"),
 };
+
+function schwerpunktKurs(schwerpunkt: string): MapCourse {
+  return {
+    courseId: "",
+    courseKeyword: `Maschinen- und Anlagenführer – Schwerpunkt ${schwerpunkt}`,
+    keyword: `Maschinen- und Anlagenführer ${schwerpunkt}`,
+    beruf: `MAF ${schwerpunkt}`,
+    schwerpunkt,
+  };
+}
+
+/** Kurs-Kennung einer Map: feste Kennung, sonst der nicht-Mock-Kurs mit dem Stichwort. */
+export function resolveCourseId(
+  mapId: string,
+  courses: ReadonlyArray<{ id: string; keyword: string; mock?: boolean }>,
+): string | null {
+  const mc = MAP_COURSES[mapId];
+  if (!mc) return null;
+  if (mc.courseId) return mc.courseId;
+  return courses.find((c) => !c.mock && c.keyword === mc.courseKeyword)?.id ?? null;
+}
 
 /** Secrets laut SIN-220; der Workflow prüft sie vor allem anderen mit scripts/check-env.mjs. */
 export const REQUIRED_SECRETS = [
@@ -96,6 +149,7 @@ export type QueueItem = {
 export function buildQueue(
   curricula: Curriculum[],
   shared: readonly string[] = neutralSharedModuleIds(curricula.filter((c) => c.family === "maf")),
+  supportedIds: readonly string[] = supportedMapIds(),
 ): QueueItem[] {
   const rank = (c: Curriculum) => (c.id === "maf-metall" ? 0 : c.family === "maf" ? 1 : 2);
   const maps = [...curricula].sort(
@@ -115,7 +169,7 @@ export function buildQueue(
         mapId: c.id,
         module,
         shared: shared.includes(module.id) && c.family === "maf",
-        supported: SUPPORTED_MAP_IDS.includes(c.id),
+        supported: supportedIds.includes(c.id),
       }));
     items.sort(
       (a, b) => Number(b.shared) - Number(a.shared) || a.module.order - b.module.order,
@@ -192,12 +246,55 @@ export function chooseRunMap(
       pendingSlots(q.module, metallPub, discarded.get("maf-metall") ?? none).length > 0,
   );
   if (metallUntouched) return "maf-metall";
-  const last = lastMapId ? order.indexOf(lastMapId) : -1;
-  for (let i = 1; i <= order.length; i++) {
-    const id = order[(last + i + order.length) % order.length]!;
+  // SIN-479: Metall und Industriekaufleute wechseln sich ab; die Schwerpunkte folgen erst, wenn beide fertig sind.
+  const core = order.filter((id) => SUPPORTED_MAP_IDS.includes(id));
+  if (!core.some((id) => withOpen.includes(id))) return withOpen[0]!;
+  const last = lastMapId ? core.indexOf(lastMapId) : -1;
+  for (let i = 1; i <= core.length; i++) {
+    const id = core[(last + i + core.length) % core.length]!;
     if (withOpen.includes(id)) return id;
   }
   return withOpen[0]!;
+}
+
+export type MapPlanRow = {
+  mapId: string;
+  /** Alle Einheiten der Curriculum-Map. */
+  ziel: number;
+  /** Veröffentlicht in der Queue dieser Map (ohne geteilte Module). */
+  vorhanden: number;
+  /** Gemeinsame Module, die der Kurs per Verknüpfung zeigt und nicht erzeugt. */
+  geteilt: number;
+  /** Geplant neu: nicht veröffentlicht und nicht verworfen. */
+  neu: number;
+};
+
+/** SIN-479: Je Map Ziel, vorhanden, geteilt, neu. Geteilte Module stehen nicht in der Queue (buildQueue). */
+export function mapPlan(
+  curricula: readonly Curriculum[],
+  queue: readonly QueueItem[],
+  published: ReadonlyMap<string, ReadonlySet<string>>,
+  discarded: ReadonlyMap<string, ReadonlySet<string>>,
+  mapIds: readonly string[] = Object.keys(MAP_COURSES),
+): MapPlanRow[] {
+  const none: ReadonlySet<string> = new Set();
+  return mapIds.flatMap((mapId) => {
+    const c = curricula.find((x) => x.id === mapId);
+    if (!c) return [];
+    const items = queue.filter((q) => q.mapId === mapId);
+    const pub = published.get(mapId) ?? none;
+    const queued = items.reduce((n, q) => n + slotIds(q.module).length, 0);
+    const ziel = c.modules.reduce((n, m) => n + slotIds(m).length, 0);
+    return [
+      {
+        mapId,
+        ziel,
+        vorhanden: items.reduce((n, q) => n + slotIds(q.module).filter((id) => pub.has(id)).length, 0),
+        geteilt: ziel - queued,
+        neu: items.reduce((n, q) => n + pendingSlots(q.module, pub, discarded.get(mapId) ?? none).length, 0),
+      },
+    ];
+  });
 }
 
 /** Einheiten, die ein Modul noch braucht: nicht veröffentlicht und nicht schon verworfen. */
@@ -477,6 +574,8 @@ export type RunReport = {
   safetySampleUnitIds: string[];
   batchIds: string[];
   langfuseTraceId?: string;
+  /** SIN-479: Ziel, vorhanden, geteilt, neu je Map. */
+  mapPlan?: MapPlanRow[];
 };
 
 export function reportFileName(r: Pick<RunReport, "runId" | "mode">): string {
@@ -505,5 +604,11 @@ export function linearSummary(r: RunReport): string {
     `- Kosten: €${r.costEur.toFixed(2)} von €${r.capEur} (Modell ${r.model})`,
     `- Stopp: ${r.stopReason ?? "kein"}`,
     `- Nächstes Modul: ${next}`,
+    ...(r.mapPlan?.length
+      ? [
+          "- Maps (Ziel / vorhanden / geteilt / neu):",
+          ...r.mapPlan.map((m) => `  - ${m.mapId}: ${m.ziel} / ${m.vorhanden} / ${m.geteilt} / ${m.neu}`),
+        ]
+      : []),
   ].join("\n");
 }

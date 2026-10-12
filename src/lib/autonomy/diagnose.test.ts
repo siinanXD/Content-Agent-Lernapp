@@ -198,6 +198,21 @@ test("SIN-361: übersprungener PR-Ereignis-Lauf von dispatch verdeckt den echten
   assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
 });
 
+test("SIN-496: grüner dispatch-Lauf nennt den Grund aus seinem Log; Fixture → Ursache ohne-start → Bug-Issue", async () => {
+  const runs = [{ id: 38256570388, name: "dispatch", status: "completed", conclusion: "success", event: "schedule", created_at: "2026-10-12T13:34:01Z", html_url: "u" }];
+  const call = (async () => ({ jobs: [{ id: 9, name: "dispatch", conclusion: "success" }] })) as never;
+  const log = "2026-10-12T13:34:03Z Abgleich: SIN-1 → Todo\n2026-10-12T13:34:04Z SIN-2 wartet (PR #5: CI läuft), belegt keinen Platz\n2026-10-12T13:34:05Z Nichts zu starten: kein freies Todo (Blocker, Design/Mensch, oder Cursor hat noch Vorrang)\nrauschen";
+  const logs = await collectLogs("o/r", runs, { call, text: async () => log });
+  const t = logs[0].text;
+  assert.match(t, /^Kein roter Lauf: dispatch\. Letzter Lauf #38256570388 success am 2026-10-12T13:34:01Z/);
+  assert.match(t, /Nichts zu starten: kein freies Todo/);
+  assert.doesNotMatch(t, /rauschen/);
+  const diag = diagnoseStall({ running: 0, paused: false, startable: 2, idleMin: 46, logs });
+  assert.equal(diag?.cause, "ohne-start");
+  assert.match(diag!.excerpt, /Nichts zu starten/);
+  assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+});
+
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
   const raw = JSON.stringify([
     { type: "assistant", message: { content: [{ type: "text", text: "Ich mache jetzt den PR." }] } },

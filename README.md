@@ -81,7 +81,7 @@ flowchart TD
   Dispatcher --> Worker["Worker (worker.yml, Claude)"]
   Worker --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
   subgraph Prüfung
-    PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Lighthouse, Leistungsbudget"]
+    PR --> CI["CI: Berichte gegen Schema, Lint, Typecheck, Tests, Build, axe, Lighthouse, Leistungsbudget"]
     PR --> CodeQL["CodeQL"]
     PR --> Review["Review-Agent (zweites Modell)"]
     CI --> Gate{"pr-gate: Risiko"}
@@ -187,6 +187,7 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 - Die Content-Fabrik nimmt je Lauf so viele Module in einen Batch, wie der Deckel (Stopp bei 19 €) zulässt, und bewertet bis zu 4 Richter-Chunks gleichzeitig (SIN-406, `docs/decisions/SIN-406-fabrik-durchsatz.md`). Deckel und Qualitäts-Schwelle sind unverändert.
 - Der Lauf-Bericht der Content-Fabrik nennt je Lauf erzeugt, bestanden, verworfen und `nichtVersucht` mit Grund (Kostendeckel, Zeitlimit, begonnene Module, andere Map). Die Kosten je Einheit rechnen ohne Reparatur, damit der Deckel nicht doppelt zählt (SIN-434, `docs/decisions/SIN-434-fabrik-engpass.md`).
 - Die Content-Fabrik erzeugt zwei Berufe: MAF Metall und Industriekaufleute (SIN-431, `docs/decisions/SIN-431-indkfl-fabrik.md`). Jeder Lauf bedient eine Map und wechselt zum nächsten Lauf; Kurs und amtliche Quellen für Industriekaufleute legt die Migration `20261012010000` an.
+- Die 6 weiteren MAF-Schwerpunkte (Kunststoff, Textil, Textilveredelung, Lebensmittel, Druckverarbeitung, Packmittel) stehen in `MAP_COURSES`, erzeugt werden sie erst mit `CONTENT_GROW_SCHWERPUNKTE=1` und nach Metall und Industriekaufleuten. Gemeinsame Module erzeugt nur MAF Metall. Der Trockenlauf (`npm run content:grow -- --dry-run`) nennt je Map Ziel, vorhanden, geteilt, neu (SIN-479, `docs/decisions/SIN-479-schwerpunkte.md`).
 - Die Content-Fabrik läuft Montag, Mittwoch und Freitag, höchstens einmal je Tag und unter 60 € je 7 Tage; MAF-Metall-Module ohne Einheiten (LF3 bis LF6) kommen zuerst (SIN-469, `docs/decisions/SIN-469-fabrik-laeufe-pro-woche.md`).
 - Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migrationen `20261007020000`, `20261010010000`), mit Start, Ende und Ergebnis. Auch ein Abbruch (fehlende Secrets, fehlender Kurs, Absturz) hinterlässt eine Zeile mit `stop_reason`. Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
 - Gesperrte Anthropic-API (Ausgabenlimit, SIN-450): Der Lauf endet ohne Wiederholung mit Exit 0 und `stop_reason` „pausiert: API-Limit am <Datum>“; `content_fabrik_status` zeigt „pausiert“ statt „hängt“, der Planer legt kein Issue an, der nächste Lauf startet normal (`docs/decisions/SIN-450-fabrik-pausiert-bei-api-limit.md`).

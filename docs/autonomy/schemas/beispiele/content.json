@@ -1,0 +1,12 @@
+{
+  "schema": "../content.schema.json",
+  "agent": "content",
+  "lauf": { "id": "beispiel-1", "datum": "2026-10-12" },
+  "erzeugt": 10,
+  "ungueltig": 2,
+  "repariert": 1,
+  "verworfen": 1,
+  "kostenEur": 0.8,
+  "status": "teilweise",
+  "hinweis": "Beispiel für den Schema-Test, keine echten Zahlen."
+}
