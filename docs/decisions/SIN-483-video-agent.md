@@ -1,6 +1,6 @@
 # SIN-483 — Video-Agent: Tutorial-Video aus den Playwright-Klickwegen
 
-**Links:** [Revideo](https://github.com/redotvideo/revideo) (MIT, laut Issue 4,1k Sterne, letzter Commit 15.07.2026), [Chatterbox](https://github.com/resemble-ai/chatterbox) (MIT), [Playwright Video](https://playwright.dev/docs/videos), `.github/workflows/video.yml`, `video/`, `scripts/autonomy/video.mjs`, `supabase/migrations/20261018010000_sin483_werbemittel.sql`
+**Links:** [Revideo](https://github.com/redotvideo/revideo) (Lizenz MIT), [Chatterbox](https://github.com/resemble-ai/chatterbox) (MIT), [Playwright Video](https://playwright.dev/docs/videos), `.github/workflows/video.yml`, `video/`, `scripts/autonomy/video.mjs`, `supabase/migrations/20261018010000_sin483_werbemittel.sql`
 
 ## Entscheidung
 
@@ -13,6 +13,7 @@
 
 ## Annahmen
 
+- **Revideo-Kennzahlen nicht geprüft.** Sterne und letzter Commit stammen nur aus dem Issue-Text und sind hier nicht belegt; vor dem Einbau auf GitHub nachprüfen (Regel: MIT/Apache, Commit jünger als 6 Monate, über 500 Sterne).
 - **Revideo-API nicht in dieser Umgebung geprüft.** Kein Netz- und Paketzugriff im Worker. `video/schnitt/` (Szene, `render.mjs`, Versionen `^0.10.4`) folgt der Revideo-Doku aus dem Gedächtnis des Autors und ist unbestätigt, bis der erste Workflow-Lauf es bestätigt. Fällt der Schnitt aus, ist der Lauf rot, nichts wird abgelegt. Reparatur im selben PR.
 - Der Revideo-Ordner hat keine Lock-Datei (Installation per `npm install` im Lauf), weil sie ohne Registry-Zugriff nicht erzeugt werden konnte. Nachziehen, sobald der Lauf grün ist.
 - Geist wird nur als Schriftname gesetzt; ohne Schriftdatei im Renderer fällt Revideo auf serifenlose Systemschrift zurück. Schriftdatei einbinden, sobald der Lauf grün ist.
