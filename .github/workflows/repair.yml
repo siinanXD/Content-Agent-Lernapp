@@ -43,7 +43,7 @@ jobs:
           fi
       - name: Runde zählen
         id: round
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           # Labels mit dem Agenten-Token, sonst löst `needs-human` den Blocker-Kommentar (dispatch.yml) nicht aus.
           github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}

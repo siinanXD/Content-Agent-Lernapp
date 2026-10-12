@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Letzten pr-gate-Lauf des Commits neu starten
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
           script: |
@@ -126,7 +126,7 @@ jobs:
 
       - name: Geänderte Zeilen des PRs laden
         id: diff
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require("node:fs");
@@ -162,7 +162,7 @@ jobs:
 
       - name: Risiko bestimmen, Label setzen, Auto-Merge steuern
         id: decide
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           SECRET_LEAK: ${{ steps.leaks.outputs.leak }}
           AGENT_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}

@@ -61,7 +61,7 @@ jobs:
           fi
       - name: Runde zählen
         id: round
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           script: |
@@ -137,7 +137,7 @@ jobs:
       # SIN-381: Hat die Reparatur alle Funde begründet verworfen (leerer Commit mit fester erster Zeile), zählt die Runde nicht.
       - name: Runde zurücknehmen, wenn nur Fehlalarme
         if: steps.round.outputs.go == 'true' && steps.fix.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           ROUND: ${{ steps.round.outputs.round }}
           OLD_SHA: ${{ github.event.pull_request.head.sha }}
