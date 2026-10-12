@@ -95,10 +95,19 @@ export async function sendEvent(event, env = process.env, http = {}) {
 
 /**
  * Schnappschuss je Projekt (überschreibt die Zeile): Kontingente, Schlange, offene PRs.
- * @param {{ quotas?: object[], queue?: object, openPrs?: object[] }} s
+ * @param {{ quotas?: object[], queue?: object, openPrs?: object[], progress?: { fertig_v1: number, gesamt_v1: number, ideen_offen: number } | null }} s
  */
 export function buildSnapshot(s, env = process.env, now = new Date()) {
-  return { project: projectOf(env), quotas: s.quotas ?? [], queue: s.queue ?? {}, open_prs: s.openPrs ?? [], updated_at: now.toISOString() };
+  const p = s.progress;
+  return {
+    project: projectOf(env),
+    quotas: s.quotas ?? [],
+    queue: s.queue ?? {},
+    open_prs: s.openPrs ?? [],
+    // SIN-528: Fortschritt aus Linear (v1 fertig/gesamt, offene Ideen); fehlt er, bleibt die Spalte unberührt.
+    ...(p ? { fertig_v1: p.fertig_v1, gesamt_v1: p.gesamt_v1, ideen_offen: p.ideen_offen } : {}),
+    updated_at: now.toISOString(),
+  };
 }
 
 export async function sendSnapshot(snapshot, env = process.env, http = {}) {

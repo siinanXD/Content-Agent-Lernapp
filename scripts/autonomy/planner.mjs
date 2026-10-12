@@ -21,7 +21,7 @@
  */
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { LANES, commentOnIssue, countIssues, fetchProjectIssues, fetchRecentlyDone, linear, linearTeamAndProject, stateIdByName } from "./linear.mjs";
+import { LANES, classifyNew, commentOnIssue, countIssues, fetchProjectIssues, fetchRecentlyDone, linear, linearTeamAndProject, milestoneIdByName, stateIdByName } from "./linear.mjs";
 import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { readLimits, runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
@@ -56,6 +56,8 @@ const RUN_AREA = "lauf";
 export const MAX_DESIGN_PER_WEEK = 1;
 /** Höchstens 3 je Spur (zusammen 9); dazu höchstens 1 Design-Paket. */
 export const MAX_ISSUES_PER_WEEK = MAX_PER_LANE * LANES.length;
+/** Ideen (SIN-528) landen im Backlog von „v2 Ideen“ und zählen nicht gegen die Spuren-Grenzen; eigene Grenze je Lauf. */
+export const MAX_IDEEN_PER_RUN = 5;
 /** Pflichtabschnitte jedes Design-Pakets (SIN-306): Vorlagen-Recherche und Hinweis für Sinan. */
 export const DESIGN_VORLAGEN_HEADING = "## Vorlagen geprüft";
 export const DESIGN_VORLAGEN_BLOCK = [
@@ -215,6 +217,8 @@ export function buildPlannerPrompt(
     "- Lern-Schleife (AP-12): ab 50 aktiven Lernenden je Kurs die 5 schwächsten Einheiten als Issue.",
     "- Nutze die Vorschläge im Abschnitt „Content“; ohne Vorschlag kein Content-Issue.",
     "",
+    `Fertig-Liste (SIN-528): Die Produktbeschreibung und die Produktreife-Tabelle sind das Grundgerüst v1. Neue Issues gibt es nur für Lücken dieser Liste. Alles andere (Nutzungsdaten, Trends, Verbesserungsideen) setzt du mit \`"idee": true\`: es landet im Backlog von „v2 Ideen“ und wird nach und nach aufgenommen (höchstens ${MAX_IDEEN_PER_RUN} je Lauf, Priorität egal). Nur Notwendiges und Dringendes ist kein \`idee\`.`,
+    "",
     "Keine Duplikate zu offenen Issues und zu den in den letzten 14 Tagen erledigten (Abschnitt unten). Ein Treffer wird nicht neu angelegt, sondern als Kommentar am alten Issue vermerkt. Pro Issue: ein Arbeitspaket, ein PR. Kein Inhalt ohne amtliche Quelle, keine Personendaten.",
     "",
     "Gebaut ist nicht gelaufen (SIN-292): Die Produktreife-Tabelle hat die Spalte Stufe (fehlt, gebaut nicht gelaufen, gelaufen unter Ziel, erfüllt).",
@@ -262,7 +266,7 @@ export function buildPlannerPrompt(
     ...Object.entries(metrics).map(([k, v]) => `- ${k}: ${v}`),
     "",
     "## Ausgabe",
-    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "size": "klein|mittel", "area": "optional, nur für klein", "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft"}].',
+    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "size": "klein|mittel", "area": "optional, nur für klein", "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft", "idee": "true, wenn es keine Lücke der Fertig-Liste ist"}].',
     "`needsDesign` und `blockedBy` nur bei Frontend-Issues, die ein Design-Paket brauchen (siehe oben). Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
   ].join("\n");
 }
@@ -285,7 +289,7 @@ function betriebPrompt(phase) {
 /**
  * Prüft den Plan des Modells. Wirft bei ungültigen Einträgen, kürzt je Spur auf MAX_PER_LANE
  * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
- * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string }[]}
+ * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string, idee?: boolean }[]}
  */
 export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean, readiness?: any[], built?: Record<string, any> }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly = false, readiness = [], built = {} } = {}) {
   const betrieb = phase?.phase === "betrieb";
@@ -297,6 +301,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
   const planTitles = new Set(plan.map((p) => String(p?.title ?? "").trim().toLowerCase()));
   const count = {};
   const out = [];
+  const ideas = [];
   for (const [i, entry] of plan.entries()) {
     // Gebaut, nie gelaufen: Lauf-Auftrag statt Bau-Issue (SIN-292).
     const row = rowFor(entry, readiness);
@@ -320,6 +325,20 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
       if (!known) throw new Error(`Eintrag ${i}: needsDesign braucht blockedBy (Design-Eintrag im Plan oder SIN-Kennung)`);
     }
     if (taken.has(p.title.trim().toLowerCase())) continue;
+    // Idee statt Lücke der Fertig-Liste (SIN-528): Backlog in „v2 Ideen“, nie startbar, kein Design-Paket, keine Abhängigkeit.
+    if (p.idee === true && p.lane !== "design") {
+      if (ideas.length < MAX_IDEEN_PER_RUN) {
+        ideas.push({
+          lane: p.lane,
+          title: p.title.trim(),
+          priority: 4,
+          idee: true,
+          labels: [p.lane, "idee"],
+          description: `${p.description ?? ""}\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`.trim(),
+        });
+      }
+      continue;
+    }
     if ((maintenance || observing) && !MAINTENANCE_LANES.includes(p.lane)) continue;
     if (bugsOnly && p.lane !== "backend") continue; // Free-Tier über 80 %: nur Bugs (SIN-225, SIN-253)
     const cap = p.lane === "design" ? MAX_DESIGN_PER_WEEK : MAX_PER_LANE;
@@ -359,7 +378,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
     result = kept.filter((r) => !r.blockedBy || !planTitles.has(r.blockedBy.toLowerCase()) || titles.has(r.blockedBy.toLowerCase()));
   }
   // Design zuerst, damit es beim Anlegen schon existiert, wenn das Frontend-Issue darauf wartet.
-  return result.sort((a, b) => Number(b.lane === "design") - Number(a.lane === "design"));
+  return [...result.sort((a, b) => Number(b.lane === "design") - Number(a.lane === "design")), ...ideas];
 }
 
 /**
@@ -396,14 +415,21 @@ async function labelId(teamId, name, cache, call) {
 /** Legt die Issues an; `blockedBy` (Titel aus dem Plan oder SIN-Kennung) wird als „blockiert durch“ verknüpft. */
 export async function createIssues(items, existing = [], call = linear) {
   const { teamId, projectId } = await linearTeamAndProject(call);
-  const stateId = await stateIdByName(teamId, "Todo", call);
   const labels = new Map();
   const created = new Map(); // Titel (klein) → Issue-ID
+  const states = {};
+  const milestones = {};
   for (const it of items) {
-    const labelIds = await Promise.all((it.labels ?? []).map((n) => labelId(teamId, n, labels, call)));
+    // SIN-528: Lücken der Fertig-Liste → Todo in v1, Ideen → Backlog in v2.
+    const cls = classifyNew(it);
+    states[cls.state] ??= await stateIdByName(teamId, cls.state, call);
+    milestones[cls.milestone] ??= await milestoneIdByName(projectId, cls.milestone, call);
+    const stateId = states[cls.state];
+    const projectMilestoneId = milestones[cls.milestone];
+    const labelIds = await Promise.all(cls.labels.map((n) => labelId(teamId, n, labels, call)));
     const data = await call(
       `mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { id identifier url } } }`,
-      { i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds } },
+      { i: { teamId, projectId, stateId, title: it.title, description: it.description, priority: it.priority, labelIds, ...(projectMilestoneId ? { projectMilestoneId } : {}) } },
     );
     const issue = data.issueCreate.issue;
     created.set(it.title.toLowerCase(), issue.id);

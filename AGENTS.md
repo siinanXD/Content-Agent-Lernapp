@@ -68,6 +68,14 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.
 - Workflows: In github-script@v7 nie `getOctokit` verwenden (nicht definiert). Stattdessen `new github.constructor({ auth: process.env.AGENT_TOKEN })`.
 
+## Fertig-Liste: v1 zuerst, Ideen nach und nach (SIN-528)
+
+- Die Produktbeschreibung ist das **Grundgerüst** (Linear-Meilenstein „v1 Grundgerüst“). Ideen, die beim Bauen dazukommen, werden sichtbar markiert (Label `idee`, Meilenstein „v2 Ideen“, Backlog) und nach und nach aufgenommen.
+- Reihenfolge des Dispatchers: `dringend` (sofort, überspringt alles) → v1 → höchstens **eine** `idee` pro Woche (älteste zuerst), erst nach allen v1-Issues.
+- Der Planer legt Issues nur für Lücken der Fertig-Liste an (Lern-App: Prüfungen in `scripts/autonomy/readiness.mjs`; Leitstand: `docs/FERTIG.md` dort). Alles andere ist `idee`.
+- Neue Wünsche von Sinan (Chat, Kommentar) bekommen automatisch `idee`, außer er sagt „dringend“ (dann Label `dringend`, kein `idee`). Agenten setzen `dringend` nie selbst.
+- Einmalig einsortieren: `node scripts/autonomy/einsortieren.mjs --projekt <Name> [--fertig docs/FERTIG.md]` (Trockenlauf, `--apply` schreibt). Fortschritt steht in `loop_snapshot` (`fertig_v1`, `gesamt_v1`, `ideen_offen`). Entscheidung: `docs/decisions/SIN-528-fertig-liste-steuert-loop.md`.
+
 ## Aufgaben für Sinan (SIN-310)
 
 - Braucht ein Worker, der Wächter oder der Planer etwas, das nur Sinan tun kann (Konto, Vertrag, Token, Einstellung), steht die Anleitung **nicht** im PR-Text. Es entsteht ein Linear-Issue mit Label `sinan` (nie `claude`, der Dispatcher nimmt es nie): `node scripts/autonomy/sinan.mjs create --titel … --wo … --link … --minuten … --schritt "…" (mehrfach) --pruefung …`. Der PR verlinkt das Issue unter `## Nach dem Merge`.

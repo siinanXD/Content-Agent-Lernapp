@@ -73,7 +73,7 @@ export function buildRadarIssues(radar, week, existing = new Set()) {
     ),
   ];
   if (sinan.length) lines.push("", "## Klick-Aufgaben", ...sinan.map((s) => `- [ ] [${label(s.titel, 90)}](${s.link}): ${label(s.was, 300)}`));
-  return [{ title, description: lines.join("\n"), priority: 4, labels: ["research"] }];
+  return [{ title, description: lines.join("\n"), priority: 4, labels: ["research"], idee: true }];
 }
 
 async function main(argv) {

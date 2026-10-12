@@ -5,7 +5,7 @@ flowchart TD
     Radar["Trend-Radar (sonntags)"] --> Planer
     Planer["Planer (planner.yml, sonntags)"] --> Schlange["Linear-Schlange"]
   end
-  Schlange --> Dispatcher["Dispatcher (dispatch.yml): Urgent zuerst, sofort nach Merge, höchstens 2 parallel"]
+  Schlange --> Dispatcher["Dispatcher (dispatch.yml): dringend, dann v1, höchstens 1 Idee pro Woche; sofort nach Merge, höchstens 2 parallel"]
   Dispatcher --> Worker["Worker (worker.yml, Claude)"]
   Worker --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
   subgraph Prüfung
