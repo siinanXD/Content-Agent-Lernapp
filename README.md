@@ -104,6 +104,7 @@ flowchart TD
   Smoke -- rot --> Revert
   Smoke -- grün --> Live["Live-Check (nach-deploy.yml)"]
   Deploy -- "grün, höchstens 1× pro Tag" --> Video["Tutorial-Video (video.yml): Freigabe nötig (SIN-483)"]
+  Deploy -- "nur von Hand, freigabe ja" --> Werbeclip["KI-Werbeclip (werbeclip.yml): bis 5 €, Freigabe nötig (SIN-520)"]
   Live --> Waechter["Wächter / Loop-Status (status.yml)"]
   Waechter -- "neuer App-Code" --> Deploy
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
@@ -169,7 +170,7 @@ Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). Right after e
 
 **Tutorial-Video (SIN-483).** Der Workflow `video` nimmt den Klickweg Start → Beruf wählen → Lernpfad → erste Einheit → Ergebnis gegen die Production-URL auf (`video/aufnahme.spec.ts`, `playwright.video.config.ts`), schneidet ihn mit Revideo (`video/schnitt/`: Titel, Einblendung je Schritt, Logo, Hinweis „Lerninhalte mit KI erstellt“, Farben aus `docs/design/tokens.json`) und legt das MP4 in Supabase Storage (Bucket `werbemittel`) und als Zeile in `werbemittel` ab, Status `wartet_auf_freigabe`. Kein KI-Videomodell, 0 € API, Länge unter 90 Sekunden (sonst Fehler), ohne Ton. Auslöser: von Hand oder nach erfolgreichem `production-deploy`, höchstens 1 Lauf pro Tag. Schreibende Endpunkte sind abgefangen, es gibt keine Personendaten. Hilfen: `scripts/autonomy/video.mjs`. Ohne `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` bleibt das Video ein Artefakt (`tutorial-video`).
 
-**KI-Werbeclips (SIN-485).** `node scripts/autonomy/werbeclip.mjs plan` zeigt als Trockenlauf geplante Clips (3 Entwürfe, 1 Final) und Kostenschätzung ohne API-Aufruf. Bezahlte Aufrufe über die Higgsfield-API (`HIGGSFIELD_API_KEY`) prüfen vor jedem Aufruf den Deckel von 5 € pro Produkt; Modelle, Preise und Endpunkte stehen in `docs/autonomy/higgsfield.json` und sind bis zum Beleg aus den Docs leer (dann kein bezahlter Aufruf). Ergebnis: Zeile in `werbemittel` mit Kosten, KI-Kennzeichnung und Status `wartet_auf_freigabe`.
+**KI-Werbeclips (SIN-485).** `node scripts/autonomy/werbeclip.mjs plan` zeigt als Trockenlauf geplante Clips (3 Entwürfe, 1 Final) und Kostenschätzung ohne API-Aufruf. `lauf` (Workflow `werbeclip`, nur von Hand mit Eingabe `freigabe: ja`, Secrets `HIGGSFIELD_KEY_ID` und `HIGGSFIELD_KEY_SECRET`) erzeugt die Clips über die Higgsfield-API, fragt den Status ab (Backoff; `failed`/`nsfw` werden gemeldet), lädt das Ergebnis herunter, blendet „Mit KI erstellt“ ein (Revideo, `video/schnitt/`) und legt es in Storage ab. Vor jedem Aufruf wird der Deckel von 5 € pro Produkt geprüft; Modelle, Preise und Endpunkte stehen in `docs/autonomy/higgsfield.json`. Ergebnis: Zeile in `werbemittel` mit Kosten, KI-Kennzeichnung und Status `wartet_auf_freigabe`.
 
 ## Secrets
 
