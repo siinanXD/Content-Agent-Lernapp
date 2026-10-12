@@ -5,6 +5,9 @@ export function correctAnswerText(q: PathQuestion): string {
   if (q.type === "zuordnen" && q.pairs?.length) {
     return q.pairs.map(([l, r]) => `${l} → ${r}`).join("; ");
   }
+  if (q.type === "lueckentext" && q.gaps?.length) {
+    return q.gaps.map((g) => g.accepted[0]).join(", ");
+  }
   if (q.type === "reihenfolge" && q.steps?.length) {
     return q.steps.map((s, i) => `${i + 1}. ${s}`).join(" ");
   }

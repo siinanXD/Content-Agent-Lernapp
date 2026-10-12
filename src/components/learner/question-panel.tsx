@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { OptionChoice } from "@/components/ui/option-choice";
 import { TextField } from "@/components/ui/text-field";
 import { UnitImageView } from "@/components/learner/unit-image";
+import { gapMatches } from "@/lib/learner/normalize-question";
 import type { PathQuestion } from "@/lib/learner/playable-path";
 
 export type AnswerResult = {
@@ -105,13 +106,69 @@ function BlankQuestion({
   revealed: boolean;
   onChecked: (result: AnswerResult) => void;
 }) {
-  const bank = question.blanks?.length
-    ? question.blanks
-    : [String(Array.isArray(question.correct) ? question.correct[0] : question.correct)];
-  const correct = String(
-    Array.isArray(question.correct) ? question.correct[0] : question.correct,
-  );
+  const gaps = question.gaps ?? [];
   const [selected, setSelected] = useState<string | null>(null);
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  if (gaps.length !== 1 || !gaps[0]!.options.length) {
+    const allFilled = gaps.every((g) => (values[g.id] ?? "").trim());
+    const isCorrect = gaps.every((g) => gapMatches(g, values[g.id] ?? ""));
+    return (
+      <div className="flex flex-col gap-3" role="group" aria-label="Lückentext">
+        {gaps.map((g, i) => (
+          <div key={g.id} className="flex flex-col gap-1.5">
+            {g.options.length ? (
+              <label className="flex flex-col gap-1.5">
+                <span className="mono-label text-[var(--color-text-secondary)]">
+                  Lücke {i + 1}
+                </span>
+                <select
+                  className="min-h-[52px] rounded-[var(--radius-md)] border-2 border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 text-[15px] text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+                  disabled={revealed}
+                  value={values[g.id] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [g.id]: e.target.value }))}
+                >
+                  <option value="">Bitte wählen</option>
+                  {g.options.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <TextField
+                id={`gap-${question.id}-${g.id}`}
+                label={`Lücke ${i + 1}`}
+                value={values[g.id] ?? ""}
+                onChange={(e) => setValues((v) => ({ ...v, [g.id]: e.target.value }))}
+                disabled={revealed}
+              />
+            )}
+            {revealed ? (
+              <p className="mono-label text-[var(--color-text-secondary)]" role="status">
+                {gapMatches(g, values[g.id] ?? "")
+                  ? "Richtig."
+                  : `Richtig wäre: ${g.accepted[0]}`}
+              </p>
+            ) : null}
+          </div>
+        ))}
+        {!revealed ? (
+          <Button
+            onClick={() => onChecked({ correct: isCorrect })}
+            disabled={!allFilled}
+            className="mt-2"
+          >
+            Antwort prüfen
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
+  const bank = gaps[0]!.options;
+  const correct = gaps[0]!.accepted[0]!;
 
   return (
     <div className="flex flex-col gap-2.5" role="group" aria-label="Lückentext">
