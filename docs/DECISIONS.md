@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-518 | SIN-518 — Video-Agent: Klickweg hängt im ersten Lauf | [SIN-518-video-klickweg.md](decisions/SIN-518-video-klickweg.md) |
 | SIN-511 | SIN-511: `freigegeben` bleibt, wenn nur main in den PR gemergt wird | [SIN-511-freigabe-merge-main.md](decisions/SIN-511-freigabe-merge-main.md) |
 | SIN-507 | SIN-507: Bestehensquote Metall, Messfehler durch zwei Frage-ID-Schreibweisen | [SIN-507-bestehensquote.md](decisions/SIN-507-bestehensquote.md) |
 | SIN-506 | SIN-506: Content-Maps und Didaktik freigegeben | [SIN-506-maps-freigegeben.md](decisions/SIN-506-maps-freigegeben.md) |
