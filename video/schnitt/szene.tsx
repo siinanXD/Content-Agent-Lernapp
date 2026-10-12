@@ -42,7 +42,7 @@ export default makeScene2D("szene", function* (view) {
   const band = createRef<Rect>();
   const zeile = createRef<Txt>();
   const kopf = createRef<Txt>();
-  view.add(<Video ref={clip} src="/aufnahme.mp4" size={[1280, 720]} play />);
+  yield view.add(<Video ref={clip} src="/aufnahme.mp4" size={[1280, 720]} play />);
   view.add(
     <Rect ref={band} width={1280} height={120} y={300} fill={f.hero} opacity={0.92} layout direction="column" justifyContent="center" alignItems="center" gap={4}>
       <Txt ref={kopf} text="" fontFamily={schrift} fontSize={22} fill={f.akzent} />
@@ -68,7 +68,7 @@ export default makeScene2D("szene", function* (view) {
   // Abspann: Logo und Hinweis
   const logo = createRef<Img>();
   const tag = createRef<Txt>();
-  view.add(<Img ref={logo} src="/logo.svg" width={160} y={-60} />);
+  yield view.add(<Img ref={logo} src="/logo.svg" width={160} y={-60} />);
   view.add(<Txt ref={tag} text={hinweis} fontFamily={schrift} fontSize={32} y={100} fill={f.textAufDunkel} />);
   yield* waitFor(OUTRO);
 });

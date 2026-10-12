@@ -57,3 +57,4 @@ live-ergebnis/
 playwright-report/
 # Laufprotokoll (SIN-296): vom Worker-Lauf erzeugt, als Artefakt hochgeladen
 laufprotokoll/
+video/schnitt/output/
