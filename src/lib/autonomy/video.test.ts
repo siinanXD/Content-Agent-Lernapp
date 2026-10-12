@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { heuteSchonGelaufen, pruefeDauer, registrieren, storagePfad, werbemittelZeile } from "../../../scripts/autonomy/video.mjs";
+import { heuteSchonGelaufen, pruefeDauer, registrieren, standbildZeiten, storagePfad, werbemittelZeile } from "../../../scripts/autonomy/video.mjs";
 import { KLICKWEG } from "../../../scripts/autonomy/video-klickweg";
+
+test("Standbilder: ein Zeitpunkt je Schritt, nach Titel (3 s) und Einblendung", () => {
+  const z = standbildZeiten([{ id: "start", startMs: 0 }, { id: "beruf wählen", startMs: 4200 }]);
+  assert.deepEqual(z, [
+    { datei: "schritt-01-start.png", sekunde: 4 },
+    { datei: "schritt-02-beruf-w-hlen.png", sekunde: 8.2 },
+  ]);
+});
 
 test("Länge: unter 90 Sekunden ist ok, ab 90 und ungültig sind Fehler", () => {
   assert.equal(pruefeDauer("45.5"), 45.5);

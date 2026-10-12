@@ -132,6 +132,8 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Playwright `locator.isVisible({ timeout })` wartet nicht (timeout wird ignoriert) → optionale Schritte mit `waitFor({ state: "visible", timeout })` prüfen und danach die Ziel-URL erwarten. (SIN-518)
 - Revideo-Render aus dem Repo-Stamm findet `@revideo/*` und `public/` nicht → in `video/schnitt` arbeiten (`process.chdir`), `outDir` dort, `@revideo/ui` als Abhängigkeit, `Img`/`Video` mit `yield view.add(...)` einhängen, Export per `@revideo/core/ffmpeg`. (SIN-518)
 
+- Tutorial-Video in 1280×720 aufgenommen, Textband lag über den Hauptknöpfen der Handy-App → Handy-Viewport 390×844 aufnehmen, im Schnitt Text in eigener Spalte neben der App; Standbilder je Schritt (`video-standbilder`) prüfen, nicht nur abspielen. (SIN-522)
+
 ## Datenbank-Rechte
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)
