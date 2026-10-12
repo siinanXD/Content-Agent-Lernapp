@@ -427,6 +427,46 @@ export function unitCostHistory(
     }));
 }
 
+/** SIN-493: Höchstzahl Einheiten je Teilbatch. Kosten sind erst nach dem Absenden bekannt, also nach jedem Teil messen. */
+export const PART_MAX_UNITS = 100;
+
+/** SIN-493: Chunk-Ziele in Teilbatches mit höchstens `maxUnits` Einheiten (ein Ziel wird nicht geteilt). */
+export function splitParts(targets: BatchChunkTarget[], maxUnits = PART_MAX_UNITS): BatchChunkTarget[][] {
+  const parts: BatchChunkTarget[][] = [];
+  let cur: BatchChunkTarget[] = [];
+  let units = 0;
+  for (const t of targets) {
+    if (cur.length > 0 && units + t.unitCount > maxUnits) {
+      parts.push(cur);
+      cur = [];
+      units = 0;
+    }
+    cur.push(t);
+    units += t.unitCount;
+  }
+  if (cur.length > 0) parts.push(cur);
+  return parts;
+}
+
+/**
+ * SIN-493: Darf der nächste Teilbatch starten? Summe (inkl. Reparatur) + erwartete Batch-Kosten
+ * (Einheiten × Kosten je Einheit × Marge) + Richter-Reserve für alle bis dahin erzeugten Einheiten
+ * und den neuen Teil müssen unter dem Deckel bleiben. Kosten je Einheit: Maximum aus Planwert und
+ * den in diesem Lauf gemessenen Kosten (macht der Aufrufer).
+ */
+export function partAllowed(input: {
+  spentEur: number;
+  perUnitEur: number;
+  partUnits: number;
+  generatedUnits: number;
+}): { ok: boolean; expectedEur: number } {
+  const expectedEur =
+    input.spentEur +
+    input.partUnits * input.perUnitEur * COST_MARGIN +
+    judgeReserveEur(input.generatedUnits + input.partUnits);
+  return { ok: expectedEur < RUN_CAP_EUR, expectedEur };
+}
+
 /** Wie viele Einheiten passen noch unter den Stopp-Wert (mit Sicherheitsfaktor)? */
 export function affordableUnits(spentEur: number, perUnitEur: number): number {
   const room = RUN_STOP_EUR - spentEur;
