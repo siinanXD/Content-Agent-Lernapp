@@ -14,6 +14,7 @@ import {
 import { variantFromBlock } from "@/lib/content/didaktik";
 import { modulesToGenerate } from "@/lib/content/shared-modules";
 import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
+import { outputConfig, REPAIR_API_SCHEMA, UNITS_API_SCHEMA } from "./api-schema";
 import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
 import type { GeneratedLernfeld, GeneratedQuestion, GeneratedUnit } from "./maf-lernfeld-seed";
 import {
@@ -107,6 +108,31 @@ Unit-IDs: "${block.id}-u${unitOffset + 1}" … "${block.id}-u${unitOffset + unit
 Keine anderen Einheiten. (Kurs-Stichwort: ${keyword})`;
 }
 
+/** Batch-Anfragen je Teilauftrag, mit Structured Outputs (SIN-489). Rein, ruft die API nicht auf (Trockenlauf). */
+export function chunkBatchRequests(opts: {
+  keyword: string;
+  curriculum: Curriculum;
+  targets: BatchChunkTarget[];
+  model?: string;
+  system?: Array<{ type: "text"; text: string; cache_control?: { type: "ephemeral" } }>;
+}) {
+  return opts.targets.map((t) => ({
+    custom_id: t.customId,
+    params: {
+      model: opts.model ?? GENERATOR_MODEL,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      output_config: outputConfig(UNITS_API_SCHEMA),
+      ...(opts.system ? { system: opts.system } : {}),
+      messages: [
+        {
+          role: "user" as const,
+          content: chunkPrompt(opts.curriculum, t.module, t.block, t.unitOffset, t.unitCount, opts.keyword),
+        },
+      ],
+    },
+  }));
+}
+
 export async function submitChunkTargets(opts: {
   keyword: string;
   /** Map des Kurses (SIN-431); Standard: MAF Metall. */
@@ -123,29 +149,7 @@ export async function submitChunkTargets(opts: {
 
   const res = await anthropicFetch("/v1/messages/batches", {
     method: "POST",
-    body: JSON.stringify({
-      requests: opts.targets.map((t) => ({
-        custom_id: t.customId,
-        params: {
-          model: opts.model ?? GENERATOR_MODEL,
-          max_tokens: MAX_OUTPUT_TOKENS,
-          ...(opts.system ? { system: opts.system } : {}),
-          messages: [
-            {
-              role: "user",
-              content: chunkPrompt(
-                c,
-                t.module,
-                t.block,
-                t.unitOffset,
-                t.unitCount,
-                opts.keyword,
-              ),
-            },
-          ],
-        },
-      })),
-    }),
+    body: JSON.stringify({ requests: chunkBatchRequests({ ...opts, curriculum: c }) }),
   });
 
   if (!res.ok) {
@@ -206,6 +210,7 @@ export async function submitRegenBatch(opts: {
       params: {
         model: GENERATOR_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
+        output_config: outputConfig(UNITS_API_SCHEMA),
         messages: [
           {
             role: "user",
@@ -328,6 +333,7 @@ export async function submitQuestionRepairBatch(opts: {
       params: {
         model: opts.model ?? GENERATOR_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
+        output_config: outputConfig(REPAIR_API_SCHEMA),
         messages: [{ role: "user", content: buildRepairPrompt(unit, plan) }],
       },
     }));

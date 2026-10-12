@@ -12,6 +12,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { agentOf } from "./agents.mjs";
 import { fetchJson } from "./http.mjs";
 import { usageFromExecution } from "./sparen.mjs";
 
@@ -58,6 +59,7 @@ export function buildEvent(a, env = process.env, now = Date.now()) {
   return {
     project,
     step: a.schritt,
+    agent: agentOf(a.schritt),
     issue: a.issue || null,
     pr: int(a.pr),
     status: a.status,
