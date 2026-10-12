@@ -3,11 +3,14 @@
  * Befehle:
  *   node scripts/autonomy/video.mjs limit --runs <json>            höchstens 1 Lauf pro Tag (UTC), Exit 3 = heute schon gelaufen
  *   node scripts/autonomy/video.mjs pruefen --dauer <sek>          Video unter 90 Sekunden, sonst Exit 1
+ *   node scripts/autonomy/video.mjs standbilder --klickweg <json> --mp4 <datei> --out <ordner>
+ *       zieht aus dem fertigen MP4 je Schritt ein Standbild (ffmpeg), Artefakt `video-standbilder` (SIN-522)
  *   node scripts/autonomy/video.mjs registrieren --mp4 <datei> --klickweg <json> --dauer <sek> [--produkt <name>]
  *       lädt das MP4 in Supabase Storage (Bucket `werbemittel`) und legt eine Zeile `werbemittel` mit Status
  *       `wartet_auf_freigabe` an. Veröffentlicht wird nie von hier aus.
  */
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const MAX_DAUER_SEKUNDEN = 90;
@@ -20,6 +23,16 @@ export function pruefeDauer(sekunden, max = MAX_DAUER_SEKUNDEN) {
   if (!Number.isFinite(s) || s <= 0) throw new Error(`Videolänge ungültig: ${sekunden}`);
   if (s >= max) throw new Error(`Video ist ${s.toFixed(1)} s lang, erlaubt sind unter ${max} s.`);
   return s;
+}
+
+export const INTRO_SEKUNDEN = 3; // gleich wie INTRO in video/schnitt/szene.tsx
+
+/** Zeitpunkt je Schritt im fertigen Video: Titel (3 s) + Start im Klickweg + 1 s, damit die Einblendung steht. */
+export function standbildZeiten(schritte, intro = INTRO_SEKUNDEN, versatz = 1) {
+  return schritte.map((s, i) => ({
+    datei: `schritt-${String(i + 1).padStart(2, "0")}-${String(s.id ?? "x").replace(/[^a-z0-9]+/gi, "-")}.png`,
+    sekunde: Math.round((intro + Number(s.startMs) / 1000 + versatz) * 10) / 10,
+  }));
 }
 
 /**
@@ -100,6 +113,14 @@ async function main(argv) {
     console.log("Heute noch kein Video-Lauf.");
   } else if (cmd === "pruefen") {
     console.log(`Länge ok: ${pruefeDauer(arg(argv, "dauer")).toFixed(1)} s (unter ${MAX_DAUER_SEKUNDEN} s).`);
+  } else if (cmd === "standbilder") {
+    const klickweg = JSON.parse(readFileSync(arg(argv, "klickweg"), "utf8"));
+    const out = arg(argv, "out");
+    mkdirSync(out, { recursive: true });
+    for (const { datei, sekunde } of standbildZeiten(klickweg.schritte)) {
+      execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-ss", String(sekunde), "-i", arg(argv, "mp4"), "-frames:v", "1", `${out}/${datei}`]);
+      console.log(`Standbild ${datei} bei ${sekunde} s`);
+    }
   } else if (cmd === "registrieren") {
     const env = process.env;
     const produkt = arg(argv, "produkt") ?? "lern-app";
@@ -117,7 +138,7 @@ async function main(argv) {
     await registrieren({ env, mp4: readFileSync(arg(argv, "mp4")), zeile });
     console.log(`Gespeichert: ${zeile.storage_pfad} (${zeile.dauer_sekunden} s), Status ${zeile.status}.`);
   } else {
-    console.error("Befehl: limit | pruefen | registrieren");
+    console.error("Befehl: limit | pruefen | standbilder | registrieren");
     process.exit(2);
   }
 }
