@@ -130,6 +130,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Video-Agent hing im ersten Lauf bis zum Test-Timeout (120 s), ohne Hinweis auf den Schritt: die Schleife kannte nur Auswahlfragen, Lücken-, Zuordnen- und Rechenfragen haben keine `aria-pressed`-Knöpfe, „Antwort prüfen“ blieb gesperrt → je Fragetyp antworten (`beantworte`), `actionTimeout` setzen, Test-Timeout nach Fragenanzahl, optionale Klicks nur wenn sichtbar, bei Fehlern `video-ergebnis/dateien/**` als Artefakt hochladen. (SIN-518)
 - Neues Unterpaket mit eigenen Abhängigkeiten (`video/schnitt`, Revideo) fiel in `**/*.tsx` der `tsconfig.json`, `next build` scheiterte mit „requires the module path …/jsx-runtime“ (Gate `bildvergleich`) → Unterpakete ohne Installation im Haupt-`npm ci` sofort in `exclude` der `tsconfig.json` eintragen und `npm run build` prüfen. (SIN-519)
 - Playwright `locator.isVisible({ timeout })` wartet nicht (timeout wird ignoriert) → optionale Schritte mit `waitFor({ state: "visible", timeout })` prüfen und danach die Ziel-URL erwarten. (SIN-518)
+- Revideo-Render aus dem Repo-Stamm findet `@revideo/*` und `public/` nicht → in `video/schnitt` arbeiten (`process.chdir`), `outDir` dort, `@revideo/ui` als Abhängigkeit, `Img`/`Video` mit `yield view.add(...)` einhängen, Export per `@revideo/core/ffmpeg`. (SIN-518)
 
 ## Datenbank-Rechte
 
