@@ -133,6 +133,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Revideo-Render aus dem Repo-Stamm findet `@revideo/*` und `public/` nicht → in `video/schnitt` arbeiten (`process.chdir`), `outDir` dort, `@revideo/ui` als Abhängigkeit, `Img`/`Video` mit `yield view.add(...)` einhängen, Export per `@revideo/core/ffmpeg`. (SIN-518)
 
 - Flex-Zeile mit `shrink-0` und langem Text (Region der Anbieter-Karten) → erzeugt auf dem Handy waagerechtes Scrollen, `bildvergleich` sah es nicht, weil es auf main schon da war. Richtig: Umbruch erlauben (`flex-wrap`, kein `shrink-0`); der Layout-Test `e2e/layout.spec.ts` fängt es. (SIN-523)
+- Tutorial-Video in 1280×720 aufgenommen, Textband lag über den Hauptknöpfen der Handy-App → Handy-Viewport 390×844 aufnehmen, im Schnitt Text in eigener Spalte neben der App; Standbilder je Schritt (`video-standbilder`) prüfen, nicht nur abspielen. (SIN-522)
 
 ## Datenbank-Rechte
 
