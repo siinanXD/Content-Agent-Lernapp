@@ -17,11 +17,11 @@
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./budget.mjs";
-import { noPrComment, splitIssue, summarizeExecution, tooBig } from "./diagnose.mjs";
+import { MAX_NO_PR, needsHumanComment, noPrComment, noPrStreak, splitIssue, summarizeExecution, tooBig } from "./diagnose.mjs";
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
 import { collectPrStates, waitingIssues } from "./warten.mjs";
-import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, buildPrompt, comment, createLinearIssues, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
+import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, addLabel, buildPrompt, comment, createLinearIssues, fetchComments, fetchProjectIssues, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -146,8 +146,19 @@ export async function main(argv) {
     const issue = await findByIdentifier(argv[noPrAt + 1]);
     const file = argv[noPrAt + 2];
     const summary = summarizeExecution(file && existsSync(file) ? readFileSync(file, "utf8") : "");
-    const text = noPrComment(issue.identifier, summary);
+    // Claude-Limit (auch Sofortabbruch ohne Text, SIN-362): kein Fehlversuch des Issues.
+    const limit = Boolean(file && existsSync(file) && pauseUntilFromLog(readFileSync(file, "utf8")));
+    const text = noPrComment(issue.identifier, summary, { limit });
     const parts = tooBig(summary) ? splitIssue(issue) : [];
+    // Zweiter Lauf in Folge ohne PR (SIN-362): `needs-human` statt neuem Start.
+    const streak = limit || dry ? 0 : noPrStreak(await fetchComments(issue.id)) + 1;
+    if (!limit && !parts.length && streak >= MAX_NO_PR) {
+      await comment(issue.id, text);
+      await comment(issue.id, needsHumanComment(issue.identifier, summary));
+      await addLabel(issue, "needs-human");
+      await setState(issue, "Todo");
+      return console.log(`${issue.identifier} → needs-human (${streak} Läufe ohne PR)`);
+    }
     if (dry) return console.log(`[dry-run] ${issue.identifier} → ${parts.length ? `${parts.length} Teil-Issues` : "Todo"}\n${text}`);
     await comment(issue.id, text);
     if (parts.length) {

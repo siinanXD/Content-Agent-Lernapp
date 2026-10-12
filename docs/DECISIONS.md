@@ -91,6 +91,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-367 | SIN-367: Kennzahlen-Bericht wiederholt Schema-Cache-Fehler | [SIN-367-schema-cache-retry.md](decisions/SIN-367-schema-cache-retry.md) |
 | SIN-366 | SIN-366 — Lauf: Impressum | [SIN-366-impressum-lauf.md](decisions/SIN-366-impressum-lauf.md) |
 | SIN-365 | SIN-365 — Produktreife Sentry: Lauf mit echten Daten | [SIN-365-sentry-lauf.md](decisions/SIN-365-sentry-lauf.md) |
+| SIN-362 | SIN-362: Claude-Sofortabbruch als Limit, Stopp bei Läufen ohne PR | [SIN-362-limit-sofortabbruch.md](decisions/SIN-362-limit-sofortabbruch.md) |
 | SIN-361 | SIN-361 — Wächter: übersprungene PR-Ereignis-Läufe von dispatch zählen nicht | [SIN-361-dispatch-skipped-lauf.md](decisions/SIN-361-dispatch-skipped-lauf.md) |
 | SIN-360 | SIN-360: Linear Basic, keine Issue-Grenze | [SIN-360-linear-basic.md](decisions/SIN-360-linear-basic.md) |
 | SIN-359 | SIN-359: Kennzahlen-Bericht unterscheidet die Ursache bei fehlenden Tabellen | [SIN-359-tabellenfehler-klassen.md](decisions/SIN-359-tabellenfehler-klassen.md) |

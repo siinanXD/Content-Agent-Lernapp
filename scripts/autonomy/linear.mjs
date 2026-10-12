@@ -278,3 +278,17 @@ export async function comment(issueId, body, call = linear) {
     b: body,
   });
 }
+
+/** Kommentare eines Issues (höchstens 50), für die Zählung der Läufe ohne PR (SIN-362). */
+export async function fetchComments(issueId, call = linear) {
+  const data = await call(`query($id: String!) { issue(id: $id) { comments(first: 50) { nodes { body createdAt } } } }`, { id: issueId });
+  return data.issue?.comments?.nodes ?? [];
+}
+
+/** Label am Issue ergänzen (SIN-362: `needs-human`). Das Label muss im Team existieren. */
+export async function addLabel(issue, name, call = linear) {
+  const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: issue.team.id, n: name });
+  const labelId = found.issueLabels.nodes[0]?.id;
+  if (!labelId) throw new Error(`Label „${name}“ im Team nicht gefunden`);
+  await call(`mutation($id: String!, $l: String!) { issueAddLabel(id: $id, labelId: $l) { success } }`, { id: issue.id, l: labelId });
+}

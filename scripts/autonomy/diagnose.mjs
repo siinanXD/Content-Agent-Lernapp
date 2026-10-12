@@ -176,13 +176,45 @@ export function summarizeExecution(raw) {
 }
 
 /** Kommentar am Linear-Issue: Issue ist zurück auf Todo, mit Grund. Bei max-turns der Hinweis zum Zerlegen. */
-export function noPrComment(identifier, s) {
+export function noPrComment(identifier, s, { limit = false } = {}) {
   return [
     `Worker-Lauf für ${identifier} beendet, aber kein PR. Zurück auf Todo (SIN-291).`,
+    ...(limit ? [LIMIT_NOTE] : []),
     `- Ergebnis: ${s.subtype ?? "unbekannt"}, num_turns: ${s.numTurns ?? "unbekannt"}`,
     `- Letzte Ausgabe: ${s.lastOutput || "keine"}`,
     `- Permission denials: ${s.denials.length ? s.denials.join("; ") : "keine"}`,
     ...(tooBig(s) ? ["", "Der Lauf hat die Zug-Grenze erreicht oder sehr viele Züge gebraucht: der Auftrag ist wahrscheinlich zu groß. In 2–4 Teil-Issues zerlegen (je ein PR)."] : []),
+  ].join("\n");
+}
+
+/** Zeile im Kommentar, wenn der Lauf am Claude-Limit endete: zählt nicht als Fehlversuch des Issues. */
+export const LIMIT_NOTE = "- Grund: Claude-Limit erkannt, Pause gesetzt. Zählt nicht als Fehlversuch (SIN-362).";
+/** So viele Läufe ohne PR in Folge, dann bekommt das Issue `needs-human`. */
+export const MAX_NO_PR = 2;
+const NO_PR_RE = /^Worker-Lauf für \S+ beendet, aber kein PR/;
+
+/**
+ * Läufe ohne PR in Folge (SIN-362): zählt die Kommentare „beendet, aber kein PR“ seit dem letzten „Worker fertig“.
+ * Limit-Läufe (LIMIT_NOTE) zählen nicht. `comments`: [{ body, createdAt }] in beliebiger Reihenfolge.
+ */
+export function noPrStreak(comments = []) {
+  const sorted = [...comments].sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
+  let n = 0;
+  for (const c of sorted) {
+    const body = String(c.body ?? "");
+    if (/^Worker fertig/.test(body)) break;
+    if (NO_PR_RE.test(body) && !body.includes("Claude-Limit erkannt")) n++;
+  }
+  return n;
+}
+
+/** Kommentar, wenn ein Issue nach MAX_NO_PR Läufen ohne PR an einen Menschen geht. */
+export function needsHumanComment(identifier, s) {
+  return [
+    `${identifier}: ${MAX_NO_PR} Worker-Läufe hintereinander ohne PR. Label \`needs-human\`, der Dispatcher startet es nicht mehr (SIN-362).`,
+    `- Letzter Grund: ${s.lastOutput || "keine Ausgabe"}`,
+    `- Ergebnis: ${s.subtype ?? "unbekannt"}, Permission denials: ${s.denials.length ? s.denials.join("; ") : "keine"}`,
+    "Nach der Klärung das Label entfernen.",
   ].join("\n");
 }
 

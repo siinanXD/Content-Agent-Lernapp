@@ -56,6 +56,8 @@ export const VERCEL_WARN = 70;
 /** So lange wartet der Wächter nach einer @claude-Bitte, bevor er sie wiederholt oder an Sinan eskaliert. */
 export const CLAUDE_RETRY_MIN = 45;
 export const MAX_CLAUDE_ASKS = 2;
+/** Fehlerzeile des Workers bei leerem Claude-Kontingent (worker.yml, SIN-362). */
+export const LIMIT_MARK = /Claude-Limit erkannt/;
 const APPROVAL_LABELS = ["freigegeben", "owner-approved"];
 const STATE_RE = /<!-- loop-status-state: (\{.*?\}) -->/s;
 const RUNNING = ["in_progress", "queued", "waiting", "pending", "requested"];
@@ -167,7 +169,15 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   /** @type {{ key: string, text: string }[]} */
   const incidents = [];
   const actions = [];
-  for (const r of failed) {
+  // SIN-362: Der Worker nennt „Claude-Limit erkannt“ in der Fehlerzeile, wenn das Kontingent leer war.
+  const limitFailed = failed.filter((r) => LIMIT_MARK.test(failures[r.id] ?? ""));
+  if (limitFailed.length) {
+    incidents.push({
+      key: "claude-limit",
+      text: `Claude-Limit erkannt: ${limitFailed.length} Worker-Läufe der letzten 24 h endeten am leeren Kontingent. ${paused ? `Pause aktiv bis ${pausedUntil}.` : "Keine Pause gesetzt: AGENT_PAUSED_UNTIL von Hand setzen."}`,
+    });
+  }
+  for (const r of failed.filter((x) => !limitFailed.includes(x))) {
     const id = idOf(r.display_title) ?? "?";
     incidents.push({
       key: `worker-failed:${r.id}`,
@@ -381,7 +391,8 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   out.push(phase.phase === "betrieb" ? `- Schlange: ${order.length} startbar, Betrieb: kein Nachfüllen (Wochenplan)` : `- Schlange: ${order.length} startbar, nächstes Nachfüllen frühestens ${earliest}`);
   out.push("", "## Letzte 24 h", "");
   out.push(`- Gemergt: ${mergedPrs.length ? mergedPrs.map((p) => `#${p.number}`).join(", ") : "keine"}`);
-  out.push(`- Fehlgeschlagene Worker: ${failed.length ? "" : "keine"}`);
+  out.push(`- Fehlgeschlagene Worker (Actions-Läufe): ${failed.length ? failed.length : "keine"}`);
+  if (limitFailed.length) out.push(`- Claude-Limit erkannt: ${limitFailed.length} Läufe, ${paused ? `Pause bis ${pausedUntil}` : "keine Pause gesetzt"}`);
   for (const r of failed) out.push(`  - ${idOf(r.display_title) ?? "?"}: ${cell(failures[r.id] || "kein Fehlertext lesbar")} ([Lauf](${r.html_url}))`);
   out.push(`- Pausen: ${paused ? `aktiv bis ${pausedUntil}` : "keine aktiv"}`);
   out.push("", "## Kontingente", "", renderQuotaTable(quotaRows));
@@ -499,7 +510,11 @@ export async function collectDecisions(repo, prs, now, { call = gh, owner = "sii
 
 async function collectGithub(repo, now) {
   const since = new Date(now.getTime() - DAY_MS).toISOString().slice(0, 10);
-  const { workflow_runs } = await gh(`/repos/${repo}/actions/runs?per_page=100&created=>=${since}`);
+  const { workflow_runs: all } = await gh(`/repos/${repo}/actions/runs?per_page=100&created=>=${since}`);
+  // SIN-362: Die 100 jüngsten Läufe aller Workflows drängen Worker-Läufe heraus (17 in einer Nacht); sie getrennt holen.
+  const own = await gh(`/repos/${repo}/actions/workflows/worker.yml/runs?per_page=100&created=>=${since}`).catch(() => ({ workflow_runs: [] }));
+  const seen = new Set(all.map((r) => r.id));
+  const workflow_runs = [...all, ...(own.workflow_runs ?? []).filter((r) => !seen.has(r.id))];
   const runs = workflow_runs.map((r) => ({
     id: r.id, name: r.name, display_title: r.display_title, status: r.status, conclusion: r.conclusion,
     created_at: r.created_at, updated_at: r.updated_at, html_url: r.html_url,
