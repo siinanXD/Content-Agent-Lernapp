@@ -14,6 +14,7 @@
     "quality:goldset-indkfl": "node --import tsx scripts/goldset-indkfl.ts",
     "quality:calibrate": "node --import tsx scripts/ap06-calibrate.ts",
     "quality:judge-backfill": "node --import tsx scripts/sin260-judge-backfill.ts",
+    "quality:quote": "node scripts/autonomy/quality-quote.mjs",
     "quality:smoke": "node --import tsx scripts/ap06-smoke.ts",
     "ap15:phase-a": "node --import tsx scripts/ap15-phase-a.ts",
     "quality:prompt-vergleich": "node --import tsx scripts/sin432-prompt-vergleich.ts",

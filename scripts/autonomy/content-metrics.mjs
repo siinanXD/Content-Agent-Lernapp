@@ -212,7 +212,9 @@ export function ratedQuestions(questions, evaluations) {
     const raw = key(e.course_id, e.unit_id, e.question_id);
     const stripped = String(e.question_id).startsWith(prefix) ? key(e.course_id, e.unit_id, String(e.question_id).slice(prefix.length)) : null;
     const k = existing.has(raw) ? raw : stripped && existing.has(stripped) ? stripped : null;
-    if (k) seen.set(k, { ...e, type: typeOf.get(k) });
+    // SIN-507: Dieselbe Frage kann unter beiden ID-Schreibweisen stehen; die neueste Bewertung gewinnt, nicht die letzte in ID-Reihenfolge.
+    const prev = k ? seen.get(k) : null;
+    if (k && (!prev || String(e.created_at ?? "") >= String(prev.created_at ?? ""))) seen.set(k, { ...e, type: typeOf.get(k) });
   }
   return { gesamt: existing.size, bewertet: [...seen.values()] };
 }
@@ -289,7 +291,7 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
     // Geteilte Einheiten liegen im Quellkurs (Metall) und stehen dort schon in `published`.
     // SIN-394: Nur Bewertungen zählen, deren Fragen noch existieren (append-only evaluations können auf gelöschte Fragen verweisen).
     const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id,type&order=course_id,unit_id,id", h);
-    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed,quellentreue,eindeutigkeit,niveau,sprache&order=course_id,unit_id,question_id", h);
+    const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed,quellentreue,eindeutigkeit,niveau,sprache,created_at&order=course_id,unit_id,question_id", h);
     const { gesamt: fragenGesamt, bewertet: evaluationsWithExisting } = ratedQuestions(questions, evaluations);
     const progressRows = await fetchAll(env.SUPABASE_URL, "learning_progress", "select=anonymous_id,course_id,unit_id,correct", h);
     const progress = {};

@@ -30,6 +30,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Langfuse: Namen, Session, Scores, Queue, Dashboard (SIN-299) | `src/lib/quality/langfuse-names.ts`, `langfuse-verwaltung.ts`, `scripts/langfuse-setup.ts`, `docs/ops/langfuse-dashboard.md` |
 | Langfuse: ein Trace je Einheit mit Fragen und Bewertung (SIN-383) | `src/lib/quality/unit-traces.ts`, `grow-traces.ts`, Test `grow-traces.test.ts` |
 | Structured Outputs: API-Schema für Batch-Anfragen (SIN-489) | `src/lib/generate/api-schema.ts` (`UNITS_API_SCHEMA`, `REPAIR_API_SCHEMA`), Test `api-schema.test.ts` |
+| Bestehensquote des Richters, lesend (SIN-507) | `scripts/autonomy/quality-quote.mjs` (`npm run quality:quote`), Bericht `docs/quality/SIN-507-bestehensquote.md` |
 | Hermes (Quellen-Monitor) | `src/lib/hermes/`, `docs/ops/HERMES.md` |
 | Skripte (Kurslauf, Goldset, Pilot) | `scripts/*.ts`, `scripts/*.mjs` |
 | API-Vertrag | `docs/api/openapi.yaml`, `docs/api/postman-collection.json` |
