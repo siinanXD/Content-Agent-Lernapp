@@ -2,9 +2,10 @@
  * Figma-Lesezugriff für Agenten (SIN-239). Nur lesen, Token `FIGMA_ACCESS_TOKEN`.
  *   node scripts/autonomy/figma.mjs --node 12:34 [--file KEY]   Werte (Farben, Abstände, Texte) eines Knotens
  *   node scripts/autonomy/figma.mjs --tokens                     Abgleich docs/design/tokens.json ↔ Figma-Farben
+ *   node scripts/autonomy/figma.mjs --bild "02 Lernpfad" [--out datei.png]  Frame als PNG, Name oder ID (SIN-523)
  * Ohne Token: „nicht verfügbar“, Exit-Code 0 (wie bisher im Bericht).
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const DEFAULT_FILE_KEY = "0SWGDO2ioBD3MyXiAnrbRz";
@@ -83,6 +84,29 @@ export async function diffColorTokens(tokens, fileKey, env = process.env, fetchI
     .map(([name, t]) => `${name} (${t.value})`);
 }
 
+/** Oberste Frames aller Seiten der Datei (Name, ID) aus `files/KEY?depth=2`. */
+export function listFrames(doc) {
+  return (doc.children ?? []).flatMap((page) => (page.children ?? []).filter((n) => n.type === "FRAME").map((n) => ({ name: n.name, id: n.id })));
+}
+
+/**
+ * Frame als PNG (Base64) nach Name oder ID; `null` ohne Token oder wenn der Frame fehlt (SIN-523).
+ * @param {string} nameOderId
+ * @param {Record<string, string | undefined>} [env]
+ */
+export async function frameBild(nameOderId, env = process.env, fetchImpl = fetch, fileKey = DEFAULT_FILE_KEY) {
+  const datei = await get(`files/${fileKey}?depth=2`, env, fetchImpl);
+  if (!datei) return null;
+  const frame = listFrames(datei.document).find((f) => f.id === nameOderId || f.name === nameOderId);
+  if (!frame) return null;
+  const bilder = await get(`images/${fileKey}?ids=${encodeURIComponent(frame.id)}&format=png&scale=1`, env, fetchImpl);
+  const url = bilder?.images?.[frame.id];
+  if (!url) return null;
+  const res = await fetchImpl(url);
+  if (!res.ok) throw new Error(`Figma-Bild HTTP ${res.status}`);
+  return { id: frame.id, name: frame.name, base64: Buffer.from(await res.arrayBuffer()).toString("base64") };
+}
+
 export async function main(argv, env = process.env, fetchImpl = fetch) {
   const arg = (n) => argv[argv.indexOf(n) + 1];
   const fileKey = argv.includes("--file") ? arg("--file") : DEFAULT_FILE_KEY;
@@ -90,11 +114,18 @@ export async function main(argv, env = process.env, fetchImpl = fetch) {
     const v = await readNodeValues(fileKey, arg("--node"), env, fetchImpl);
     return console.log(v ? JSON.stringify(v, null, 2) : NOT_AVAILABLE);
   }
+  if (argv.includes("--bild")) {
+    const b = await frameBild(arg("--bild"), env, fetchImpl, fileKey);
+    if (!b) return console.log(NOT_AVAILABLE);
+    const out = argv.includes("--out") ? arg("--out") : `figma-${b.id.replace(":", "-")}.png`;
+    writeFileSync(out, Buffer.from(b.base64, "base64"));
+    return console.log(`${b.name} (${b.id}) → ${out}`);
+  }
   if (argv.includes("--tokens")) {
     const d = await diffColorTokens(JSON.parse(readFileSync("docs/design/tokens.json", "utf8")), fileKey, env, fetchImpl);
     return console.log(d === null ? NOT_AVAILABLE : d.length ? `Token-Farben ohne Figma-Entsprechung: ${d.join(", ")}` : "Token-Farben stimmen mit Figma überein");
   }
-  throw new Error("Aufruf: --node ID [--file KEY] oder --tokens");
+  throw new Error("Aufruf: --node ID [--file KEY], --bild NAME [--out DATEI] oder --tokens");
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

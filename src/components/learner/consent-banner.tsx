@@ -30,6 +30,7 @@ export function ConsentBanner() {
   return (
     <section
       data-consent-banner
+      data-layout-ok="Einwilligungs-Banner liegt bewusst über dem Inhalt (Figma N3) und verschwindet nach der Entscheidung"
       aria-labelledby="consent-banner-title"
       className="fixed inset-x-4 bottom-4 z-10 mx-auto flex max-w-[358px] flex-col gap-2.5 rounded-[var(--radius-xl)] bg-[var(--color-bg-hero)] p-6 text-[var(--color-text-on-brand)]"
     >

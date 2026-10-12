@@ -96,7 +96,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
                 {b.items.map((c) => (
                   <li
                     key={c.name}
-                    className="flex items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 py-2.5"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 py-2.5"
                   >
                     <div className="flex flex-col gap-0.5">
                       <span className="text-sm font-semibold leading-[18.2px] text-[var(--color-text-primary)]">
@@ -107,7 +107,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
                       </span>
                     </div>
                     <span
-                      className="shrink-0 text-xs font-medium leading-[15.6px] text-[var(--color-text-secondary)]"
+                      className="max-w-full text-xs font-medium leading-[15.6px] text-[var(--color-text-secondary)]"
                       style={{ fontFamily: "var(--font-mono)" }}
                     >
                       <Inlines parts={c.region} />
