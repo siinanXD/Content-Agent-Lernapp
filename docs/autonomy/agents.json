@@ -1,0 +1,107 @@
+{
+  "hinweis": "Einzige Quelle für Agenten-Rollen (SIN-481). Ein Agent ist eine Rolle, unter der bestehende Workflows gebündelt werden, keine neue KI-Ebene. Workflow = Dateiname in .github/workflows/ ohne .yml. budget: null = kein eigenes Limit festgelegt (nichts erfunden).",
+  "agents": [
+    {
+      "id": "research",
+      "name": "Research",
+      "auftrag": "Beobachtet Trends und amtliche Quellen und bereitet Produktwünsche mit einer Vor-Recherche vor.",
+      "ausloeser": "Zeitplan (wöchentlich) und Produktwunsch",
+      "workflows": ["trend-radar", "source-check"],
+      "geplant": ["Vor-Recherche je Produktwunsch (SIN-488)"],
+      "modell": "claude-sonnet-5-5",
+      "budget": { "proLauf": null, "proWoche": null },
+      "eingabe": "Web, amtliche Quellen, Produktwunsch",
+      "ausgabe": "Berichte in docs/research/, Hinweise im Tages-Update"
+    },
+    {
+      "id": "planer",
+      "name": "Planer",
+      "auftrag": "Legt aus Zielen und Berichten höchstens 5 Linear-Issues pro Woche an (Code ohne Sprachmodell im Dispatcher).",
+      "ausloeser": "Zeitplan (sonntags)",
+      "workflows": ["planner"],
+      "modell": "claude-sonnet-5-5",
+      "budget": { "proLauf": null, "proWoche": "höchstens 5 neue Issues" },
+      "eingabe": "PRODUCT.md, Linear-Backlog, Berichte",
+      "ausgabe": "Linear-Issues mit Größe und Blockern"
+    },
+    {
+      "id": "design",
+      "name": "Design",
+      "auftrag": "Klärt neue Screens, Komponenten und Tokens in Figma, bevor Code entsteht.",
+      "ausloeser": "Linear-Issues mit Label design (Sitzung mit Sinan)",
+      "workflows": [],
+      "modell": "claude-sonnet-5-5 (nur in einer Claude-Sitzung)",
+      "budget": { "proLauf": null, "proWoche": "höchstens 1 Design-Paket" },
+      "eingabe": "Design-Issues, Figma-Datei 0SWGDO2ioBD3MyXiAnrbRz",
+      "ausgabe": "Figma-Frames, Tokens"
+    },
+    {
+      "id": "coding",
+      "name": "Coding",
+      "auftrag": "Setzt ein Issue als Pull Request um und repariert rote Checks.",
+      "ausloeser": "Todo-Issue ohne offene Blocker, Mention, rote CI",
+      "workflows": ["dispatch", "worker", "claude", "repair", "review"],
+      "modell": "claude-haiku-5-5 (klein), claude-sonnet-5-5 (mittel, gross)",
+      "budget": { "proLauf": "30/80/150 Runden je Größe, 3 Reparatur-Runden", "proWoche": null },
+      "eingabe": "Linear-Issue, Repo",
+      "ausgabe": "Pull Request"
+    },
+    {
+      "id": "pruefen",
+      "name": "Prüfen",
+      "auftrag": "Bewertet Risiko, Tests, Sicherheit und Optik und macht Fehler auf main rückgängig.",
+      "ausloeser": "Pull Request, Push auf main, Deploy",
+      "workflows": ["pr-gate", "ci", "codeql", "visual", "nach-deploy", "revert-guard"],
+      "modell": "keins (Code)",
+      "budget": { "proLauf": null, "proWoche": null },
+      "eingabe": "Pull Request, Build, Live-Seite",
+      "ausgabe": "Labels, Checks, Revert-PR"
+    },
+    {
+      "id": "betrieb",
+      "name": "Betrieb",
+      "auftrag": "Liefert aus, migriert, sichert und berichtet den Stand an Sinan.",
+      "ausloeser": "Merge, Zeitplan, manuell",
+      "workflows": ["production-deploy", "post-merge", "migrate", "backup", "status", "loop-pause", "aufraeumen", "digest"],
+      "modell": "keins (Code), aufraeumen: Claude",
+      "budget": { "proLauf": null, "proWoche": "aufraeumen: höchstens 1 PR" },
+      "eingabe": "main, Migrationen, Schnappschuss",
+      "ausgabe": "Deploy, Backup, Tages-Update, Status-Seite"
+    },
+    {
+      "id": "content",
+      "name": "Content",
+      "auftrag": "Erzeugt Lerninhalte nur mit amtlicher Quelle; Bewertung und Zulassung macht ein Mensch.",
+      "ausloeser": "Zeitplan und manuell",
+      "workflows": ["content-grow", "run-task"],
+      "modell": "claude-sonnet-5-5",
+      "budget": { "proLauf": "20 Euro je Kurslauf", "proWoche": null },
+      "eingabe": "Curriculum-Maps, amtliche Quellen",
+      "ausgabe": "Lerneinheiten mit Quelle und Abrufdatum"
+    },
+    {
+      "id": "video",
+      "name": "Video",
+      "auftrag": "Erstellt Tutorials aus Playwright-Läufen und KI-Clips.",
+      "ausloeser": "noch nicht festgelegt",
+      "workflows": [],
+      "geplant": ["neu: Tutorial aus Playwright, KI-Clips"],
+      "modell": null,
+      "budget": { "proLauf": null, "proWoche": null },
+      "eingabe": "Playwright-Läufe, Produkt-Screens",
+      "ausgabe": "Tutorial-Videos"
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing",
+      "auftrag": "Schreibt Werbetexte, holt die Freigabe ein und veröffentlicht.",
+      "ausloeser": "noch nicht festgelegt",
+      "workflows": [],
+      "geplant": ["neu: Werbetexte, Freigabe, Veröffentlichung"],
+      "modell": null,
+      "budget": { "proLauf": null, "proWoche": null },
+      "eingabe": "Produktstand, Kanäle",
+      "ausgabe": "Freigegebene Texte"
+    }
+  ]
+}
