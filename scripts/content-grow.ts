@@ -33,11 +33,10 @@ import {
   affordableUnits,
   buildQueue,
   chooseRunMap,
-  eurPerUnit,
+  COST_MARGIN,
+  judgeReserveEur,
   linearSummary,
   MAP_COURSES,
-  mapBilanz,
-  resolveCourseIds,
   missingSecrets,
   nextOpenItem,
   nextOpenItems,
@@ -45,6 +44,8 @@ import {
   overBudget,
   pendingSlots,
   pickSafetySample,
+  planEurPerUnit,
+  REPAIR_STOP_EUR,
   reportFileName,
   RUN_CAP_EUR,
   runAllowed,
@@ -97,7 +98,7 @@ const REPAIR_DIR = join(ROOT, "docs", "ops", "ap15-runs");
  * abwechselnd (chooseRunMap). Bis dahin gilt MAF Metall (Phase A, D-40) für Abbruch-Zeilen.
  */
 let MAP_ID = "maf-metall";
-let COURSE: string = MAP_COURSES[MAP_ID]!.courseId!;
+let COURSE = MAP_COURSES[MAP_ID]!.courseId;
 let KEYWORD = MAP_COURSES[MAP_ID]!.keyword;
 let CURRICULUM: Curriculum | undefined;
 
@@ -127,7 +128,8 @@ function cachedSystem() {
 /** Stufe a: ruft die AP-21-Reparatur auf und liest deren Kosten aus dem Bericht. */
 function runRepair(dry: boolean): { ran: boolean; costEur: number; budgetStop: boolean } {
   const startedAt = Date.now();
-  const args = ["--import", "tsx", "scripts/ap15-regen-dropped.ts", ...(dry ? ["--dry-run"] : [])];
+  // SIN-478: die Reparatur stoppt früher, damit ihr letzter Batch im Deckel bleibt.
+  const args = ["--import", "tsx", "scripts/ap15-regen-dropped.ts", "--stop-eur", String(REPAIR_STOP_EUR), ...(dry ? ["--dry-run"] : [])];
   const r = spawnSync(process.execPath, args, { stdio: "inherit", env: process.env });
   // 3 = Deckel der Reparatur erreicht, 4 = weniger als 280 Einheiten (kein Fehler).
   if (r.status !== 0 && r.status !== 3 && r.status !== 4) {
@@ -183,12 +185,10 @@ async function main() {
   // Kurse aller unterstützten Maps laden. Fehlt ein Kurs (Migration noch nicht angewendet), fällt
   // nur diese Map aus; fehlt der Metall-Kurs, bricht der Lauf wie bisher ab.
   const unitsByMap = new Map<string, GeneratedUnit[]>();
-  const courseIds = resolveCourseIds(await storage.listCourses());
   for (const [mapId, mc] of Object.entries(MAP_COURSES)) {
-    const id = courseIds.get(mapId);
-    const c = id ? await storage.getCourse(id) : undefined;
+    const c = await storage.getCourse(mc.courseId);
     if (!c) {
-      console.error(`::warning::Kurs fehlt für ${mapId}: ${mc.courseId ?? mc.courseKeyword}`);
+      console.error(`::warning::Kurs fehlt für ${mapId}: ${mc.courseId}`);
       continue;
     }
     unitsByMap.set(mapId, (c.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? []);
@@ -223,7 +223,7 @@ async function main() {
   const usable = queueAll.filter((q) => unitsByMap.has(q.mapId));
   const chosen = chooseRunMap(usable, publishedByMap, discardedByMap, lastMapId, resumeModuleId);
   if (chosen) MAP_ID = chosen;
-  COURSE = courseIds.get(MAP_ID) ?? MAP_COURSES[MAP_ID]!.courseId!;
+  COURSE = MAP_COURSES[MAP_ID]!.courseId;
   KEYWORD = MAP_COURSES[MAP_ID]!.keyword;
   CURRICULUM = curricula.find((c) => c.id === MAP_ID);
   const priorUnits = unitsByMap.get(MAP_ID) ?? [];
@@ -231,7 +231,8 @@ async function main() {
   const discarded = discardedByMap.get(MAP_ID) ?? new Set<string>();
   const handledChanges = new Set(history.flatMap((r) => r.sourceRefresh.changeKeys));
   // SIN-434: ohne Reparaturkosten; die zieht die Planung getrennt als `spent` ab.
-  const perUnit = eurPerUnit(unitCostHistory(history));
+  // SIN-478: teuerster bisheriger Lauf statt Durchschnitt, weil ein Batch erst nach dem Absenden gemessen wird.
+  const perUnit = planEurPerUnit(unitCostHistory(history));
 
   const queue = usable.filter((q) => q.mapId === MAP_ID);
   const sourceReportPath = argValue("source-report");
@@ -268,7 +269,6 @@ async function main() {
     discarded: 0,
     discardedUnitIds: [],
     deferred: 0,
-    maps: mapBilanz(curricula, queueAll, publishedByMap, discardedByMap),
     schema: emptySchemaStats(),
     repair: { ran: false, costEur: 0 },
     sourceRefresh: { units: affected.unitIds.length, replaced: 0, changeKeys: [] },
@@ -358,6 +358,8 @@ async function main() {
   let lastJudgeTraceId: string | undefined;
 
   async function judge(units: GeneratedUnit[], label: string): Promise<QuestionEval[]> {
+    // SIN-478: Der Richter läuft nach dem Batch; ohne Prüfung hier überschritt der Lauf 12.10. den Deckel.
+    assertWithinRunCap(spentTotal() + judgeReserveEur(units.length), RUN_CAP_EUR);
     const judged = await liveJudgeWithUsage(
       openaiKey,
       toEvalItems(units.map((unit) => ({ unit, questions: unit.questions })), curriculum),
@@ -461,7 +463,8 @@ async function main() {
   };
   try {
   if (refreshIds.length > 0) {
-    assertWithinRunCap(spentTotal(), RUN_CAP_EUR);
+    // SIN-478: vor dem Absenden die erwarteten Kosten des Batches dazurechnen (Summe inkl. Reparatur).
+    assertWithinRunCap(spentTotal() + refreshIds.length * perUnit * COST_MARGIN, RUN_CAP_EUR);
     const specs = refreshIds.map((id) => {
       const u = priorUnits.find((x) => x.id === id)!;
       return { moduleId: u.moduleId ?? id.split("-")[0]!, blockId: u.blockId ?? id.replace(/-u\d+$/, ""), unitId: id, titleHint: u.title };
@@ -505,7 +508,7 @@ async function main() {
     if (targets.length === 0) {
       report.stopReason = "Deckel: keine Einheit mehr bezahlbar; Rest im nächsten Lauf";
     } else {
-      assertWithinRunCap(spentTotal(), RUN_CAP_EUR);
+      assertWithinRunCap(spentTotal() + units * perUnit * COST_MARGIN, RUN_CAP_EUR);
       const sub = await submitChunkTargets({ keyword: KEYWORD, curriculum, targets, system: cachedSystem() });
       report.batchIds.push(sub.batchId);
       console.log("Batch", sub.batchId, "Einheiten", units, "Modell", GENERATOR_MODEL);

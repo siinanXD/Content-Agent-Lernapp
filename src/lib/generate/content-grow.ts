@@ -5,7 +5,12 @@
  */
 import type { Curriculum, CurriculumModule } from "@/lib/content/curriculum";
 import { neutralSharedModuleIds } from "@/lib/content/shared-modules";
-import { OLD_REGEN_EUR_PER_UNIT } from "@/lib/quality/cost-guard";
+import {
+  EUR_PER_USD,
+  GPT_JUDGE_IN_PER_MTOK,
+  GPT_JUDGE_OUT_PER_MTOK,
+  OLD_REGEN_EUR_PER_UNIT,
+} from "@/lib/quality/cost-guard";
 import type { EvalItem } from "@/lib/quality/evaluate-agent";
 import type { GeneratedUnit } from "./maf-lernfeld-seed";
 import type { BatchChunkTarget } from "./batch-generate";
@@ -20,43 +25,22 @@ export const WEEK_CAP_EUR = 60;
 export const MAX_RUNS_PER_DAY = 1;
 /** Sicherheitsfaktor auf die Kosten je Einheit bei der Vorab-Rechnung. */
 export const COST_MARGIN = 1.25;
+/**
+ * SIN-478: Reserve für die Reparaturstufe. Sie läuft vor der Fabrik und kostete im Lauf 10-12 2,90 €;
+ * ihr letzter Batch darf höchstens so viel kosten, dann bleibt der Lauf unter 20 €.
+ */
+export const REPAIR_BATCH_RESERVE_EUR = 3;
+/** SIN-478: Stopp der Reparaturstufe (als `--stop-eur` an scripts/ap15-regen-dropped.ts). */
+export const REPAIR_STOP_EUR = RUN_CAP_EUR - REPAIR_BATCH_RESERVE_EUR;
 
 /**
- * Maps, die die Fabrik erzeugt: MAF Metall, Industriekaufleute (SIN-431) und die 6 weiteren
- * MAF-Schwerpunkte (SIN-479). Die Weiterbildung folgt später.
+ * Maps, die die Fabrik erzeugt (SIN-431): vorerst zwei Berufe, MAF Metall und Industriekaufleute.
+ * Die anderen MAF-Schwerpunkte und die Weiterbildung folgen später.
  */
-export const SUPPORTED_MAP_IDS: readonly string[] = [
-  "maf-metall",
-  "indkfl",
-  "maf-kunststoff",
-  "maf-textil",
-  "maf-textilveredelung",
-  "maf-lebensmittel",
-  "maf-druckverarbeitung",
-  "maf-packmittel",
-];
+export const SUPPORTED_MAP_IDS: readonly string[] = ["maf-metall", "indkfl"];
 
-/** SIN-479: Maps mit Vorrang. Die 6 weiteren Schwerpunkte kommen erst, wenn diese fertig sind. */
-export const PRIORITY_MAP_IDS: readonly string[] = ["maf-metall", "indkfl"];
-
-/**
- * Kurs, Stichwort und Langfuse-Kontext je Map. Die Einheiten liegen in `courses.generated` des Kurses.
- * Feste Kennung (`courseId`) oder Kursname (`courseKeyword`, SIN-479): die Kurse der Schwerpunkte legt
- * die Migration 20261005020000 mit zufälliger Kennung an, darum löst `resolveCourseIds` sie über den Namen auf.
- */
-export type MapCourse = {
-  courseId?: string;
-  courseKeyword?: string;
-  keyword: string;
-  beruf: string;
-  schwerpunkt: string;
-};
-const mafSchwerpunkt = (name: string, beruf: string): MapCourse => ({
-  courseKeyword: `Maschinen- und Anlagenführer – Schwerpunkt ${name}`,
-  keyword: `Maschinen- und Anlagenführer – Schwerpunkt ${name}`,
-  beruf,
-  schwerpunkt: name,
-});
+/** Kurs, Stichwort und Langfuse-Kontext je Map. Die Einheiten liegen in `courses.generated` des Kurses. */
+export type MapCourse = { courseId: string; keyword: string; beruf: string; schwerpunkt: string };
 export const MAP_COURSES: Record<string, MapCourse> = {
   "maf-metall": {
     courseId: "e22073de-7020-4380-9002-c70d46c25e25",
@@ -71,26 +55,7 @@ export const MAP_COURSES: Record<string, MapCourse> = {
     beruf: "Industriekaufleute",
     schwerpunkt: "Industriekaufmann/-frau",
   },
-  "maf-kunststoff": mafSchwerpunkt("Kunststoff", "MAF Kunststoff"),
-  "maf-textil": mafSchwerpunkt("Textil", "MAF Textil"),
-  "maf-textilveredelung": mafSchwerpunkt("Textilveredelung", "MAF Textilveredelung"),
-  "maf-lebensmittel": mafSchwerpunkt("Lebensmittel", "MAF Lebensmittel"),
-  "maf-druckverarbeitung": mafSchwerpunkt("Druckverarbeitung", "MAF Druckverarbeitung"),
-  "maf-packmittel": mafSchwerpunkt("Packmittel", "MAF Packmittel"),
 };
-
-/** Kurs-Kennung je Map: feste Kennung, sonst der echte Kurs (kein Mock) mit dem Namen der Map. */
-export function resolveCourseIds(
-  courses: ReadonlyArray<{ id: string; keyword: string; mock?: boolean }>,
-): Map<string, string> {
-  const out = new Map<string, string>();
-  for (const [mapId, mc] of Object.entries(MAP_COURSES)) {
-    const id =
-      mc.courseId ?? courses.find((c) => !c.mock && c.keyword === mc.courseKeyword)?.id;
-    if (id) out.set(mapId, id);
-  }
-  return out;
-}
 
 /** Secrets laut SIN-220; der Workflow prüft sie vor allem anderen mit scripts/check-env.mjs. */
 export const REQUIRED_SECRETS = [
@@ -123,7 +88,7 @@ export type QueueItem = {
 };
 
 /**
- * Reihenfolge: MAF Metall, dann Industriekaufleute, dann die MAF-Schwerpunkte (SIN-479), dann der Rest.
+ * Reihenfolge: MAF Metall vor den anderen Maps, dann MAF vor den übrigen Familien.
  * Je Map zuerst neutrale Shared-Module (AP-20), dann Schwerpunkt-Module nach `order`.
  * Ein neutrales Shared-Modul steht nur in der ersten Map, die es hat; alle anderen
  * Maps nutzen es per Verknüpfung.
@@ -132,8 +97,7 @@ export function buildQueue(
   curricula: Curriculum[],
   shared: readonly string[] = neutralSharedModuleIds(curricula.filter((c) => c.family === "maf")),
 ): QueueItem[] {
-  const rank = (c: Curriculum) =>
-    c.id === "maf-metall" ? 0 : c.id === "indkfl" ? 1 : c.family === "maf" ? 2 : 3;
+  const rank = (c: Curriculum) => (c.id === "maf-metall" ? 0 : c.family === "maf" ? 1 : 2);
   const maps = [...curricula].sort(
     (a, b) => rank(a) - rank(b) || a.id.localeCompare(b.id, "de"),
   );
@@ -188,45 +152,6 @@ export function runAllowed(
   return { ok: true };
 }
 
-/** SIN-479: Bilanz je Map fürs Lauf-Protokoll: Ziel, vorhanden, geteilt, neu. */
-export type MapBilanz = {
-  mapId: string;
-  /** Alle Einheiten der Map laut Curriculum. */
-  ziel: number;
-  /** In der Map selbst schon veröffentlicht. */
-  vorhanden: number;
-  /** Einheiten gemeinsamer Module, die ein anderer Kurs erzeugt und diese Map nur verknüpft. */
-  geteilt: number;
-  /** Noch zu erzeugen: weder veröffentlicht noch verworfen, ohne die geteilten Module. */
-  neu: number;
-};
-
-export function mapBilanz(
-  curricula: readonly Curriculum[],
-  queue: readonly QueueItem[],
-  published: ReadonlyMap<string, ReadonlySet<string>>,
-  discarded: ReadonlyMap<string, ReadonlySet<string>>,
-): MapBilanz[] {
-  const none: ReadonlySet<string> = new Set();
-  return curricula
-    .filter((c) => SUPPORTED_MAP_IDS.includes(c.id))
-    .map((c) => {
-      const eigene = queue.filter((q) => q.mapId === c.id);
-      const eigeneIds = new Set(eigene.map((q) => q.module.id));
-      const pub = published.get(c.id) ?? none;
-      const dis = discarded.get(c.id) ?? none;
-      return {
-        mapId: c.id,
-        ziel: c.modules.reduce((s, m) => s + slotIds(m).length, 0),
-        vorhanden: eigene.reduce((s, q) => s + slotIds(q.module).filter((id) => pub.has(id)).length, 0),
-        geteilt: c.modules
-          .filter((m) => !eigeneIds.has(m.id))
-          .reduce((s, m) => s + slotIds(m).length, 0),
-        neu: eigene.reduce((s, q) => s + pendingSlots(q.module, pub, dis).length, 0),
-      };
-    });
-}
-
 /**
  * SIN-431: Welche Map ein Lauf bedient. Abwechselnd je Lauf, damit Industriekaufleute nicht
  * erst nach allen Metall-Einheiten drankommt. Ein angefangenes Modul (`resumeModuleId`) läuft
@@ -242,7 +167,7 @@ export function chooseRunMap(
 ): string | null {
   const none: ReadonlySet<string> = new Set();
   const order = [...new Set(queue.filter((q) => q.supported).map((q) => q.mapId))];
-  const allOpen = order.filter((mapId) =>
+  const withOpen = order.filter((mapId) =>
     queue.some(
       (q) =>
         q.mapId === mapId &&
@@ -250,13 +175,10 @@ export function chooseRunMap(
         pendingSlots(q.module, published.get(mapId) ?? none, discarded.get(mapId) ?? none).length > 0,
     ),
   );
-  if (allOpen.length === 0) return null;
-  // SIN-479: erst Metall und Industriekaufleute fertig, dann die Schwerpunkte (angefangene Module ausgenommen).
-  const prioOpen = allOpen.filter((id) => PRIORITY_MAP_IDS.includes(id));
-  const withOpen = prioOpen.length > 0 ? prioOpen : allOpen;
+  if (withOpen.length === 0) return null;
   // Modul-Kennungen können in zwei Maps vorkommen: die Map des letzten Laufs gilt zuerst.
   const resumeCandidates = resumeModuleId
-    ? queue.filter((q) => allOpen.includes(q.mapId) && q.module.id === resumeModuleId)
+    ? queue.filter((q) => withOpen.includes(q.mapId) && q.module.id === resumeModuleId)
     : [];
   const resumed = resumeCandidates.find((q) => q.mapId === lastMapId) ?? resumeCandidates[0];
   if (resumed) return resumed.mapId;
@@ -367,6 +289,28 @@ export function eurPerUnit(history: ReadonlyArray<{ costEur: number; unitsGenera
   const units = history.reduce((s, r) => s + r.unitsGenerated, 0);
   const eur = history.reduce((s, r) => s + r.costEur, 0);
   return units > 0 && eur > 0 ? eur / units : OLD_REGEN_EUR_PER_UNIT;
+}
+
+/**
+ * SIN-478: Kosten je Einheit für die Vorab-Rechnung. Ein Batch wird erst nach dem Absenden gemessen,
+ * also plant die Fabrik mit dem teuersten bisherigen Lauf. Der Durchschnitt (`eurPerUnit`) reichte nicht:
+ * Lauf 10-08 kostete 0,041 € je Einheit, Lauf 10-12 0,059 €; mit 0,041 geplant lief er auf 21,78 €.
+ */
+export function planEurPerUnit(history: ReadonlyArray<{ costEur: number; unitsGenerated: number }>): number {
+  const perRun = history
+    .filter((r) => r.unitsGenerated > 0 && r.costEur > 0)
+    .map((r) => r.costEur / r.unitsGenerated);
+  return perRun.length > 0 ? Math.max(...perRun) : OLD_REGEN_EUR_PER_UNIT;
+}
+
+/**
+ * SIN-478: Richter-Kosten für `units` Einheiten vor dem Richter-Aufruf (OpenAI). Gleiche Annahme wie
+ * `phaseAPreflightUsd`: 6 Fragen je Einheit, 1200 Eingabe- und 200 Ausgabe-Token je Frage, plus Sicherheitsfaktor.
+ */
+export function judgeReserveEur(units: number, questionsPerUnit = 6): number {
+  const q = units * questionsPerUnit;
+  const usd = ((q * 1200) / 1e6) * GPT_JUDGE_IN_PER_MTOK + ((q * 200) / 1e6) * GPT_JUDGE_OUT_PER_MTOK;
+  return Math.round(usd * EUR_PER_USD * COST_MARGIN * 100) / 100;
 }
 
 /**
@@ -522,8 +466,6 @@ export type RunReport = {
   deferred: number;
   /** SIN-434: offene Einheiten, die dieser Lauf nicht versucht hat, nach Grund. */
   nichtVersucht?: NichtVersucht[];
-  /** SIN-479: Einheiten je Map (Ziel, vorhanden, geteilt, neu) zu Beginn des Laufs. */
-  maps?: MapBilanz[];
   /** SIN-473: Fragen erzeugt, ungültig (Schema), repariert, verworfen. */
   schema?: SchemaStats;
   repair: { ran: boolean; costEur: number };
@@ -556,12 +498,6 @@ export function linearSummary(r: RunReport): string {
     `- Modul: ${r.mapId ?? "–"} / ${r.moduleIds?.length ? r.moduleIds.join(", ") : (r.moduleId ?? "–")}`,
     `- Erzeugt: ${r.generated}, bestanden: ${r.passed}, verworfen: ${r.discarded}, zurückgestellt: ${r.deferred}`,
     `- Verworfen (Richter unter Schwelle oder nicht geliefert): ${r.discarded}${r.discardedUnitIds.length ? ` (${r.discardedUnitIds.join(", ")})` : ""}`,
-    ...(r.maps?.length
-      ? [
-          "- Einheiten je Map (Ziel / vorhanden / geteilt / neu):",
-          ...r.maps.map((m) => `  - ${m.mapId}: ${m.ziel} / ${m.vorhanden} / ${m.geteilt} / ${m.neu}`),
-        ]
-      : []),
     `- Frageschema (SIN-473): ${r.schema ? formatSchemaStats(r.schema) : "nicht erfasst"}`,
     `- Nicht versucht: ${r.nichtVersucht?.length ? r.nichtVersucht.map((x) => `${x.units} wegen ${NICHT_VERSUCHT_TEXT[x.grund]}`).join("; ") : "nichts offen oder nicht erfasst"}`,
     `- Reparatur (AP-21): ${r.repair.ran ? `€${r.repair.costEur.toFixed(2)}` : "nicht gelaufen"}; Quellen-Neuerzeugung: ${r.sourceRefresh.replaced}/${r.sourceRefresh.units}`,

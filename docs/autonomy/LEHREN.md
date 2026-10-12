@@ -116,6 +116,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Erzeugte Fragen (Paare als `{left,right}`, Lücken als Objekte, `correct` als `{value,unit}`) gingen ungeprüft an Komponenten und stürzten fast jede Einheit ab → Format beim Lesen mit `normalizeQuestion()` vereinheitlichen, Unbekanntes überspringen und per Sentry melden. (SIN-384)
 - Zuordnen-Frage mit `correct` als Paarliste (`[["a","b"]]` oder `[[0,0]]`) galt als „unbekannte Form von correct“ und fehlte still in der Einheit → bei Typ `zuordnen` ist `correct` unerheblich, nur `pairs` prüfen; Tests für beide Formen. (SIN-477)
 - Claude brach nachts nach 0,5 s ab (`is_error`, 0 Kosten, `modelUsage` leer) ohne Pause, SIN-348 lief 17-mal ohne PR → Fehler ohne Verbrauch zählt als Limit (`isInstantAbort`); zweiter Lauf in Folge ohne PR setzt `needs-human`; Lauf-Aufträge plant der Planer gleich für Menschen. (SIN-362)
+- Kostendeckel 20 € überschritten (Lauf 12.10.: 21,78 €): Planung mit dem Durchschnitt je Einheit, Richter ohne Prüfung, `cost_usd` ohne Reparatur → Planung mit dem teuersten bisherigen Lauf (`planEurPerUnit`), Prüfung vor jedem Richter-Aufruf (`judgeReserveEur`), Reparatur stoppt bei 17 € (`--stop-eur`), `cost_usd` aus `cost_eur` über `EUR_PER_USD`. (SIN-478)
 
 ## Datenbank-Rechte
 
