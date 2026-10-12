@@ -36,8 +36,6 @@ import {
   eurPerUnit,
   linearSummary,
   MAP_COURSES,
-  mapBilanz,
-  resolveCourseIds,
   missingSecrets,
   nextOpenItem,
   nextOpenItems,
@@ -97,7 +95,7 @@ const REPAIR_DIR = join(ROOT, "docs", "ops", "ap15-runs");
  * abwechselnd (chooseRunMap). Bis dahin gilt MAF Metall (Phase A, D-40) für Abbruch-Zeilen.
  */
 let MAP_ID = "maf-metall";
-let COURSE: string = MAP_COURSES[MAP_ID]!.courseId!;
+let COURSE = MAP_COURSES[MAP_ID]!.courseId;
 let KEYWORD = MAP_COURSES[MAP_ID]!.keyword;
 let CURRICULUM: Curriculum | undefined;
 
@@ -183,12 +181,10 @@ async function main() {
   // Kurse aller unterstützten Maps laden. Fehlt ein Kurs (Migration noch nicht angewendet), fällt
   // nur diese Map aus; fehlt der Metall-Kurs, bricht der Lauf wie bisher ab.
   const unitsByMap = new Map<string, GeneratedUnit[]>();
-  const courseIds = resolveCourseIds(await storage.listCourses());
   for (const [mapId, mc] of Object.entries(MAP_COURSES)) {
-    const id = courseIds.get(mapId);
-    const c = id ? await storage.getCourse(id) : undefined;
+    const c = await storage.getCourse(mc.courseId);
     if (!c) {
-      console.error(`::warning::Kurs fehlt für ${mapId}: ${mc.courseId ?? mc.courseKeyword}`);
+      console.error(`::warning::Kurs fehlt für ${mapId}: ${mc.courseId}`);
       continue;
     }
     unitsByMap.set(mapId, (c.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? []);
@@ -223,7 +219,7 @@ async function main() {
   const usable = queueAll.filter((q) => unitsByMap.has(q.mapId));
   const chosen = chooseRunMap(usable, publishedByMap, discardedByMap, lastMapId, resumeModuleId);
   if (chosen) MAP_ID = chosen;
-  COURSE = courseIds.get(MAP_ID) ?? MAP_COURSES[MAP_ID]!.courseId!;
+  COURSE = MAP_COURSES[MAP_ID]!.courseId;
   KEYWORD = MAP_COURSES[MAP_ID]!.keyword;
   CURRICULUM = curricula.find((c) => c.id === MAP_ID);
   const priorUnits = unitsByMap.get(MAP_ID) ?? [];
@@ -268,7 +264,6 @@ async function main() {
     discarded: 0,
     discardedUnitIds: [],
     deferred: 0,
-    maps: mapBilanz(curricula, queueAll, publishedByMap, discardedByMap),
     schema: emptySchemaStats(),
     repair: { ran: false, costEur: 0 },
     sourceRefresh: { units: affected.unitIds.length, replaced: 0, changeKeys: [] },
