@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-523 | SIN-523: Layout-Prüfer (Gate) und KI-Sichtprüfung (Hinweis) | [SIN-523-layout-pruefer.md](decisions/SIN-523-layout-pruefer.md) |
 | SIN-522 | SIN-522: Tutorial-Video im Handy-Format, Text neben der App | [SIN-522-video-handyformat.md](decisions/SIN-522-video-handyformat.md) |
 | SIN-519 | SIN-519 — Gate-Bruch bildvergleich: Revideo-JSX im Build | [SIN-519-bildvergleich-revideo.md](decisions/SIN-519-bildvergleich-revideo.md) |
 | SIN-518 | SIN-518 — Video-Agent: Klickweg hängt im ersten Lauf | [SIN-518-video-klickweg.md](decisions/SIN-518-video-klickweg.md) |

@@ -1,0 +1,94 @@
+# KI-Sichtprüfung (SIN-523): Hinweis, kein Gate. Bei PRs, die src/app oder src/components ändern, fotografiert Job
+# `bilder` die betroffenen Seiten (Handy + Desktop) ohne Secrets, Job `pruefen` gibt sie mit dem Figma-Frame an Claude
+# und schreibt einen Kommentar (höchstens 5 Punkte, Kosten im Kommentar). Skripte kommen aus main, nie aus dem PR.
+# Das Gate gegen Layout-Fehler ist der Layout-Test e2e/layout.spec.ts im Job `build`.
+name: sichtpruefung
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "src/app/**"
+      - "src/components/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: sichtpruefung-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  bilder:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COURSE_STORAGE: mock
+    outputs:
+      routen: ${{ steps.routen.outputs.routen }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Betroffene Seiten
+        id: routen
+        env:
+          BASIS: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # Dieser Job hat keine Secrets: das Skript des PRs darf hier laufen.
+          dateien=$(git diff --name-only "$BASIS"...HEAD | paste -sd, -)
+          routen=$(node scripts/autonomy/sichtpruefung.mjs routen --dateien "$dateien" | paste -sd' ' -)
+          echo "routen=$routen" >> "$GITHUB_OUTPUT"
+          echo "Seiten: $routen"
+      - name: Pakete, Build, Chromium
+        if: steps.routen.outputs.routen != ''
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Bilder aufnehmen
+        if: steps.routen.outputs.routen != ''
+        env:
+          ROUTEN: ${{ steps.routen.outputs.routen }}
+        run: node scripts/autonomy/screenshots.mjs $ROUTEN
+      - uses: actions/upload-artifact@v7
+        if: steps.routen.outputs.routen != ''
+        with:
+          name: sichtpruefung
+          path: screenshots/
+          retention-days: 7
+
+  pruefen:
+    needs: bilder
+    if: needs.bilder.outputs.routen != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          name: sichtpruefung
+          path: screenshots/
+      - name: Mit Figma vergleichen, Kommentar schreiben
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+          FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/autonomy/sichtpruefung.mjs lauf --pr "${{ github.event.pull_request.number }}" --bilder screenshots
