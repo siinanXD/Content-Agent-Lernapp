@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { KLICKWEG, type Schritt } from "../scripts/autonomy/video-klickweg";
 
@@ -7,6 +7,22 @@ import { KLICKWEG, type Schritt } from "../scripts/autonomy/video-klickweg";
 // schreibende Endpunkte sind abgefangen: kein Eintrag, keine Personendaten. Die Einwilligung wird abgelehnt (kein Tracking).
 
 const PAUSE = 1600;
+const MAX_FRAGEN = 12;
+// Je Frage ~6 s Pause plus Klicks; Grundlast für Start, Beruf und Lernpfad dazu (SIN-518).
+test.setTimeout(120_000 + MAX_FRAGEN * 20_000);
+
+/** Beantwortet jeden Fragetyp (Auswahl, Lücken, Zuordnen, Reihenfolge, Rechnen), nicht nur Auswahlfragen. */
+async function beantworte(page: Page) {
+  const optionen = page.locator("button[aria-pressed]");
+  if ((await optionen.count()) > 0) await optionen.first().click();
+  const auswahl = page.locator("main select:enabled");
+  for (let i = 0; i < (await auswahl.count()); i++) await auswahl.nth(i).selectOption({ index: 1 });
+  const felder = page.locator("main input:not([type=checkbox]):not([type=search]):enabled, main textarea:enabled");
+  for (let i = 0; i < (await felder.count()); i++) await felder.nth(i).fill("Test");
+  await page.getByRole("button", { name: /^(Antwort prüfen|Musterlösung zeigen)$/ }).click();
+  const speichern = page.getByRole("button", { name: "Selbstkontrolle speichern" });
+  if (await speichern.isVisible()) await speichern.click();
+}
 
 test("Tutorial: Start bis Ergebnis", async ({ page, context }) => {
   const zeiten: Schritt[] = [];
@@ -22,7 +38,9 @@ test("Tutorial: Start bis Ergebnis", async ({ page, context }) => {
   await page.goto("/willkommen");
   await marke("start");
   await page.getByRole("link", { name: "Los geht’s" }).click();
-  await page.getByRole("button", { name: "Ablehnen" }).click();
+  // Einwilligung nur ablehnen, wenn der Schritt erscheint (sonst hängt der Klick bis zum Test-Timeout).
+  const ablehnen = page.getByRole("button", { name: "Ablehnen" });
+  if (await ablehnen.isVisible({ timeout: 10_000 }).catch(() => false)) await ablehnen.click();
 
   await marke("beruf");
   await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
@@ -37,14 +55,10 @@ test("Tutorial: Start bis Ergebnis", async ({ page, context }) => {
 
   await marke("einheit");
   const zaehler = page.getByText(/^Frage \d+ von \d+/);
-  for (let guard = 0; guard < 12; guard++) {
+  for (let guard = 0; guard < MAX_FRAGEN; guard++) {
     const stand = (await zaehler.textContent()) ?? "";
     const rueckmeldung = page.getByTestId("answer-feedback");
-    if (!(await rueckmeldung.isVisible())) {
-      const optionen = page.locator("button[aria-pressed]");
-      if ((await optionen.count()) > 0) await optionen.first().click();
-      await page.getByRole("button", { name: "Antwort prüfen" }).click();
-    }
+    if (!(await rueckmeldung.isVisible())) await beantworte(page);
     await expect(rueckmeldung).toBeVisible();
     await page.waitForTimeout(900);
     if (/^Frage (\d+) von \1\b/.test(stand)) {
