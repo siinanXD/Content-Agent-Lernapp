@@ -43,6 +43,36 @@ export const JUDGE_SYSTEM_PROMPT =
   "safetyFlag true bei Maschinen-/Elektrosicherheit oder wenn safety=true vorgegeben ist. " +
   "Antworte ausschließlich als JSON {\"items\":[{\"id\":\"g01\",\"sourceFidelity\":1,\"uniqueness\":1,\"niveau\":4,\"language\":5,\"safetyFlag\":false,\"reasons\":[\"kurz\"]}]}";
 
+/**
+ * SIN-490: festes Antwortformat des Richters (json_schema, strict). Feldnamen wie QuestionEval und
+ * question_evaluations; 0/1 und 1–5 wie bisher, damit Schwelle und Auswertung unverändert bleiben.
+ * Strict: alle Felder required, additionalProperties false, keine Grenzen (minimum/maximum).
+ */
+export const JUDGE_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          sourceFidelity: { type: "integer", enum: [0, 1] },
+          uniqueness: { type: "integer", enum: [0, 1] },
+          niveau: { type: "integer", enum: [1, 2, 3, 4, 5] },
+          language: { type: "integer", enum: [1, 2, 3, 4, 5] },
+          safetyFlag: { type: "boolean" },
+          reasons: { type: "array", items: { type: "string" } },
+        },
+        required: ["id", "sourceFidelity", "uniqueness", "niveau", "language", "safetyFlag", "reasons"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["items"],
+  additionalProperties: false,
+} as const;
+
 export type EvalItem = {
   id: string;
   unitId: string;
@@ -233,31 +263,44 @@ export async function liveJudgeChunk(key: string, items: EvalItem[]): Promise<Qu
   return questions;
 }
 
+/** Body für /v1/chat/completions. Mit `strictSchema`: json_schema (SIN-490), sonst JSON-Modus. */
+export function buildJudgeRequestBody(items: EvalItem[], strictSchema = true): Record<string, unknown> {
+  return {
+    model: JUDGE_MODEL,
+    response_format: strictSchema
+      ? { type: "json_schema", json_schema: { name: "richter_ergebnis", strict: true, schema: JUDGE_JSON_SCHEMA } }
+      : { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: JUDGE_SYSTEM_PROMPT,
+      },
+      {
+        role: "user",
+        content: judgeUserContent(items),
+      },
+    ],
+  };
+}
+
 export async function liveJudgeChunkWithUsage(
   key: string,
   items: EvalItem[],
+  fetchImpl: typeof fetch = fetch,
 ): Promise<JudgeChunkResult> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: JUDGE_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: JUDGE_SYSTEM_PROMPT,
-        },
-        {
-          role: "user",
-          content: judgeUserContent(items),
-        },
-      ],
-    }),
-  });
+  const call = (strictSchema: boolean) =>
+    fetchImpl("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify(buildJudgeRequestBody(items, strictSchema)),
+    });
+  let res = await call(true);
+  // SIN-490: Lehnt die API das Schema ab (HTTP 400), einmal mit JSON-Modus wiederholen (wie candidates.ts).
+  // Der Prompt beschreibt das Format ohnehin; so scheitert der Lauf nicht an einem Schema-Detail.
+  if (res.status === 400) res = await call(false);
   if (!res.ok) {
     // Fehlertext von OpenAI mitgeben (Modellname, Parameter, Kontingent); nie den Schlüssel.
     const body = await res.text().catch(() => "");
