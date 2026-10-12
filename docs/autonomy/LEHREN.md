@@ -132,6 +132,8 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Playwright `locator.isVisible({ timeout })` wartet nicht (timeout wird ignoriert) → optionale Schritte mit `waitFor({ state: "visible", timeout })` prüfen und danach die Ziel-URL erwarten. (SIN-518)
 - Revideo-Render aus dem Repo-Stamm findet `@revideo/*` und `public/` nicht → in `video/schnitt` arbeiten (`process.chdir`), `outDir` dort, `@revideo/ui` als Abhängigkeit, `Img`/`Video` mit `yield view.add(...)` einhängen, Export per `@revideo/core/ffmpeg`. (SIN-518)
 
+- Flex-Zeile mit `shrink-0` und langem Text (Region der Anbieter-Karten) → erzeugt auf dem Handy waagerechtes Scrollen, `bildvergleich` sah es nicht, weil es auf main schon da war. Richtig: Umbruch erlauben (`flex-wrap`, kein `shrink-0`); der Layout-Test `e2e/layout.spec.ts` fängt es. (SIN-523)
+
 ## Datenbank-Rechte
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)
