@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { collectMigrations, duplicateVersions, migrationIncident, migrationStatus, readMigrationFiles } from "../../../scripts/autonomy/migrationen.mjs";
-import { recordVersionSql } from "../../../scripts/autonomy/run-task.mjs";
+import { collectMigrations, duplicateVersions, migrationBugPlan, migrationIncident, migrationStatus, readMigrationFiles, sinanTaskForMigrations } from "../../../scripts/autonomy/migrationen.mjs";
+import { migrationStand, recordVersionSql } from "../../../scripts/autonomy/run-task.mjs";
 
 test("Migrationen: keine doppelte Versionsnummer im Repo (SIN-374)", () => {
   const names = readMigrationFiles().map((f: { name: string }) => f.name);
@@ -59,4 +59,93 @@ test("Migrationen: migrate.yml läuft nach Merge auf supabase/migrations und vor
   assert.match(wf, /run-task\.mjs --task migrate/);
   assert.match(wf, /SUPABASE_PROJECT_REF: \$\{\{ secrets\.SUPABASE_PROJECT_REF \|\| vars\.SUPABASE_PROJECT_REF \}\}/);
   assert.match(readFileSync(".github/workflows/production-deploy.yml", "utf8"), /migrationen\.mjs --check/);
+});
+
+test("Migrationen: nicht additiv ergibt Sinan-Aufgabe statt Bug-Issue (SIN-451)", () => {
+  const files = [
+    { name: "20261013010000_sin415_gruppen.sql", sql: "alter table public.trainer_groups drop constraint if exists k;" },
+    { name: "20261014010000_sin416_orgs.sql", sql: "alter table public.organisations add column x int;" },
+  ];
+  const none = { tables: new Set<string>(), versions: new Set<string>() };
+  const nurNichtAdditiv = migrationStatus(files.slice(0, 1), none);
+  assert.deepEqual(nurNichtAdditiv.blockedMissing, ["20261013010000_sin415_gruppen.sql"]);
+  assert.deepEqual(nurNichtAdditiv.additiveMissing, []);
+  assert.equal(migrationIncident(nurNichtAdditiv).bug, null);
+  const task = sinanTaskForMigrations(nurNichtAdditiv);
+  assert.match(task!.titel, /sin415_gruppen/);
+  assert.equal(task!.schritte.length, 3);
+
+  const gemischt = migrationStatus(files, none);
+  assert.deepEqual(gemischt.additiveMissing, ["20261014010000_sin416_orgs.sql"]);
+  assert.deepEqual(gemischt.blockedMissing, ["20261013010000_sin415_gruppen.sql"]);
+  // SIN-472: SIN-416 folgt auf die nicht additive SIN-415, daher kein Bug-Issue, nur die Sinan-Aufgabe.
+  assert.deepEqual(gemischt.waitingMissing, ["20261014010000_sin416_orgs.sql"]);
+  assert.equal(migrationIncident(gemischt).bug, null);
+  assert.ok(sinanTaskForMigrations(gemischt));
+  // Eine ältere additive Datei, die selbst fehlt, bleibt ein Bug.
+  const alt = [{ name: "20261001010000_x.sql", sql: "alter table public.a add column y int;" }, ...files];
+  assert.ok(migrationIncident(migrationStatus(alt, none)).bug);
+
+  const ok = migrationStatus(files, { tables: new Set<string>(), versions: new Set(["20261013010000", "20261014010000"]) });
+  assert.equal(sinanTaskForMigrations(ok), null);
+});
+
+test("Migrationen: Lauf meldet n/n angewandt oder abweichend (SIN-451)", () => {
+  assert.equal(migrationStand(15, 0), "Migrationen: 15/15 angewandt");
+  assert.equal(migrationStand(15, 2), "Migrationen: 13/15 abweichend");
+});
+
+test("Migrationen: offenes Issue mit gleicher Liste → Kommentar mit Datum, kein neues Issue (SIN-468)", () => {
+  const files = [
+    { name: "20261003030000_a.sql", sql: "create table if not exists public.courses (id int);" },
+    { name: "20261014010000_b.sql", sql: "alter table public.organisations add column x int;" },
+  ];
+  const m = migrationStatus(files, { tables: new Set(["courses"]), versions: new Set() });
+  const bug = migrationIncident(m).bug!;
+  const offen = { id: "iss-1", title: bug.title, description: bug.description };
+
+  const plan = migrationBugPlan(m, [offen], { now: new Date("2026-10-12T08:07:00Z") });
+  assert.equal(plan.create, null);
+  assert.equal(plan.comment?.issueId, "iss-1");
+  assert.match(plan.comment!.body, /^2026-10-12: /);
+  assert.deepEqual(plan.state, { issueId: "iss-1", day: "2026-10-12" });
+
+  // Gleicher Tag mit gespeichertem Merker: still.
+  const gleicherTag = migrationBugPlan(m, [offen], { now: new Date("2026-10-12T15:00:00Z"), lastComment: plan.state });
+  assert.equal(gleicherTag.comment, null);
+  assert.equal(gleicherTag.create, null);
+
+  // Anderer Tag: wieder ein Kommentar, weiterhin kein Issue.
+  const naechsterTag = migrationBugPlan(m, [offen], { now: new Date("2026-10-13T08:00:00Z"), lastComment: plan.state });
+  assert.match(naechsterTag.comment!.body, /^2026-10-13: /);
+  assert.equal(naechsterTag.create, null);
+});
+
+test("Migrationen: geänderte Liste oder kein offenes Issue → neues Bug-Issue (SIN-468)", () => {
+  const files = [
+    { name: "20261003030000_a.sql", sql: "create table if not exists public.courses (id int);" },
+    { name: "20261014010000_b.sql", sql: "alter table public.organisations add column x int;" },
+    { name: "20261015010000_c.sql", sql: "alter table public.courses add column y int;" },
+  ];
+  const none = { tables: new Set(["courses"]), versions: new Set<string>() };
+  const alt = migrationStatus(files.slice(0, 2), none);
+  const altBug = migrationIncident(alt).bug!;
+  const offen = [{ id: "iss-1", title: altBug.title, description: altBug.description }];
+
+  // Gleiche Anzahl, andere Datei: kein Kommentar am alten Issue, sondern ein neues.
+  const andere = migrationStatus([files[0], files[2]], none);
+  const planAnders = migrationBugPlan(andere, offen);
+  assert.equal(planAnders.comment, null);
+  assert.match(planAnders.create!.title, /\(1\/2\)/);
+
+  // Zusätzlich fehlende Datei: neues Issue.
+  const mehr = migrationStatus(files, none);
+  assert.equal(migrationBugPlan(mehr, offen).comment, null);
+  assert.ok(migrationBugPlan(mehr, offen).create);
+
+  // Kein offenes Issue: neues Issue.
+  assert.ok(migrationBugPlan(alt, []).create);
+  // Alles angewendet: weder Issue noch Kommentar.
+  const ok = migrationStatus(files.slice(0, 1), none);
+  assert.deepEqual(migrationBugPlan(ok, offen), { create: null, comment: null, state: null });
 });

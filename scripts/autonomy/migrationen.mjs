@@ -35,6 +35,9 @@ export function migrationStatus(files, { tables, versions }) {
     applied,
     missing: pending.map((p) => p.name),
     additiveMissing: pending.filter((p) => p.additiv).map((p) => p.name),
+    blockedMissing: pending.filter((p) => !p.additiv).map((p) => p.name),
+    // Additiv, aber nach einer nicht additiven Datei: wartet auf Sinan, kein Fehler von migrate.yml (SIN-472).
+    waitingMissing: pending.filter((p) => p.additiv && pending.some((b) => !b.additiv && b.name < p.name)).map((p) => p.name),
     ok: pending.length === 0,
     line: pending.length
       ? `Migrationen: ${applied}/${total} angewendet, fehlen: ${pending.map((p) => p.name.replace(/\.sql$/, "")).join(", ")}`
@@ -73,19 +76,73 @@ export async function collectMigrations(/** @type {Record<string, string | undef
   }
 }
 
-/** Meldung für die Status-Seite: Vorfall und Bug-Issue, wenn Migrationen fehlen. */
+/** Sinan-Aufgabe für nicht additive Migrationen (SIN-451): sie werden nie automatisch angewandt. Ohne solche Dateien null. */
+export function sinanTaskForMigrations(m) {
+  if (!m?.blockedMissing?.length) return null;
+  const names = m.blockedMissing.map((n) => n.replace(/\.sql$/, ""));
+  return {
+    titel: `Nicht additive Migration prüfen und anwenden: ${names.join(", ")}`,
+    wo: "Supabase-Dashboard (SQL-Editor) und GitHub Actions",
+    link: "https://supabase.com/dashboard",
+    minuten: 15,
+    schritte: [
+      `Datei(en) unter supabase/migrations/ lesen: ${names.map((n) => `\`${n}.sql\``).join(", ")}. Sie enthalten drop, delete, truncate oder rename und werden nie automatisch angewandt.`,
+      "Ist der Inhalt unkritisch: Sicherung prüfen (Actions → backup), dann das SQL im SQL-Editor in einer Transaktion ausführen.",
+      "Danach in GitHub Actions den Workflow migrate per „Run workflow“ starten: er trägt die Version ein und wendet davon abhängige additive Migrationen an.",
+    ],
+    pruefung: `Der Wächter meldet „Migrationen: ${m.total}/${m.total} angewendet“. Du schließt das Issue danach selbst.`,
+  };
+}
+
+export const MIGRATION_BUG_PREFIX = "Bug: Migrationen fehlen in Supabase";
+
+/** Zeile in der Bug-Beschreibung, an der der Wächter dieselbe Liste wiedererkennt (SIN-468). */
+export const fehlendZeile = (missing) => `Fehlend: ${missing.join(", ")}`;
+
+/** Meldung für die Status-Seite: Vorfall und Bug-Issue, wenn Migrationen fehlen. Fehlen nur nicht additive Dateien: Sinan-Aufgabe statt Bug. */
 export function migrationIncident(m) {
   if (!m || m.ok) return { incident: null, bug: null };
   const names = m.missing.join(", ");
+  const nurSinan = !m.additiveMissing.some((n) => !m.waitingMissing?.includes(n));
   return {
-    incident: { key: `migrationen:${m.missing.join("|")}`, text: `Migrationen: ${m.applied}/${m.total} angewendet, es fehlen ${names}. Bug-Issue angelegt, Workflow migrate.yml prüfen.` },
-    bug: {
+    incident: {
+      key: `migrationen:${m.missing.join("|")}`,
+      text: `Migrationen: ${m.applied}/${m.total} angewendet, es fehlen ${names}. ${nurSinan ? "Nicht additiv (oder davon abhängig): Aufgabe für Sinan angelegt." : "Bug-Issue angelegt, Workflow migrate.yml prüfen."}`,
+    },
+    bug: nurSinan ? null : {
       lane: "backend",
       priority: 1,
       labels: ["claude", "Bug"],
-      title: `Bug: Migrationen fehlen in Supabase (${m.applied}/${m.total})`,
-      description: `Der Wächter findet ${m.missing.length} Migration(en) im Repo, die in Supabase fehlen: ${names}.\n\nPrüfen: Lauf von \`migrate.yml\` (Actions), ob die Secrets SUPABASE_ACCESS_TOKEN und SUPABASE_PROJECT_REF gesetzt sind, ob die Sicherung frisch war und ob eine Migration nicht additiv ist (dann entscheidet Sinan). Siehe SIN-374.`,
+      title: `${MIGRATION_BUG_PREFIX} (${m.applied}/${m.total})`,
+      description: `Der Wächter findet ${m.missing.length} Migration(en) im Repo, die in Supabase fehlen: ${names}.\n\nPrüfen: Lauf von \`migrate.yml\` (Actions), ob die Secrets SUPABASE_ACCESS_TOKEN und SUPABASE_PROJECT_REF gesetzt sind, ob die Sicherung frisch war und ob eine Migration nicht additiv ist (dann entscheidet Sinan). Siehe SIN-374.\n\n${fehlendZeile(m.missing)}`,
     },
+  };
+}
+
+/**
+ * Dubletten-Schutz (SIN-468): gibt es ein offenes Bug-Issue mit derselben Liste fehlender Migrationen, entsteht kein neues,
+ * sondern höchstens ein Kommentar mit Datum, einmal je Tag. Ändert sich die Liste, wird ein neues Issue angelegt.
+ * `lastComment` ist der Merker aus dem Status-Text (`{ issueId, day }`), damit der stündliche Wächter nicht jedes Mal kommentiert.
+ * @param {any} m Ergebnis von `migrationStatus`
+ * @param {{ id?: string, title?: string, description?: string }[]} openIssues
+ * @param {{ now?: Date, lastComment?: { issueId: string, day: string } | null }} [options]
+ * @returns {{ create: { title: string } | null, comment: { issueId: string, body: string } | null, state: { issueId: string, day: string } | null }}
+ */
+export function migrationBugPlan(m, openIssues = [], { now = new Date(), lastComment = null } = {}) {
+  const { bug } = migrationIncident(m);
+  if (!bug) return { create: null, comment: null, state: null };
+  const zeile = fehlendZeile(m.missing);
+  const offen = openIssues.find((i) => String(i.title ?? "").startsWith(MIGRATION_BUG_PREFIX) && String(i.description ?? "").split("\n").includes(zeile));
+  if (!offen) return { create: bug, comment: null, state: null };
+  const day = now.toISOString().slice(0, 10);
+  if (lastComment?.issueId === offen.id && lastComment.day === day) return { create: null, comment: null, state: lastComment };
+  return {
+    create: null,
+    comment: {
+      issueId: offen.id,
+      body: `${day}: Der Wächter findet weiterhin ${m.missing.length} fehlende Migration(en), ${m.applied}/${m.total} angewendet. Gleiche Liste, daher kein neues Issue (SIN-468).`,
+    },
+    state: { issueId: offen.id, day },
   };
 }
 

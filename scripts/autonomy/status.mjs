@@ -16,13 +16,13 @@ import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
 import { collectBackup } from "./backup.mjs";
-import { collectMigrations, migrationIncident } from "./migrationen.mjs";
+import { collectMigrations, migrationBugPlan, migrationIncident, sinanTaskForMigrations } from "./migrationen.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { buildSnapshot, sendSnapshot } from "./leitstand.mjs";
 import { sendTelegramPlain } from "./telegram.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
-import { renderSinan, syncSinan } from "./sinan.mjs";
+import { SEED, renderSinan, syncSinan } from "./sinan.mjs";
 import { decideRefill, nextRefillAt, overQuota, refillConfig } from "./refill.mjs";
 import { DIAG_WORKFLOWS, LINEAR_WARN_PCT, STALL_PREFIX, diagnoseStall, stalledRepairs, linearQuota, linearQuotaIssue, newStallIssue, pendingDecisions, renderLinearQuota } from "./diagnose.mjs";
 import { GATE_LABEL, GATE_PREFIX, collectGateFailures, collectMainChecks, detectGateBreaks, gateActions, waitingIssues } from "./warten.mjs";
@@ -227,6 +227,8 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const migrations = snap.migrations ?? null;
   const migr = migrationIncident(migrations);
   if (migr.incident) incidents.push(migr.incident);
+  // Dubletten-Schutz (SIN-468): offenes Bug-Issue mit gleicher Liste → höchstens ein Kommentar je Tag, kein neues Issue.
+  const migrPlan = migrationBugPlan(migrations, issues, { now, lastComment: prev.migrationKommentar ?? null });
   // Live-Check nach dem Deploy (SIN-319): Meldung erst, wenn er nach dem Revert noch rot ist.
   const liveCheck = snap.liveCheck ?? null;
   if (liveCheck?.incident) incidents.push(liveCheck.incident);
@@ -248,12 +250,13 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null, limitsFile.limits?.linear_issues?.limit);
   const stop = linearQ.level === "stop";
-  const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...[...deployBugs, migr.bug].filter((b) => b && !known.some((k) => k.title === b.title)),...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
+  const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...deployBugs.filter((b) => b && !known.some((k) => k.title === b.title)), migrPlan.create,...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
   const decisions = snap.decisions ?? [];
   for (const d of decisions) incidents.push({ key: `decision:${d.number}`, text: `Entscheidung nötig in gemergtem PR #${d.number} (${cell(d.title)}): ${d.question}` });
 
   // --- Selbstheilung ---
   for (const issue of bugs) actions.push({ type: "create-issue", issue });
+  if (migrPlan.comment) actions.push({ type: "comment-issue", ...migrPlan.comment });
   for (const a of gateActions(openPrs, breaks, gateBugOpen, rerun)) actions.push(/** @type {any} */ (a));
   // Reparatur ohne Commit (SIN-418): rote CI, kein neuer Commit seit > 30 Min → `ci` neu anstoßen, damit `repair` die nächste Runde startet.
   const repairKicks = {};
@@ -304,7 +307,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
       : decideRefill({ startable: order.length, phase: phase.phase, lastRefill: prev.lastRefill, quotaOver: overQuota(quotaRows), paused, linearFull: stop, now });
   const refillCfg = refillConfig(process.env);
   const lastRefill = refill.trigger ? now.toISOString() : prev.lastRefill;
-  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(Object.keys(repairKicks).length || prev.repairKicks ? { repairKicks: { ...(prev.repairKicks ?? {}), ...repairKicks } } : {}), ...(lastRefill ? { lastRefill } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}), ...(deployAlarms.length ? { deployAlarm: deployAlarms.map((a) => a.text) } : {}) };
+  const state = { reported: incidents.map((i) => i.key), conflictAsks, ...(Object.keys(repairKicks).length || prev.repairKicks ? { repairKicks: { ...(prev.repairKicks ?? {}), ...repairKicks } } : {}), ...(lastRefill ? { lastRefill } : {}), ...(migrPlan.state ? { migrationKommentar: migrPlan.state } : {}), ...(prev.refilled != null && !refill.trigger ? { refilled: prev.refilled } : {}), ...(snap.deploy?.attempt ? { deployAttempt: snap.deploy.attempt } : {}), ...(stuckDeploy ? { deployStuck: stuckDeploy } : {}), ...(deployAlarms.length ? { deployAlarm: deployAlarms.map((a) => a.text) } : {}) };
   if (refill.trigger) state.refilled = refill.maxIssues;
 
   // Kick: Dispatcher anstoßen, wenn nichts läuft, aber etwas startbar ist und der letzte Lauf lange her ist.
@@ -692,7 +695,9 @@ export async function main(argv, env = process.env) {
     const liveCheck = await collectLiveCheck(repo, gh);
     const migrations = await collectMigrations(env).catch(() => null);
     // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
-    const sinanIssues = linearOk ? (await syncSinan({ dry }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
+    // SIN-451: nicht additive Migrationen legt der Wächter als Sinan-Aufgabe an (Doppelte überspringt createSinanIssues).
+    const migrationTask = sinanTaskForMigrations(migrations);
+    const sinanIssues = linearOk ? (await syncSinan({ dry, seed: migrationTask ? [...SEED, migrationTask] : SEED }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
     snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
@@ -705,6 +710,7 @@ export async function main(argv, env = process.env) {
       a.type === "linear-done" ? `${a.issue.identifier} → Done`
       : a.type === "linear-todo" ? `${a.issue.identifier} → Todo`
       : a.type === "create-issue" ? `Bug-Issue: ${a.issue.title}\n${a.issue.description}`
+      : a.type === "comment-issue" ? `Kommentar an ${a.issueId}: ${a.body}`
       : `PR #${a.pr}: ${a.text}`;
     console.log(`\n--- Aktion ${a.type} ---\n${what}`);
   }
@@ -736,6 +742,9 @@ export async function main(argv, env = process.env) {
     if (a.type === "create-issue") {
       // Ist Linear selbst die Ursache (Limit), schlägt das Anlegen fehl: der Vorfall ging schon per Erwähnung an Sinan.
       await createLinearIssues([a.issue]).catch((e) => console.log(`::warning::Bug-Issue nicht angelegt: ${e.message}`));
+    }
+    if (a.type === "comment-issue") {
+      await comment(a.issueId, a.body).catch((e) => console.log(`::warning::Migrations-Kommentar nicht geschrieben: ${e.message}`));
     }
     // Label und Branch-Update mit dem Agenten-Token: nur so läuft die CI nach dem Push neu (SIN-240).
     if (a.type === "gate-block" || a.type === "gate-release" || a.type === "gate-rerun") {

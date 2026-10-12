@@ -40,11 +40,14 @@ test("SIN-447: Phase A mit mindestens 5 Fragen je Modul, Blöcke existieren, Sic
   }
 });
 
-test("SIN-447: Gegenproben fallen durch, alle anderen bestehen die Schwelle", () => {
+test("SIN-447: Gegenproben und zu leichte Fragen fallen durch, alle anderen bestehen die Schwelle", () => {
   const gp = indkflGegenproben();
   assert.ok(gp.length >= 3);
   for (const q of gp) assert.equal(scoresPass(q.expected), false, q.id);
-  for (const q of INDKFL_GOLDSET_ITEMS.filter((x) => !x.gegenprobe)) assert.equal(scoresPass(q.expected), true, q.id);
+  // SIN-456: reine Faktenfragen zur Verordnung sind laut Richter Niveau 3, sie sollen nicht bestehen.
+  for (const q of INDKFL_GOLDSET_ITEMS.filter((x) => x.zuLeicht)) assert.equal(q.expected.niveau, 3, q.id);
+  for (const q of INDKFL_GOLDSET_ITEMS.filter((x) => !x.gegenprobe && !x.zuLeicht)) assert.equal(scoresPass(q.expected), true, q.id);
+  assert.equal(INDKFL_GOLDSET_ITEMS.filter((x) => !x.gegenprobe && !x.zuLeicht).length, 22);
   // Jede Art von Fehler einmal: Quellentreue, Eindeutigkeit, Niveau oder Sprache.
   assert.ok(gp.some((q) => q.expected.sourceFidelity === 0));
   assert.ok(gp.some((q) => q.expected.uniqueness === 0));

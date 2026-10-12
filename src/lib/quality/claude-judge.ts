@@ -4,6 +4,7 @@
  */
 import { anthropicFetch } from "@/lib/anthropic/client";
 import { compactApiError } from "@/lib/api-error";
+import { withSourceExcerpts } from "./source-excerpt";
 import {
   JUDGE_SYSTEM_PROMPT,
   judgeChunked,
@@ -44,8 +45,9 @@ export async function claudeJudgeChunk(
   };
 }
 
-export function claudeJudge(
+export async function claudeJudge(
   items: EvalItem[],
 ): Promise<{ questions: QuestionEval[]; usage: { prompt_tokens: number; completion_tokens: number } }> {
-  return judgeChunked(items, (chunk) => claudeJudgeChunk(chunk));
+  // SIN-456: gleicher Quellenauszug wie beim OpenAI-Richter.
+  return judgeChunked(await withSourceExcerpts(items), (chunk) => claudeJudgeChunk(chunk));
 }

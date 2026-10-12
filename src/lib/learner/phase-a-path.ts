@@ -8,6 +8,7 @@ import {
   type PathUnitStatus,
   PLAYABLE_UNITS as SEED_UNITS,
 } from "./playable-path";
+import { normalizeQuestions } from "./normalize-question";
 import phaseAIndex from "./phase-a-index.json";
 import phaseATitles from "./phase-a-titles.json";
 
@@ -87,25 +88,9 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
       blockId: u.blockId ?? "M0-3",
       blockTitle: blockTitle(u.blockId),
       examAreas: u.questions[0]?.examAreas ?? [],
-      questions: u.questions.map((q) => ({
-        id: q.id,
-        type: q.type,
-        level: q.level ?? "verstehen",
-        prompt: q.prompt,
-        choices: q.choices,
-        pairs: q.pairs,
-        steps: q.steps,
-        blanks: q.blanks,
-        correct: q.correct ?? "",
-        explanation: q.explanation ?? "",
-        sourceUrl: q.sourceUrl ?? "",
-        examAreas: q.examAreas ?? [],
-        image: q.image,
-        sampleSolution: q.sampleSolution,
-        sampleChecklist: q.sampleChecklist,
-      })),
+      questions: normalizeQuestions(u.questions),
     };
-  });
+  }).filter((u) => u.questions.length > 0);
 }
 
 /**

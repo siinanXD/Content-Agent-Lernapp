@@ -13,6 +13,30 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-477 | SIN-477: Zuordnen-Fragen mit `correct` als Paarliste nicht verwerfen | [SIN-477-zuordnen-correct-paare.md](decisions/SIN-477-zuordnen-correct-paare.md) |
+| SIN-476 | SIN-476: Lernweg-Schritte bis zur ersten Einheit | [SIN-476-lernweg-schritte.md](decisions/SIN-476-lernweg-schritte.md) |
+| SIN-475 | SIN-475: Niveau-Regeln für Auswahlfragen in maf-metall LF1 und LF2 | [SIN-475-niveau-auswahl.md](decisions/SIN-475-niveau-auswahl.md) |
+| SIN-473 | SIN-473: Festes Frageschema vor dem Speichern | [SIN-473-frageschema.md](decisions/SIN-473-frageschema.md) |
+| SIN-472 | SIN-472: Wartende Migrationen erzeugen kein Bug-Issue | [SIN-472-migrationen-wartend.md](decisions/SIN-472-migrationen-wartend.md) |
+| SIN-471 | SIN-471: Migrationen 13/15 – Dublette von SIN-470 | [SIN-471-migrationen-13-von-15.md](decisions/SIN-471-migrationen-13-von-15.md) |
+| SIN-470 | SIN-470: Migrationen 13/15 – Dublette von SIN-458 | [SIN-470-migrationen-13-von-15.md](decisions/SIN-470-migrationen-13-von-15.md) |
+| SIN-469 | SIN-469: Content-Fabrik läuft dreimal pro Woche | [SIN-469-fabrik-laeufe-pro-woche.md](decisions/SIN-469-fabrik-laeufe-pro-woche.md) |
+| SIN-468 | SIN-468: Migrations-Wächter legt keine Dubletten an | [SIN-468-migrations-dubletten.md](decisions/SIN-468-migrations-dubletten.md) |
+| SIN-467 | SIN-467: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-467-migrationen-dublette.md](decisions/SIN-467-migrationen-dublette.md) |
+| SIN-466 | SIN-466: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-466-migrationen-dublette.md](decisions/SIN-466-migrationen-dublette.md) |
+| SIN-465 | SIN-465: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-465-migrationen-dublette.md](decisions/SIN-465-migrationen-dublette.md) |
+| SIN-464 | SIN-464: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-464-migrationen-dublette.md](decisions/SIN-464-migrationen-dublette.md) |
+| SIN-463 | SIN-463: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-463-migrationen-dublette.md](decisions/SIN-463-migrationen-dublette.md) |
+| SIN-462 | SIN-462: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-462-migrationen-dublette.md](decisions/SIN-462-migrationen-dublette.md) |
+| SIN-461 | SIN-461: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-461-migrationen-13-von-15.md](decisions/SIN-461-migrationen-13-von-15.md) |
+| SIN-460 | SIN-460: Migrationen 13/15 – Dublette von SIN-458 | [SIN-460-migrationen-13-von-15.md](decisions/SIN-460-migrationen-13-von-15.md) |
+| SIN-458 | SIN-458: Migrationen 13/15 – SIN-415 wartet auf Sinan, SIN-416 hängt daran | [SIN-458-migrationen-415-416.md](decisions/SIN-458-migrationen-415-416.md) |
+| SIN-457 | SIN-457: Migrationen 415/416 fehlen in Supabase | [SIN-457-migrationen-415-416.md](decisions/SIN-457-migrationen-415-416.md) |
+| SIN-456 | SIN-456: Richter prüft Fakten gegen den Quelltext | [SIN-456-richter-quellenauszug.md](decisions/SIN-456-richter-quellenauszug.md) |
+| SIN-455 | SIN-455: Leistungsbudget sichtbar machen, Ausreißer einmal nachmessen | [SIN-455-leistungsbudget-nachmessen.md](decisions/SIN-455-leistungsbudget-nachmessen.md) |
+| SIN-454 | SIN-454: Migrationen 13/15 sind weiter dieselbe Blockade wie SIN-441, SIN-443 und SIN-446 | [SIN-454-migrationen-weiter-offen.md](decisions/SIN-454-migrationen-weiter-offen.md) |
+| SIN-452 | SIN-452: Lernpfad zeigt Module ohne Einheiten als Leerzustand | [SIN-452-lernpfad-leere-module.md](decisions/SIN-452-lernpfad-leere-module.md) |
+| SIN-451 | SIN-451: Migrationen: Abweichung nach Merge erkennen, additive anwenden, nicht additive an Sinan | [SIN-451-migrationen-abweichung-melden.md](decisions/SIN-451-migrationen-abweichung-melden.md) |
 | SIN-450 | SIN-450: Content-Fabrik pausiert bei gesperrter Anthropic-API | [SIN-450-fabrik-pausiert-bei-api-limit.md](decisions/SIN-450-fabrik-pausiert-bei-api-limit.md) |
 | SIN-447 | SIN-447: Goldset Industriekaufleute | [SIN-447-goldset-indkfl.md](decisions/SIN-447-goldset-indkfl.md) |
 | SIN-446 | SIN-446: Migrationen 13/15 sind dieselbe Blockade wie SIN-441 und SIN-443 | [SIN-446-migrationen-weiter-offen.md](decisions/SIN-446-migrationen-weiter-offen.md) |
@@ -50,6 +74,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-387 | SIN-387 — PostHog lädt nach Einwilligung, Abbruch-Ereignisse | [SIN-387-posthog-laden-nach-einwilligung.md](decisions/SIN-387-posthog-laden-nach-einwilligung.md) |
 | SIN-386 | SIN-386 — Bewertungslauf fortsetzen: 376 von 1852 Fragen bewertet | [SIN-386-bewertungslauf-fortsetzen.md](decisions/SIN-386-bewertungslauf-fortsetzen.md) |
 | SIN-385 | SIN-385 — Demo-Gruppenansicht mit Beispieldaten ohne Konto | [SIN-385-demo-gruppenansicht.md](decisions/SIN-385-demo-gruppenansicht.md) |
+| SIN-384 | SIN-384: Fragenformate beim Lesen vereinheitlichen | [SIN-384-fragen-normalisieren.md](decisions/SIN-384-fragen-normalisieren.md) |
 | SIN-383 | SIN-383: Langfuse lesbar machen, ein Trace je Einheit mit jeder Frage | [SIN-383-langfuse-trace-je-einheit.md](decisions/SIN-383-langfuse-trace-je-einheit.md) |
 | SIN-381 | SIN-381: Review-Fehlalarme verbrauchen keine Reparatur-Runden | [SIN-381-review-fehlalarme.md](decisions/SIN-381-review-fehlalarme.md) |
 | SIN-380 | SIN-380: Content-Fabrik schreibt Langfuse-Traces je Schritt | [SIN-380-langfuse-traces-je-schritt.md](decisions/SIN-380-langfuse-traces-je-schritt.md) |

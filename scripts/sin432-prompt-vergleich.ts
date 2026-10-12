@@ -6,6 +6,9 @@
  *
  *   npm run quality:prompt-vergleich
  *   npm run quality:prompt-vergleich -- --dry-run
+ *
+ * SIN-475: `--niveau` vergleicht stattdessen PROMPT_NIVEAU_REGELN=aus (Stand SIN-432/433) mit den Niveau-Regeln
+ * für auswahl, nur LF1 und LF2, und meldet zusätzlich die auswahl-Quote je Modul (Ausgabe: docs/ops/sin475-runs/).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,10 +25,11 @@ import { GENERATOR_MODEL } from "../src/lib/anthropic/client";
 import { addOpenAIUsage, claudeBatchUsd, emptyLedger } from "../src/lib/quality/cost-guard";
 import { JUDGE_MODEL, liveJudgeWithUsage, type EvalItem } from "../src/lib/quality/evaluate-agent";
 
-const OUT_DIR = join(process.cwd(), "docs", "ops", "sin432-runs");
+const NIVEAU = process.argv.includes("--niveau");
+const OUT_DIR = join(process.cwd(), "docs", "ops", NIVEAU ? "sin475-runs" : "sin432-runs");
 const KEYWORD = "Maschinen- und Anlagenführer";
-const MODULES = ["LF1", "LF2", "M0", "PA"];
-const UNITS_PER_MODULE = 6;
+const MODULES = NIVEAU ? ["LF1", "LF2"] : ["LF1", "LF2", "M0", "PA"];
+const UNITS_PER_MODULE = NIVEAU ? 12 : 6;
 const BUDGET_USD = 3.2;
 const TYPES = ["auswahl", "reihenfolge", "rechnen", "zuordnen", "lueckentext"] as const;
 
@@ -48,18 +52,21 @@ function targets(): BatchChunkTarget[] {
 }
 
 async function lauf(label: "vorher" | "nachher", key: string) {
-  if (label === "vorher") process.env.PROMPT_AUSWAHL_REGELN = "aus";
-  else delete process.env.PROMPT_AUSWAHL_REGELN;
+  delete process.env.PROMPT_AUSWAHL_REGELN;
+  delete process.env.PROMPT_NIVEAU_REGELN;
+  if (label === "vorher") process.env[NIVEAU ? "PROMPT_NIVEAU_REGELN" : "PROMPT_AUSWAHL_REGELN"] = "aus";
   const system = [{ type: "text" as const, text: generatorSystemText(), cache_control: { type: "ephemeral" as const } }];
   const sub = await submitChunkTargets({ keyword: KEYWORD, targets: targets(), model: GENERATOR_MODEL, system });
   await pollBatchUntilDone(sub.batchId, { intervalMs: 20_000 });
   const got = await collectBatchUnits(sub.batchId);
   const c = loadMafCurriculum();
   const typeOf = new Map<string, string>();
+  const moduleOf = new Map<string, string>();
   const items: EvalItem[] = got.units.flatMap((u) => {
     const mod = c.modules.find((m) => m.id === u.moduleId);
     return u.questions.map((q) => {
       typeOf.set(`${u.id}-${q.id}`, q.type);
+      moduleOf.set(`${u.id}-${q.id}`, u.moduleId ?? "");
       return {
         id: `${u.id}-${q.id}`, unitId: u.id, prompt: q.prompt, correct: q.correct, explanation: q.explanation,
         sourceUrl: q.sourceUrl, moduleId: u.moduleId, blockId: u.blockId, year: mod?.year,
@@ -77,7 +84,13 @@ async function lauf(label: "vorher" | "nachher", key: string) {
     const v = qs.filter((q) => !q.passed).length;
     jeTyp[t] = { fragen: qs.length, verworfen: v, quote: Number((v / Math.max(1, qs.length)).toFixed(3)) };
   }
-  return { label, batchId: sub.batchId, failedChunks: got.failedCustomIds, jeTyp, usd };
+  const jeModulAuswahl: Record<string, { fragen: number; verworfen: number; quote: number }> = {};
+  for (const m of MODULES) {
+    const qs = judged.questions.filter((q) => moduleOf.get(q.questionId) === m && typeOf.get(q.questionId) === "auswahl");
+    const v = qs.filter((q) => !q.passed).length;
+    jeModulAuswahl[m] = { fragen: qs.length, verworfen: v, quote: Number((v / Math.max(1, qs.length)).toFixed(3)) };
+  }
+  return { label, batchId: sub.batchId, failedChunks: got.failedCustomIds, jeTyp, jeModulAuswahl, usd };
 }
 
 async function main() {

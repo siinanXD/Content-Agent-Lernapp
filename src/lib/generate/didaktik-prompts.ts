@@ -54,19 +54,59 @@ export const RECHNEN_ZUORDNEN_LUECKE_REGELN = `Regeln für Fragetyp rechnen, zuo
 - lueckentext: Satz oder kurzer Absatz mit 1–3 Lücken, jede Lücke hat genau EIN fachlich richtiges Wort nach der Quelle (keine Synonyme möglich, sonst Hinweis in der Aufgabe). Fehlt der Fachbegriff, muss der Rest des Satzes ihn eindeutig bestimmen. Keine Lücke für Artikel, Füllwörter oder Zahlen ohne Bezug. Lücken verlangen Verständnis (Ursache, Zusammenhang, Wirkung), nicht nur Auswendiglernen eines Namens; Stufe verstehen oder anwenden.
 - Alle drei: Begründung (explanation) nennt die Quelle und warum die Lösung gilt.`;
 
-/** `PROMPT_AUSWAHL_REGELN=aus` erzeugt den Prompt von vor SIN-432 und SIN-433 (nur für den Vorher-Lauf im Vergleich). */
-function auswahlRegelnBlock(): string {
-  return process.env.PROMPT_AUSWAHL_REGELN === "aus"
-    ? ""
-    : `\n${AUSWAHL_REGELN}\n${RECHNEN_ZUORDNEN_LUECKE_REGELN}`;
+/**
+ * SIN-475: Niveau bei auswahl. Verwerfungen nach SIN-432/433: maf-metall LF2 auswahl 17 (davon 14 Niveau),
+ * LF1 auswahl 9 (alle Niveau). Der Richter vergibt Niveau 4 nur, wenn die Frage eine Entscheidung verlangt;
+ * Definitionsfragen und Wortvergleiche bleiben darunter. Ergänzt AUSWAHL_REGELN (SIN-432), ersetzt sie nicht;
+ * das Format steht in FRAGE_FORMAT (SIN-473).
+ */
+export const AUSWAHL_NIVEAU_REGELN = `Niveau bei auswahl (Zwischenprüfung Jahr 1; der Richter verwirft Fragen unter Niveau 4):
+- Aufbau: 1–2 Sätze Betriebssituation mit konkretem Werkstück, Werkstoff, Maschine oder Messwert, dann EINE Frage nach Entscheidung, Ursache oder Folge ("Welches Werkzeug ist hier richtig?", "Woran liegt die Abweichung?", "Was geschieht, wenn ...?"). Keine Frage der Form "Was ist ...?", "Wie heißt ...?" oder "Welche Aussage über X stimmt?" ohne Situation.
+- Die richtige Antwort verlangt, zwei Angaben der Frage mit der Quelle zu verknüpfen (z. B. Werkstoff und Verfahren, Toleranz und Prüfmittel). Sie lässt sich nicht durch das Wiedererkennen eines Wortes aus dem Merksatz finden.
+- Stufe erinnern höchstens bei 2 von 7 Fragen und dann nur für Sicherheits- oder Normwerte aus der Quelle. Alle anderen Fragen sind verstehen oder anwenden, mit level passend zur Frage.
+- Die Distraktoren sind in der Situation plausible Entscheidungen, die nach der Quelle an einer genannten Angabe scheitern. Eine zu leichte Frage (zwei Antworten offensichtlich absurd) wird verworfen.
+- Der Quellenbezug bleibt Pflicht: Was die Frage voraussetzt, steht in der zitierten Quelle; Werte, Maße und Verfahren nicht erfinden.`;
+
+/** Modulspezifische Schwerpunkte für das Niveau (nur Frageform, keine neuen Fakten; Fakten kommen aus der Quelle). */
+const MODUL_NIVEAU_HINWEISE: Record<string, string> = {
+  LF1: "Niveau-Hinweis LF1 (handgeführte Werkzeuge): Situation am Werkstück (Zeichnung lesen, Werkstoff und Halbzeug wählen, von Hand trennen, umformen oder prüfen) mit einer konkreten Angabe (Werkstoff, Maß, Werkzeug). Gefragt wird, welches Vorgehen, Werkzeug oder Prüfmittel nach der Quelle passt oder warum etwas misslingt, nie die bloße Benennung eines Werkzeugs, Werkstoffs oder Zeichnungselements.",
+  LF2: "Niveau-Hinweis LF2 (Maschinen): Situation an der Maschine (Bohren, Drehen, Fräsen, Toleranz oder Prüfmittel wählen, Messfehler, Standzeit, Kühlschmierung) mit einer konkreten Angabe (Werkstoff, Durchmesser, Toleranzklasse, Messwert). Gefragt wird nach Ursache, Folge oder dem passenden Verfahren, Werkzeug oder Prüfmittel mit Begründung aus der Quelle, nie nach dem Namen eines Maschinenteils oder Verfahrens.",
+};
+
+function niveauRegelnAus(): boolean {
+  return process.env.PROMPT_NIVEAU_REGELN === "aus";
 }
+
+export function modulNiveauHinweis(moduleId: string): string {
+  return niveauRegelnAus() ? "" : (MODUL_NIVEAU_HINWEISE[moduleId] ?? "");
+}
+
+/**
+ * `PROMPT_AUSWAHL_REGELN=aus` erzeugt den Prompt von vor SIN-432 und SIN-433, `PROMPT_NIVEAU_REGELN=aus` den von
+ * vor SIN-475 (nur für Vorher-Läufe im Vergleich).
+ */
+function auswahlRegelnBlock(): string {
+  if (process.env.PROMPT_AUSWAHL_REGELN === "aus") return "";
+  const niveau = niveauRegelnAus() ? "" : `${AUSWAHL_NIVEAU_REGELN}\n`;
+  return `\n${AUSWAHL_REGELN}\n${niveau}${RECHNEN_ZUORDNEN_LUECKE_REGELN}`;
+}
+
+/** SIN-473: feste Form je Fragetyp (Quelle: question-schema.ts). Ungültige Fragen werden einmal repariert, dann verworfen. */
+export const FRAGE_FORMAT = `Feste Form je Fragetyp (type nur genau so; Pflicht: id, type, level, prompt, correct, explanation, sourceUrl, examAreas):
+- auswahl: choices = Liste mit 2–6 Texten; correct = genau ein Text aus choices.
+- zuordnen: pairs = Liste von 2–8 Paaren [Begriff, Zuordnung] (Liste, kein Objekt); correct = Liste der rechten Seiten in der Reihenfolge der pairs.
+- lueckentext: blanks = Wortliste mit 2–8 Texten (Liste, kein Objekt); prompt enthält ____ als Lücke; correct = ein Wort aus blanks.
+- reihenfolge: steps = Liste mit 3–8 Schritten in richtiger Folge; correct = die steps mit " → " verbunden (ein Text).
+- rechnen: correct = Ergebnis mit Einheit (ein Text); sampleSolution = Rechenweg; sampleChecklist optional (Liste).
+`;
 
 export function didaktikSchemaHint(): string {
   return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
 Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter mit Quelle.
 Offene Aufgaben (rechnen/kurze Begründung): nur sampleSolution + sampleChecklist zur Selbstkontrolle — keine KI-Bewertung.
 Phase A: nur generierte SVG (license Generated-SVG), keine Commons-/KI-Bilder.
-explanation muss immer gesetzt sein (Fallback aus sections).${auswahlRegelnBlock()}`;
+explanation muss immer gesetzt sein (Fallback aus sections).
+${FRAGE_FORMAT}${auswahlRegelnBlock()}`;
 }
 
 /** Full block prompt with variant rules (AP-14/AP-15 contract). */
@@ -89,7 +129,7 @@ export function buildDidaktikBlockPrompt(
   return `Erzeuge ${block.units} Lerneinheiten (je 5–10 Minuten) für den Block "${block.title}" im Modul "${mod.title}"
 der Ausbildung ${c.keyword}${c.variantLabel ? `, ${c.variantLabel}` : ""}, Ausbildungsjahr ${mod.year}.
 Niveau: ${mod.niveau}. Themen: ${block.topics.join("; ")}.
-Erlaubte Quellen (nur diese zitieren, URL in sourceUrl, Abrufdatum ${fetchedAt} in sourceFetchedAt): ${sourceUrls}.
+${modulNiveauHinweis(mod.id) ? `${modulNiveauHinweis(mod.id)}\n` : ""}Erlaubte Quellen (nur diese zitieren, URL in sourceUrl, Abrufdatum ${fetchedAt} in sourceFetchedAt): ${sourceUrls}.
 Fragetypen-Mix in Prozent: ${formatMix(mod.questionMix)}.
 examAreas je Frage aus dem Modul: [${examAreas}].
 Didaktik-Variante für diesen Block: ${variant}.

@@ -8,11 +8,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CONTENT_DIR, loadCurriculum } from "../src/lib/content/curriculum";
 import { addOpenAIUsage, emptyLedger } from "../src/lib/quality/cost-guard";
-import { JUDGE_MODEL, liveJudgeWithUsage, type EvalItem } from "../src/lib/quality/evaluate-agent";
+import { JUDGE_MODEL, JUDGE_PROMPT_VERSION, liveJudgeWithUsage, type EvalItem } from "../src/lib/quality/evaluate-agent";
 import { checkGoldset, renderGoldsetCheck } from "../src/lib/quality/goldset-check";
 import { INDKFL_GOLDSET, INDKFL_GOLDSET_ITEMS, LANGFUSE_INDKFL_DATASET } from "../src/lib/quality/indkfl-goldset";
 import { ensureGoldsetDataset } from "../src/lib/quality/langfuse-client";
 import { shutdownLangfuseOtel } from "../src/lib/quality/langfuse-otel";
+import { withSourceExcerpts } from "../src/lib/quality/source-excerpt";
 
 const OUT_DIR = join(process.cwd(), "docs", "quality", "runs");
 
@@ -50,14 +51,18 @@ async function main() {
       safety: q.expected.safetyFlag,
     };
   });
-  const judged = await liveJudgeWithUsage(key, items);
+  // SIN-456: Auszüge vorab laden, um im Bericht zu zeigen, wie viele Fragen einen Quelltext hatten (Cache je URL).
+  const enriched = await withSourceExcerpts(items);
+  const auszug = `${enriched.filter((i) => i.sourceExcerpt).length} von ${enriched.length} Fragen mit Quellenauszug`;
+  console.log(`Quellenauszug: ${auszug}`);
+  const judged = await liveJudgeWithUsage(key, enriched);
   const costUsd = addOpenAIUsage(emptyLedger(), judged.usage.prompt_tokens, judged.usage.completion_tokens).usdEstimate;
   const check = checkGoldset(INDKFL_GOLDSET_ITEMS, judged.questions);
 
   mkdirSync(OUT_DIR, { recursive: true });
   const base = `indkfl-goldset-check-${runId.slice(0, 10)}`;
-  writeFileSync(join(OUT_DIR, `${base}.json`), JSON.stringify({ runId, dataset: LANGFUSE_INDKFL_DATASET, judgeModel: JUDGE_MODEL, costUsd, langfuse, check, judged: judged.questions }, null, 2) + "\n");
-  writeFileSync(join(OUT_DIR, `${base}.md`), renderGoldsetCheck(check, { dataset: LANGFUSE_INDKFL_DATASET, judgeModel: JUDGE_MODEL, runId, costUsd, langfuse }, INDKFL_GOLDSET_ITEMS));
+  writeFileSync(join(OUT_DIR, `${base}.json`), JSON.stringify({ runId, dataset: LANGFUSE_INDKFL_DATASET, judgeModel: JUDGE_MODEL, judgePromptVersion: JUDGE_PROMPT_VERSION, auszug, costUsd, langfuse, check, judged: judged.questions }, null, 2) + "\n");
+  writeFileSync(join(OUT_DIR, `${base}.md`), renderGoldsetCheck(check, { dataset: LANGFUSE_INDKFL_DATASET, judgeModel: `${JUDGE_MODEL} (Prompt ${JUDGE_PROMPT_VERSION})`, runId, costUsd, langfuse, auszug }, INDKFL_GOLDSET_ITEMS));
   console.log(`Richter wie erwartet: ${check.agree} von ${check.judged}; Gegenproben erkannt: ${check.gegenproben.erkannt} von ${check.gegenproben.total}; Kosten ${costUsd.toFixed(4)} USD`);
 }
 

@@ -1,0 +1,571 @@
+{
+  "runId": "2026-10-09T12-21-42-978Z",
+  "dataset": "indkfl-goldset",
+  "judgeModel": "gpt-5.4-mini",
+  "judgePromptVersion": "2026-10-v2",
+  "auszug": "19 von 35 Fragen mit Quellenauszug",
+  "costUsd": 0.0233,
+  "langfuse": "35 von 35 Einträgen im Datensatz indkfl-goldset",
+  "check": {
+    "total": 35,
+    "judged": 35,
+    "agree": 24,
+    "agreementRate": 0.686,
+    "falseFail": [],
+    "falsePass": [
+      "ik-g01",
+      "ik-g02",
+      "ik-g03",
+      "ik-g04",
+      "ik-g05",
+      "ik-g06",
+      "ik-g07",
+      "ik-g08",
+      "ik-g09",
+      "ik-g10",
+      "ik-x01"
+    ],
+    "gegenproben": {
+      "total": 3,
+      "erkannt": 2
+    },
+    "missing": []
+  },
+  "judged": [
+    {
+      "questionId": "ik-g01",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Antwort 'Drei Jahre' stimmt mit § 2 des Auszugs überein."
+      ]
+    },
+    {
+      "questionId": "ik-g02",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Der Auszug nennt ausdrücklich 'Textnachweis ab: 1.8.2024' und das Inkrafttreten am 1. August 2024."
+      ]
+    },
+    {
+      "questionId": "ik-g03",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die genannten sieben Einsatzgebiete entsprechen wortgleich § 4 Abs. 4 im Auszug."
+      ]
+    },
+    {
+      "questionId": "ik-g04",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Der Auszug nennt die Abschlussprüfung als aus Teil 1 und Teil 2 bestehend; eine gesonderte Zwischenprüfung ist nicht vorgesehen."
+      ]
+    },
+    {
+      "questionId": "ik-g05",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Der Auszug nennt ausdrücklich: 'Teil 1 soll im vierten Ausbildungshalbjahr stattfinden.'"
+      ]
+    },
+    {
+      "questionId": "ik-g06",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Der Prüfungsbereich heißt im Auszug genau 'Leistungserstellung, Logistik, Beschaffung und Buchhaltung' und die Prüfungszeit beträgt 90 Minuten."
+      ]
+    },
+    {
+      "questionId": "ik-g07",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Der Auszug gewichtet den Prüfungsbereich 'Leistungserstellung, Logistik, Beschaffung und Buchhaltung' mit 25 Prozent."
+      ]
+    },
+    {
+      "questionId": "ik-g08",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Der Auszug nennt für den Prüfungsbereich 'Marketing, Vertrieb, Personalwesen und kaufmännische Steuerung und Kontrolle' eine Prüfungszeit von 150 Minuten."
+      ]
+    },
+    {
+      "questionId": "ik-g09",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Antwort gibt die drei Teil-2-Gewichtungen aus dem Auszug korrekt wieder: 35 Prozent, 30 Prozent und 10 Prozent."
+      ]
+    },
+    {
+      "questionId": "ik-g10",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Gewichtung im Auszug ist exakt: Dokumentation 10 Prozent, Präsentation 20 Prozent, fallbezogenes Fachgespräch 70 Prozent."
+      ]
+    },
+    {
+      "questionId": "ik-g11",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Angaben zu 30 Minuten und max. 10 Minuten stimmen mit § 12 Abs. 7 des Auszugs überein."
+      ]
+    },
+    {
+      "questionId": "ik-g12",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Bestehensregeln stimmen wörtlich mit § 14 Abs. 2 des Auszugs überein."
+      ]
+    },
+    {
+      "questionId": "ik-m0-01",
+      "unitId": "M0-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Der Betriebsrat ist als betriebsverfassungsrechtliches Organ in der Quelle genannt; die Antwort passt sachlich."
+      ]
+    },
+    {
+      "questionId": "ik-m0-02",
+      "unitId": "M0-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Steuern und Sozialversicherungsbeiträge sind typische Abzugsarten zwischen Brutto und Netto; mit dem Ausbildungsrahmenplan vereinbar."
+      ]
+    },
+    {
+      "questionId": "ik-m0-03",
+      "unitId": "M0-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": true
+      },
+      "passed": true,
+      "reasons": [
+        "Verhaltensweisen bei Bränden und erste Maßnahmen zur Brandbekämpfung sind in der Quelle genannt; die Reihenfolge ist fachlich richtig und sicherheitsrelevant.",
+        "safety_human_sample"
+      ]
+    },
+    {
+      "questionId": "ik-m0-04",
+      "unitId": "M0-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Antwort entspricht der in der Quelle genannten Rangfolge: Abfälle vermeiden und einer Wiederverwertung oder Entsorgung zuführen."
+      ]
+    },
+    {
+      "questionId": "ik-m0-05",
+      "unitId": "M0-4",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Datenschutz und Datensicherheit werden in der Quelle ausdrücklich genannt; private ungesicherte Weiterleitung ist sachlich verneint."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-01",
+      "unitId": "LF1-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die genannten Produktionsfaktoren entsprechen dem in LF 1 üblichen Fachwissen zum Industriebetrieb."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-02",
+      "unitId": "LF1-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Haftungsbeschreibung einer GmbH ist sachlich richtig: grundsätzlich nur Gesellschaftsvermögen, nicht Privatvermögen der Gesellschafter."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-03",
+      "unitId": "LF1-6",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Berechnung ist korrekt: 600.000 € / 500.000 € = 1,2."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-04",
+      "unitId": "LF1-6",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Rechnung und Ergebnis 50.000 € / 400.000 € × 100 = 12,5 % sind korrekt."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-05",
+      "unitId": "LF1-4",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Abgrenzung Kernprozesse/Supportprozesse sachlich richtig und passend zum Thema Geschäftsprozesse."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-01",
+      "unitId": "LF2-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Merkmale eines Projekts korrekt genannt: einmalig, zeitlich begrenzt, Ziel und begrenzte Mittel."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-02",
+      "unitId": "LF2-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "SMART korrekt wiedergegeben: spezifisch, messbar, attraktiv/akzeptiert, realistisch, terminiert."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-03",
+      "unitId": "LF2-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Reihenfolge der Projektphasen korrekt: Definition, Planung, Durchführung, Abschluss."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-04",
+      "unitId": "LF2-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Meilenstein als wichtiges Zwischenergebnis zu einem festen Termin korrekt erklärt."
+      ]
+    },
+    {
+      "questionId": "ik-lf2-05",
+      "unitId": "LF2-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Feedbackregel mit Ich-Botschaften und sachlicher Beschreibung beobachtbaren Verhaltens ist korrekt."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-01",
+      "unitId": "LF3-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Kaufvertrag durch zwei übereinstimmende Willenserklärungen korrekt beschrieben."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-02",
+      "unitId": "LF3-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Unterschied Besitz/Eigentum sachlich richtig erklärt."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-03",
+      "unitId": "LF3-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Barverkaufspreis 460 € ist korrekt: 400 € + 15 % von 400 € = 460 €."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-04",
+      "unitId": "LF3-7",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Sachlich richtig: Die Nichtbezahlung einer fälligen Rechnung ist Zahlungsverzug.",
+        "Passt zum Lernfeld 3 zu Kaufvertragsstörungen und Mahnwesen."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-05",
+      "unitId": "LF3-7",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Sachlich richtig: Regelmäßige Verjährungsfrist beträgt 3 Jahre.",
+        "Fristbeginn ist mit dem Schluss des Jahres, in dem der Anspruch entstanden ist (§§ 195, 199 BGB)."
+      ]
+    },
+    {
+      "questionId": "ik-x01",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Entspricht dem Auszug: Teil 1 und Teil 2 werden im Gesamtergebnis mit 40 Prozent gewichtet.",
+        "Keine Abweichung bei Prozentwert oder Bezug zur Prüfung."
+      ]
+    },
+    {
+      "questionId": "ik-x02",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 0,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Frage ist nicht einzigartig lösbar, da im Auszug mehrere Einsatzgebiete genannt werden (z. B. Vertrieb, Marketing, Beschaffung usw.).",
+        "Die Vorgabe 'Nenne ein Einsatzgebiet' erlaubt mehrere richtige Antworten.",
+        "uniqueness_fail"
+      ]
+    },
+    {
+      "questionId": "ik-x03",
+      "unitId": "LF3-1",
+      "scores": {
+        "sourceFidelity": 0,
+        "uniqueness": 1,
+        "niveau": 1,
+        "language": 2,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Antwort ist zu ungenau und fachlich nicht sauber: Ein Kunde ist nicht einfach nur 'jemand, der was kauft', sondern eine Person/Organisation, die Waren oder Dienstleistungen bezieht bzw. nachfragt.",
+        "Die Erklärung ist umgangssprachlich und didaktisch schwach; kein belastbarer Bezug zur amtlichen Quelle.",
+        "source_fidelity_fail",
+        "niveau_below_4",
+        "language_below_4"
+      ]
+    }
+  ]
+}

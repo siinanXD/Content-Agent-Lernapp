@@ -20,6 +20,8 @@ import { GENERATOR_MODEL } from "../src/lib/anthropic/client";
 import { loadAllCurricula, type Curriculum } from "../src/lib/content/curriculum";
 import {
   collectBatchUnits,
+  collectRepairQuestions,
+  submitQuestionRepairBatch,
   mergePhaseLernfeld,
   moduleChunks,
   pollBatchUntilDone,
@@ -43,6 +45,7 @@ import {
   pickSafetySample,
   reportFileName,
   RUN_CAP_EUR,
+  runAllowed,
   toEvalItems,
   trimTargets,
   unitCostHistory,
@@ -52,6 +55,8 @@ import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
 import type { BatchChunkTarget } from "../src/lib/generate/batch-generate";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { MAX_QUESTIONS, MIN_PASSED_QUESTIONS, planFromEvals } from "../src/lib/generate/repair-questions";
+import { enforceQuestionSchema, type RepairFn } from "../src/lib/generate/schema-gate";
+import { emptySchemaStats, gateUnit } from "../src/lib/generate/question-schema";
 import {
   addClaudeLedger,
   addOpenAIUsage,
@@ -191,6 +196,14 @@ async function main() {
   const publishedByMap = new Map([...unitsByMap].map(([m, us]) => [m, new Set(us.map((u) => u.id))]));
 
   const history = loadHistory();
+  // SIN-469: mehrere Läufe pro Woche, aber höchstens einer je Tag und unter dem Wochendeckel (nur echte Läufe).
+  if (!dry) {
+    const allowed = runAllowed(history);
+    if (!allowed.ok) {
+      console.log(`Fabrik übersprungen: ${allowed.reason}`);
+      process.exit(0);
+    }
+  }
   // Einheiten-IDs wiederholen sich zwischen den Maps (M0-1-u1): Verworfene gehören zur Map ihres Laufs.
   const discardedByMap = new Map<string, Set<string>>();
   for (const r of history) {
@@ -251,6 +264,7 @@ async function main() {
     discarded: 0,
     discardedUnitIds: [],
     deferred: 0,
+    schema: emptySchemaStats(),
     repair: { ran: false, costEur: 0 },
     sourceRefresh: { units: affected.unitIds.length, replaced: 0, changeKeys: [] },
     model: GENERATOR_MODEL,
@@ -365,6 +379,26 @@ async function main() {
     return judged.questions;
   }
 
+  /** SIN-473: Schema prüfen, ungültige Fragen einmal über die Reparatur (AP-21) neu erzeugen, Rest verwerfen. */
+  async function schemaGate(units: GeneratedUnit[]): Promise<GeneratedUnit[]> {
+    const repair: RepairFn = async (items) => {
+      assertWithinRunCap(spentTotal(), RUN_CAP_EUR);
+      const sub = await submitQuestionRepairBatch({ items });
+      report.batchIds.push(sub.batchId);
+      await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
+      const got = await collectRepairQuestions(sub.batchId, new Map(items.map((i) => [i.unit.id, i.unit])));
+      ledger = addClaudeLedger(ledger, got.ledger);
+      return got.questions;
+    };
+    const res = await enforceQuestionSchema(units, repair);
+    const s = report.schema!;
+    s.generated += res.stats.generated;
+    s.invalid += res.stats.invalid;
+    s.repaired += res.stats.repaired;
+    s.discarded += res.stats.discarded;
+    return res.units;
+  }
+
   /** Nur Fragen über der Schwelle bleiben; Einheit live ab MIN_PASSED_QUESTIONS (AP-21). */
   function keepPassing(units: GeneratedUnit[], evals: QuestionEval[]): { ok: GeneratedUnit[]; dropped: string[] } {
     const ok: GeneratedUnit[] = [];
@@ -434,6 +468,7 @@ async function main() {
     ledger = addClaudeLedger(ledger, got.ledger);
     tracer.batchFertig(got.units, got.ledger, "reparatur");
     if (got.units.length > 0) {
+      got.units = await schemaGate(got.units);
       const { ok } = keepPassing(got.units, await judge(got.units, "refresh"));
       live.push(...ok);
       report.sourceRefresh.replaced = ok.length;
@@ -475,7 +510,7 @@ async function main() {
       tracer.batchFertig(got.units, got.ledger, "neuesModul");
       // Nur Einheiten, die zum Modul gehören und noch offen sind.
       const wanted = planPending;
-      generatedUnits.push(...got.units.filter((u) => wanted.has(u.id)));
+      generatedUnits.push(...(await schemaGate(got.units.filter((u) => wanted.has(u.id)))));
       const evals = generatedUnits.length > 0 ? await judge(generatedUnits, "grow") : [];
       const { ok, dropped } = keepPassing(generatedUnits, evals);
       live.push(...ok);
@@ -499,6 +534,8 @@ async function main() {
   }
 
   // Veröffentlichen: erst jetzt, alles in einem Schritt.
+  // Letzte Sperre (SIN-473): nie eine schema-ungültige Frage speichern.
+  for (let i = 0; i < live.length; i++) live[i] = gateUnit(live[i]!).unit;
   const liveIds = new Set(live.map((u) => u.id));
   if (live.length > 0) {
     const merged = mergePhaseLernfeld(

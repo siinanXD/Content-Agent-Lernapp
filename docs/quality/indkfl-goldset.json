@@ -1,6 +1,6 @@
 {
   "name": "indkfl-goldset",
-  "description": "Goldset Industriekaufleute: 12 Fragen zu Verordnung und Prüfung, je 5 Fachfragen zu Phase A (M0, LF1, LF2, LF3) und 3 Gegenproben, die der Richter durchfallen lassen muss. Eigene Fragen, keine IHK-Prüfungsaufgaben, keine Personendaten.",
+  "description": "Goldset Industriekaufleute: 12 Fragen zu Verordnung und Prüfung, je 5 Fachfragen zu Phase A (M0, LF1, LF2, LF3) und 3 Gegenproben, die der Richter durchfallen lassen muss. Eigene Fragen, keine IHK-Prüfungsaufgaben, keine Personendaten. Die 10 reinen Faktenfragen ik-g01 bis ik-g10 gelten als zu leicht (Niveau 3) und sollen nicht bestehen (SIN-456).",
   "status": "Geprüft durch Sinan am 09.10.2026",
   "retrievedAt": "2026-10-03",
   "itemCount": 35,
@@ -36,10 +36,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g02",
@@ -55,10 +56,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g03",
@@ -74,10 +76,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g04",
@@ -93,10 +96,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g05",
@@ -112,10 +116,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g06",
@@ -131,10 +136,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g07",
@@ -150,10 +156,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g08",
@@ -169,10 +176,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g09",
@@ -188,10 +196,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g10",
@@ -207,10 +216,11 @@
       "expected": {
         "sourceFidelity": 1,
         "uniqueness": 1,
-        "niveau": 4,
+        "niveau": 3,
         "language": 4,
         "safetyFlag": false
-      }
+      },
+      "zuLeicht": "Reine Faktenabfrage zur Verordnung; der Richter wertet sie als Niveau 3 (SIN-456, mit Sinan abgestimmt)."
     },
     {
       "id": "ik-g11",
