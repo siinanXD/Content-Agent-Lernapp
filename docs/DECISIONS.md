@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-460 | SIN-460: Migrationen 13/15 – Dublette von SIN-458 | [SIN-460-migrationen-13-von-15.md](decisions/SIN-460-migrationen-13-von-15.md) |
 | SIN-458 | SIN-458: Migrationen 13/15 – SIN-415 wartet auf Sinan, SIN-416 hängt daran | [SIN-458-migrationen-415-416.md](decisions/SIN-458-migrationen-415-416.md) |
 | SIN-457 | SIN-457: Migrationen 415/416 fehlen in Supabase | [SIN-457-migrationen-415-416.md](decisions/SIN-457-migrationen-415-416.md) |
 | SIN-456 | SIN-456: Richter prüft Fakten gegen den Quelltext | [SIN-456-richter-quellenauszug.md](decisions/SIN-456-richter-quellenauszug.md) |
