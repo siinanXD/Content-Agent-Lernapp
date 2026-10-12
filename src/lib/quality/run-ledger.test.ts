@@ -1,6 +1,6 @@
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { addClaudeMeasuredUsage, addOpenAIUsage, emptyLedger } from "./cost-guard";
+import { addClaudeMeasuredUsage, addOpenAIUsage, EUR_PER_USD, emptyLedger } from "./cost-guard";
 import {
   assertWithinRunCap,
   clearMockRunCosts,
@@ -60,6 +60,21 @@ describe("Kosten-Ledger je Pipeline-Lauf (SIN-258)", () => {
     assert.equal(row!.stopped, true);
     assert.equal(row!.capEur, 20);
     assert.ok(row!.costEur >= 20);
+  });
+
+  it("SIN-478: cost_usd und cost_eur stimmen über EUR_PER_USD überein, auch mit Reparatur", () => {
+    // Lauf 10-12: Ledger 18,89 € (20,30 $), Reparatur 2,90 €, Summe 21,78 €.
+    const ledger = { ...emptyLedger(), usdEstimate: 20.3, eurEstimate: 18.89 };
+    const withRepair = toRunCostRecord({
+      runId: "r5", courseId: "c5", kind: "content-grow", ledger, totalEur: 21.78,
+    });
+    assert.equal(withRepair.costEur, 21.78);
+    assert.ok(Math.abs(withRepair.costUsd * EUR_PER_USD - withRepair.costEur) < 0.01);
+    assert.equal(withRepair.stopped, true);
+
+    const ledgerOnly = addClaudeMeasuredUsage(emptyLedger(), { input_tokens: 0, output_tokens: 1_000_000 });
+    const rec = toRunCostRecord({ runId: "r6", courseId: "c6", kind: "t", ledger: ledgerOnly });
+    assert.ok(Math.abs(rec.costUsd * EUR_PER_USD - rec.costEur) < 0.01);
   });
 
   it("Planer-Kennzahl kosten_pro_lauf", () => {
