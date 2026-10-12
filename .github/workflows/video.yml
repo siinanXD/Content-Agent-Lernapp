@@ -121,3 +121,12 @@ jobs:
             video-ergebnis/klickweg.json
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Fehlerkontext sichern
+        if: failure() && env.STOP != '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-fehlerkontext
+          path: video-ergebnis/dateien/**
+          if-no-files-found: warn
+          retention-days: 14
