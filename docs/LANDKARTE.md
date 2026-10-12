@@ -54,6 +54,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Leitstand: Ereignisse und Schnappschuss nach Supabase `loop_events`, `loop_snapshot` (SIN-303) | `scripts/autonomy/leitstand.mjs` (`ereignis`, `sendSnapshot`), Migration `20261011010000_sin303_leitstand.sql`, Schritte „Leitstand Start/Ende“ in den Workflows |
 | Agenten-Rollen: Register aller Workflows, Feld `agent` in `loop_events` (SIN-481) | `docs/autonomy/agents.json`, `scripts/autonomy/agents.mjs`, Test `src/lib/autonomy/agents.test.ts` (neuer Workflow muss ins Register) |
 | Projekt-Starter, nur Plan (SIN-202) | `scripts/autonomy/starter.mjs` (`plan`, `sql`), Entscheidung `docs/decisions/SIN-202-projekt-starter.md` |
+| Revert-Entscheidung des Wächters `revert-guard` (SIN-502) | `scripts/autonomy/revert-guard.mjs` (`decideRevert`), Test `src/lib/autonomy/revert-guard.test.ts` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
 

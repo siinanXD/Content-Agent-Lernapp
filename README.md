@@ -97,7 +97,7 @@ flowchart TD
   Merge --> Dispatcher
   Merge --> Migr["Migrationen anwenden: additiv automatisch, sonst Sinan-Aufgabe (SIN-374, SIN-451)"]
   Merge --> Bruch{"gate-bruch-Erkennung"}
-  Bruch -- "CI auf main rot" --> Revert["revert-guard: Revert-PR"]
+  Bruch -- "CI auf main rot" --> Revert["revert-guard: Revert-PR nur wenn Schritt davor grün (SIN-502)"]
   Migr --> Deploy["production-deploy (höchstens 1× pro Stunde)"]
   Deploy --> Smoke["Smoke-Test"]
   Smoke -- rot --> Revert
