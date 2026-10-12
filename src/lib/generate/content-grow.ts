@@ -9,6 +9,7 @@ import { OLD_REGEN_EUR_PER_UNIT } from "@/lib/quality/cost-guard";
 import type { EvalItem } from "@/lib/quality/evaluate-agent";
 import type { GeneratedUnit } from "./maf-lernfeld-seed";
 import type { BatchChunkTarget } from "./batch-generate";
+import { formatSchemaStats, type SchemaStats } from "./question-schema";
 
 /** Deckel je Lauf (AGENTS.md); Stopp schon bei 19 €, weil der Richter nach dem Batch noch läuft (D-45). */
 export const RUN_CAP_EUR = 20;
@@ -431,6 +432,8 @@ export type RunReport = {
   deferred: number;
   /** SIN-434: offene Einheiten, die dieser Lauf nicht versucht hat, nach Grund. */
   nichtVersucht?: NichtVersucht[];
+  /** SIN-473: Fragen erzeugt, ungültig (Schema), repariert, verworfen. */
+  schema?: SchemaStats;
   repair: { ran: boolean; costEur: number };
   sourceRefresh: { units: number; replaced: number; changeKeys: string[] };
   model: string;
@@ -461,6 +464,7 @@ export function linearSummary(r: RunReport): string {
     `- Modul: ${r.mapId ?? "–"} / ${r.moduleIds?.length ? r.moduleIds.join(", ") : (r.moduleId ?? "–")}`,
     `- Erzeugt: ${r.generated}, bestanden: ${r.passed}, verworfen: ${r.discarded}, zurückgestellt: ${r.deferred}`,
     `- Verworfen (Richter unter Schwelle oder nicht geliefert): ${r.discarded}${r.discardedUnitIds.length ? ` (${r.discardedUnitIds.join(", ")})` : ""}`,
+    `- Frageschema (SIN-473): ${r.schema ? formatSchemaStats(r.schema) : "nicht erfasst"}`,
     `- Nicht versucht: ${r.nichtVersucht?.length ? r.nichtVersucht.map((x) => `${x.units} wegen ${NICHT_VERSUCHT_TEXT[x.grund]}`).join("; ") : "nichts offen oder nicht erfasst"}`,
     `- Reparatur (AP-21): ${r.repair.ran ? `€${r.repair.costEur.toFixed(2)}` : "nicht gelaufen"}; Quellen-Neuerzeugung: ${r.sourceRefresh.replaced}/${r.sourceRefresh.units}`,
     `- Kosten: €${r.costEur.toFixed(2)} von €${r.capEur} (Modell ${r.model})`,

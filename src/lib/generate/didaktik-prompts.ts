@@ -61,12 +61,22 @@ function auswahlRegelnBlock(): string {
     : `\n${AUSWAHL_REGELN}\n${RECHNEN_ZUORDNEN_LUECKE_REGELN}`;
 }
 
+/** SIN-473: feste Form je Fragetyp (Quelle: question-schema.ts). Ungültige Fragen werden einmal repariert, dann verworfen. */
+export const FRAGE_FORMAT = `Feste Form je Fragetyp (type nur genau so; Pflicht: id, type, level, prompt, correct, explanation, sourceUrl, examAreas):
+- auswahl: choices = Liste mit 2–6 Texten; correct = genau ein Text aus choices.
+- zuordnen: pairs = Liste von 2–8 Paaren [Begriff, Zuordnung] (Liste, kein Objekt); correct = Liste der rechten Seiten in der Reihenfolge der pairs.
+- lueckentext: blanks = Wortliste mit 2–8 Texten (Liste, kein Objekt); prompt enthält ____ als Lücke; correct = ein Wort aus blanks.
+- reihenfolge: steps = Liste mit 3–8 Schritten in richtiger Folge; correct = die steps mit " → " verbunden (ein Text).
+- rechnen: correct = Ergebnis mit Einheit (ein Text); sampleSolution = Rechenweg; sampleChecklist optional (Liste).
+`;
+
 export function didaktikSchemaHint(): string {
   return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
 Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter mit Quelle.
 Offene Aufgaben (rechnen/kurze Begründung): nur sampleSolution + sampleChecklist zur Selbstkontrolle — keine KI-Bewertung.
 Phase A: nur generierte SVG (license Generated-SVG), keine Commons-/KI-Bilder.
-explanation muss immer gesetzt sein (Fallback aus sections).${auswahlRegelnBlock()}`;
+explanation muss immer gesetzt sein (Fallback aus sections).
+${FRAGE_FORMAT}${auswahlRegelnBlock()}`;
 }
 
 /** Full block prompt with variant rules (AP-14/AP-15 contract). */

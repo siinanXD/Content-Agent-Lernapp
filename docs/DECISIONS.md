@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-473 | SIN-473: Festes Frageschema vor dem Speichern | [SIN-473-frageschema.md](decisions/SIN-473-frageschema.md) |
 | SIN-472 | SIN-472: Wartende Migrationen erzeugen kein Bug-Issue | [SIN-472-migrationen-wartend.md](decisions/SIN-472-migrationen-wartend.md) |
 | SIN-471 | SIN-471: Migrationen 13/15 – Dublette von SIN-470 | [SIN-471-migrationen-13-von-15.md](decisions/SIN-471-migrationen-13-von-15.md) |
 | SIN-470 | SIN-470: Migrationen 13/15 – Dublette von SIN-458 | [SIN-470-migrationen-13-von-15.md](decisions/SIN-470-migrationen-13-von-15.md) |
