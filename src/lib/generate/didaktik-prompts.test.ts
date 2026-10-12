@@ -77,6 +77,38 @@ describe("didaktik prompts (AP-18e)", () => {
     }
   });
 
+  it("SIN-475: Niveau-Regeln für auswahl verlangen Situation und Quellenbezug", () => {
+    const t = generatorSystemText();
+    assert.match(t, /Niveau bei auswahl/);
+    assert.match(t, /Betriebssituation mit konkretem Werkstück/);
+    assert.match(t, /Quellenbezug bleibt Pflicht/);
+    assert.match(t, /genau EINE/);
+  });
+
+  it("SIN-475: Block-Prompt von LF1 und LF2 trägt den Modul-Hinweis, andere Module nicht", () => {
+    const c = loadMafCurriculum();
+    const prompt = (id: string) => {
+      const mod = c.modules.find((m) => m.id === id)!;
+      return buildDidaktikBlockPrompt(c, mod, mod.blocks[0]!);
+    };
+    assert.match(prompt("LF1"), /Niveau-Hinweis LF1/);
+    assert.match(prompt("LF2"), /Niveau-Hinweis LF2/);
+    assert.doesNotMatch(prompt("M0"), /Niveau-Hinweis/);
+  });
+
+  it("SIN-475: PROMPT_NIVEAU_REGELN=aus liefert den Prompt von vor SIN-475, SIN-432 bleibt", () => {
+    const c = loadMafCurriculum();
+    const mod = c.modules.find((m) => m.id === "LF2")!;
+    process.env.PROMPT_NIVEAU_REGELN = "aus";
+    try {
+      assert.doesNotMatch(generatorSystemText(), /Niveau bei auswahl/);
+      assert.doesNotMatch(buildDidaktikBlockPrompt(c, mod, mod.blocks[0]!), /Niveau-Hinweis/);
+      assert.match(generatorSystemText(), /Distraktoren/);
+    } finally {
+      delete process.env.PROMPT_NIVEAU_REGELN;
+    }
+  });
+
   it("SIN-432: PROMPT_AUSWAHL_REGELN=aus liefert den alten Prompt", () => {
     process.env.PROMPT_AUSWAHL_REGELN = "aus";
     try {
