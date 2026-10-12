@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-497 | SIN-497: Structured Outputs abschaltbar, Batch-Fehler sichtbar, Lauf rot bei 0 Einheiten | [SIN-497-structured-outputs-schalter.md](decisions/SIN-497-structured-outputs-schalter.md) |
 | SIN-496 | SIN-496 — Stillstand `ohne-start`: Grund des Dispatchers im Bericht | [SIN-496-dispatch-grund.md](decisions/SIN-496-dispatch-grund.md) |
 | SIN-490 | SIN-490: Richter mit festem Antwortschema (json_schema, strict) | [SIN-490-richter-schema.md](decisions/SIN-490-richter-schema.md) |
 | SIN-489 | SIN-489: Structured Outputs der Claude-API | [SIN-489-structured-outputs.md](decisions/SIN-489-structured-outputs.md) |

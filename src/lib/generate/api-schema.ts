@@ -113,6 +113,18 @@ export function outputConfig(schema: Record<string, unknown>) {
   return { format: { type: "json_schema" as const, schema } };
 }
 
+/**
+ * SIN-497: Structured Outputs sind nur mit `STRUCTURED_OUTPUTS=1` an. Der erste Lauf mit Schema (SIN-489)
+ * scheiterte mit 10 von 10 abgelehnten Anfragen; bis ein echter Lauf es belegt, bleibt es aus (Standard).
+ */
+export const structuredOutputsEnabled = (env: NodeJS.ProcessEnv = process.env): boolean =>
+  env.STRUCTURED_OUTPUTS?.trim() === "1";
+
+/** Teil der Anfrage-Parameter: `{ output_config }` bei eingeschaltetem Schalter, sonst leer. */
+export function structuredParams(schema: Record<string, unknown>, env: NodeJS.ProcessEnv = process.env) {
+  return structuredOutputsEnabled(env) ? { output_config: outputConfig(schema) } : {};
+}
+
 /** Alle Schlüssel eines Schemas, rekursiv (für Tests). */
 export function schemaKeywords(node: Json | unknown, acc = new Set<string>()): Set<string> {
   if (Array.isArray(node)) node.forEach((n) => schemaKeywords(n, acc));

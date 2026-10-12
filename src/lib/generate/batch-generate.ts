@@ -14,7 +14,7 @@ import {
 import { variantFromBlock } from "@/lib/content/didaktik";
 import { modulesToGenerate } from "@/lib/content/shared-modules";
 import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
-import { outputConfig, REPAIR_API_SCHEMA, UNITS_API_SCHEMA } from "./api-schema";
+import { REPAIR_API_SCHEMA, structuredParams, UNITS_API_SCHEMA } from "./api-schema";
 import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
 import type { GeneratedLernfeld, GeneratedQuestion, GeneratedUnit } from "./maf-lernfeld-seed";
 import {
@@ -55,6 +55,8 @@ export type BatchPollResult = {
   status: string;
   units: GeneratedUnit[];
   failedCustomIds: string[];
+  /** Fehlertext je gescheiterter Zeile (SIN-497). */
+  errors: BatchRowError[];
   ledger: CostLedger;
   rawResultsPath?: string;
 };
@@ -121,7 +123,7 @@ export function chunkBatchRequests(opts: {
     params: {
       model: opts.model ?? GENERATOR_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
-      output_config: outputConfig(UNITS_API_SCHEMA),
+      ...structuredParams(UNITS_API_SCHEMA),
       ...(opts.system ? { system: opts.system } : {}),
       messages: [
         {
@@ -210,7 +212,7 @@ export async function submitRegenBatch(opts: {
       params: {
         model: GENERATOR_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
-        output_config: outputConfig(UNITS_API_SCHEMA),
+        ...structuredParams(UNITS_API_SCHEMA),
         messages: [
           {
             role: "user",
@@ -281,9 +283,37 @@ type BatchResultRow = {
       content?: Array<{ type: string; text?: string }>;
       usage?: ClaudeUsage;
     };
-    error?: { message?: string };
+    error?: { type?: string; message?: string; error?: { type?: string; message?: string } };
   };
 };
+
+/** SIN-497: Fehler einer abgelehnten Batch-Zeile, einzeilig (`type: message`). */
+export type BatchRowError = { customId: string; resultType: string; error: string };
+
+export function rowError(row: BatchResultRow): BatchRowError {
+  const e = row.result?.error;
+  const inner = e?.error ?? e; // Batch-Zeilen verschachteln den Fehler teils ein zweites Mal
+  const type = inner?.type ?? e?.type ?? "unbekannt";
+  const message = (inner?.message ?? e?.message ?? "").replace(/\s+/g, " ").trim().slice(0, 400);
+  return {
+    customId: row.custom_id ?? "",
+    resultType: row.result?.type ?? "ohne Ergebnis",
+    error: message ? `${type}: ${message}` : type,
+  };
+}
+
+/** Log: die ersten 3 Fehler als `::error`-Anmerkung, alle stehen im Bericht. */
+export function logRowErrors(label: string, errors: BatchRowError[], max = 3): void {
+  for (const e of errors.slice(0, max)) console.error(`::error::${label} ${e.customId} (${e.resultType}): ${e.error}`);
+  if (errors.length > max) console.error(`${label}: +${errors.length - max} weitere Fehler im Bericht`);
+}
+
+/** Lauf rot bei 0 Einheiten oder mehr als 50 % gescheiterten Teilaufträgen. `null` = in Ordnung. */
+export function failedRunReason(units: number, failed: number, total: number): string | null {
+  if (total > 0 && units === 0) return `0 Einheiten, ${failed} von ${total} Teilaufträgen gescheitert`;
+  if (total > 0 && failed / total > 0.5) return `${failed} von ${total} Teilaufträgen gescheitert (über 50 %)`;
+  return null;
+}
 
 async function fetchBatchRows(
   batchId: string,
@@ -333,7 +363,7 @@ export async function submitQuestionRepairBatch(opts: {
       params: {
         model: opts.model ?? GENERATOR_MODEL,
         max_tokens: MAX_OUTPUT_TOKENS,
-        output_config: outputConfig(REPAIR_API_SCHEMA),
+        ...structuredParams(REPAIR_API_SCHEMA),
         messages: [{ role: "user", content: buildRepairPrompt(unit, plan) }],
       },
     }));
@@ -360,6 +390,7 @@ export type RepairCollectResult = {
   /** Ersatzfragen je Einheit-Id (neue Frage-Ids `r<runde>-n`). */
   questions: Map<string, GeneratedQuestion[]>;
   failedCustomIds: string[];
+  errors: BatchRowError[];
   ledger: CostLedger;
 };
 
@@ -371,6 +402,7 @@ export async function collectRepairQuestions(
   const { rows } = await fetchBatchRows(batchId);
   const questions = new Map<string, GeneratedQuestion[]>();
   const failedCustomIds: string[] = [];
+  const errors: BatchRowError[] = [];
   let ledger = emptyLedger();
   for (const row of rows) {
     const customId = row.custom_id ?? "";
@@ -380,11 +412,17 @@ export async function collectRepairQuestions(
     const parsed = row.result?.type === "succeeded" ? parseRepairQuestions(rowText(row)) : null;
     if (!unit || !parsed) {
       failedCustomIds.push(customId);
+      errors.push(
+        row.result?.type === "succeeded"
+          ? { customId, resultType: "succeeded", error: "Antwort ohne lesbare Ersatzfragen" }
+          : rowError(row),
+      );
       continue;
     }
     questions.set(unit.id, annotateRepairQuestions(unit, parsed, round));
   }
-  return { questions, failedCustomIds, ledger };
+  logRowErrors("Reparatur-Batch", errors);
+  return { questions, failedCustomIds, errors, ledger };
 }
 
 export async function collectBatchUnits(
@@ -394,6 +432,7 @@ export async function collectBatchUnits(
   const { status, rows } = await fetchBatchRows(batchId);
   const units: GeneratedUnit[] = [];
   const failedCustomIds: string[] = [];
+  const errors: BatchRowError[] = [];
   let ledger = emptyLedger();
 
   for (const row of rows) {
@@ -404,11 +443,13 @@ export async function collectBatchUnits(
     }
     if (row.result?.type !== "succeeded" || !row.result.message) {
       failedCustomIds.push(customId);
+      errors.push(rowError(row));
       continue;
     }
     const parsed = parseLernfeldJson(rowText(row));
     if (!parsed?.units?.length) {
       failedCustomIds.push(customId);
+      errors.push({ customId, resultType: "succeeded", error: "Antwort ohne lesbare Einheiten" });
       continue;
     }
     const meta = resolveCustomId(customId, c);
@@ -417,11 +458,13 @@ export async function collectBatchUnits(
     }
   }
 
+  logRowErrors("Batch", errors);
   return {
     batchId,
     status,
     units,
     failedCustomIds,
+    errors,
     ledger,
   };
 }
