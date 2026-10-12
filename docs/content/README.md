@@ -8,7 +8,7 @@ node scripts/content-render-curriculum.mjs maf-metall # eine Map
 npm test                                               # Summen, Quellen, Gewichte, Phasen
 ```
 
-Stand 2026-10-03 · Status aller Maps: **Entwurf, Freigabe durch Sinan offen** · Linear [SIN-191](https://linear.app/sinan-kahraman/issue/SIN-191) · Entscheidung D-26/D-27/D-28 in `docs/DECISIONS.md` · Rechtsstand geprüft am 2026-10-03 (siehe unten).
+Stand 2026-10-03 · Status aller Maps: **Freigegeben – Sinan, 12.10.2026** · Linear [SIN-191](https://linear.app/sinan-kahraman/issue/SIN-191) · Entscheidung D-26/D-27/D-28 in `docs/DECISIONS.md` · Rechtsstand geprüft am 2026-10-03 (siehe unten).
 
 ## Übersicht
 

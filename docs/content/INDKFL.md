@@ -1,6 +1,6 @@
 # Curriculum-Map: Industriekaufmann / Industriekauffrau (IndKflAusbV 2024, 3 Jahre, 13 Lernfelder, Einsatzgebiete)
 
-Stand: 2026-10-03 · Status: **Entwurf – Freigabe durch Sinan offen** · Familie: `indkfl` · Map-ID: `indkfl` · Maschinenlesbar: [`indkfl.json`](indkfl.json) · Vorgaben für die Agenten: [README](README.md)
+Stand: 2026-10-03 · Status: **Freigegeben – Sinan, 12.10.2026** · Familie: `indkfl` · Map-ID: `indkfl` · Maschinenlesbar: [`indkfl.json`](indkfl.json) · Vorgaben für die Agenten: [README](README.md)
 
 > Diese Datei wird aus der JSON erzeugt (`node scripts/content-render-curriculum.mjs`). Änderungen gehören in die JSON.
 
