@@ -23,6 +23,11 @@
 # Worker-Screenshots (SIN-275, nur Artefakt)
 /screenshots/
 
+# Video-Agent (SIN-483, nur Artefakt)
+/video-ergebnis/
+/video/schnitt/node_modules/
+/video/schnitt/public/
+
 # misc
 .DS_Store
 *.pem

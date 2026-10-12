@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-489 | SIN-489: Structured Outputs der Claude-API | [SIN-489-structured-outputs.md](decisions/SIN-489-structured-outputs.md) |
+| SIN-483 | SIN-483 — Video-Agent: Tutorial-Video aus den Playwright-Klickwegen | [SIN-483-video-agent.md](decisions/SIN-483-video-agent.md) |
 | SIN-481 | SIN-481 — Agenten-Rollen: Register und Feld `agent` in `loop_events` | [SIN-481-agenten-rollen.md](decisions/SIN-481-agenten-rollen.md) |
 | SIN-478 | SIN-478: Kostendeckel je Kurslauf auch mit Reparatur einhalten | [SIN-478-kostendeckel-lauf.md](decisions/SIN-478-kostendeckel-lauf.md) |
 | SIN-477 | SIN-477: Zuordnen-Fragen mit `correct` als Paarliste nicht verwerfen | [SIN-477-zuordnen-correct-paare.md](decisions/SIN-477-zuordnen-correct-paare.md) |

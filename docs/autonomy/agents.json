@@ -82,14 +82,14 @@
     {
       "id": "video",
       "name": "Video",
-      "auftrag": "Erstellt Tutorials aus Playwright-Läufen und KI-Clips.",
-      "ausloeser": "noch nicht festgelegt",
-      "workflows": [],
-      "geplant": ["neu: Tutorial aus Playwright, KI-Clips"],
+      "auftrag": "Erstellt Tutorial-Videos aus den echten Playwright-Klickwegen (kein KI-Videomodell) und legt sie zur Freigabe ab.",
+      "ausloeser": "Nach erfolgreichem production-deploy und von Hand, höchstens 1 Lauf pro Tag",
+      "workflows": ["video"],
+      "geplant": ["Sprecherstimme mit Chatterbox, sobald die Laufzeit ohne Grafikkarte gemessen ist", "KI-Clips"],
       "modell": null,
-      "budget": { "proLauf": null, "proWoche": null },
-      "eingabe": "Playwright-Läufe, Produkt-Screens",
-      "ausgabe": "Tutorial-Videos"
+      "budget": { "proLauf": "0 € API (nur Actions-Minuten)", "proWoche": null },
+      "eingabe": "Playwright-Klickweg gegen Production, Design-Tokens",
+      "ausgabe": "MP4 in Supabase Storage und Zeile in werbemittel (Status wartet_auf_freigabe)"
     },
     {
       "id": "marketing",

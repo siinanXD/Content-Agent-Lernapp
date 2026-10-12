@@ -1,0 +1,123 @@
+# Video-Agent (SIN-483): Tutorial-Video der Lern-App aus dem echten Klickweg, kein KI-Videomodell, keine Grafikkarte, 0 € API.
+# Ablauf: Playwright nimmt den Klickweg gegen die Production-URL auf (video/aufnahme.spec.ts), Revideo schneidet Titel,
+# Einblendungen, Logo und den Hinweis „mit KI erstellt“ (video/schnitt/), das MP4 landet in Supabase Storage
+# (Bucket `werbemittel`) und als Zeile in `werbemittel` mit Status `wartet_auf_freigabe`. Veröffentlicht wird hier nie.
+# Auslöser: von Hand und nach erfolgreichem `production-deploy`, höchstens 1 Lauf pro Tag (Schritt „Tageslimit“).
+# Ton: ohne (Untertitel als Einblendung). Chatterbox ist nicht eingebaut, siehe docs/decisions/SIN-483-video-agent.md.
+name: video
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Adresse der App (leer = Production)."
+        type: string
+        default: ""
+  workflow_run:
+    workflows: [production-deploy]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: video
+  cancel-in-progress: false
+
+jobs:
+  video:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LIVE_URL: ${{ inputs.url || 'https://content-agent-ashen-nu.vercel.app' }}
+      PLAYWRIGHT_BASE_URL: ${{ inputs.url || 'https://content-agent-ashen-nu.vercel.app' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tageslimit (höchstens 1 Lauf pro Tag)
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          runs=$(gh run list --workflow video.yml --limit 20 --json databaseId,createdAt,conclusion \
+            --jq '[.[] | {id: .databaseId, created_at: .createdAt, conclusion: .conclusion}]')
+          set +e
+          node scripts/autonomy/video.mjs limit --runs "$runs"
+          code=$?
+          if [ "$code" = "3" ]; then echo "STOP=1" >> "$GITHUB_ENV"; exit 0; fi
+          exit "$code"
+
+      - name: Pakete und Browser
+        if: env.STOP != '1'
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Warten, bis die App antwortet
+        if: env.STOP != '1'
+        run: |
+          for try in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "${LIVE_URL%/}/api/health") || code=000
+            echo "Versuch ${try}: ${code}"
+            [ "$code" != "000" ] && [ "$code" -lt 500 ] && exit 0
+            sleep 10
+          done
+          echo "Die App antwortet nicht, die Aufnahme folgt trotzdem."
+
+      - name: Klickweg aufnehmen
+        if: env.STOP != '1'
+        run: npx playwright test --config playwright.video.config.ts
+
+      - name: Aufnahme umwandeln
+        if: env.STOP != '1'
+        run: |
+          mkdir -p video/schnitt/public
+          webm=$(find video-ergebnis/dateien -name '*.webm' | head -n 1)
+          test -n "$webm"
+          ffmpeg -y -loglevel error -i "$webm" -c:v libx264 -pix_fmt yuv420p -r 30 -an video/schnitt/public/aufnahme.mp4
+
+      - name: Schnitt mit Revideo
+        if: env.STOP != '1'
+        run: |
+          npm install --prefix video/schnitt --no-audit --no-fund
+          node video/schnitt/render.mjs video-ergebnis/klickweg.json video-ergebnis/tutorial.mp4
+
+      - name: Länge prüfen (unter 90 Sekunden)
+        if: env.STOP != '1'
+        run: |
+          dauer=$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 video-ergebnis/tutorial.mp4)
+          echo "DAUER=$dauer" >> "$GITHUB_ENV"
+          node scripts/autonomy/video.mjs pruefen --dauer "$dauer"
+
+      - name: Ablegen, Status wartet_auf_freigabe
+        if: env.STOP != '1'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::SUPABASE_URL oder SUPABASE_SERVICE_ROLE_KEY fehlt: Video nur als Artefakt, nicht in Storage."
+            exit 0
+          fi
+          node scripts/autonomy/video.mjs registrieren --mp4 video-ergebnis/tutorial.mp4 \
+            --klickweg video-ergebnis/klickweg.json --dauer "$DAUER" --produkt lern-app
+
+      - name: Video sichern
+        if: always() && env.STOP != '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tutorial-video
+          path: |
+            video-ergebnis/tutorial.mp4
+            video-ergebnis/klickweg.json
+          if-no-files-found: warn
+          retention-days: 14
