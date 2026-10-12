@@ -32,6 +32,10 @@ jobs:
       - name: Entscheidungs-Index aktuell
         run: node scripts/decisions-index.mjs --check || { echo "::error::docs/DECISIONS.md ist veraltet. Lokal 'npm run decisions:index' ausführen und die Datei im selben PR committen."; exit 1; }
 
+      # SIN-491: Berichte der Agenten müssen zu ihrem Schema in docs/autonomy/schemas/ passen.
+      - name: Übergabe-Verträge (Berichte gegen Schema)
+        run: node scripts/autonomy/vertraege.mjs
+
       - name: Lint
         run: npm run lint
 

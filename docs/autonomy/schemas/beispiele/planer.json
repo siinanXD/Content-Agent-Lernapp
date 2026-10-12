@@ -1,0 +1,14 @@
+{
+  "schema": "../planer.schema.json",
+  "issues": [
+    {
+      "titel": "Beispiel: Fortschrittsbalken im Lernpfad",
+      "ziel": "Lernende sehen ihren Fortschritt.",
+      "umsetzung": ["Balken mit vorhandener Komponente anzeigen"],
+      "akzeptanzkriterien": ["axe-core ohne Fehler"],
+      "labels": ["claude", "groesse:klein"],
+      "agent": "coding",
+      "budget": { "groesse": "klein", "apiEur": null }
+    }
+  ]
+}
