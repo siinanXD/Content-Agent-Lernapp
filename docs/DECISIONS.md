@@ -25,6 +25,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-492 | SIN-492: Zurückgenommenes Issue in Linear wieder öffnen | [SIN-492-revert-linear.md](decisions/SIN-492-revert-linear.md) |
 | SIN-490 | SIN-490: Richter mit festem Antwortschema (json_schema, strict) | [SIN-490-richter-schema.md](decisions/SIN-490-richter-schema.md) |
 | SIN-489 | SIN-489: Structured Outputs der Claude-API | [SIN-489-structured-outputs.md](decisions/SIN-489-structured-outputs.md) |
+| SIN-485 | SIN-485 — Video-Agent: KI-Werbeclips über die Higgsfield-API, Deckel 5 € pro Produkt | [SIN-485-werbeclips-higgsfield.md](decisions/SIN-485-werbeclips-higgsfield.md) |
 | SIN-483 | SIN-483 — Video-Agent: Tutorial-Video aus den Playwright-Klickwegen | [SIN-483-video-agent.md](decisions/SIN-483-video-agent.md) |
 | SIN-481 | SIN-481 — Agenten-Rollen: Register und Feld `agent` in `loop_events` | [SIN-481-agenten-rollen.md](decisions/SIN-481-agenten-rollen.md) |
 | SIN-479 | SIN-479: Content-Fabrik für die 6 weiteren MAF-Schwerpunkte | [SIN-479-schwerpunkte.md](decisions/SIN-479-schwerpunkte.md) |

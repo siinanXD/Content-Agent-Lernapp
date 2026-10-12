@@ -169,6 +169,8 @@ Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). Right after e
 
 **Tutorial-Video (SIN-483).** Der Workflow `video` nimmt den Klickweg Start → Beruf wählen → Lernpfad → erste Einheit → Ergebnis gegen die Production-URL auf (`video/aufnahme.spec.ts`, `playwright.video.config.ts`), schneidet ihn mit Revideo (`video/schnitt/`: Titel, Einblendung je Schritt, Logo, Hinweis „Lerninhalte mit KI erstellt“, Farben aus `docs/design/tokens.json`) und legt das MP4 in Supabase Storage (Bucket `werbemittel`) und als Zeile in `werbemittel` ab, Status `wartet_auf_freigabe`. Kein KI-Videomodell, 0 € API, Länge unter 90 Sekunden (sonst Fehler), ohne Ton. Auslöser: von Hand oder nach erfolgreichem `production-deploy`, höchstens 1 Lauf pro Tag. Schreibende Endpunkte sind abgefangen, es gibt keine Personendaten. Hilfen: `scripts/autonomy/video.mjs`. Ohne `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` bleibt das Video ein Artefakt (`tutorial-video`).
 
+**KI-Werbeclips (SIN-485).** `node scripts/autonomy/werbeclip.mjs plan` zeigt als Trockenlauf geplante Clips (3 Entwürfe, 1 Final) und Kostenschätzung ohne API-Aufruf. Bezahlte Aufrufe über die Higgsfield-API (`HIGGSFIELD_API_KEY`) prüfen vor jedem Aufruf den Deckel von 5 € pro Produkt; Modelle, Preise und Endpunkte stehen in `docs/autonomy/higgsfield.json` und sind bis zum Beleg aus den Docs leer (dann kein bezahlter Aufruf). Ergebnis: Zeile in `werbemittel` mit Kosten, KI-Kennzeichnung und Status `wartet_auf_freigabe`.
+
 ## Secrets
 
 Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.

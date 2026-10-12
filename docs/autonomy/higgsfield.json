@@ -1,0 +1,14 @@
+{
+  "hinweis": "Modell-IDs, Endpunkte und Preise je Sekunde müssen aus https://docs.higgsfield.ai belegt werden (SIN-485). null = nicht belegt: der Trockenlauf nennt es, ein bezahlter Aufruf wird verweigert. Nichts geraten.",
+  "basisUrl": null,
+  "pfadErzeugen": null,
+  "pfadStatus": null,
+  "stufen": {
+    "entwurf": { "modell": null, "preisProSekundeUsd": null, "nutzungsrechteWerbung": null },
+    "final": { "modell": null, "preisProSekundeUsd": null, "nutzungsrechteWerbung": null }
+  },
+  "entwuerfe": 3,
+  "sekundenEntwurf": 5,
+  "sekundenFinal": 8,
+  "deckelEur": 5
+}
