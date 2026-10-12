@@ -40,7 +40,11 @@ test("Tutorial: Start bis Ergebnis", async ({ page, context }) => {
   await page.getByRole("link", { name: "Los geht’s" }).click();
   // Einwilligung nur ablehnen, wenn der Schritt erscheint (sonst hängt der Klick bis zum Test-Timeout).
   const ablehnen = page.getByRole("button", { name: "Ablehnen" });
-  if (await ablehnen.isVisible({ timeout: 10_000 }).catch(() => false)) await ablehnen.click();
+  // isVisible() wartet nicht (timeout wird ignoriert): direkt nach dem Klick war die Seite noch nicht da, der Klick
+  // wurde übersprungen und der Lauf hing danach auf /einwilligung beim Beruf-Knopf (SIN-518). waitFor wartet wirklich.
+  const einwilligung = await ablehnen.waitFor({ state: "visible", timeout: 10_000 }).then(() => true, () => false);
+  if (einwilligung) await ablehnen.click();
+  await expect(page).toHaveURL(/\/beruf$/);
 
   await marke("beruf");
   await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
