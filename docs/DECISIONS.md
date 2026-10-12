@@ -14,7 +14,6 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-496 | SIN-496 — Stillstand `ohne-start`: Grund des Dispatchers im Bericht | [SIN-496-dispatch-grund.md](decisions/SIN-496-dispatch-grund.md) |
-| SIN-493 | SIN-493: Content-Fabrik sendet den Batch in Teilbatches und prüft die Kosten nach jedem Teil | [SIN-493-teilbatches.md](decisions/SIN-493-teilbatches.md) |
 | SIN-492 | SIN-492: Zurückgenommenes Issue in Linear wieder öffnen | [SIN-492-revert-linear.md](decisions/SIN-492-revert-linear.md) |
 | SIN-491 | SIN-491: Übergabe-Verträge, ein JSON-Schema je Agenten-Ausgabe | [SIN-491-uebergabe-vertraege.md](decisions/SIN-491-uebergabe-vertraege.md) |
 | SIN-490 | SIN-490: Richter mit festem Antwortschema (json_schema, strict) | [SIN-490-richter-schema.md](decisions/SIN-490-richter-schema.md) |

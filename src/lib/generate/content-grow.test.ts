@@ -21,9 +21,6 @@ import {
   judgeReserveEur,
   linearSummary,
   planEurPerUnit,
-  partAllowed,
-  splitParts,
-  PART_MAX_UNITS,
   REPAIR_BATCH_RESERVE_EUR,
   REPAIR_STOP_EUR,
   nichtVersucht,
@@ -402,37 +399,4 @@ test("SIN-479: Lauf-Bericht nennt je Map Ziel, vorhanden, geteilt, neu", () => {
     mapPlan: [{ mapId: "maf-textil", ziel: 5, vorhanden: 1, geteilt: 2, neu: 1 }],
   } as unknown as RunReport;
   assert.match(linearSummary(r), /maf-textil: 5 \/ 1 \/ 2 \/ 1/);
-});
-
-test("SIN-493: Teilbatches mit höchstens 100 Einheiten, Ziele bleiben ganz", () => {
-  const targets = Array.from({ length: 7 }, (_, i) => target("LF3-1", i * 2, 2));
-  const parts = splitParts(targets, 6);
-  assert.deepEqual(parts.map((p) => p.reduce((n, t) => n + t.unitCount, 0)), [6, 6, 2]);
-  assert.equal(PART_MAX_UNITS, 100);
-  assert.deepEqual(splitParts([], 6), []);
-});
-
-test("SIN-493: teurerer Teilbatch stoppt den Lauf unter 20 €", () => {
-  const trueCostPerUnit = 0.07; // gemessen deutlich mehr als geplant (0,041)
-  let spent = 2.9; // Reparatur
-  let generated = 0;
-  let perUnit = 0.041;
-  let sent = 0;
-  for (const units of [100, 100, 100]) {
-    if (!partAllowed({ spentEur: spent, perUnitEur: perUnit, partUnits: units, generatedUnits: generated }).ok) break;
-    spent += units * trueCostPerUnit;
-    generated += units;
-    perUnit = Math.max(perUnit, trueCostPerUnit);
-    sent++;
-  }
-  assert.equal(sent, 1); // Teil 2 ergäbe 9,9 + 8,75 + Richter-Reserve, also über dem Deckel
-  assert.ok(spent + judgeReserveEur(generated) < RUN_CAP_EUR);
-  // Ohne Teilbatches (ein Batch mit 300 Einheiten) wäre der Deckel gerissen.
-  assert.ok(2.9 + 300 * trueCostPerUnit > RUN_CAP_EUR);
-});
-
-test("SIN-493: günstige Teile laufen durch, zu teure nicht", () => {
-  assert.ok(partAllowed({ spentEur: 1, perUnitEur: 0.04, partUnits: 100, generatedUnits: 0 }).ok);
-  assert.ok(partAllowed({ spentEur: 5, perUnitEur: 0.04, partUnits: 100, generatedUnits: 100 }).ok);
-  assert.equal(partAllowed({ spentEur: 19.5, perUnitEur: 0.04, partUnits: 10, generatedUnits: 0 }).ok, false);
 });
