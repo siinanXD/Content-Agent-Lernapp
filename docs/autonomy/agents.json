@@ -94,14 +94,14 @@
     {
       "id": "marketing",
       "name": "Marketing",
-      "auftrag": "Schreibt Werbetexte, holt die Freigabe ein und veröffentlicht.",
-      "ausloeser": "noch nicht festgelegt",
-      "workflows": [],
-      "geplant": ["neu: Werbetexte, Freigabe, Veröffentlichung"],
-      "modell": null,
-      "budget": { "proLauf": null, "proWoche": null },
-      "eingabe": "Produktstand, Kanäle",
-      "ausgabe": "Freigegebene Texte"
+      "auftrag": "Schreibt je fertigem Kurs 3 Werbetexte (LinkedIn, Website, E-Mail an Bildungsträger) für Bildungsträger und Ausbilder und legt sie zur Freigabe ab.",
+      "ausloeser": "Von Hand (workflow_dispatch) für einen Kurs mit Status published",
+      "workflows": ["marketing"],
+      "geplant": ["Automatischer Auslöser bei Status published", "Freigabe und Veröffentlichung im Leitstand"],
+      "modell": "claude-haiku-5-5, bei verworfenem Text einmal claude-sonnet-5-5",
+      "budget": { "proLauf": "1 € Deckel", "proWoche": null },
+      "eingabe": "Zahlen aus courses, units, sources, questions",
+      "ausgabe": "Zeilen in werbemittel (Status wartet_auf_freigabe)"
     }
   ]
 }

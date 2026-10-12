@@ -31,6 +31,7 @@ flowchart TD
   Smoke -- rot --> Revert
   Smoke -- grün --> Live["Live-Check (nach-deploy.yml)"]
   Deploy -- "grün, höchstens 1× pro Tag" --> Video["Tutorial-Video (video.yml): Freigabe nötig (SIN-483)"]
+  Kurs["Kurs veröffentlicht"] -- "von Hand" --> Marketing["Werbetexte (marketing.yml): Prüfung, dann Freigabe nötig (SIN-484)"]
   Live --> Waechter["Wächter / Loop-Status (status.yml)"]
   Waechter -- "neuer App-Code" --> Deploy
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
