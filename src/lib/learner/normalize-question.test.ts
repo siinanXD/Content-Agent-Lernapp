@@ -19,6 +19,23 @@ test("zuordnen: Listen-Paare bleiben", () => {
   assert.deepEqual(q?.pairs, [["a", "b"]]);
 });
 
+test("zuordnen (SIN-477): correct als Liste von Text-Paaren wird nicht verworfen", () => {
+  const q = normalizeQuestion({
+    ...base,
+    type: "zuordnen",
+    pairs: [{ left: "Maßstab", right: "Verhältnis" }],
+    correct: [["Maßstab", "Verhältnis"]],
+  });
+  assert.ok(q);
+  assert.deepEqual(q.pairs, [["Maßstab", "Verhältnis"]]);
+});
+
+test("zuordnen (SIN-477): correct als Liste von Index-Paaren wird nicht verworfen", () => {
+  const q = normalizeQuestion({ ...base, type: "zuordnen", pairs: [["a", "b"], ["c", "d"]], correct: [[0, 0], [1, 1]] });
+  assert.ok(q);
+  assert.deepEqual(q.pairs, [["a", "b"], ["c", "d"]]);
+});
+
 test("lueckentext: Lücken mit options und {{id}}-Platzhalter", () => {
   const q = normalizeQuestion({
     ...base,
