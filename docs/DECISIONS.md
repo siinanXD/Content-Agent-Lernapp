@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-479 | SIN-479: Content-Fabrik nimmt die 6 weiteren MAF-Schwerpunkte auf | [SIN-479-schwerpunkte-fabrik.md](decisions/SIN-479-schwerpunkte-fabrik.md) |
 | SIN-477 | SIN-477: Zuordnen-Fragen mit `correct` als Paarliste nicht verwerfen | [SIN-477-zuordnen-correct-paare.md](decisions/SIN-477-zuordnen-correct-paare.md) |
 | SIN-476 | SIN-476: Lernweg-Schritte bis zur ersten Einheit | [SIN-476-lernweg-schritte.md](decisions/SIN-476-lernweg-schritte.md) |
 | SIN-475 | SIN-475: Niveau-Regeln für Auswahlfragen in maf-metall LF1 und LF2 | [SIN-475-niveau-auswahl.md](decisions/SIN-475-niveau-auswahl.md) |

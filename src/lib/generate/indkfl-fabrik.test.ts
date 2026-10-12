@@ -41,7 +41,7 @@ test("Probelauf ohne Kosten: indkfl-Einheiten tragen amtliche Quelle und Abrufda
 
 test("Migration legt Kurs und alle Quellen der Map mit Abrufdatum an", () => {
   const sql = readFileSync("supabase/migrations/20261012010000_sin431_kurs_indkfl.sql", "utf8");
-  assert.ok(sql.includes(MAP_COURSES.indkfl!.courseId));
+  assert.ok(sql.includes(MAP_COURSES.indkfl!.courseId!));
   for (const s of indkfl.sources) {
     assert.ok(sql.includes(s.url), `Quelle fehlt in der Migration: ${s.url}`);
     assert.ok(sql.includes(s.fetchedAt));
