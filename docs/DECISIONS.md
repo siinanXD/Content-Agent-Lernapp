@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-491 | SIN-491: Übergabe-Verträge, ein JSON-Schema je Agenten-Ausgabe | [SIN-491-uebergabe-vertraege.md](decisions/SIN-491-uebergabe-vertraege.md) |
 | SIN-490 | SIN-490: Richter mit festem Antwortschema (json_schema, strict) | [SIN-490-richter-schema.md](decisions/SIN-490-richter-schema.md) |
 | SIN-489 | SIN-489: Structured Outputs der Claude-API | [SIN-489-structured-outputs.md](decisions/SIN-489-structured-outputs.md) |
 | SIN-481 | SIN-481 — Agenten-Rollen: Register und Feld `agent` in `loop_events` | [SIN-481-agenten-rollen.md](decisions/SIN-481-agenten-rollen.md) |

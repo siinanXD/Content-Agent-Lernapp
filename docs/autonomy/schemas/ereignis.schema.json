@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Ereignis für loop_events (SIN-491)",
+  "description": "Eine Zeile der Tabelle loop_events, wie buildEvent() in scripts/autonomy/leitstand.mjs sie baut.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project", "agent", "step", "status"],
+  "properties": {
+    "project": { "type": "string", "minLength": 1 },
+    "agent": { "enum": ["research", "planer", "design", "coding", "pruefen", "betrieb", "content", "video", "marketing", null] },
+    "step": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["start", "ok", "fehler", "uebersprungen"] },
+    "issue": { "type": ["string", "null"], "pattern": "^[A-Z]+-[0-9]+$" },
+    "pr": { "type": ["integer", "null"], "minimum": 1 },
+    "run_id": { "type": ["string", "null"] },
+    "run_url": { "type": ["string", "null"], "pattern": "^https://" },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "input_tokens": { "type": ["integer", "null"], "minimum": 0 },
+    "output_tokens": { "type": ["integer", "null"], "minimum": 0 },
+    "cache_read_tokens": { "type": ["integer", "null"], "minimum": 0 },
+    "cache_write_tokens": { "type": ["integer", "null"], "minimum": 0 },
+    "cost_usd": { "type": ["number", "null"], "minimum": 0 }
+  }
+}
