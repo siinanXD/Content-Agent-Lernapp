@@ -172,6 +172,8 @@ Functions run in Frankfurt (`regions: ["fra1"]` in `vercel.json`). Right after e
 
 **Werbetexte (SIN-484).** Der Workflow `marketing` (von Hand, Eingabe Kurs-Stichwort, z. B. `MAF`) liest die Zahlen eines veröffentlichten Kurses aus der Datenbank (Einheiten, Minuten, Quellen, Fragen) und schreibt 3 Varianten: LinkedIn-Beitrag, Kurztext für die Website, E-Mail an Bildungsträger. Zielgruppe sind Bildungsträger und Ausbilder (FernUSG). Modell: `claude-haiku-5-5`, bei verworfenem Text einmal `claude-sonnet-5-5`, Deckel 1 € pro Lauf. `scripts/autonomy/marketing.mjs` prüft jeden Text: Hinweis „mit KI erstellt“ nötig, keine Garantien, keine IHK-Aufgaben oder -Logos, keine Zahl außerhalb der Datenbank. Durchgefallene Texte werden verworfen; bestehen nicht alle 3, wird nichts gespeichert. Ablage in `werbemittel` (Status `wartet_auf_freigabe`), veröffentlicht wird nie automatisch. Braucht `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 
+**KI-Werbeclips (SIN-485).** `node scripts/autonomy/werbeclip.mjs plan` zeigt als Trockenlauf geplante Clips (3 Entwürfe, 1 Final) und Kostenschätzung ohne API-Aufruf. Bezahlte Aufrufe über die Higgsfield-API (`HIGGSFIELD_API_KEY`) prüfen vor jedem Aufruf den Deckel von 5 € pro Produkt; Modelle, Preise und Endpunkte stehen in `docs/autonomy/higgsfield.json` und sind bis zum Beleg aus den Docs leer (dann kein bezahlter Aufruf). Ergebnis: Zeile in `werbemittel` mit Kosten, KI-Kennzeichnung und Status `wartet_auf_freigabe`.
+
 ## Secrets
 
 Set in Vercel / local `.env.local` (never commit): Anthropic, OpenAI, Langfuse (EU), Supabase (EU). Work without keys uses mocks.

@@ -15,6 +15,8 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | --- | --- | --- |
 | SIN-519 | SIN-519 — Gate-Bruch bildvergleich: Revideo-JSX im Build | [SIN-519-bildvergleich-revideo.md](decisions/SIN-519-bildvergleich-revideo.md) |
 | SIN-518 | SIN-518 — Video-Agent: Klickweg hängt im ersten Lauf | [SIN-518-video-klickweg.md](decisions/SIN-518-video-klickweg.md) |
+| SIN-516 | SIN-516: Bekannte Secrets in Workflows sind kein High-Grund mehr | [SIN-516-bekannte-secrets.md](decisions/SIN-516-bekannte-secrets.md) |
+| SIN-515 | SIN-515: Kennzahl `content_fabrik_ueberfaellig_tage` immer als Zahl | [SIN-515-fabrik-ueberfaellig-zahl.md](decisions/SIN-515-fabrik-ueberfaellig-zahl.md) |
 | SIN-511 | SIN-511: `freigegeben` bleibt, wenn nur main in den PR gemergt wird | [SIN-511-freigabe-merge-main.md](decisions/SIN-511-freigabe-merge-main.md) |
 | SIN-507 | SIN-507: Bestehensquote Metall, Messfehler durch zwei Frage-ID-Schreibweisen | [SIN-507-bestehensquote.md](decisions/SIN-507-bestehensquote.md) |
 | SIN-506 | SIN-506: Content-Maps und Didaktik freigegeben | [SIN-506-maps-freigegeben.md](decisions/SIN-506-maps-freigegeben.md) |
@@ -27,6 +29,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-492 | SIN-492: Zurückgenommenes Issue in Linear wieder öffnen | [SIN-492-revert-linear.md](decisions/SIN-492-revert-linear.md) |
 | SIN-490 | SIN-490: Richter mit festem Antwortschema (json_schema, strict) | [SIN-490-richter-schema.md](decisions/SIN-490-richter-schema.md) |
 | SIN-489 | SIN-489: Structured Outputs der Claude-API | [SIN-489-structured-outputs.md](decisions/SIN-489-structured-outputs.md) |
+| SIN-485 | SIN-485 — Video-Agent: KI-Werbeclips über die Higgsfield-API, Deckel 5 € pro Produkt | [SIN-485-werbeclips-higgsfield.md](decisions/SIN-485-werbeclips-higgsfield.md) |
 | SIN-484 | SIN-484 — Marketing-Agent: Werbetexte pro Kurs, nur mit Freigabe | [SIN-484-marketing-agent.md](decisions/SIN-484-marketing-agent.md) |
 | SIN-483 | SIN-483 — Video-Agent: Tutorial-Video aus den Playwright-Klickwegen | [SIN-483-video-agent.md](decisions/SIN-483-video-agent.md) |
 | SIN-481 | SIN-481 — Agenten-Rollen: Register und Feld `agent` in `loop_events` | [SIN-481-agenten-rollen.md](decisions/SIN-481-agenten-rollen.md) |

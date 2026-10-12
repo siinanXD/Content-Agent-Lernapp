@@ -1,9 +1,9 @@
 -- SIN-484: Werbetexte in derselben Tabelle wie die Videos – additiv (Constraint wird nur erweitert, keine Daten gelöscht).
--- Tabelle `werbemittel` kommt aus SIN-483. Status bleibt `wartet_auf_freigabe`, bis Sinan im Leitstand freigibt.
+-- Tabelle `werbemittel` kommt aus SIN-483, `werbeclip` aus SIN-485 (läuft davor, Nummer 20261019010000). Status bleibt `wartet_auf_freigabe`, bis Sinan im Leitstand freigibt.
 alter table public.werbemittel drop constraint if exists werbemittel_art_check;
 alter table public.werbemittel
   add constraint werbemittel_art_check
-  check (art in ('tutorial_video', 'text_linkedin', 'text_website', 'text_email'));
+  check (art in ('tutorial_video', 'werbeclip', 'text_linkedin', 'text_website', 'text_email'));
 
 alter table public.werbemittel alter column storage_pfad drop not null;
 alter table public.werbemittel alter column dauer_sekunden drop not null;

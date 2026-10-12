@@ -183,6 +183,12 @@ jobs:
             const newDependencies = typeof riskModule.newDependencies === "function" ? riskModule.newDependencies : () => [];
             const fetchDependencyInfo = typeof riskModule.fetchDependencyInfo === "function"
               ? riskModule.fetchDependencyInfo : async () => ({});
+            // SIN-516: Secret-Namen, die auf main (Checkout = Basis) in irgendeinem Workflow vorkommen. Nur Namen.
+            const knownSecrets = typeof riskModule.secretNames === "function"
+              ? riskModule.secretNames(fs.readdirSync(".github/workflows")
+                .filter((n) => /\.ya?ml$/.test(n))
+                .map((n) => fs.readFileSync(`.github/workflows/${n}`, "utf8")))
+              : [];
             const { owner, repo } = context.repo;
             const action = context.payload.action;
             const sender = context.payload.sender?.login;
@@ -230,6 +236,7 @@ jobs:
             const { risk, reasons } = classifyRisk({
               files: gateFiles,
               depInfo,
+              knownSecrets,
               labels,
               isFork,
               secretLeak: process.env.SECRET_LEAK === "true",

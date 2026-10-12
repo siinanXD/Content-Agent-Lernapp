@@ -1,6 +1,6 @@
 # SIN-484 — Marketing-Agent: Werbetexte pro Kurs, nur mit Freigabe
 
-**Links:** [SIN-484](https://linear.app/sinan-kahraman/issue/SIN-484), `.github/workflows/marketing.yml`, `scripts/autonomy/marketing.mjs`, `supabase/migrations/20261019010000_sin484_werbemittel_texte.sql`, [SIN-483](SIN-483-video-agent.md) (Tabelle `werbemittel`), [Anthropic-Preise](https://platform.claude.com/docs/en/about-claude/pricing). Fertige Lösung für diese Prüfung gibt es nicht; Eigenbau, klein und ohne neue Pakete.
+**Links:** [SIN-484](https://linear.app/sinan-kahraman/issue/SIN-484), `.github/workflows/marketing.yml`, `scripts/autonomy/marketing.mjs`, `supabase/migrations/20261019020000_sin484_werbemittel_texte.sql`, [SIN-483](SIN-483-video-agent.md) (Tabelle `werbemittel`), [Anthropic-Preise](https://platform.claude.com/docs/en/about-claude/pricing). Fertige Lösung für diese Prüfung gibt es nicht; Eigenbau, klein und ohne neue Pakete.
 
 ## Entscheidung
 

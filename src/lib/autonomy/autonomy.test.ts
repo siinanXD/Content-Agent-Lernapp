@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { approvalStillValid, classifyRisk, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
+import { approvalStillValid, classifyRisk, secretNames, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
@@ -47,6 +47,23 @@ test("Gate: normale Workflow-Änderungen sind medium (SIN-252)", () => {
   assert.equal(risk([file(wf, patch("-  contents: write", "+  contents: read"))]).risk, "risk:medium");
   assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:medium");
   assert.equal(risk([file(".github/dependabot.yml", patch("+a: b"))]).risk, "risk:medium");
+});
+
+test("Gate: auf main bekannte Secrets sind medium, neue high (SIN-516)", () => {
+  const guard = ".github/workflows/revert-guard.yml";
+  const used = patch("+        LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}");
+  const known = secretNames(["env:\n  K: ${{ secrets.LINEAR_API_KEY }}\n  G: ${{ secrets.GITHUB_TOKEN }}"]);
+  assert.deepEqual(known, ["LINEAR_API_KEY", "GITHUB_TOKEN"]);
+  assert.equal(risk([file(guard, used)], { knownSecrets: known }).risk, "risk:medium");
+  assert.equal(risk([file(guard, used)]).risk, "risk:high");
+  assert.equal(
+    risk([file(guard, patch("+        X: ${{ secrets.NEUES_SECRET_XY }}"))], { knownSecrets: known }).risk,
+    "risk:high",
+  );
+  assert.equal(
+    risk([file(".github/workflows/pr-gate.yml", patch("+      - run: echo"))], { knownSecrets: known }).risk,
+    "risk:high",
+  );
 });
 
 test("Gate: Rechte in Workflows sind high (SIN-252 Punkt 6)", () => {
