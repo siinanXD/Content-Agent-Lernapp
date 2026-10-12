@@ -98,6 +98,19 @@ jobs:
           echo "DAUER=$dauer" >> "$GITHUB_ENV"
           node scripts/autonomy/video.mjs pruefen --dauer "$dauer"
 
+      - name: Standbilder je Schritt
+        if: env.STOP != '1'
+        run: node scripts/autonomy/video.mjs standbilder --klickweg video-ergebnis/klickweg.json --mp4 video-ergebnis/tutorial.mp4 --out video-ergebnis/standbilder
+
+      - name: Standbilder sichern
+        if: always() && env.STOP != '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-standbilder
+          path: video-ergebnis/standbilder/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Ablegen, Status wartet_auf_freigabe
         if: env.STOP != '1'
         env:
