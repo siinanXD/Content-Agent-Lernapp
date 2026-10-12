@@ -36,6 +36,7 @@
     "decisions:index": "node scripts/decisions-index.mjs",
     "figma:abdeckung": "node scripts/autonomy/figma-abdeckung.mjs --write",
     "autonomy:dispatch:dry": "node scripts/autonomy/dispatch.mjs --dry-run --fixture docs/autonomy/fixture-issues.json",
+    "autonomy:revert:dry": "node scripts/autonomy/revert-linear.mjs --dry-run --sha a1b2c3d4e5f60718293a4b5c6d7e8f9012345678 --fixture docs/autonomy/fixture-revert.json",
     "autonomy:status:dry": "node scripts/autonomy/status.mjs --fixture docs/autonomy/fixture-status.json",
     "autonomy:digest:dry": "node scripts/autonomy/digest.mjs --slot morgen --fixture docs/autonomy/fixture-digest.json && node scripts/autonomy/digest.mjs --slot abend --fixture docs/autonomy/fixture-digest.json",
     "autonomy:planner:dry": "node scripts/autonomy/planner.mjs --create docs/autonomy/fixture-plan.json --dry-run",

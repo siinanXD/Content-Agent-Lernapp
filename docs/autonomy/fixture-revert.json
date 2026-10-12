@@ -1,0 +1,35 @@
+{
+  "hinweis": "Trockenlauf für scripts/autonomy/revert-linear.mjs (SIN-492): Daten eines gemergten Revert-PRs von revert-guard, ohne Netz. Form wie die GitHub-API (pulls, commits) und Linear (issue).",
+  "revertPulls": [
+    {
+      "number": 290,
+      "title": "revert: feat(fabrik): 6 weitere MAF-Schwerpunkte in der Content-Fabrik (SIN-479) zurücknehmen (SIN-479)",
+      "body": "Part of SIN-479\n\n## Was ändert sich\nNimmt `a1b2c3d` (feat(fabrik): 6 weitere MAF-Schwerpunkte) zurück, weil die CI auf main rot war.\n\nFehlgeschlagener Lauf: https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/1234567",
+      "html_url": "https://github.com/siinanXD/Content-Agent-Lernapp/pull/290",
+      "merged_at": "2026-10-12T09:30:00Z",
+      "head": { "ref": "claude/revert-a1b2c3d" }
+    }
+  ],
+  "revertCommits": [
+    {
+      "commit": {
+        "message": "revert: feat(fabrik): 6 weitere MAF-Schwerpunkte in der Content-Fabrik (SIN-479) zurücknehmen (SIN-479)\n\nPart of SIN-479\nRevert von a1b2c3d4e5f60718293a4b5c6d7e8f9012345678, weil die CI auf main rot war.\n"
+      }
+    }
+  ],
+  "originalPulls": [
+    {
+      "number": 288,
+      "title": "feat(fabrik): 6 weitere MAF-Schwerpunkte in der Content-Fabrik (SIN-479)",
+      "html_url": "https://github.com/siinanXD/Content-Agent-Lernapp/pull/288",
+      "merged_at": "2026-10-12T09:05:00Z",
+      "head": { "ref": "claude/sin-479" }
+    }
+  ],
+  "issue": {
+    "id": "fixture-sin-479",
+    "identifier": "SIN-479",
+    "team": { "id": "fixture-team" },
+    "comments": { "nodes": [] }
+  }
+}

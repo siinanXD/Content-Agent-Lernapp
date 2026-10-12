@@ -9,6 +9,8 @@
 # nächtliche Lauf), nimmt dieser Lauf den Commit des Deploys zurück, solange er noch die Spitze von main ist. Der
 # Revert-Commit löst über den Status-Wächter den nächsten Deploy aus (letzter grüner Stand). Hilft das nicht, wird
 # `nach-deploy` erneut rot; der Revert eines Reverts ist gesperrt, dann bleibt die Meldung im Status und Tages-Update.
+# SIN-492: Der Job `linear` setzt nach dem Merge eines Revert-PRs das Linear-Issue des Originals wieder auf Todo
+# (zweite Rücknahme: needs-human). Skript: scripts/autonomy/revert-linear.mjs.
 # Token: AGENT_WORKFLOW_TOKEN (nie github.token, sonst starten keine Folge-Workflows).
 name: revert-guard
 
@@ -78,3 +80,24 @@ jobs:
             "${issue:-SIN-252}" "${SHA:0:7}" "$title" "$REASON" "$run_url")
           gh pr create --base main --head "$branch" \
             --title "$msg_title" --body "$body"
+
+  # SIN-492: Ist der CI-Lauf auf main der Merge eines Revert-PRs von revert-guard, steht das Linear-Issue des
+  # Originals danach wieder auf Todo (zweite Rücknahme: Label needs-human). Läuft nach jedem CI-Lauf auf main,
+  # nicht nur nach roten: der Revert-Commit selbst kann grün oder rot sein. Ohne Revert-PR tut der Lauf nichts.
+  linear:
+    if: github.event.workflow_run.name == 'ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Zurückgenommenes Issue wieder öffnen
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/autonomy/revert-linear.mjs --sha "$SHA"

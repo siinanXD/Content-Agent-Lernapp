@@ -10,7 +10,10 @@ export function loadAgents(file = REGISTER) {
   return JSON.parse(readFileSync(file, "utf8")).agents;
 }
 
-/** Workflow-Name (Dateiname ohne .yml) → Agent-ID; `null`, wenn keiner zugeordnet ist. */
+/**
+ * Workflow-Name (Dateiname ohne .yml) oder Schritt (`schritte`, z. B. REVERT aus SIN-492) → Agent-ID;
+ * `null`, wenn keiner zugeordnet ist.
+ */
 export function agentOf(workflow, agents = loadAgents()) {
-  return agents.find((a) => a.workflows.includes(workflow))?.id ?? null;
+  return agents.find((a) => a.workflows.includes(workflow) || a.schritte?.includes(workflow))?.id ?? null;
 }
