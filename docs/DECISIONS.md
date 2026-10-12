@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-462 | SIN-462: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-462-migrationen-dublette.md](decisions/SIN-462-migrationen-dublette.md) |
 | SIN-461 | SIN-461: Migrationen 13/15 – weitere Dublette von SIN-458 | [SIN-461-migrationen-13-von-15.md](decisions/SIN-461-migrationen-13-von-15.md) |
 | SIN-460 | SIN-460: Migrationen 13/15 – Dublette von SIN-458 | [SIN-460-migrationen-13-von-15.md](decisions/SIN-460-migrationen-13-von-15.md) |
 | SIN-458 | SIN-458: Migrationen 13/15 – SIN-415 wartet auf Sinan, SIN-416 hängt daran | [SIN-458-migrationen-415-416.md](decisions/SIN-458-migrationen-415-416.md) |
