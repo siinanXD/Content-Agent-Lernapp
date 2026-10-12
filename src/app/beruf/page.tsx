@@ -3,9 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { trackOnboardingCompleted, trackOnboardingStep } from "@/lib/analytics";
-import { Button } from "@/components/ui/button";
 import { MobileShell } from "@/components/learner/mobile-shell";
-import { filterBerufe, findBeruf, saveOnboarding } from "@/lib/learner/onboarding";
+import { filterBerufe, saveOnboarding, type Beruf } from "@/lib/learner/onboarding";
 import { saveSession } from "@/lib/learner/session";
 
 const focus =
@@ -13,22 +12,20 @@ const focus =
 
 /**
  * N1 Beruf wählen (Variante 2026): neuer Schritt vor dem Schwerpunkt. Das Suchfeld filtert nur die
- * vorhandenen Berufe. Monoberufe (Industriekaufmann/-frau) gehen direkt zum Lernpfad.
+ * vorhandenen Berufe. Die Wahl führt direkt weiter, ohne zweiten Knopf (SIN-476). Monoberufe
+ * (Industriekaufmann/-frau) gehen direkt zum Lernpfad.
  */
 export default function BerufPage() {
   const router = useRouter();
   const searchId = useId();
   const [query, setQuery] = useState("");
-  const [berufId, setBerufId] = useState<string | null>(null);
-  const beruf = findBeruf(berufId);
   const treffer = filterBerufe(query);
 
   useEffect(() => {
     trackOnboardingStep({ step: "beruf" });
   }, []);
 
-  function next() {
-    if (!beruf) return;
+  function choose(beruf: Beruf) {
     if (beruf.nextRoute === "/schwerpunkt") {
       saveOnboarding({ berufId: beruf.id, schwerpunktId: null, mapId: null });
       router.push("/schwerpunkt");
@@ -72,43 +69,23 @@ export default function BerufPage() {
         </div>
 
         <div role="group" aria-label="Beruf" className="flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-4">
-          {treffer.map((b) => {
-            const selected = b.id === berufId;
-            return (
-              <button
-                key={b.id}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setBerufId(b.id)}
-                className={`flex flex-col gap-1.5 rounded-[var(--radius-xl)] border p-6 text-left ${focus} ${
-                  selected
-                    ? "border-[var(--color-bg-hero)] bg-[var(--color-bg-hero)] text-[var(--color-text-on-brand)]"
-                    : "border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]"
-                }`}
+          {treffer.map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => choose(b)}
+              className={`flex flex-col gap-1.5 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-6 text-left text-[var(--color-text-primary)] ${focus}`}
+            >
+              <span className="mono-label text-[var(--color-text-secondary)]">{b.facts}</span>
+              <span
+                className="text-xl font-bold leading-[26px]"
+                style={{ fontFamily: "var(--font-display)" }}
               >
-                <span
-                  className={`mono-label ${
-                    selected ? "text-[var(--color-text-muted-on-dark)]" : "text-[var(--color-text-secondary)]"
-                  }`}
-                >
-                  {b.facts}
-                </span>
-                <span
-                  className="text-xl font-bold leading-[26px]"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  {b.title}
-                </span>
-                <span
-                  className={`text-sm ${
-                    selected ? "text-[var(--color-text-soft-on-dark)]" : "text-[var(--color-text-secondary)]"
-                  }`}
-                >
-                  {b.next}
-                </span>
-              </button>
-            );
-          })}
+                {b.title}
+              </span>
+              <span className="text-sm text-[var(--color-text-secondary)]">{b.next}</span>
+            </button>
+          ))}
         </div>
         <p role="status" className="text-sm text-[var(--color-text-secondary)]">
           {treffer.length === 0 ? "Zu dieser Suche gibt es noch keinen Beruf." : ""}
@@ -117,10 +94,6 @@ export default function BerufPage() {
         <p className="rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] p-5 text-[13px] font-medium leading-[17px] text-[var(--color-text-hint)]">
           Weitere Berufe kommen dazu, sobald es eine amtliche Quelle und geprüfte Inhalte gibt.
         </p>
-
-        <Button className="mt-auto md:w-auto md:self-start" disabled={!beruf} onClick={next}>
-          Weiter
-        </Button>
       </main>
     </MobileShell>
   );
