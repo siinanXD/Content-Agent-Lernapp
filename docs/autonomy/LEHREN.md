@@ -135,6 +135,8 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Flex-Zeile mit `shrink-0` und langem Text (Region der Anbieter-Karten) → erzeugt auf dem Handy waagerechtes Scrollen, `bildvergleich` sah es nicht, weil es auf main schon da war. Richtig: Umbruch erlauben (`flex-wrap`, kein `shrink-0`); der Layout-Test `e2e/layout.spec.ts` fängt es. (SIN-523)
 - Tutorial-Video in 1280×720 aufgenommen, Textband lag über den Hauptknöpfen der Handy-App → Handy-Viewport 390×844 aufnehmen, im Schnitt Text in eigener Spalte neben der App; Standbilder je Schritt (`video-standbilder`) prüfen, nicht nur abspielen. (SIN-522)
 
+- A/B-Bericht zeigt `scores.sourceFidelity`/`uniqueness` immer 0 → `aggregateScores` ist Alles-oder-nichts (Gate); für Berichte `aggregateRates` (Quote 0–1) nutzen. (SIN-532)
+
 ## Datenbank-Rechte
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)

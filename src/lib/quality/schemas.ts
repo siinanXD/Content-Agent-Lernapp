@@ -82,3 +82,19 @@ export function aggregateScores(questions: QuestionEval[]): QualityScores {
     safetyFlag: questions.some((q) => q.scores.safetyFlag),
   };
 }
+
+/**
+ * Berichts-Variante von aggregateScores (SIN-532): Quote 0–1 statt Alles-oder-nichts.
+ * Das Gate nutzt weiter aggregateScores; hier würde eine durchgefallene Frage sonst 0 ergeben.
+ */
+export function aggregateRates(questions: QuestionEval[]) {
+  const base = aggregateScores(questions);
+  const n = questions.length;
+  const rate = (pick: (q: QuestionEval) => number) =>
+    n === 0 ? 0 : Math.round((questions.reduce((s, q) => s + pick(q), 0) / n) * 1000) / 1000;
+  return {
+    ...base,
+    sourceFidelity: rate((q) => q.scores.sourceFidelity),
+    uniqueness: rate((q) => q.scores.uniqueness),
+  };
+}

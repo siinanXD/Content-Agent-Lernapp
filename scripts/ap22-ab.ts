@@ -42,7 +42,7 @@ import {
   liveJudgeWithUsage,
   type EvalItem,
 } from "../src/lib/quality/evaluate-agent";
-import { aggregateScores, type QuestionEval } from "../src/lib/quality/schemas";
+import { aggregateRates, type QuestionEval } from "../src/lib/quality/schemas";
 
 const OUT_DIR = join(process.cwd(), "docs", "ops", "ap22-runs");
 const KEYWORD = "Maschinen- und Anlagenführer";
@@ -279,7 +279,7 @@ async function main() {
       questionPassRate: Number(
         (judged.questions.filter((q) => q.passed).length / Math.max(1, judged.questions.length)).toFixed(3),
       ),
-      scores: aggregateScores(judged.questions),
+      scores: aggregateRates(judged.questions),
       usage: {
         input: l.claudeInputTokens,
         output: l.claudeOutputTokens,
