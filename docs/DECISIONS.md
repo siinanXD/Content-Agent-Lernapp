@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-539 | SIN-539: Live-Prüfung rot, Meldekette ab 2× rot | [SIN-539-live-check-meldekette.md](decisions/SIN-539-live-check-meldekette.md) |
 | SIN-534 | SIN-534 — Kennzahl kosten_woche mit Warnung | [SIN-534-kosten-woche.md](decisions/SIN-534-kosten-woche.md) |
 | SIN-532 | SIN-532: A/B-Bericht zeigt Quoten statt 0/1 | [SIN-532-ab-quoten.md](decisions/SIN-532-ab-quoten.md) |
 | SIN-528 | SIN-528 — Fertig-Liste steuert den Loop: v1 Grundgerüst zuerst, Ideen nach und nach | [SIN-528-fertig-liste-steuert-loop.md](decisions/SIN-528-fertig-liste-steuert-loop.md) |

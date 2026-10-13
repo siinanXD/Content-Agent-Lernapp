@@ -157,7 +157,29 @@ export function analyzeLiveCheck({ runs, note = "" }) {
   return {
     line: ok ? text : `${text} ([Lauf](${last.html_url}))`,
     ok,
-    incident: twice ? { key: `live-check-red:${last.html_url}`, text: `Live-Check zweimal rot, der Revert hat nicht geholfen: ${last.html_url}` } : null,
+    incident: twice ? { key: `live-check-red:${last.html_url}`, text: `Live-Check zweimal rot, der Revert hat nicht geholfen: ${last.html_url}`, issue: liveCheckIssue(text, last.html_url) } : null,
+  };
+}
+
+export const LIVE_CHECK_PREFIX = "Bug: Live-Prüfung (nach-deploy) rot";
+
+/** Urgent-Bug (Label `dringend`, SIN-539): ab dem zweiten roten Lauf in Folge; Titel fest, der Wächter legt höchstens ein offenes Issue an. */
+export function liveCheckIssue(text, url) {
+  return {
+    lane: "backend",
+    priority: 1,
+    labels: ["claude", "Bug", "dringend"],
+    title: LIVE_CHECK_PREFIX,
+    description: [
+      `Der Wächter hat zwei rote Läufe von \`nach-deploy\` in Folge gesehen: ${text}`,
+      "",
+      `Lauf: ${url}`,
+      "",
+      "## Akzeptanzkriterien",
+      "- [ ] Rote Kennungen aus `gh run view <id> --log-failed` bestimmt (API-xx / UI-xx, `docs/ops/live-checkliste.md`)",
+      "- [ ] Ursache in der App behoben (keine Prüfung abgeschaltet, kein Budget angehoben)",
+      "- [ ] Ein `nach-deploy`-Lauf auf main ist grün",
+    ].join("\n"),
   };
 }
 
