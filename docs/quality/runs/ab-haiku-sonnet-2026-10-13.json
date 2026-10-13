@@ -1,0 +1,9 @@
+{
+  "task": "ab-haiku-sonnet",
+  "label": "Goldset-Vergleich Haiku 5.5 gegen Sonnet 5.5 (20 LF3-Einheiten, inkl. Reparatur, unter 3 €)",
+  "datum": "2026-10-13",
+  "lauf": "https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/38325598681",
+  "ok": null,
+  "ergebnis": "Goldset-Vergleich Haiku 5.5 gegen Sonnet 5.5 (20 LF3-Einheiten, inkl. Reparatur, unter 3 €): bestanden",
+  "durchgelaufen": true
+}
