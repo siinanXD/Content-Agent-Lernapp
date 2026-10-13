@@ -125,12 +125,23 @@ test("Planer: gebaut, nicht gelaufen → Lauf starten statt Issue", async () => 
   assert.equal(taskForCheck("recht-impressum"), undefined);
 });
 
-test("Kosten: Deckel und leerer Ledger", () => {
+test("Kosten: Deckel, Wochenkosten und Stichtag der Teilbatches", () => {
+  const now = new Date("2026-10-15T12:00:00Z");
   assert.equal(costResult([]).ok, null);
-  const good = costResult([{ cost_eur: 4.5, kind: "judge-backfill" }, { cost_eur: 1, kind: "content" }]);
-  assert.equal(good.ok, true);
-  assert.match(good.ergebnis, /2 Läufe .*Ø 2\.75 €, höchster 4\.50 €/);
-  assert.equal(costResult([{ cost_eur: 20, kind: "x", stopped: true }]).ok, false);
+  const good = costResult(
+    [
+      { cost_eur: 4.5, kind: "judge-backfill", created_at: "2026-10-14T10:00:00Z" },
+      { cost_eur: 1, kind: "content", created_at: "2026-10-13T10:00:00Z" },
+      { cost_eur: 21.78, kind: "content-grow", created_at: "2026-10-12T10:00:00Z", stopped: true },
+    ],
+    20,
+    { now },
+  );
+  assert.equal(good.ok, true); // der Lauf vor den Teilbatches zählt nicht
+  assert.equal(good.wocheEur, 27.28);
+  assert.match(good.ergebnis, /3 Läufe .*höchster 21\.78 €.*seit 2026-10-13 2 Läufe, höchster 4\.50 €.*7 Tage 27\.28 €/);
+  assert.equal(costResult([{ cost_eur: 20, kind: "x", created_at: "2026-10-14T10:00:00Z" }], 20, { now }).ok, false);
+  assert.equal(costResult([{ cost_eur: 21.78, kind: "x", created_at: "2026-10-12T10:00:00Z" }], 20, { now }).ok, null);
 });
 
 test("Migrationen: nur additive, fehlende nach Tabellen und Version", () => {
