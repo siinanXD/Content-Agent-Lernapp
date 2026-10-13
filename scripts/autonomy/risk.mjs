@@ -1,21 +1,21 @@
 /**
- * Risiko-Gate (SIN-223, gelockert mit SIN-252): Standard ist `risk:medium`. `risk:high` gibt es nur bei
- * Secret-Leak, Datenverlust, Sicherheit, Geld, dem Gate selbst, erweiterten Rechten in Workflows,
- * unbestätigten npm-Abhängigkeiten und Grundsatz-Entscheidungen (`docs/PRODUCT.md`, Framework/DB-Wechsel).
- * Normale Workflow-Änderungen, Design-Tokens aus Figma, Docs und Tests sind `risk:medium`.
+ * Risiko-Gate (SIN-223, gelockert mit SIN-252 und SIN-547): Standard ist `risk:medium`. `risk:high` gibt es nur bei
+ * Secret-Leak, Datenverlust, Auth/RLS/Service-Role-Key im Client, Geld, unbestätigten npm-Abhängigkeiten,
+ * `docs/PRODUCT.md`, Fork, `pull_request_target`, neuen Secrets, Drittanbieter-Actions außerhalb der Liste und Branch-Protection.
+ * Workflow-Rechte, das Gate selbst und übrige Grundsatz-Änderungen sind `risk:medium` mit Einspruchsfrist
+ * (`einspruch` im Ergebnis, `EINSPRUCH_STUNDEN`): Auto-Merge erst danach, Sinan stoppt mit `no-automerge`.
+ * Normale Workflow-Änderungen, Design-Tokens aus Figma, Docs und Tests sind `risk:medium` ohne Frist.
  * `classifyRisk` ist eine reine Funktion ohne Netz, damit pr-gate sie testbar aus main laden kann.
  * Nur `fetchDependencyInfo` ruft npm und GitHub ab; pr-gate reicht das Ergebnis als `depInfo` herein.
  */
 
 /** @typedef {{ filename: string, previous_filename?: string, status?: string, patch?: string }} GateFile */
 
+export const EINSPRUCH_STUNDEN = 2;
 const PRINCIPLE_PATHS = [/^docs\/PRODUCT\.md$/];
-// Das Gate selbst (Punkt 5): Workflow, Regeln, Branch-Protection als Datei.
-const GATE_PATHS = [
-  /^\.github\/workflows\/pr-gate\.ya?ml$/,
-  /^scripts\/autonomy\/risk\.mjs$/,
-  /^\.github\/(rulesets?\/|settings\.ya?ml$)/,
-];
+// Das Gate selbst: Frist statt Freigabe (SIN-547). Branch-Protection als Datei bleibt high.
+const GATE_PATHS = [/^\.github\/workflows\/(pr-gate|dispatch)\.ya?ml$/, /^scripts\/autonomy\/risk\.mjs$/];
+const PROTECTION_PATHS = [/^\.github\/(rulesets?\/|settings\.ya?ml$)/];
 const PAYMENT_PATH = /(billing|payment|stripe|checkout|(^|\/)pricing?(\/|\.)|(^|\/)prices?(\/|\.))/i;
 const MONEY_LINE = /\b(sk_live|pk_live|rk_live)\b|STRIPE_[A-Z_]*LIVE|livemode\s*[:=]\s*true/i;
 const SERVICE_ROLE = /service_role/i;
@@ -130,14 +130,18 @@ export function secretNames(texts) {
 }
 
 /**
- * @param {{ files: GateFile[], labels?: string[], isFork?: boolean, secretLeak?: boolean, depInfo?: Record<string, { license: string, stars: number } | null>, knownSecrets?: string[] }} input
- * @returns {{ risk: "risk:medium" | "risk:high", reasons: { key: string, category: string, text: string }[] }}
+ * @param {{ files: GateFile[], labels?: string[], isFork?: boolean, secretLeak?: boolean, depInfo?: Record<string, { license: string, stars: number } | null>, knownSecrets?: string[], trustedOwners?: string[] }} input
+ * @returns {{ risk: "risk:medium" | "risk:high", reasons: { key: string, category: string, text: string }[], einspruch: { key: string, category: string, text: string }[] }}
+ *   `reasons` sind nur High-Gründe; `einspruch` sind die Gründe, die medium bleiben, aber die Frist auslösen.
  */
-export function classifyRisk({ files, labels = [], isFork = false, secretLeak = false, depInfo = {}, knownSecrets = [] }) {
+export function classifyRisk({ files, labels = [], isFork = false, secretLeak = false, depInfo = {}, knownSecrets = [], trustedOwners = [] }) {
   const known = new Set(knownSecrets);
+  const owners = new Set([...TRUSTED_ACTION_OWNERS, ...trustedOwners]);
   const reasons = [];
-  const add = (category, detail) =>
-    reasons.push({ key: `${category}:${detail}`, category, text: `${category}: ${detail}` });
+  const einspruch = [];
+  const mk = (category, detail) => ({ key: `${category}:${detail}`, category, text: `${category}: ${detail}` });
+  const add = (category, detail) => reasons.push(mk(category, detail));
+  const addFrist = (category, detail) => einspruch.push(mk(category, detail));
 
   if (secretLeak) add("secret", "gitleaks hat einen Fund gemeldet");
   if (isFork) add("sicherheit", "PR kommt aus einem Fork");
@@ -151,7 +155,8 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
       if (PRINCIPLE_PATHS.some((r) => r.test(p))) add("grundsatz", p);
       if (PAYMENT_PATH.test(p)) add("zahlung", p);
       if (AUTH_PATH.some((r) => r.test(p))) add("sicherheit", `Auth/Middleware ${p}`);
-      if (GATE_PATHS.some((r) => r.test(p))) add("gate", `Das Gate selbst: ${p}`);
+      if (GATE_PATHS.some((r) => r.test(p))) addFrist("gate", `Das Gate selbst: ${p}`);
+      if (PROTECTION_PATHS.some((r) => r.test(p))) add("sicherheit", `Branch-Protection ${p}`);
     }
 
     if (ENV_FILE.test(f.filename)) {
@@ -180,20 +185,24 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
       const beforeText = removed.join("\n");
       for (const l of added) {
         if (before.has(l.trim())) continue;
-        if (WRITE_PERMISSION.test(l)) add("sicherheit", `Workflow-Recht erweitert in ${f.filename}: ${l.trim()}`);
-        if (/^\s*pull_request_target\s*:/.test(l)) add("sicherheit", `pull_request_target neu in ${f.filename}`);
+        if (WRITE_PERMISSION.test(l)) addFrist("workflow-recht", `Workflow-Recht erweitert in ${f.filename}: ${l.trim()}`);
+        if (/^\s*pull_request_target\s*:/.test(l)) add("workflow-recht", `pull_request_target neu in ${f.filename}`);
         for (const m of l.matchAll(/\bsecrets\.([A-Za-z0-9_]+)/g)) {
           const wasUsed = new RegExp(`secrets\\.${m[1]}\\b`).test(beforeText);
-          if (m[1] !== "GITHUB_TOKEN" && !wasUsed && !known.has(m[1])) add("workflow-recht", `neues Secret ${m[1]} in ${f.filename}`);
+          if (m[1] === "GITHUB_TOKEN" || wasUsed) continue;
+          if (known.has(m[1])) addFrist("workflow-recht", `Secret ${m[1]} in ${f.filename}`);
+          else add("workflow-recht", `neues Secret ${m[1]} in ${f.filename}`);
         }
         if (/allowed[_-]?(tools|bots)/i.test(l) && tokens(l).some((t) => !beforeTokens.has(t))) {
-          add("workflow-recht", `allowedTools/allowed_bots erweitert in ${f.filename}: ${l.trim().slice(0, 80)}`);
+          addFrist("workflow-recht", `allowedTools/allowed_bots erweitert in ${f.filename}: ${l.trim().slice(0, 80)}`);
         }
         const u = l.match(/^\s*-?\s*uses:\s*([^\s@#]+)/);
         if (u && !u[1].startsWith("./")) {
-          const known = removed.some((r) => r.includes(u[1]));
-          if (!TRUSTED_ACTION_OWNERS.includes(u[1].split("/")[0]) && !known) {
-            add("workflow-recht", `neue Drittanbieter-Action ${u[1]} in ${f.filename}`);
+          const seen = removed.some((r) => r.includes(u[1]));
+          const owner = u[1].split("/")[0];
+          if (!seen && !TRUSTED_ACTION_OWNERS.includes(owner)) {
+            if (owners.has(owner)) addFrist("workflow-recht", `Action ${u[1]} in ${f.filename}`);
+            else add("workflow-recht", `neue Drittanbieter-Action ${u[1]} in ${f.filename}`);
           }
         }
       }
@@ -212,7 +221,7 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
       const a = depKeys(added);
       const r = depKeys(removed);
       for (const k of FRAMEWORK_DEPS) {
-        if (a.has(k) !== r.has(k)) add("grundsatz", `Framework/DB-Abhängigkeit ${k} hinzugefügt oder entfernt`);
+        if (a.has(k) !== r.has(k)) addFrist("grundsatz", `Framework/DB-Abhängigkeit ${k} hinzugefügt oder entfernt`);
       }
     }
   }
@@ -224,8 +233,23 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
     }
   }
 
-  const unique = [...new Map(reasons.map((r) => [r.key, r])).values()];
-  return { risk: unique.length ? "risk:high" : "risk:medium", reasons: unique };
+  const uniq = (list) => [...new Map(list.map((r) => [r.key, r])).values()];
+  const unique = uniq(reasons);
+  return { risk: unique.length ? "risk:high" : "risk:medium", reasons: unique, einspruch: uniq(einspruch) };
+}
+
+const FRIST_RE = /<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/;
+
+/**
+ * Einspruchsfrist (SIN-547) je Commit: Zeitstempel `bis` (ms) im Fristkommentar. Neuer Commit = neue Frist.
+ * @param {string | undefined} body Text des Fristkommentars (oder undefined)
+ * @returns {{ bis: number, comment: string, neu: boolean, vorbei: boolean }}
+ */
+export function einspruchFrist(body, sha, now = Date.now()) {
+  const m = body?.match(FRIST_RE);
+  const neu = !m || m[1] !== sha;
+  const bis = neu ? now + EINSPRUCH_STUNDEN * 3600_000 : Number(m[2]);
+  return { bis, neu, vorbei: now >= bis, comment: `<!-- pr-gate-einspruch sha=${sha} bis=${bis} -->` };
 }
 
 /**

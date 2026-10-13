@@ -25,6 +25,9 @@ on:
   workflow_run:
     workflows: [ci]
     types: [completed]
+  # SIN-547: Einspruchsfrist abgelaufen? Dann den letzten pr-gate-Lauf neu starten (Job `einspruch-ende`).
+  schedule:
+    - cron: "*/20 * * * *"
 
 permissions:
   contents: write
@@ -34,7 +37,7 @@ permissions:
 
 # Kein cancel-in-progress: Ein abgebrochener Lauf darf keine Entscheidung verschlucken.
 concurrency:
-  group: pr-gate-${{ github.event.pull_request.number || github.event.workflow_run.id }}
+  group: pr-gate-${{ github.event.pull_request.number || github.event.workflow_run.id || github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -72,6 +75,33 @@ jobs:
             await github.rest.actions.reRunWorkflow({ owner, repo, run_id: latest.id });
             core.info(`pr-gate-Lauf ${latest.id} neu gestartet (PR #${number}).`);
 
+  # SIN-547: Läuft die Einspruchsfrist ab, startet dieser Job den letzten pr-gate-Lauf des PRs neu; das Gate
+  # bewertet dann frisch (Zeitstempel im Kommentar `pr-gate-einspruch`) und schaltet Auto-Merge ein.
+  einspruch-ende:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Abgelaufene Fristen neu bewerten
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prs = await github.paginate(github.rest.pulls.list, { owner, repo, state: "open", per_page: 100 });
+            for (const pr of prs.filter((p) => !p.draft && p.labels.some((l) => l.name === "einspruch:2h"))) {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number, per_page: 100 });
+              const m = comments.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/)).filter(Boolean).pop();
+              if (!m || m[1] !== pr.head.sha || Date.now() < Number(m[2])) continue;
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                owner, repo, workflow_id: "pr-gate.yml", event: "pull_request", head_sha: pr.head.sha, per_page: 20,
+              });
+              const latest = data.workflow_runs.sort((a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt)[0];
+              if (latest?.status !== "completed") continue;
+              await github.rest.actions.reRunWorkflow({ owner, repo, run_id: latest.id });
+              core.info(`Frist von PR #${pr.number} abgelaufen: pr-gate-Lauf ${latest.id} neu gestartet.`);
+            }
+
   pr-title:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -104,6 +134,7 @@ jobs:
     timeout-minutes: 8
     outputs:
       waiting: ${{ steps.decide.outputs.waiting }}
+      einspruch_bis: ${{ steps.decide.outputs.einspruch_bis }}
     steps:
       # Basis, nie PR-Code: Regeln (risk.mjs) kommen aus dem Ziel-Branch.
       - uses: actions/checkout@v4
@@ -189,6 +220,9 @@ jobs:
                 .filter((n) => /\.ya?ml$/.test(n))
                 .map((n) => fs.readFileSync(`.github/workflows/${n}`, "utf8")))
               : [];
+            // SIN-547: Fristregeln aus der Basis; fehlen sie dort noch, gibt es keine Frist (alter Stand).
+            const einspruchFrist = typeof riskModule.einspruchFrist === "function" ? riskModule.einspruchFrist : null;
+            const trustedOwners = (JSON.parse(fs.readFileSync("docs/autonomy/config.json", "utf8")).ERLAUBTE_ACTION_OWNER) ?? [];
             const { owner, repo } = context.repo;
             const action = context.payload.action;
             const sender = context.payload.sender?.login;
@@ -233,10 +267,11 @@ jobs:
             }));
             // SIN-252: neue npm-Abhängigkeiten nur mit MIT/Apache und > 500 Sternen (npm-Registry, GitHub-API).
             const depInfo = await fetchDependencyInfo(newDependencies(gateFiles), fetch, process.env.GITHUB_TOKEN);
-            const { risk, reasons } = classifyRisk({
+            const { risk, reasons, einspruch = [] } = classifyRisk({
               files: gateFiles,
               depInfo,
               knownSecrets,
+              trustedOwners,
               labels,
               isFork,
               secretLeak: process.env.SECRET_LEAK === "true",
@@ -245,6 +280,7 @@ jobs:
             core.summary.addHeading(`Risiko: ${risk}`, 3)
               .addRaw(`${files.length} Dateien geändert.`).addEOL();
             if (reasons.length) core.summary.addList(reasons.slice(0, 15).map((r) => r.text));
+            if (einspruch.length) core.summary.addHeading("Einspruchsfrist", 4).addList(einspruch.slice(0, 15).map((r) => r.text));
             await core.summary.write();
 
             if (isFork) {
@@ -253,7 +289,8 @@ jobs:
 
             // Labels anlegen (falls neu) und genau ein Risiko-Label setzen (risk:low entfällt).
             for (const [name, meta] of Object.entries({ ...RISK_LABELS,
-              freigegeben: { color: "1D76DB", description: "Sinan hat einen risk:high-PR freigegeben" } })) {
+              freigegeben: { color: "1D76DB", description: "Sinan hat einen risk:high-PR freigegeben" },
+              "einspruch:2h": { color: "FEF2C0", description: "Automatisch: Auto-Merge nach 2 h Einspruchsfrist, Stopp mit no-automerge" } })) {
               try { await agent.rest.issues.createLabel({ owner, repo, name, ...meta }); }
               catch (e) { if (e.status !== 422) core.warning(`Label ${name} nicht angelegt (SIN-335): ${e.message}`); }
             }
@@ -311,7 +348,25 @@ jobs:
                   body: `Freigabe entzogen, weil seit dem Label ein neuer High-Grund dazukam: ${why}.` });
               }
             }
-            const allowAutoMerge = !pr.draft && !labels.includes(NO_AUTOMERGE)
+            // SIN-547: Einspruchsfrist nur bei risk:medium mit Frist-Gründen; Zeitstempel je Commit im eigenen Kommentar.
+            const FRIST = "einspruch:2h";
+            const fristMine = comments.find((c) => c.user?.login === BOT && c.body?.includes("<!-- pr-gate-einspruch "));
+            let fristOffen = false;
+            if (einspruchFrist && risk === "risk:medium" && einspruch.length) {
+              const fr = einspruchFrist(fristMine?.body, pr.head.sha);
+              if (!fristMine) await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: `${fr.comment}\nEinspruchsfrist bis ${new Date(fr.bis).toISOString()}. Stopp mit dem Label \`no-automerge\`.` });
+              else if (fr.neu) await github.rest.issues.updateComment({ owner, repo, comment_id: fristMine.id, body: `${fr.comment}\nEinspruchsfrist bis ${new Date(fr.bis).toISOString()}. Stopp mit dem Label \`no-automerge\`.` });
+              fristOffen = !fr.vorbei;
+              if (!labels.includes(FRIST)) await agent.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: [FRIST] });
+              if (fristOffen) {
+                core.setOutput("einspruch_bis", new Date(fr.bis).toISOString());
+                note = note || `Einspruchsfrist bis ${new Date(fr.bis).toISOString()} (${einspruch.slice(0, 3).map((r) => r.text).join("; ")}). Stopp mit \`no-automerge\`.`;
+              }
+            } else if (labels.includes(FRIST)) {
+              try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: FRIST }); }
+              catch (e) { if (e.status !== 404) throw e; }
+            }
+            const allowAutoMerge = !pr.draft && !labels.includes(NO_AUTOMERGE) && !fristOffen
               && (risk !== "risk:high" || approved);
 
             // Steckbrief (SIN-248): ein Kommentar für jeden PR, wird aktualisiert statt neu gepostet.
@@ -413,6 +468,7 @@ jobs:
     env:
       GATE_RESULT: ${{ needs.gate.result }}
       WAITING: ${{ needs.gate.outputs.waiting }}
+      EINSPRUCH_BIS: ${{ needs.gate.outputs.einspruch_bis }}
     steps:
       - name: Ergebnis des Gates melden
         run: |
@@ -422,6 +478,10 @@ jobs:
           fi
           if [ "$WAITING" = "true" ]; then
             echo "::error::risk:high: wartet auf das Label freigegeben von Sinan. Kein Fehler, der Merge ist gesperrt."
+            exit 1
+          fi
+          if [ -n "$EINSPRUCH_BIS" ]; then
+            echo "::error::Einspruchsfrist läuft bis $EINSPRUCH_BIS (SIN-547). Danach merged der PR von selbst; Stopp mit dem Label no-automerge."
             exit 1
           fi
           echo "Gate ok."

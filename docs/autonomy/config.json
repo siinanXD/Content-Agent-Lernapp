@@ -1,4 +1,5 @@
 {
   "_hinweis": "Nicht geheime Konfiguration für Worker und Skripte (SIN-278). Keine Zugangsdaten hier.",
-  "APP_BASE_URL": "https://content-agent-ashen-nu.vercel.app"
+  "APP_BASE_URL": "https://content-agent-ashen-nu.vercel.app",
+  "ERLAUBTE_ACTION_OWNER": ["github"]
 }
