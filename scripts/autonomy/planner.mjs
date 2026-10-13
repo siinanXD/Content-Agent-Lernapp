@@ -99,6 +99,18 @@ export function summarizeRunCosts(rows, capEur = 20) {
   return `Ø ${avg.toFixed(2)} € je Lauf, letzter ${eur[0].toFixed(2)} €, höchster ${Math.max(...eur).toFixed(2)} € (Deckel ${capEur} €, ${rows.length} Läufe, ${stopped} gestoppt)`;
 }
 
+/** Kennzahl kosten_woche (SIN-534): Summe der Läufe der letzten 7 Tage, Warnung über 2 x Lauf-Deckel. */
+export function summarizeWeekCosts(rows, capEur = 20, now = new Date()) {
+  const since = now.getTime() - 7 * 864e5;
+  const week = rows.filter((r) => new Date(r.created_at).getTime() >= since);
+  if (!week.length) return "keine Läufe in den letzten 7 Tagen";
+  const sum = week.reduce((a, r) => a + Number(r.cost_eur ?? 0), 0);
+  const warn = sum > 2 * capEur ? ` WARNUNG: über dem Doppelten des Lauf-Deckels (${2 * capEur} €)` : "";
+  return `${sum.toFixed(2)} € in ${week.length} Läufen (letzte 7 Tage)${warn}`;
+}
+
+const costSummaries = (rows) => ({ kosten_pro_lauf: summarizeRunCosts(rows.slice(0, 20)), kosten_woche: summarizeWeekCosts(rows) });
+
 /** @param {{ fetchImpl?: typeof fetch, sleep?: (ms: number) => Promise<void>, delays?: number[], log?: (l: string) => void }} [http] */
 export async function collectMetrics(env = process.env, http = {}) {
   const m = {
@@ -107,6 +119,7 @@ export async function collectMetrics(env = process.env, http = {}) {
     bestehensquote: "nicht verfügbar",
     bestehensquote_pct: "nicht verfügbar",
     kosten_pro_lauf: "nicht verfügbar",
+    kosten_woche: "nicht verfügbar",
     posthog: "nicht verfügbar",
     sentry: "nicht verfügbar",
     sentry_kritisch: "nicht verfügbar",
@@ -137,21 +150,21 @@ export async function collectMetrics(env = process.env, http = {}) {
     }
     // Kosten separat mit Retry-Logik
     if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
-      const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped&order=created_at.desc&limit=20`;
+      const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped,created_at&order=created_at.desc&limit=100`;
       try {
-        m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
+        Object.assign(m, costSummaries(await fetchJson("Supabase", url, { headers: h }, http)));
       } catch (e) {
         if (isSchemaCache(e)) {
           const sleep = http.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
           await sleep(500);
           try {
-            m.kosten_pro_lauf = summarizeRunCosts(await fetchJson("Supabase", url, { headers: h }, http));
+            Object.assign(m, costSummaries(await fetchJson("Supabase", url, { headers: h }, http)));
           } catch (retryError) {
-            m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", retryError);
+            m.kosten_pro_lauf = m.kosten_woche = describeTableError("pipeline_run_costs", "20261006020000", retryError);
             queueSinanTask(http, "pipeline_run_costs", "20261006020000", retryError);
           }
         } else {
-          m.kosten_pro_lauf = describeTableError("pipeline_run_costs", "20261006020000", e);
+          m.kosten_pro_lauf = m.kosten_woche = describeTableError("pipeline_run_costs", "20261006020000", e);
           queueSinanTask(http, "pipeline_run_costs", "20261006020000", e);
         }
       }
