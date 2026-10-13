@@ -179,7 +179,8 @@ export function costResult(rows, capEur = RUN_CAP_EUR, { now = new Date(), seit 
   const kinds = [...new Set(rows.map((r) => r.kind))].join(", ");
   const weekStart = now.getTime() - 7 * 864e5;
   const woche = eurOf(rows.filter((r) => Date.parse(String(r.created_at)) >= weekStart)).reduce((a, b) => a + b, 0);
-  const neu = rows.filter((r) => String(r.created_at ?? "") >= seit);
+  const seitMs = Date.parse(seit);
+  const neu = rows.filter((r) => Date.parse(String(r.created_at)) >= seitMs);
   const neuMax = neu.length ? Math.max(...eurOf(neu)) : null;
   const seitText = neuMax === null ? `seit ${seit} kein Lauf` : `seit ${seit} ${neu.length} Läufe, höchster ${neuMax.toFixed(2)} €`;
   return {
