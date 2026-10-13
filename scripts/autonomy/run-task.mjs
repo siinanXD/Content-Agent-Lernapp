@@ -162,17 +162,31 @@ export async function dispatchRun(task, /** @type {{ env?: Record<string, string
 
 // ---- Kosten --------------------------------------------------------------------------------------------------
 
-/** Auswertung der Ledger-Zeilen (pipeline_run_costs, neueste zuerst). `ok`: mindestens ein Lauf und keiner über dem Deckel. */
-export function costResult(rows, capEur = RUN_CAP_EUR) {
+/** SIN-493: Teilbatch-Kostenprüfung gilt ab diesem Tag (UTC). Ältere Läufe stehen im Bericht, zählen aber nicht für `ok`. */
+export const TEILBATCH_SEIT = "2026-10-13";
+
+/**
+ * Auswertung der Ledger-Zeilen (pipeline_run_costs, neueste zuerst). `ok` (SIN-563): mindestens ein Lauf seit den
+ * Teilbatches und keiner davon über dem Deckel. Die Wochenkosten (7 Tage) stehen im Ergebnis.
+ */
+export function costResult(rows, capEur = RUN_CAP_EUR, { now = new Date(), seit = TEILBATCH_SEIT } = {}) {
   if (!rows.length) return { ok: null, ergebnis: "Ledger leer: noch kein Lauf gemessen" };
-  const eur = rows.map((r) => Number(r.cost_eur ?? 0));
+  const eurOf = (list) => list.map((r) => Number(r.cost_eur ?? 0));
+  const eur = eurOf(rows);
   const max = Math.max(...eur);
   const avg = eur.reduce((a, b) => a + b, 0) / eur.length;
   const stopped = rows.filter((r) => r.stopped).length;
   const kinds = [...new Set(rows.map((r) => r.kind))].join(", ");
+  const weekStart = now.getTime() - 7 * 864e5;
+  const woche = eurOf(rows.filter((r) => Date.parse(String(r.created_at)) >= weekStart)).reduce((a, b) => a + b, 0);
+  const seitMs = Date.parse(seit);
+  const neu = rows.filter((r) => Date.parse(String(r.created_at)) >= seitMs);
+  const neuMax = neu.length ? Math.max(...eurOf(neu)) : null;
+  const seitText = neuMax === null ? `seit ${seit} kein Lauf` : `seit ${seit} ${neu.length} Läufe, höchster ${neuMax.toFixed(2)} €`;
   return {
-    ok: max < capEur && stopped === 0,
-    ergebnis: `${rows.length} Läufe (${kinds}): Ø ${avg.toFixed(2)} €, höchster ${max.toFixed(2)} € (Deckel ${capEur} €), ${stopped} gestoppt`,
+    ok: neuMax === null ? null : neuMax < capEur,
+    wocheEur: Math.round(woche * 100) / 100,
+    ergebnis: `${rows.length} Läufe (${kinds}): Ø ${avg.toFixed(2)} €, höchster ${max.toFixed(2)} € (Deckel ${capEur} €), ${stopped} gestoppt; ${seitText}; letzte 7 Tage ${woche.toFixed(2)} € (Wochendeckel 60 €)`,
   };
 }
 
