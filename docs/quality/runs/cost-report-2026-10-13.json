@@ -1,0 +1,9 @@
+{
+  "task": "cost-report",
+  "label": "Kosten pro Kurslauf aus dem Ledger",
+  "datum": "2026-10-13",
+  "lauf": "https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/38350924181",
+  "ok": false,
+  "ergebnis": "3 Läufe (content-grow, judge-backfill): Ø 8.36 €, höchster 21.78 € (Deckel 20 €), 1 gestoppt",
+  "rows": 3
+}
