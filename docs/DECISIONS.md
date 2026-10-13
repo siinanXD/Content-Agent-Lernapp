@@ -18,6 +18,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-586 | SIN-586: Quellenauszug zeigt den Grund, wenn er fehlt | [SIN-586-auszug-quelle.md](decisions/SIN-586-auszug-quelle.md) |
 | SIN-584 | SIN-584: Stillstand `ohne-start` nennt den dispatch-Grund | [SIN-584-ohne-start-dispatch-zuerst.md](decisions/SIN-584-ohne-start-dispatch-zuerst.md) |
 | SIN-569 | SIN-569: Kosten je Kurslauf unter 20 €: Befund, kein neuer Code | [SIN-569-kosten-deckel-befund.md](decisions/SIN-569-kosten-deckel-befund.md) |
+| SIN-566 | SIN-566 — Serie, Tagesziel und Wiederholungs-Erinnerung: Blocker Design | [SIN-566-erinnerung-blocker.md](decisions/SIN-566-erinnerung-blocker.md) |
 | SIN-563 | SIN-563: Kosten pro Kurslauf unter dem Deckel belegen | [SIN-563-kosten-deckel-beleg.md](decisions/SIN-563-kosten-deckel-beleg.md) |
 | SIN-557 | SIN-557: Live-Check UI-04 wartet auf Hydration | [SIN-557-live-ui04-hydration.md](decisions/SIN-557-live-ui04-hydration.md) |
 | SIN-549 | SIN-549: Live-Check UI-04 folgt der Berufswahl ohne „Weiter“ | [SIN-549-live-check-beruf.md](decisions/SIN-549-live-check-beruf.md) |
