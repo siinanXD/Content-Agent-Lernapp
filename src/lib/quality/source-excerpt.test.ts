@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { judgeUserContent, type EvalItem } from "./evaluate-agent";
-import { createSourceTextLoader, decodeBody, detectCharset, excerptFor, htmlToText, queryTerms, withSourceExcerpts } from "./source-excerpt";
+import { createSourceTextLoader, sourceTextFailures, decodeBody, detectCharset, excerptFor, htmlToText, queryTerms, withSourceExcerpts } from "./source-excerpt";
 
 const P14 = `<html><head><title>§ 14</title><script>var x = 1;</script></head><body>
 <div class="nav">Nichtamtliches Inhaltsverzeichnis</div>
@@ -63,4 +63,15 @@ test("SIN-456: Auszug geht an den Richter, abschaltbar über JUDGE_QUELLENAUSZUG
   assert.doesNotMatch(judgeUserContent([item]), /sourceExcerpt/);
   const [off] = await withSourceExcerpts([item], load, { JUDGE_QUELLENAUSZUG: "0" });
   assert.equal(off!.sourceExcerpt, undefined);
+});
+
+test("SIN-456: Lader sendet eine Kennung und merkt sich den Grund bei Fehlern", async () => {
+  let ua = "";
+  const fake = (async (_url: string, init?: RequestInit) => {
+    ua = String((init?.headers as Record<string, string>)["user-agent"]);
+    return new Response("nein", { status: 403 });
+  }) as unknown as typeof fetch;
+  assert.equal(await createSourceTextLoader(fake)("https://x.de/gesperrt"), null);
+  assert.match(ua, /Content-Agent-Lernapp/);
+  assert.equal(sourceTextFailures.get("https://x.de/gesperrt"), "HTTP 403");
 });

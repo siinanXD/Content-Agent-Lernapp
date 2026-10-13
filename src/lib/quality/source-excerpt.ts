@@ -8,6 +8,11 @@
 
 export const EXCERPT_MAX_CHARS = 2500;
 const FETCH_TIMEOUT_MS = 10_000;
+/** Ohne Kennung lehnen Behörden-Seiten Node-Anfragen teils ab (Lauf 13.10.: 0 von 35 Auszügen). */
+const FETCH_HEADERS = { "user-agent": "Content-Agent-Lernapp/1.0 (Quellenpruefung; +https://github.com/siinanXD/Content-Agent-Lernapp)", accept: "text/html,text/plain;q=0.9" };
+
+/** Gründe, warum eine Quelle keinen Text lieferte (je URL), damit der Lauf-Bericht sie nennen kann. */
+export const sourceTextFailures = new Map<string, string>();
 
 const ENTITIES: Record<string, string> = {
   amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", sect: "§", auml: "ä", ouml: "ö", uuml: "ü",
@@ -98,13 +103,20 @@ export function createSourceTextLoader(fetchImpl: typeof fetch = fetch): SourceT
         (async () => {
           if (!/^https:\/\//i.test(url) || /\.pdf($|[?#])/i.test(url)) return null;
           try {
-            const res = await fetchImpl(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
-            if (!res.ok) return null;
+            const res = await fetchImpl(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: FETCH_HEADERS });
+            if (!res.ok) {
+              sourceTextFailures.set(url, `HTTP ${res.status}`);
+              return null;
+            }
             const type = res.headers.get("content-type");
-            if (type && !/html|text\/plain/i.test(type)) return null;
+            if (type && !/html|text\/plain/i.test(type)) {
+              sourceTextFailures.set(url, `Typ ${type}`);
+              return null;
+            }
             const body = decodeBody(await res.arrayBuffer(), type);
             return /<[a-z!]/i.test(body) ? htmlToText(body) : body.trim();
-          } catch {
+          } catch (e) {
+            sourceTextFailures.set(url, e instanceof Error ? e.message : String(e));
             return null;
           }
         })(),

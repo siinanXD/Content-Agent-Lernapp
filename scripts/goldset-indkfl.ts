@@ -13,7 +13,7 @@ import { checkGoldset, renderGoldsetCheck } from "../src/lib/quality/goldset-che
 import { INDKFL_GOLDSET, INDKFL_GOLDSET_ITEMS, LANGFUSE_INDKFL_DATASET } from "../src/lib/quality/indkfl-goldset";
 import { ensureGoldsetDataset } from "../src/lib/quality/langfuse-client";
 import { shutdownLangfuseOtel } from "../src/lib/quality/langfuse-otel";
-import { withSourceExcerpts } from "../src/lib/quality/source-excerpt";
+import { sourceTextFailures, withSourceExcerpts } from "../src/lib/quality/source-excerpt";
 
 const OUT_DIR = join(process.cwd(), "docs", "quality", "runs");
 
@@ -55,6 +55,7 @@ async function main() {
   const enriched = await withSourceExcerpts(items);
   const auszug = `${enriched.filter((i) => i.sourceExcerpt).length} von ${enriched.length} Fragen mit Quellenauszug`;
   console.log(`Quellenauszug: ${auszug}`);
+  for (const [url, grund] of sourceTextFailures) console.warn(`Kein Quelltext: ${url} (${grund})`);
   const judged = await liveJudgeWithUsage(key, enriched);
   const costUsd = addOpenAIUsage(emptyLedger(), judged.usage.prompt_tokens, judged.usage.completion_tokens).usdEstimate;
   const check = checkGoldset(INDKFL_GOLDSET_ITEMS, judged.questions);
