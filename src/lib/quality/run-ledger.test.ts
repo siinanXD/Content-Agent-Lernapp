@@ -9,7 +9,7 @@ import {
   RunBudgetExceededError,
   toRunCostRecord,
 } from "./run-ledger";
-import { summarizeRunCosts } from "../../../scripts/autonomy/planner.mjs";
+import { summarizeRunCosts, summarizeWeekCosts } from "../../../scripts/autonomy/planner.mjs";
 
 describe("Kosten-Ledger je Pipeline-Lauf (SIN-258)", () => {
   afterEach(() => clearMockRunCosts());
@@ -87,5 +87,20 @@ describe("Kosten-Ledger je Pipeline-Lauf (SIN-258)", () => {
     assert.match(s, /letzter 4\.00 €/);
     assert.match(s, /höchster 20\.50 €/);
     assert.match(s, /1 gestoppt/);
+  });
+
+  it("Planer-Kennzahl kosten_woche mit Warnung über 2 x Deckel", () => {
+    const now = new Date("2026-10-13T12:00:00Z");
+    const alt = { cost_eur: 30, created_at: "2026-10-01T00:00:00Z" };
+    const ok = summarizeWeekCosts([{ cost_eur: 15, created_at: "2026-10-12T00:00:00Z" }, alt], 20, now);
+    assert.equal(ok, "15.00 € in 1 Läufen (letzte 7 Tage)");
+    const warn = summarizeWeekCosts(
+      [{ cost_eur: 21.78, created_at: "2026-10-12T00:00:00Z" }, { cost_eur: 20.43, created_at: "2026-10-09T00:00:00Z" }, alt],
+      20,
+      now,
+    );
+    assert.match(warn, /^42\.21 € in 2 Läufen/);
+    assert.match(warn, /WARNUNG/);
+    assert.equal(summarizeWeekCosts([alt], 20, now), "keine Läufe in den letzten 7 Tagen");
   });
 });
