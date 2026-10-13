@@ -137,7 +137,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - A/B-Bericht zeigt `scores.sourceFidelity`/`uniqueness` immer 0 → `aggregateScores` ist Alles-oder-nichts (Gate); für Berichte `aggregateRates` (Quote 0–1) nutzen. (SIN-532)
 
 - Roter `nach-deploy`-Lauf blieb 26 h unbemerkt: der Wächter schrieb ab dem 2. roten Lauf nur einen Kommentar → `liveCheckIssue` legt ein Urgent-Bug-Issue mit `dringend` an (ein offenes je Titel). (SIN-539)
-- Worker lief 244-mal rot im 7-Minuten-Takt, weil die Log-Erkennung kein Limit fand und `until` leer blieb → Pause zusätzlich unabhängig vom Log: derselbe Auftrag 3-mal in 60 Min ohne PR (`dispatch.mjs --repeat-fail`) setzt `AGENT_PAUSED_UNTIL`, ohne Dispatcher-Anstoß. (SIN-548)
+- Worker lief 244-mal rot im 7-Minuten-Takt, weil die Log-Erkennung kein Limit fand und `until` leer blieb → Pause zusätzlich unabhängig vom Log: derselbe Auftrag 3-mal in 60 Min ohne PR (`dispatch.mjs --repeat-fail`) setzt `AGENT_PAUSED_UNTIL`, ohne Dispatcher-Anstoß. Die Sicherung hing an `steps.limit.outcome == 'success'`; scheiterte „Fehler auswerten“, startete dieselbe Aufgabe alle 3 Minuten neu → Sicherungsschritte mit `if: always() && steps.pr.outputs.has_pr != 'true'`, Auswertung mit `continue-on-error`, Fehlergrund als `loop_events`-Ereignis. (SIN-548, SIN-587)
 
 ## Datenbank-Rechte
 
@@ -147,4 +147,3 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Live-Check UI-04 blieb trotz richtigem Klickweg rot: Klicks auf der Live-Seite vor der Hydration bewirken nichts → mehrstufige Klickwege in `live/live.spec.ts` mit `clickUntil` (Klick wiederholen, bis die URL wechselt) und `networkidle` bauen. (SIN-557)
 - `cost-report` blieb wegen des alten Laufs (21,78 €) für immer rot und zeigte keine Wochenkosten → `ok` zählt nur Läufe seit `TEILBATCH_SEIT`, `wocheEur` (7 Tage) steht im Ergebnis. (SIN-563)
 - Stilles `catch → null` beim Abruf (Quellenauszug 0 von 35, Ursache unsichtbar) → Grund je URL loggen und im Bericht zählen; Abruf wie `content-check-sources.mjs` (User-Agent, 25 s, ein Wiederholversuch). (SIN-586)
-- Sicherung im Worker (`--repeat-fail`, Pause) hing an `steps.limit.outcome == 'success'`; scheiterte „Fehler auswerten“, startete dieselbe Aufgabe alle 3 Minuten neu → Sicherungsschritte mit `if: always() && steps.pr.outputs.has_pr != 'true'`, Auswertung mit `continue-on-error`, Fehlergrund als `loop_events`-Ereignis. (SIN-587)
