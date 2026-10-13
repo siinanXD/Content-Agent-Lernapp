@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-557 | SIN-557: Live-Check UI-04 wartet auf Hydration | [SIN-557-live-ui04-hydration.md](decisions/SIN-557-live-ui04-hydration.md) |
 | SIN-549 | SIN-549: Live-Check UI-04 folgt der Berufswahl ohne „Weiter“ | [SIN-549-live-check-beruf.md](decisions/SIN-549-live-check-beruf.md) |
 | SIN-548 | SIN-548: Worker wartet bei leerem Kontingent | [SIN-548-worker-wartet.md](decisions/SIN-548-worker-wartet.md) |
 | SIN-547 | SIN-547: Freigaben halbieren, Einspruchsfrist statt Handfreigabe | [SIN-547-freigaben-halbieren.md](decisions/SIN-547-freigaben-halbieren.md) |
