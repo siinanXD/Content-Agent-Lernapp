@@ -19,7 +19,7 @@ import {
   summarizeExecution,
   tooBig,
 } from "../../../scripts/autonomy/diagnose.mjs";
-import { isInstantAbort, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
+import { isInstantAbort, isPaused, pauseUntilFromLog, repeatFailurePause } from "../../../scripts/autonomy/budget.mjs";
 import { analyze, buildQuotaRows, collectLogs } from "../../../scripts/autonomy/status.mjs";
 import { limitAlerts } from "../../../scripts/autonomy/limits.mjs";
 import { decideRefill } from "../../../scripts/autonomy/refill.mjs";
@@ -356,6 +356,28 @@ test("SIN-362: Sofortabbruch ohne Verbrauch zählt als Claude-Limit (Fixture aus
   assert.equal(isInstantAbort({ is_error: true, subtype: "error_max_turns", total_cost_usd: 0 }), false);
   assert.equal(isInstantAbort({ is_error: true, result: "x" }), false); // ohne Kosten und Nutzung kein sicheres Zeichen
   assert.equal(isInstantAbort({ is_error: true, modelUsage: {} }), true);
+});
+
+test("SIN-548: breitere Limit-Erkennung und Pause nach 3 Fehlläufen in 60 Minuten", () => {
+  const now = new Date("2026-10-12T00:00:00Z");
+  const err = (result: string, extra = {}) => JSON.stringify([{ type: "result", subtype: "success", is_error: true, result, total_cost_usd: 0.2, modelUsage: { m: {} }, ...extra }]);
+  for (const t of ["API Error: 429", "Overloaded", "usage limit", "rate_limit_error"]) assert.ok(pauseUntilFromLog(err(t), now), t);
+  assert.equal(pauseUntilFromLog(err("Build failed"), now), null);
+  // Leere Ausgabe unter 60 s ohne Tool-Aufruf, auch mit Kosten
+  assert.ok(pauseUntilFromLog(err("", { duration_ms: 4000, num_turns: 1 }), now));
+  assert.equal(pauseUntilFromLog(err("", { duration_ms: 300000, num_turns: 9 }), now), null);
+
+  const runs = JSON.parse(readFileSync("docs/autonomy/fixture-worker-fehllaeufe.json", "utf8"));
+  const t = new Date("2026-10-12T01:00:00Z");
+  // 2 rote Läufe + der laufende = 3 → Pause 60 Minuten
+  const pause = repeatFailurePause("SIN-458", runs, t);
+  assert.equal(pause?.until, "2026-10-12T02:00:00.000Z");
+  assert.match(pause?.grund ?? "", /SIN-458 scheiterte 3-mal/);
+  assert.equal(repeatFailurePause("SIN-459", runs, t), null); // anderer Auftrag
+  assert.equal(repeatFailurePause("SIN-45", runs, t), null); // Teil-Kennung zählt nicht
+  assert.equal(repeatFailurePause("SIN-458", runs, new Date("2026-10-12T03:00:00Z")), null); // außerhalb von 60 Minuten
+  // 4. Lauf findet nicht statt: während der Pause startet der Dispatcher nichts
+  assert.equal(isPaused(pause?.until, new Date("2026-10-12T01:30:00Z")), true);
 });
 
 test("SIN-362: zweiter Lauf in Folge ohne PR → needs-human; Limit-Läufe und frühere PRs zählen nicht", () => {

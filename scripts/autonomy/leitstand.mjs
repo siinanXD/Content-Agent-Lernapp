@@ -16,7 +16,7 @@ import { agentOf } from "./agents.mjs";
 import { fetchJson } from "./http.mjs";
 import { usageFromExecution } from "./sparen.mjs";
 
-export const STEPS = ["dispatch", "worker", "pr-gate", "planner", "digest", "status", "REVERT"];
+export const STEPS = ["dispatch", "worker", "pr-gate", "planner", "digest", "status", "REVERT", "worker_pause"];
 export const STATUSES = ["start", "ok", "fehler", "uebersprungen"];
 
 /** Projektname: LEITSTAND_PROJEKT, sonst der Teil nach dem „/“ in GITHUB_REPOSITORY. */
@@ -45,7 +45,7 @@ const int = (x) => (x !== "" && x != null && Number.isFinite(Number(x)) ? Math.r
 
 /**
  * Baut eine Ereigniszeile. Wirft bei unbekanntem Schritt oder Status (Tippfehler im Workflow sollen auffallen).
- * @param {{ schritt: string, status: string, issue?: string, pr?: number | string, seit?: number | string, usage?: ReturnType<typeof usageFromExecution> }} a
+ * @param {{ schritt: string, status: string, issue?: string, pr?: number | string, seit?: number | string, grund?: string, usage?: ReturnType<typeof usageFromExecution> }} a
  */
 export function buildEvent(a, env = process.env, now = Date.now()) {
   if (!STEPS.includes(a.schritt)) throw new Error(`Unbekannter Schritt „${a.schritt}“ (erlaubt: ${STEPS.join(", ")})`);
@@ -71,6 +71,8 @@ export function buildEvent(a, env = process.env, now = Date.now()) {
     cache_read_tokens: u ? u.cacheRead : null,
     cache_write_tokens: u ? u.cacheWrite : null,
     cost_usd: u?.costUsd ?? null,
+    // SIN-548: nur Pause-Ereignisse tragen einen Grund (Spalte `grund`); sonst bleibt die Zeile wie bisher.
+    ...(a.grund ? { grund: String(a.grund).slice(0, 300) } : {}),
   };
 }
 
@@ -139,7 +141,7 @@ export async function main(argv, env = process.env, http = {}) {
     // Der Dispatcher übergibt mehrere Issues („SIN-1 SIN-2+SIN-3“): je Issue ein Ereignis, damit jedes einzeln zuordenbar bleibt.
     const issues = arg("--issue").split(/[\s+,]+/).filter(Boolean);
     for (const issue of issues.length ? issues : [""]) {
-      const event = buildEvent({ schritt: arg("--schritt"), status: arg("--status"), issue, pr: arg("--pr"), seit: arg("--seit"), usage }, env);
+      const event = buildEvent({ schritt: arg("--schritt"), status: arg("--status"), issue, pr: arg("--pr"), seit: arg("--seit"), usage, grund: arg("--grund") }, env);
       const r = await sendEvent(event, env, http);
       console.log(r.ok ? `Leitstand: ${event.step} ${event.status}${event.issue ? ` (${event.issue})` : ""} gespeichert` : `::warning::Leitstand: Ereignis nicht gespeichert (${r.grund})`);
     }

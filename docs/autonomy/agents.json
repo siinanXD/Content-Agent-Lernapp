@@ -41,6 +41,7 @@
       "auftrag": "Setzt ein Issue als Pull Request um und repariert rote Checks.",
       "ausloeser": "Todo-Issue ohne offene Blocker, Mention, rote CI",
       "workflows": ["dispatch", "worker", "claude", "repair", "review"],
+      "schritte": ["worker_pause"],
       "modell": "claude-haiku-5-5 (klein), claude-sonnet-5-5 (mittel, gross)",
       "budget": { "proLauf": "30/80/150 Runden je Größe, 3 Reparatur-Runden", "proWoche": null },
       "eingabe": "Linear-Issue, Repo",
