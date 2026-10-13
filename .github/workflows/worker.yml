@@ -264,6 +264,8 @@ jobs:
       - name: Fehler auswerten
         id: limit
         if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
+        # SIN-587: Scheitert dieser Schritt, laufen Sicherung und Pause trotzdem (kein `outcome == 'success'` als Bedingung).
+        continue-on-error: true
         env:
           EXECUTION_FILE: ${{ steps.claude2.outputs.execution_file || steps.claude.outputs.execution_file }}
         run: |
@@ -275,19 +277,19 @@ jobs:
       # Sicherung unabhängig vom Log (SIN-548): derselbe Auftrag 3-mal in 60 Minuten ohne PR → Pause 60 Minuten.
       - name: Wiederholte Fehlläufe prüfen
         id: repeat
-        if: steps.limit.outcome == 'success' && steps.limit.outputs.until == ''
+        if: always() && steps.pr.outputs.has_pr != 'true'
         run: node scripts/autonomy/dispatch.mjs --repeat-fail "$IDENTIFIER"
       # Frei gewordener Platz (SIN-334): Ohne PR und ohne Pause 5 Min Abstand, damit dasselbe Issue
       # (z. B. mit Label `claude`) nicht im Sekundentakt neu startet; dann wählt der Dispatcher neu.
       # Bei Pause (Limit oder Sicherung) kein Anstoß (SIN-548).
       - name: Dispatcher anstoßen (Platz frei)
-        if: steps.limit.outcome == 'success' && steps.limit.outputs.until == '' && steps.repeat.outputs.until == ''
+        if: always() && steps.pr.outputs.has_pr != 'true' && steps.limit.outputs.until == '' && steps.repeat.outputs.until == ''
         run: |
           sleep 300
           gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
       - name: Pause bis Reset setzen
         id: pause
-        if: steps.limit.outputs.until != '' || steps.repeat.outputs.until != ''
+        if: always() && (steps.limit.outputs.until != '' || steps.repeat.outputs.until != '')
         env:
           GH_TOKEN: ${{ secrets.AGENT_VARIABLES_TOKEN }}
           UNTIL: ${{ steps.limit.outputs.until || steps.repeat.outputs.until }}
@@ -304,7 +306,7 @@ jobs:
           # Ereignis für den Leitstand (nie ein Fehlerabbruch, siehe leitstand.mjs).
           node scripts/autonomy/leitstand.mjs ereignis --schritt worker_pause --status uebersprungen --issue "$IDENTIFIER" --grund "$GRUND bis $UNTIL" || true
       - name: Lauf ohne PR als fehlgeschlagen markieren
-        if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
+        if: always() && steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
         env:
           LIMIT_UNTIL: ${{ steps.limit.outputs.until }}
           REPEAT_UNTIL: ${{ steps.repeat.outputs.until }}
