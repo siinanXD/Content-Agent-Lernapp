@@ -13,7 +13,7 @@ import { checkGoldset, renderGoldsetCheck } from "../src/lib/quality/goldset-che
 import { INDKFL_GOLDSET, INDKFL_GOLDSET_ITEMS, LANGFUSE_INDKFL_DATASET } from "../src/lib/quality/indkfl-goldset";
 import { ensureGoldsetDataset } from "../src/lib/quality/langfuse-client";
 import { shutdownLangfuseOtel } from "../src/lib/quality/langfuse-otel";
-import { sourceTextFailures, withSourceExcerpts } from "../src/lib/quality/source-excerpt";
+import { countReasons, withSourceExcerpts } from "../src/lib/quality/source-excerpt";
 
 const OUT_DIR = join(process.cwd(), "docs", "quality", "runs");
 
@@ -52,10 +52,12 @@ async function main() {
     };
   });
   // SIN-456: Auszüge vorab laden, um im Bericht zu zeigen, wie viele Fragen einen Quelltext hatten (Cache je URL).
-  const enriched = await withSourceExcerpts(items);
-  const auszug = `${enriched.filter((i) => i.sourceExcerpt).length} von ${enriched.length} Fragen mit Quellenauszug`;
+  const misses: string[] = [];
+  const enriched = await withSourceExcerpts(items, undefined, process.env, (r) => misses.push(r));
+  const nichtPdf = misses.filter((r) => r !== "PDF");
+  const ohne = nichtPdf.length ? `${nichtPdf.length} nicht geladen: ${countReasons(nichtPdf)}` : "alle HTML-Quellen geladen";
+  const auszug = `${enriched.filter((i) => i.sourceExcerpt).length} von ${enriched.length} Fragen mit Quellenauszug (${ohne}; ${misses.length - nichtPdf.length} PDF bewusst ohne)`;
   console.log(`Quellenauszug: ${auszug}`);
-  for (const [url, grund] of sourceTextFailures) console.warn(`Kein Quelltext: ${url} (${grund})`);
   const judged = await liveJudgeWithUsage(key, enriched);
   const costUsd = addOpenAIUsage(emptyLedger(), judged.usage.prompt_tokens, judged.usage.completion_tokens).usdEstimate;
   const check = checkGoldset(INDKFL_GOLDSET_ITEMS, judged.questions);

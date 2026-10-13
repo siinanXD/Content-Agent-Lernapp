@@ -7,12 +7,7 @@
  */
 
 export const EXCERPT_MAX_CHARS = 2500;
-const FETCH_TIMEOUT_MS = 10_000;
-/** Ohne Kennung lehnen Behörden-Seiten Node-Anfragen teils ab (Lauf 13.10.: 0 von 35 Auszügen). */
-const FETCH_HEADERS = { "user-agent": "Content-Agent-Lernapp/1.0 (Quellenpruefung; +https://github.com/siinanXD/Content-Agent-Lernapp)", accept: "text/html,text/plain;q=0.9" };
-
-/** Gründe, warum eine Quelle keinen Text lieferte (je URL), damit der Lauf-Bericht sie nennen kann. */
-export const sourceTextFailures = new Map<string, string>();
+const FETCH_TIMEOUT_MS = 25_000;
 
 const ENTITIES: Record<string, string> = {
   amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", sect: "§", auml: "ä", ouml: "ö", uuml: "ü",
@@ -91,39 +86,62 @@ export function excerptFor(text: string, query: string, max = EXCERPT_MAX_CHARS)
   return scored.filter((s) => picked.has(s.i)).map((s) => s.p).join("\n\n");
 }
 
-export type SourceTextLoader = (url: string) => Promise<string | null>;
+/** Text der Quelle oder der Grund, warum es keinen gibt (`PDF` = bewusst ohne Auszug). */
+export type SourceResult = { text: string; reason?: undefined } | { text: null; reason: string };
+export type SourceTextLoader = (url: string) => Promise<SourceResult>;
 
-/** Lädt den Text einer Quelle einmal je Lauf (Cache je URL). PDF oder Fehler → null, der Richter bewertet dann wie bisher. */
-export function createSourceTextLoader(fetchImpl: typeof fetch = fetch): SourceTextLoader {
-  const cache = new Map<string, Promise<string | null>>();
+// Wie scripts/content-check-sources.mjs: ohne User-Agent sperren Behörden-Server Rechenzentrums-Abrufe.
+const FETCH_HEADERS = { "user-agent": "content-agent-lernapp source-monitor" };
+
+function failReason(e: unknown): string {
+  const err = e as { name?: string; message?: string; cause?: { code?: string; message?: string } };
+  if (err?.name === "TimeoutError" || err?.name === "AbortError") return "Zeitlimit";
+  const detail = err?.cause?.code ?? err?.cause?.message ?? err?.message ?? String(e);
+  return /cert|tls|ssl/i.test(detail) ? `TLS ${detail}` : `Netzfehler ${detail}`;
+}
+
+async function fetchOnce(fetchImpl: typeof fetch, url: string): Promise<SourceResult & { retry?: boolean }> {
+  try {
+    const res = await fetchImpl(url, { redirect: "follow", signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: FETCH_HEADERS });
+    if (!res.ok) return { text: null, reason: `HTTP ${res.status}`, retry: res.status >= 500 || res.status === 429 };
+    const type = res.headers.get("content-type");
+    if (type && !/html|text\/plain/i.test(type)) return { text: null, reason: `Content-Type ${type}` };
+    const body = decodeBody(await res.arrayBuffer(), type);
+    return { text: /<[a-z!]/i.test(body) ? htmlToText(body) : body.trim() };
+  } catch (e) {
+    return { text: null, reason: failReason(e), retry: true };
+  }
+}
+
+/** Lädt den Text einer Quelle einmal je Lauf (Cache je URL), bei Netzfehler/5xx/429 ein zweiter Versuch. Jeder Fehlgrund wird einmal geloggt. */
+export function createSourceTextLoader(fetchImpl: typeof fetch = fetch, log: (msg: string) => void = console.warn): SourceTextLoader {
+  const cache = new Map<string, Promise<SourceResult>>();
   return (url: string) => {
     if (!cache.has(url)) {
       cache.set(
         url,
-        (async () => {
-          if (!/^https:\/\//i.test(url) || /\.pdf($|[?#])/i.test(url)) return null;
-          try {
-            const res = await fetchImpl(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: FETCH_HEADERS });
-            if (!res.ok) {
-              sourceTextFailures.set(url, `HTTP ${res.status}`);
-              return null;
-            }
-            const type = res.headers.get("content-type");
-            if (type && !/html|text\/plain/i.test(type)) {
-              sourceTextFailures.set(url, `Typ ${type}`);
-              return null;
-            }
-            const body = decodeBody(await res.arrayBuffer(), type);
-            return /<[a-z!]/i.test(body) ? htmlToText(body) : body.trim();
-          } catch (e) {
-            sourceTextFailures.set(url, e instanceof Error ? e.message : String(e));
-            return null;
+        (async (): Promise<SourceResult> => {
+          if (!/^https:\/\//i.test(url)) return { text: null, reason: "keine https-URL" };
+          if (/\.pdf($|[?#])/i.test(url)) return { text: null, reason: "PDF" };
+          let r = await fetchOnce(fetchImpl, url);
+          if (r.text === null && r.retry) r = await fetchOnce(fetchImpl, url);
+          if (r.text === null) {
+            log(`Quellenauszug ${url}: ${r.reason}`);
+            return { text: null, reason: r.reason };
           }
+          return { text: r.text };
         })(),
       );
     }
     return cache.get(url)!;
   };
+}
+
+/** Zählt Fehlgründe je Frage: `19 × HTTP 403, 16 × PDF`. */
+export function countReasons(reasons: string[]): string {
+  const n = new Map<string, number>();
+  for (const r of reasons) n.set(r, (n.get(r) ?? 0) + 1);
+  return [...n].sort((a, b) => b[1] - a[1]).map(([r, c]) => `${c} × ${r}`).join(", ");
 }
 
 let defaultLoader: SourceTextLoader | null = null;
@@ -135,14 +153,18 @@ export async function withSourceExcerpts<T extends WithSource>(
   items: T[],
   load?: SourceTextLoader,
   env: Record<string, string | undefined> = process.env,
+  onMiss: (reason: string) => void = () => undefined,
 ): Promise<T[]> {
   if (env.JUDGE_QUELLENAUSZUG === "0") return items;
   const loader = load ?? (defaultLoader ??= createSourceTextLoader());
   return Promise.all(
     items.map(async (item) => {
       if (item.sourceExcerpt) return item;
-      const text = await loader(item.sourceUrl);
-      if (!text) return item;
+      const { text, reason } = await loader(item.sourceUrl);
+      if (!text) {
+        onMiss(reason ?? "leerer Text");
+        return item;
+      }
       const query = [item.prompt, Array.isArray(item.correct) ? item.correct.join(" ") : item.correct, item.explanation].join(" ");
       const sourceExcerpt = excerptFor(text, query);
       return sourceExcerpt ? { ...item, sourceExcerpt } : item;
