@@ -142,3 +142,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 ## Datenbank-Rechte
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)
+- Berufswahl führt seit SIN-476 ohne „Weiter“ weiter, Live-Check UI-04 klickte noch darauf → rot. Richtig: Beim Ändern eines Klickwegs `live/live.spec.ts` gegen den Seitencode abgleichen, nicht nur `e2e/`. (SIN-549)
