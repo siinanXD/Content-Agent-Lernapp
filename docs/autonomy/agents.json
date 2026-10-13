@@ -85,7 +85,7 @@
       "name": "Video",
       "auftrag": "Erstellt Tutorial-Videos aus den echten Playwright-Klickwegen (kein KI-Videomodell) und legt sie zur Freigabe ab.",
       "ausloeser": "Nach erfolgreichem production-deploy und von Hand, höchstens 1 Lauf pro Tag",
-      "workflows": ["video"],
+      "workflows": ["video", "werbeclip"],
       "geplant": ["Sprecherstimme mit Chatterbox, sobald die Laufzeit ohne Grafikkarte gemessen ist", "KI-Clips"],
       "modell": null,
       "budget": { "proLauf": "0 € API (nur Actions-Minuten)", "proWoche": null },

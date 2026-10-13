@@ -17,6 +17,20 @@ export default makeScene2D("szene", function* (view) {
 
   view.fill(f.hero);
 
+  // Werbeclip (SIN-520): KI-Clip in voller Größe, dauerhaft mit Hinweis „Mit KI erstellt“, kein Titel, kein Abspann.
+  const werbe = v.get("werbeclip", null as { sekunden: number; text: string } | null)();
+  if (werbe) {
+    const ki = createRef<Video>();
+    view.add(<Video ref={ki} src="/aufnahme.mp4" size={[1280, 720]} play />);
+    view.add(
+      <Rect width={260} height={48} x={500} y={320} fill={f.hero} opacity={0.92} layout justifyContent="center" alignItems="center">
+        <Txt text={werbe.text} fontFamily={schrift} fontSize={24} fill={f.textAufDunkel} />
+      </Rect>,
+    );
+    yield* waitFor(werbe.sekunden);
+    return;
+  }
+
   // Titel
   const titel = createRef<Txt>();
   view.add(<Txt ref={titel} text="Lern-App: so funktioniert es" fontFamily={schrift} fontSize={64} fill={f.textAufDunkel} />);

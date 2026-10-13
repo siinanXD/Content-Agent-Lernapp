@@ -2,12 +2,13 @@
  * Video-Agent (SIN-485): KI-Werbeclips über die Higgsfield-API, Deckel 5 € pro Produkt und Lauf.
  * Befehle:
  *   node scripts/autonomy/werbeclip.mjs plan    Trockenlauf: geplante Clips und Kostenschätzung, kein API-Aufruf
- *   node scripts/autonomy/werbeclip.mjs lauf    bezahlter Lauf (braucht HIGGSFIELD_API_KEY und belegte Konfig)
+ *   node scripts/autonomy/werbeclip.mjs lauf    bezahlter Lauf (braucht HIGGSFIELD_KEY_ID, HIGGSFIELD_KEY_SECRET, Supabase-Zugang, ffmpeg und belegte Konfig; Workflow werbeclip.yml)
  * Konfig: docs/autonomy/higgsfield.json. Ergebnis wird mit Status `wartet_auf_freigabe` gespeichert, nie veröffentlicht.
  */
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { STATUS_NEU } from "./video.mjs";
+import { STATUS_NEU, registrieren, storagePfad } from "./video.mjs";
 
 export const EUR_PER_USD = 20 / 21.5; // wie src/lib/quality/cost-guard.ts
 export const DECKEL_EUR = 5;
@@ -91,6 +92,68 @@ export async function lauf({ cfg, erzeugen, p = PRODUKT }) {
   return { ausgegebenEur: Math.round(ausgegeben * 100) / 100, final: { clip: final, ...fin } };
 }
 
+/** Wartezeiten der Statusabfrage in Sekunden (Annahme: wachsender Abstand; die Seite „polling“ war im Worker nicht abrufbar). */
+export const BACKOFF_SEKUNDEN = [2, 3, 5, 8, 10, 15, 20, 30];
+export const MAX_WARTEN_SEKUNDEN = 15 * 60;
+
+export class ClipFehler extends Error {
+  constructor(status, requestId) {
+    super(`Higgsfield-Clip ${requestId ?? ""} endete mit Status ${status} (laut FAQ nicht berechnet).`);
+    this.name = "ClipFehler";
+    this.status = status;
+  }
+}
+
+/** Header laut Docs: `Authorization: Key <KEY_ID>:<KEY_SECRET>`. */
+export function authHeader(env) {
+  const id = env.HIGGSFIELD_KEY_ID?.trim();
+  const secret = env.HIGGSFIELD_KEY_SECRET?.trim();
+  if (!id || !secret) throw new Error("HIGGSFIELD_KEY_ID oder HIGGSFIELD_KEY_SECRET fehlt.");
+  return `Key ${id}:${secret}`;
+}
+
+async function json(res, was) {
+  if (!res.ok) throw new Error(`${was}: HTTP ${res.status} ${(await res.text()).replace(/\s+/g, " ").slice(0, 200)}`);
+  return res.json();
+}
+
+/**
+ * Ein Clip: POST, Status bis `completed`, dann `video.url`. `failed`/`nsfw` -> ClipFehler.
+ * `idempotenzKey` ist je Clip stabil, damit ein Wiederholen nicht doppelt berechnet wird.
+ */
+export async function erzeugeClip({ cfg, clip, auth, idempotenzKey, fetchImpl = fetch, warte = (s) => new Promise((r) => setTimeout(r, s * 1000)) }) {
+  const body = { ...cfg.stufen[clip.stufe].parameter, prompt: clip.prompt };
+  const start = await json(
+    await fetchImpl(`${cfg.basisUrl}/${clip.modell}`, {
+      method: "POST",
+      headers: { Authorization: auth, "Content-Type": "application/json", "Idempotency-Key": idempotenzKey },
+      body: JSON.stringify(body),
+    }),
+    "Higgsfield erzeugen",
+  );
+  const statusUrl = start.status_url ?? `${cfg.basisUrl}${cfg.pfadStatus.replace("{request_id}", start.request_id)}`;
+  let gewartet = 0;
+  for (let i = 0; ; i++) {
+    const r = await json(await fetchImpl(statusUrl, { headers: { Authorization: auth } }), "Higgsfield Status");
+    if (r.status === "completed") {
+      if (!r.video?.url) throw new Error("Higgsfield: completed ohne video.url.");
+      return { url: r.video.url, requestId: start.request_id };
+    }
+    if (r.status === "failed" || r.status === "nsfw") throw new ClipFehler(r.status, start.request_id);
+    const s = BACKOFF_SEKUNDEN[Math.min(i, BACKOFF_SEKUNDEN.length - 1)];
+    if (gewartet + s > MAX_WARTEN_SEKUNDEN) throw new Error(`Higgsfield: nach ${gewartet} s noch nicht fertig (Status ${r.status}).`);
+    await warte(s);
+    gewartet += s;
+  }
+}
+
+/** Lädt das Ergebnis herunter (Higgsfield hält Ausgaben nur mindestens 7 Tage). */
+export async function ladeHerunter(url, fetchImpl = fetch) {
+  const res = await fetchImpl(url);
+  if (!res.ok) throw new Error(`Download: HTTP ${res.status}`);
+  return Buffer.from(await res.arrayBuffer());
+}
+
 /** Zeile für `werbemittel`: Status wartet_auf_freigabe, KI-Kennzeichnung, Kosten. */
 /** @param {{ produkt: string, pfad: string, sekunden: number, modell: string, kosten: number, runUrl?: string | null }} p */
 export function werbeclipZeile({ produkt, pfad, sekunden, modell, kosten, runUrl }) {
@@ -116,9 +179,33 @@ async function main(argv) {
   if (argv[0] === "plan") {
     console.log(planText(plan));
   } else if (argv[0] === "lauf") {
-    if (!process.env.HIGGSFIELD_API_KEY) throw new Error("HIGGSFIELD_API_KEY fehlt.");
+    const env = process.env;
     if (plan.luecken.length) throw new Error(`Konfig nicht belegt: ${plan.luecken.join(", ")}`);
-    throw new Error("API-Aufruf noch nicht angebunden: Endpunkt-Schema erst aus docs.higgsfield.ai belegen.");
+    const auth = authHeader(env);
+    const lauf_id = env.GITHUB_RUN_ID ?? String(Date.now());
+    mkdirSync("video-ergebnis", { recursive: true });
+    const ergebnis = await lauf({
+      cfg,
+      erzeugen: async (clip) => {
+        const r = await erzeugeClip({ cfg, clip, auth, idempotenzKey: `werbeclip-${lauf_id}-${clip.stufe}-${clip.nr}` });
+        const datei = `video-ergebnis/${clip.stufe}-${clip.nr}.mp4`;
+        writeFileSync(datei, await ladeHerunter(r.url));
+        return { url: r.url, datei };
+      },
+    });
+    const mitHinweis = "video-ergebnis/werbeclip.mp4";
+    execFileSync("node", ["video/schnitt/render.mjs", "--werbeclip", ergebnis.final.datei, mitHinweis], { stdio: "inherit", env: { ...env, WERBECLIP_SEKUNDEN: String(cfg.sekundenFinal) } });
+    const produkt = "lern-app";
+    const zeile = werbeclipZeile({
+      produkt,
+      pfad: storagePfad(`${produkt}-werbeclip`, env.GITHUB_SHA),
+      sekunden: cfg.sekundenFinal,
+      modell: ergebnis.final.clip.modell,
+      kosten: ergebnis.ausgegebenEur,
+      runUrl: env.GITHUB_SERVER_URL && env.GITHUB_RUN_ID ? `${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` : null,
+    });
+    await registrieren({ env, mp4: readFileSync(mitHinweis), zeile });
+    console.log(`Gespeichert: ${zeile.storage_pfad}, ${zeile.kosten_eur} € (mit open.higgsfield.ai/analytics abgleichen), Status ${zeile.status}.`);
   } else {
     console.error("Befehl: plan | lauf");
     process.exit(2);

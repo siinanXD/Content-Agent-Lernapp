@@ -1,0 +1,70 @@
+# Video-Agent (SIN-520): KI-Werbeclip über die Higgsfield-API. BEZAHLT (Deckel 5 € pro Produkt), darum nur von Hand
+# und nur mit Eingabe `freigabe: ja`. Ablauf: 3 Entwürfe, 1 Final, Download, Einblendung „Mit KI erstellt“ (Revideo),
+# Ablage in Supabase Storage (Bucket `werbemittel`) und Zeile in `werbemittel` mit Status `wartet_auf_freigabe`.
+# Kosten danach in open.higgsfield.ai/analytics gegen `werbemittel.kosten_eur` abgleichen.
+name: werbeclip
+
+on:
+  workflow_dispatch:
+    inputs:
+      freigabe:
+        description: "Bezahlter Lauf (bis 5 €). Nur `ja` startet ihn."
+        type: string
+        default: "nein"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: werbeclip
+  cancel-in-progress: false
+
+jobs:
+  werbeclip:
+    if: inputs.freigabe == 'ja'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Trockenlauf (Kostenschätzung)
+        run: node scripts/autonomy/werbeclip.mjs plan
+
+      - name: Zugang prüfen
+        env:
+          HIGGSFIELD_KEY_ID: ${{ secrets.HIGGSFIELD_KEY_ID }}
+          HIGGSFIELD_KEY_SECRET: ${{ secrets.HIGGSFIELD_KEY_SECRET }}
+        run: |
+          if [ -z "$HIGGSFIELD_KEY_ID" ] || [ -z "$HIGGSFIELD_KEY_SECRET" ]; then
+            echo "::error::HIGGSFIELD_KEY_ID oder HIGGSFIELD_KEY_SECRET fehlt (Aufgabe für Sinan, SIN-480). Kein Aufruf."
+            exit 1
+          fi
+
+      - name: Pakete für den Schnitt
+        run: |
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          npm install --prefix video/schnitt --no-audit --no-fund
+          mkdir -p video/schnitt/public
+
+      - name: Clips erzeugen, einblenden, ablegen
+        env:
+          HIGGSFIELD_KEY_ID: ${{ secrets.HIGGSFIELD_KEY_ID }}
+          HIGGSFIELD_KEY_SECRET: ${{ secrets.HIGGSFIELD_KEY_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/autonomy/werbeclip.mjs lauf
+
+      - name: Clip sichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: werbeclip
+          path: video-ergebnis/*.mp4
+          if-no-files-found: warn
+          retention-days: 14
