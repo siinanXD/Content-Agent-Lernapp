@@ -14,7 +14,8 @@ export const KNOWN_GENERATOR_MODELS = [
 export type GeneratorModel = (typeof KNOWN_GENERATOR_MODELS)[number];
 /** Kandidaten des Goldset-Vergleichs `ap22:ab` (SIN-398): günstiger Kandidat gegen den Standard. */
 export const AB_MODELS: readonly GeneratorModel[] = ["claude-haiku-5-5", "claude-sonnet-5-5"];
-export const DEFAULT_GENERATOR_MODEL: GeneratorModel = "claude-sonnet-5-5";
+// SIN-222: Haiku nach A/B-Lauf 13.10. (PR #330): 0,018 $ statt 0,117 $ je veröffentlichbarer Einheit; Sinan: „Haiku ja“.
+export const DEFAULT_GENERATOR_MODEL: GeneratorModel = "claude-haiku-5-5";
 
 /** Env `GENERATOR_MODEL` überschreibt den Default; unbekannte IDs scheitern laut statt falsch abzurechnen. */
 export function resolveGeneratorModel(raw: string | undefined): GeneratorModel {
