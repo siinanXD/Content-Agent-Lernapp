@@ -1,7 +1,6 @@
 # Lehren (SIN-296)
 
 Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → wie es richtig geht** (`Kennung`). Höchstens 150 Zeilen, keine Dopplungen: vor dem Ergänzen suchen, ob es die Lehre schon gibt. Wird es eng, fasst der Aufräum-Agent ältere Zeilen eines Themas zu einer zusammen.
-
 **Pflicht nach jedem behobenen Bug** (auch im Reparatur-Lauf): eine Zeile unter dem passenden Thema ergänzen, im selben PR. Kein Bug, keine Zeile. Wiederholt sich ein Arbeitsablauf, gehört er als Anleitung nach `docs/skills/<name>/SKILL.md` (siehe `docs/skills/README.md`), nicht hierher.
 
 ## Workflows und github-script
@@ -147,3 +146,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Worker durften laut `--allowedTools` keine Doku lesen (kein WebFetch/MCP), Preise blieben `null` → Context7 (`mcp__context7__*`, `--mcp-config`) und `WebFetch` sind in `claude.yml` und `worker.yml` erlaubt; erst Context7, dann offizielle Doku, Quelle im PR nennen. (SIN-537)
 - Live-Check UI-04 blieb trotz richtigem Klickweg rot: Klicks auf der Live-Seite vor der Hydration bewirken nichts → mehrstufige Klickwege in `live/live.spec.ts` mit `clickUntil` (Klick wiederholen, bis die URL wechselt) und `networkidle` bauen. (SIN-557)
 - `cost-report` blieb wegen des alten Laufs (21,78 €) für immer rot und zeigte keine Wochenkosten → `ok` zählt nur Läufe seit `TEILBATCH_SEIT`, `wocheEur` (7 Tage) steht im Ergebnis. (SIN-563)
+- Stilles `catch → null` beim Abruf (Quellenauszug 0 von 35, Ursache unsichtbar) → Grund je URL loggen und im Bericht zählen; Abruf wie `content-check-sources.mjs` (User-Agent, 25 s, ein Wiederholversuch). (SIN-586)

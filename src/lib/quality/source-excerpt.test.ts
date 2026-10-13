@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { judgeUserContent, type EvalItem } from "./evaluate-agent";
-import { createSourceTextLoader, decodeBody, detectCharset, excerptFor, htmlToText, queryTerms, withSourceExcerpts } from "./source-excerpt";
+import { countReasons, createSourceTextLoader, decodeBody, detectCharset, excerptFor, htmlToText, queryTerms, withSourceExcerpts } from "./source-excerpt";
 
 const P14 = `<html><head><title>§ 14</title><script>var x = 1;</script></head><body>
 <div class="nav">Nichtamtliches Inhaltsverzeichnis</div>
@@ -44,19 +44,43 @@ test("SIN-456: Lader holt jede URL einmal, PDF und Fehler ergeben null", async (
     if (url.includes("kaputt")) return new Response("weg", { status: 404 });
     return new Response(P14, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
   }) as unknown as typeof fetch;
-  const load = createSourceTextLoader(fake);
+  const logs: string[] = [];
+  const load = createSourceTextLoader(fake, (m) => logs.push(m));
   const a = await load("https://www.gesetze-im-internet.de/indkflausbv/__14.html");
   await load("https://www.gesetze-im-internet.de/indkflausbv/__14.html");
-  assert.match(a!, /25 Prozent/);
+  assert.match(a.text!, /25 Prozent/);
   assert.equal(calls, 1);
-  assert.equal(await load("https://www.kmk.org/x/rlp.pdf"), null);
+  assert.deepEqual(await load("https://www.kmk.org/x/rlp.pdf"), { text: null, reason: "PDF" });
   assert.equal(calls, 1);
-  assert.equal(await load("https://x.de/kaputt"), null);
+  assert.deepEqual(await load("https://x.de/kaputt"), { text: null, reason: "HTTP 404" });
+  assert.deepEqual(logs, ["Quellenauszug https://x.de/kaputt: HTTP 404"]);
+});
+
+test("SIN-586: Lader sendet User-Agent und wiederholt bei 503 einmal", async () => {
+  const agents: (string | null)[] = [];
+  let calls = 0;
+  const fake = (async (_url: string, init?: RequestInit) => {
+    calls += 1;
+    agents.push(new Headers(init?.headers).get("user-agent"));
+    if (calls === 1) return new Response("", { status: 503 });
+    return new Response(P14, { status: 200, headers: { "content-type": "text/html" } });
+  }) as unknown as typeof fetch;
+  const r = await createSourceTextLoader(fake, () => undefined)("https://www.gesetze-im-internet.de/x.html");
+  assert.match(r.text!, /25 Prozent/);
+  assert.deepEqual(agents, ["content-agent-lernapp source-monitor", "content-agent-lernapp source-monitor"]);
+  calls = 0;
+  const down = (async () => {
+    calls += 1;
+    return new Response("", { status: 503 });
+  }) as unknown as typeof fetch;
+  assert.deepEqual(await createSourceTextLoader(down, () => undefined)("https://x.de/a"), { text: null, reason: "HTTP 503" });
+  assert.equal(calls, 2);
+  assert.equal(countReasons(["HTTP 403", "PDF", "HTTP 403"]), "2 × HTTP 403, 1 × PDF");
 });
 
 test("SIN-456: Auszug geht an den Richter, abschaltbar über JUDGE_QUELLENAUSZUG=0", async () => {
   const item: EvalItem = { id: "ik-x01", unitId: "ik-vo", prompt: "Mit wie viel Prozent geht Teil 1 ein?", correct: "Mit 40 Prozent", explanation: "Laut § 14 zählt Teil 1 mit 40 Prozent.", sourceUrl: "https://www.gesetze-im-internet.de/indkflausbv/__14.html" };
-  const load = async () => htmlToText(P14);
+  const load = async () => ({ text: htmlToText(P14) });
   const [withEx] = await withSourceExcerpts([item], load, {});
   assert.match(withEx!.sourceExcerpt!, /25 Prozent/);
   assert.match(judgeUserContent([withEx!]), /"sourceExcerpt":".*25 Prozent/);
