@@ -1,0 +1,9 @@
+{
+  "task": "offline-check",
+  "label": "Offline-Einheit und Service Worker, dreimal wiederholt",
+  "datum": "2026-10-13",
+  "lauf": "https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/38350920966",
+  "ok": true,
+  "ergebnis": "Offline-Einheit und Service Worker, dreimal wiederholt: bestanden",
+  "durchgelaufen": true
+}
