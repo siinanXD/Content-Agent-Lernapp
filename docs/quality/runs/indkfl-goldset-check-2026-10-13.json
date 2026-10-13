@@ -1,0 +1,629 @@
+{
+  "runId": "2026-10-13T15-12-43-661Z",
+  "dataset": "indkfl-goldset",
+  "judgeModel": "gpt-5.4-mini",
+  "judgePromptVersion": "2026-10-v2",
+  "auszug": "0 von 35 Fragen mit Quellenauszug",
+  "costUsd": 0.0155,
+  "langfuse": "35 von 35 Einträgen im Datensatz indkfl-goldset",
+  "check": {
+    "total": 35,
+    "judged": 35,
+    "agree": 19,
+    "agreementRate": 0.543,
+    "falseFail": [
+      {
+        "id": "ik-m0-01",
+        "reasons": [
+          "Betriebsrat vertritt die Interessen der Beschäftigten gegenüber dem Arbeitgeber.",
+          "Für Jahr 1 angemessen, eher Grundlagenwissen.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-m0-02",
+        "reasons": [
+          "Steuern und Sozialversicherungsbeiträge sind die zwei Abzugsarten zwischen Brutto und Netto.",
+          "Aufgabenstellung ist eindeutig.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-m0-03",
+        "reasons": [
+          "Reihenfolge im Brandfall sachgerecht: melden, retten, nur dann löschen ohne Eigengefährdung.",
+          "Sicherheitsrelevantes Verhalten, daher safetyFlag=true.",
+          "niveau_below_4",
+          "safety_human_sample"
+        ]
+      },
+      {
+        "id": "ik-m0-04",
+        "reasons": [
+          "Abfallhierarchie fachlich richtig dargestellt: vermeiden, wiederverwenden/verwerten, zuletzt beseitigen.",
+          "Eindeutig formuliert.",
+          "niveau_below_4"
+        ]
+      },
+      {
+        "id": "ik-m0-05",
+        "reasons": [
+          "Datenschutzkonforme Antwort: Kundendaten dürfen nur über freigegebene und gesicherte Wege verarbeitet werden.",
+          "Eindeutig und sachlich richtig.",
+          "niveau_below_4"
+        ]
+      }
+    ],
+    "falsePass": [
+      "ik-g01",
+      "ik-g02",
+      "ik-g03",
+      "ik-g04",
+      "ik-g05",
+      "ik-g06",
+      "ik-g07",
+      "ik-g08",
+      "ik-g09",
+      "ik-g10",
+      "ik-x01"
+    ],
+    "gegenproben": {
+      "total": 3,
+      "erkannt": 2
+    },
+    "missing": []
+  },
+  "judged": [
+    {
+      "questionId": "ik-g01",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Drei Jahre entsprechen der Ausbildungsordnung."
+      ]
+    },
+    {
+      "questionId": "ik-g02",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Inkrafttreten zum 1. August 2024 passt zur Verordnung von 2024."
+      ]
+    },
+    {
+      "questionId": "ik-g03",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die genannten sieben Einsatzgebiete entsprechen der Verordnung."
+      ]
+    },
+    {
+      "questionId": "ik-g04",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Es gibt nach der Verordnung von 2024 keine Zwischenprüfung, sondern eine gestreckte Abschlussprüfung."
+      ]
+    },
+    {
+      "questionId": "ik-g05",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Teil 1 findet im vierten Ausbildungshalbjahr statt."
+      ]
+    },
+    {
+      "questionId": "ik-g06",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Prüfungsbereich und Prüfungsdauer stimmen mit der Verordnung überein."
+      ]
+    },
+    {
+      "questionId": "ik-g07",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Gewichtung von Teil 1 mit 25 Prozent ist korrekt."
+      ]
+    },
+    {
+      "questionId": "ik-g08",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die angegebene Prüfungszeit von 150 Minuten stimmt."
+      ]
+    },
+    {
+      "questionId": "ik-g09",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Gewichtung der drei Prüfungsbereiche von Teil 2 ist korrekt angegeben."
+      ]
+    },
+    {
+      "questionId": "ik-g10",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Die Gewichtung 10 zu 20 zu 70 für Dokumentation, Präsentation und Fachgespräch passt zur Verordnung."
+      ]
+    },
+    {
+      "questionId": "ik-g11",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Angabe passt zur Prüfungsregel: Präsentation höchstens 10 Minuten, zusammen mit dem fallbezogenen Fachgespräch 30 Minuten.",
+        "Keine Mehrdeutigkeit."
+      ]
+    },
+    {
+      "questionId": "ik-g12",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Bestehensregel in § 14 Abs. 2 sinngemäß korrekt wiedergegeben.",
+        "Keine Mehrdeutigkeit."
+      ]
+    },
+    {
+      "questionId": "ik-m0-01",
+      "unitId": "M0-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 3,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Betriebsrat vertritt die Interessen der Beschäftigten gegenüber dem Arbeitgeber.",
+        "Für Jahr 1 angemessen, eher Grundlagenwissen.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-m0-02",
+      "unitId": "M0-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 3,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Steuern und Sozialversicherungsbeiträge sind die zwei Abzugsarten zwischen Brutto und Netto.",
+        "Aufgabenstellung ist eindeutig.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-m0-03",
+      "unitId": "M0-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 3,
+        "language": 5,
+        "safetyFlag": true
+      },
+      "passed": false,
+      "reasons": [
+        "Reihenfolge im Brandfall sachgerecht: melden, retten, nur dann löschen ohne Eigengefährdung.",
+        "Sicherheitsrelevantes Verhalten, daher safetyFlag=true.",
+        "niveau_below_4",
+        "safety_human_sample"
+      ]
+    },
+    {
+      "questionId": "ik-m0-04",
+      "unitId": "M0-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 3,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Abfallhierarchie fachlich richtig dargestellt: vermeiden, wiederverwenden/verwerten, zuletzt beseitigen.",
+        "Eindeutig formuliert.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-m0-05",
+      "unitId": "M0-4",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 3,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Datenschutzkonforme Antwort: Kundendaten dürfen nur über freigegebene und gesicherte Wege verarbeitet werden.",
+        "Eindeutig und sachlich richtig.",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-lf1-01",
+      "unitId": "LF1-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Produktionsfaktoren korrekt benannt und eingeordnet.",
+        "Für Lernfeld 1 angemessen."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-02",
+      "unitId": "LF1-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Haftung bei der GmbH korrekt: grundsätzlich nur Gesellschaftsvermögen, nicht Privatvermögen der Gesellschafter.",
+        "Eindeutig."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-03",
+      "unitId": "LF1-6",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Berechnung stimmt: 600.000 € / 500.000 € = 1,2.",
+        "Eine richtige Lösung."
+      ]
+    },
+    {
+      "questionId": "ik-lf1-04",
+      "unitId": "LF1-6",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Rechnung und Begriff sind sachlich richtig; Eigenkapitalrentabilität = 50.000 / 400.000 × 100 = 12,5 %"
+      ]
+    },
+    {
+      "questionId": "ik-lf1-05",
+      "unitId": "LF1-4",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Sachlich richtig und eindeutig unterschieden: Kernprozesse schaffen Kundennutzen, Supportprozesse unterstützen diese Prozesse"
+      ]
+    },
+    {
+      "questionId": "ik-lf2-01",
+      "unitId": "LF2-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Sachlich richtig: Ein Projekt ist einmalig, zeitlich begrenzt, zielgerichtet und mit begrenzten Mitteln"
+      ]
+    },
+    {
+      "questionId": "ik-lf2-02",
+      "unitId": "LF2-1",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "SMART ist korrekt aufgelöst: spezifisch, messbar, attraktiv/akzeptiert, realistisch, terminiert"
+      ]
+    },
+    {
+      "questionId": "ik-lf2-03",
+      "unitId": "LF2-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Reihenfolge ist korrekt: Definition, Planung, Durchführung, Abschluss"
+      ]
+    },
+    {
+      "questionId": "ik-lf2-04",
+      "unitId": "LF2-2",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Definition eines Meilensteins ist sachlich richtig: wichtiges Zwischenergebnis zu einem festen Termin"
+      ]
+    },
+    {
+      "questionId": "ik-lf2-05",
+      "unitId": "LF2-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Feedbackregel ist fachlich passend formuliert: Ich-Botschaften und konkretes Verhalten statt Pauschalurteile"
+      ]
+    },
+    {
+      "questionId": "ik-lf3-01",
+      "unitId": "LF3-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Kaufvertrag entsteht korrekt durch zwei übereinstimmende Willenserklärungen: Antrag und Annahme"
+      ]
+    },
+    {
+      "questionId": "ik-lf3-02",
+      "unitId": "LF3-3",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Unterschied zwischen Besitz und Eigentum ist korrekt beschrieben"
+      ]
+    },
+    {
+      "questionId": "ik-lf3-03",
+      "unitId": "LF3-5",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Berechnung stimmt: 15 % von 400 € sind 60 €, daher Barverkaufspreis 460 €"
+      ]
+    },
+    {
+      "questionId": "ik-lf3-04",
+      "unitId": "LF3-7",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Fachlich richtig: Nicht-Rechtzeitig-Zahlung bzw. Zahlungsverzug ist eine Kaufvertragsstörung.",
+        "Passt zum Lernfeld 3 (Kaufvertragsstörungen/Mahnverfahren)."
+      ]
+    },
+    {
+      "questionId": "ik-lf3-05",
+      "unitId": "LF3-7",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 4,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Fachlich richtig: regelmäßige Verjährungsfrist beträgt drei Jahre und beginnt mit dem Schluss des Jahres der Entstehung der Forderung.",
+        "Entspricht den §§ 195, 199 BGB und dem Lernfeld 3."
+      ]
+    },
+    {
+      "questionId": "ik-x01",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 1,
+        "niveau": 4,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": true,
+      "reasons": [
+        "Fachlich richtig: Teil 1 der Abschlussprüfung geht mit 40 Prozent in das Gesamtergebnis ein.",
+        "Zahl stimmt mit der Ausbildungsverordnung überein."
+      ]
+    },
+    {
+      "questionId": "ik-x02",
+      "unitId": "ik-vo",
+      "scores": {
+        "sourceFidelity": 1,
+        "uniqueness": 0,
+        "niveau": 3,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Die Frage ist nicht eindeutig, weil mehrere Einsatzgebiete zulässig wären.",
+        "'Vertrieb' ist zwar ein mögliches Einsatzgebiet, aber nicht die einzige richtige Antwort.",
+        "uniqueness_fail",
+        "niveau_below_4"
+      ]
+    },
+    {
+      "questionId": "ik-x03",
+      "unitId": "LF3-1",
+      "scores": {
+        "sourceFidelity": 0,
+        "uniqueness": 0,
+        "niveau": 1,
+        "language": 5,
+        "safetyFlag": false
+      },
+      "passed": false,
+      "reasons": [
+        "Zu ungenau formuliert: 'Was ist ein Kunde?' kann je nach Kontext unterschiedlich beantwortet werden.",
+        "Die Antwort ist umgangssprachlich, aber keine präzise fachliche Definition.",
+        "source_fidelity_fail",
+        "uniqueness_fail",
+        "niveau_below_4"
+      ]
+    }
+  ]
+}
