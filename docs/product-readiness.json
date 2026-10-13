@@ -117,6 +117,10 @@
     "recht-impressum": {
       "datum": "2026-10-08",
       "beleg": "SIN-366: Lokaler Build mit npm ci && npm run build && npm test (566 Tests grün); /impressum erreichbar von Fußzeile (Startseite, Einstellungen) und als Link in /ki-hinweis, axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), Build erfolgreich. 7 Platzhalter offen (SIN-340); Live-Abgleich nach dem Merge offen"
+    },
+    "qual-offline": {
+      "datum": "2026-10-13",
+      "beleg": "Lauf https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/38350920966, Rohdaten docs/quality/runs/offline-check-2026-10-13.json: Offline-Einheit und Service Worker, dreimal wiederholt: bestanden"
     }
   },
   "abnahme": null,
