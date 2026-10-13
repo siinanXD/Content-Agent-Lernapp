@@ -337,6 +337,28 @@ test("SIN-493: teurerer Teilbatch stoppt den Lauf unter 20 €", () => {
   assert.ok(spent <= RUN_CAP_EUR);
 });
 
+test("SIN-563: Lauf mit zu hohen Kosten stoppt vor dem Überschreiten, inkl. Richter", () => {
+  // 10 Teile à 100 Einheiten; Plan 0,05 €/Einheit, real bis +80 % darüber.
+  const parts = splitTargets(Array.from({ length: 500 }, (_, i) => target("B", i * 2, 2)));
+  for (const real of [0.05, 0.0625, 0.09]) {
+    let spent = 2.9;
+    let perUnit = 0.05;
+    let units = 0;
+    let sent = 0;
+    for (const part of parts) {
+      const n = part.reduce((s, t) => s + t.unitCount, 0);
+      if (!partGate(spent, n, perUnit, units).ok) break;
+      const before = spent;
+      spent += n * real;
+      units += n;
+      sent++;
+      perUnit = measuredPerUnit(perUnit, spent - before, n);
+    }
+    assert.ok(sent < parts.length, `real ${real}: Deckel muss greifen`);
+    assert.ok(spent + judgeReserveEur(units) <= RUN_CAP_EUR, `real ${real}: ${spent} € + Richter über Deckel`);
+  }
+});
+
 test("SIN-493: partGate und measuredPerUnit", () => {
   const gate = partGate(2.9, 100, 0.059, 0);
   assert.ok(gate.ok);
