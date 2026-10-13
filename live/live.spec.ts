@@ -104,10 +104,9 @@ test("UI-04 Onboarding: Willkommen → Einwilligung → Beruf → Schwerpunkt �
   await page.getByRole("link", { name: "Los geht’s" }).click();
   await expect(page).toHaveURL(/\/einwilligung$/);
   await page.getByRole("button", { name: "Ablehnen" }).click();
-  // N1 Beruf wählen (SIN-414): neuer Schritt vor dem Schwerpunkt.
+  // N1 Beruf wählen (SIN-414): die Wahl führt direkt weiter, ohne zweiten Knopf (SIN-476).
   await expect(page).toHaveURL(/\/beruf$/);
   await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
-  await page.getByRole("button", { name: "Weiter", exact: true }).click();
   await expect(page).toHaveURL(/\/schwerpunkt$/);
   await page.getByRole("button", { name: "Metall + Kunststoff" }).click();
   await page.getByRole("button", { name: "Lernpfad erstellen", exact: true }).click();

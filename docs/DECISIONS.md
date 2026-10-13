@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-549 | SIN-549: Live-Check UI-04 folgt der Berufswahl ohne „Weiter“ | [SIN-549-live-check-beruf.md](decisions/SIN-549-live-check-beruf.md) |
 | SIN-547 | SIN-547: Freigaben halbieren, Einspruchsfrist statt Handfreigabe | [SIN-547-freigaben-halbieren.md](decisions/SIN-547-freigaben-halbieren.md) |
 | SIN-539 | SIN-539: Live-Prüfung rot, Meldekette ab 2× rot | [SIN-539-live-check-meldekette.md](decisions/SIN-539-live-check-meldekette.md) |
 | SIN-534 | SIN-534 — Kennzahl kosten_woche mit Warnung | [SIN-534-kosten-woche.md](decisions/SIN-534-kosten-woche.md) |
