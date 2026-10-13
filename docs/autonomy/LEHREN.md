@@ -138,6 +138,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - A/B-Bericht zeigt `scores.sourceFidelity`/`uniqueness` immer 0 → `aggregateScores` ist Alles-oder-nichts (Gate); für Berichte `aggregateRates` (Quote 0–1) nutzen. (SIN-532)
 
 - Roter `nach-deploy`-Lauf blieb 26 h unbemerkt: der Wächter schrieb ab dem 2. roten Lauf nur einen Kommentar → `liveCheckIssue` legt ein Urgent-Bug-Issue mit `dringend` an (ein offenes je Titel). (SIN-539)
+- Worker lief 244-mal rot im 7-Minuten-Takt, weil die Log-Erkennung kein Limit fand und `until` leer blieb → Pause zusätzlich unabhängig vom Log: derselbe Auftrag 3-mal in 60 Min ohne PR (`dispatch.mjs --repeat-fail`) setzt `AGENT_PAUSED_UNTIL`, ohne Dispatcher-Anstoß. (SIN-548)
 
 ## Datenbank-Rechte
 

@@ -59,8 +59,13 @@ jobs:
         run: |
           echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
           node scripts/autonomy/leitstand.mjs ereignis --schritt dispatch --status start
+      # Pause zuerst prüfen (SIN-548): bei Limit oder Sicherung läuft nichts weiter, auch keine Linear-Abfrage.
+      - name: Pause prüfen
+        id: pause
+        run: node scripts/autonomy/dispatch.mjs --check-pause
       - name: Issues wählen (max. 2, Spuren abwechselnd)
         id: pick
+        if: steps.pause.outputs.paused != 'true'
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
         run: |

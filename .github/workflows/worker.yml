@@ -271,31 +271,46 @@ jobs:
             node scripts/autonomy/dispatch.mjs --no-pr "$id" "$EXECUTION_FILE"
           done
           if [ -f "$EXECUTION_FILE" ]; then node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE"; fi
-      # Frei gewordener Platz (SIN-334): Ohne PR und ohne Limit-Pause 5 Min Abstand, damit dasselbe Issue
-      # (z. B. mit Label `claude`) nicht im Sekundentakt neu startet; dann wählt der Dispatcher neu.
-      - name: Dispatcher anstoßen (Platz frei)
+      # Sicherung unabhängig vom Log (SIN-548): derselbe Auftrag 3-mal in 60 Minuten ohne PR → Pause 60 Minuten.
+      - name: Wiederholte Fehlläufe prüfen
+        id: repeat
         if: steps.limit.outcome == 'success' && steps.limit.outputs.until == ''
+        run: node scripts/autonomy/dispatch.mjs --repeat-fail "$IDENTIFIER"
+      # Frei gewordener Platz (SIN-334): Ohne PR und ohne Pause 5 Min Abstand, damit dasselbe Issue
+      # (z. B. mit Label `claude`) nicht im Sekundentakt neu startet; dann wählt der Dispatcher neu.
+      # Bei Pause (Limit oder Sicherung) kein Anstoß (SIN-548).
+      - name: Dispatcher anstoßen (Platz frei)
+        if: steps.limit.outcome == 'success' && steps.limit.outputs.until == '' && steps.repeat.outputs.until == ''
         run: |
           sleep 300
           gh workflow run dispatch.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false
       - name: Pause bis Reset setzen
-        if: steps.limit.outputs.until != ''
+        id: pause
+        if: steps.limit.outputs.until != '' || steps.repeat.outputs.until != ''
         env:
           GH_TOKEN: ${{ secrets.AGENT_VARIABLES_TOKEN }}
-          UNTIL: ${{ steps.limit.outputs.until }}
+          UNTIL: ${{ steps.limit.outputs.until || steps.repeat.outputs.until }}
+          GRUND: ${{ steps.limit.outputs.until != '' && 'Claude-Limit' || steps.repeat.outputs.grund }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "::warning::Secret AGENT_VARIABLES_TOKEN fehlt: AGENT_PAUSED_UNTIL=$UNTIL bitte von Hand setzen."
           else
             gh variable set AGENT_PAUSED_UNTIL --repo "$GITHUB_REPOSITORY" --body "$UNTIL"
+            gh variable set AGENT_PAUSED_REASON --repo "$GITHUB_REPOSITORY" --body "$GRUND"
           fi
+          # Ereignis für den Leitstand (nie ein Fehlerabbruch, siehe leitstand.mjs).
+          node scripts/autonomy/leitstand.mjs ereignis --schritt worker_pause --status uebersprungen --issue "$IDENTIFIER" --grund "$GRUND bis $UNTIL" || true
       - name: Lauf ohne PR als fehlgeschlagen markieren
         if: steps.pr.outcome == 'success' && steps.pr.outputs.has_pr != 'true'
         env:
           LIMIT_UNTIL: ${{ steps.limit.outputs.until }}
+          REPEAT_UNTIL: ${{ steps.repeat.outputs.until }}
         run: |
           # Der Loop-Status liest „Claude-Limit erkannt“ aus dieser Zeile (SIN-362).
           note=""
           [ -n "$LIMIT_UNTIL" ] && note=" Claude-Limit erkannt, Pause bis $LIMIT_UNTIL."
+          [ -n "$REPEAT_UNTIL" ] && note=" Wiederholte Fehlläufe, Pause bis $REPEAT_UNTIL."
           echo "::error::Claude-Lauf für $IDENTIFIER ohne PR beendet (Ergebnis: ${{ steps.claude2.outcome == 'skipped' && steps.claude.outcome || steps.claude2.outcome }}).$note"
           exit 1
