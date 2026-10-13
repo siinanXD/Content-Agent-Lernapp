@@ -84,6 +84,8 @@ test("Live-Check Status: Zeile aus der Annotation, Meldung erst beim zweiten rot
   assert.equal(once.incident, null);
   const twice = analyzeLiveCheck({ runs: [run("failure", "2026-10-06T20:10:00Z"), run("failure", "2026-10-06T19:10:00Z")] });
   assert.match(twice.incident!.text, /zweimal rot/);
+  assert.equal(twice.incident!.issue.priority, 1);
+  assert.deepEqual(twice.incident!.issue.labels, ["claude", "Bug", "dringend"]);
   assert.match(twice.line, /ROT/);
   assert.equal(analyzeLiveCheck({ runs: [] }).line, "Live-Check: noch keiner gelaufen");
 });

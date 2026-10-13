@@ -137,6 +137,8 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 
 - A/B-Bericht zeigt `scores.sourceFidelity`/`uniqueness` immer 0 → `aggregateScores` ist Alles-oder-nichts (Gate); für Berichte `aggregateRates` (Quote 0–1) nutzen. (SIN-532)
 
+- Roter `nach-deploy`-Lauf blieb 26 h unbemerkt: der Wächter schrieb ab dem 2. roten Lauf nur einen Kommentar → `liveCheckIssue` legt ein Urgent-Bug-Issue mit `dringend` an (ein offenes je Titel). (SIN-539)
+
 ## Datenbank-Rechte
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)

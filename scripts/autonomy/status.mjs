@@ -17,7 +17,7 @@ import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectMigrations, migrationBugPlan, migrationIncident, sinanTaskForMigrations } from "./migrationen.mjs";
-import { collectLiveCheck } from "./live-check.mjs";
+import { LIVE_CHECK_PREFIX, collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
 import { buildSnapshot, sendSnapshot } from "./leitstand.mjs";
 import { sendTelegramPlain } from "./telegram.mjs";
@@ -262,7 +262,8 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   const linearQ = linearQuota(typeof snap.usage?.linear_issues === "number" ? snap.usage.linear_issues : null, limitsFile.limits?.linear_issues?.limit);
   const stop = linearQ.level === "stop";
-  const bugs = [newStallIssue(diagnosis, known), ...breaks.map((b) => b.issue).filter(Boolean), ...deployBugs.filter((b) => b && !known.some((k) => k.title === b.title)), migrPlan.create,...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
+  const liveBug = liveCheck?.incident?.issue && !known.some((k) => String(k.title).startsWith(LIVE_CHECK_PREFIX)) ? liveCheck.incident.issue : null;
+  const bugs = [newStallIssue(diagnosis, known), liveBug, ...breaks.map((b) => b.issue).filter(Boolean), ...deployBugs.filter((b) => b && !known.some((k) => k.title === b.title)), migrPlan.create,...(stop ? [linearQuotaIssue(linearQ)].filter((i) => i && !known.some((k) => k.title === i.title)) : [])].filter(Boolean);
   const decisions = snap.decisions ?? [];
   for (const d of decisions) incidents.push({ key: `decision:${d.number}`, text: `Entscheidung nötig in gemergtem PR #${d.number} (${cell(d.title)}): ${d.question}` });
 
