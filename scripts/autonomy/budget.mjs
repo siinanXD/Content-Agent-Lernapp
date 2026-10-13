@@ -31,7 +31,7 @@ export function isPaused(value, now = new Date()) {
 }
 
 /** Echte Usage-/Rate-Limit-Meldung (nicht: max-turns, Build-Fehler, das Wort „limit“ irgendwo im Log). */
-const REAL_LIMIT = /usage limit reached|hit your (?:usage )?limit|limit reached|rate[_ -]?limit|"status":\s*429|too many requests/i;
+const REAL_LIMIT = /usage limit|hit your (?:usage )?limit|limit reached|rate[_ -]?limit|overloaded|\b429\b|too many requests/i;
 
 /**
  * Text, der über ein Limit entscheidet. Die Execution-Datei der Action ist ein JSON-Array der ganzen
@@ -65,7 +65,25 @@ export function isInstantAbort(result) {
   if (result?.is_error !== true || result.subtype === "error_max_turns") return false;
   const noCost = typeof result.total_cost_usd === "number" && result.total_cost_usd === 0;
   const noUsage = result.modelUsage != null && typeof result.modelUsage === "object" && Object.keys(result.modelUsage).length === 0;
-  return noCost || noUsage;
+  // SIN-548: leere Ausgabe nach unter 60 s ohne Tool-Aufruf. shortcut: num_turns <= 1 steht für „kein Tool-Aufruf“, bei Abweichung im Log prüfen.
+  const emptyFast = !String(result.result ?? "").trim() && typeof result.duration_ms === "number" && result.duration_ms < 60_000 && (result.num_turns ?? 0) <= 1;
+  return noCost || noUsage || emptyFast;
+}
+
+export const REPEAT_FAILS = 3;
+export const REPEAT_WINDOW_MS = 60 * 60 * 1000;
+export const REPEAT_PAUSE_MS = 60 * 60 * 1000;
+
+/**
+ * Sicherung unabhängig vom Log (SIN-548): Scheitert derselbe Auftrag 3-mal in 60 Minuten ohne PR, pausiert der Loop 60 Minuten.
+ * `failedRuns`: abgeschlossene, rote Worker-Läufe `{ display_title, created_at }`; der laufende Lauf zählt mit.
+ * Gibt `{ until, grund }` zurück, oder null, wenn die Schwelle nicht erreicht ist.
+ */
+export function repeatFailurePause(identifier, failedRuns, now = new Date()) {
+  const id = new RegExp(`(^|[^0-9])${String(identifier).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^0-9])`, "i");
+  const recent = failedRuns.filter((r) => id.test(String(r.display_title ?? "")) && now.getTime() - new Date(r.created_at).getTime() <= REPEAT_WINDOW_MS);
+  if (recent.length + 1 < REPEAT_FAILS) return null;
+  return { until: new Date(now.getTime() + REPEAT_PAUSE_MS).toISOString(), grund: `${identifier} scheiterte ${recent.length + 1}-mal in 60 Minuten ohne PR` };
 }
 
 /**

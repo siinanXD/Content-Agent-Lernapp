@@ -409,7 +409,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   out.push("", `<!-- loop-status-state: ${JSON.stringify(state)} -->`);
 
   // Leitstand (SIN-303): Schlange und offene PRs für `loop_snapshot` (nur Kennungen, Titel, Zahlen).
-  const queue = { startable: order.length, in_progress: active.length, waiting: waiting.size, todo: todo.length, running: running.length, paused };
+  const queue = { startable: order.length, in_progress: active.length, waiting: waiting.size, todo: todo.length, running: running.length, paused, ...(paused ? { pause_bis: pausedUntil, pause_grund: snap.pausedReason || "Claude-Limit" } : {}) };
   const openPrList = openPrs.map((p) => ({ number: p.number, title: p.title, risk: riskOf(p), draft: !!p.draft, ci: checks[p.number]?.ci ?? null, einspruch_bis: p.einspruch_bis ?? null }));
   return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis, queue, openPrList };
 }
@@ -744,7 +744,7 @@ export async function main(argv, env = process.env) {
     // SIN-451: nicht additive Migrationen legt der Wächter als Sinan-Aufgabe an (Doppelte überspringt createSinanIssues).
     const migrationTask = sinanTaskForMigrations(migrations);
     const sinanIssues = linearOk ? (await syncSinan({ dry, seed: migrationTask ? [...SEED, migrationTask] : SEED }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
-    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, pausedReason: env.AGENT_PAUSED_REASON, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);

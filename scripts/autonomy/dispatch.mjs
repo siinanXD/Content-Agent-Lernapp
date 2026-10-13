@@ -7,6 +7,7 @@
  *   node scripts/autonomy/dispatch.mjs --blocker SIN-123 "Text"   Blocker-Kommentar
  *   node scripts/autonomy/dispatch.mjs --no-pr SIN-123 [datei]    Worker ohne PR: zurück auf Todo + Grund, zu große Aufträge zerlegen (SIN-291)
  *
+ *   node scripts/autonomy/dispatch.mjs --repeat-fail SIN-123 [--runs datei.json]   3 Fehlläufe in 60 Min ohne PR → Pause (SIN-548)
  *   node scripts/autonomy/dispatch.mjs --prompt SIN-123 [--bundle "SIN-124 SIN-125"] [--attempt 2]
  *                                        Prompt, Größe, Modell und Runden-Deckel für den Worker-Lauf (SIN-320)
  *
@@ -16,7 +17,7 @@
  */
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog } from "./budget.mjs";
+import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog, repeatFailurePause } from "./budget.mjs";
 import { MAX_NO_PR, needsHumanComment, noPrComment, noPrStreak, splitIssue, summarizeExecution, tooBig } from "./diagnose.mjs";
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
@@ -58,6 +59,19 @@ async function fetchRunningWorkers() {
     for (const r of (await res.json()).workflow_runs ?? []) ids.push(...(String(r.display_title ?? "").match(/SIN-\d+/g) ?? []));
   }
   return ids.filter(Boolean);
+}
+
+/** Rote Worker-Läufe der letzten Stunde; bei Fehler leer, dann greift nur die Log-Erkennung. */
+async function fetchFailedWorkers() {
+  const { GITHUB_REPOSITORY: repo, GITHUB_TOKEN: token, GH_TOKEN: gh } = process.env;
+  const auth = token || gh;
+  if (!repo || !auth) return [];
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/worker.yml/runs?status=failure&created=%3E%3D${since}&per_page=100`, {
+    headers: { Authorization: `Bearer ${auth}`, Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) return [];
+  return ((await res.json()).workflow_runs ?? []).map((r) => ({ display_title: r.display_title, created_at: r.created_at }));
 }
 
 /**
@@ -109,6 +123,17 @@ export async function main(argv) {
     const until = pauseUntilFromLog(readFileSync(argv[limitAt + 1], "utf8")) ?? "";
     console.log(until ? `Claude-Limit, Pause bis ${until}` : "Kein Limit erkannt");
     output("until", until);
+    return;
+  }
+  // Wiederholte Fehlläufe (SIN-548): `--repeat-fail SIN-123 [--runs datei.json]` → until, grund (leer = keine Pause).
+  const repeatAt = argv.indexOf("--repeat-fail");
+  if (repeatAt >= 0) {
+    const runsAt = argv.indexOf("--runs");
+    const failed = runsAt >= 0 ? JSON.parse(readFileSync(argv[runsAt + 1], "utf8")) : await fetchFailedWorkers();
+    const pause = repeatFailurePause(argv[repeatAt + 1], failed);
+    console.log(pause ? `Wiederholter Fehllauf, Pause bis ${pause.until}: ${pause.grund}` : "Keine wiederholten Fehlläufe");
+    output("until", pause?.until ?? "");
+    output("grund", pause?.grund ?? "");
     return;
   }
   // Prompt für den Worker-Lauf: --prompt SIN-123 → GITHUB_OUTPUT (identifier, prompt).

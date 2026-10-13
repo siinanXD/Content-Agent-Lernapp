@@ -43,7 +43,7 @@ flowchart TD
   Worker -.-> Leitstand
   subgraph Projektwaechter["Projekt-Wächter (Leitstand-Repo, waechter.yml, stündlich, alle Projekte In Progress mit GitHub-Link)"]
     PW["Projekt-Wächter"] --> PWS["Schlange leer: Backlog rückt nach, sonst Planungs-Issue"]
-    PW --> PWH["Hänger: über 6 h In Progress ohne PR, nur Label claude: Todo, beim 2. Mal needs-human; Worker 2-mal ohne PR: needs-human; Claude-Sofortabbruch zählt als Limit-Pause"]
+    PW --> PWH["Hänger: über 6 h In Progress ohne PR, nur Label claude: Todo, beim 2. Mal needs-human; Worker 2-mal ohne PR: needs-human; Claude-Sofortabbruch zählt als Limit-Pause; 3 Fehlläufe desselben Auftrags in 60 Min ohne PR: Pause 60 Min (SIN-548)"]
     PW --> PWU["Projekt-Update in Linear, einmal am Tag"]
     PW --> PWR["Roter PR, 30 Min ohne Commit: @claude, Runde zählt mit"]
   end

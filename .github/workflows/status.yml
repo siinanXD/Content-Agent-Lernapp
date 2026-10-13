@@ -38,6 +38,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ github.token }}
       AGENT_PAUSED_UNTIL: ${{ vars.AGENT_PAUSED_UNTIL }}
+      AGENT_PAUSED_REASON: ${{ vars.AGENT_PAUSED_REASON }}
       # Phase (SIN-244): Anzeige und Startfilter
       PHASE: ${{ vars.PHASE }}
       OBSERVE_DAYS: ${{ vars.OBSERVE_DAYS }}
