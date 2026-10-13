@@ -88,7 +88,10 @@ export function diagnoseStall({ running, paused, startable, idleMin, logs = [] }
   const empty = startable === 0;
   if (!idle && !empty) return null;
   let found = null;
-  for (const l of logs) {
+  // SIN-584: „Kein roter Lauf“ gilt für jeden Workflow; den Grund nennt nur der dispatch-Lauf. Er kommt zuerst,
+  // sonst verdeckt die neueste Zeile (z. B. planner) die Schritt-Ausgabe des Dispatchers.
+  const ordered = [...logs].sort((a, b) => Number(b.workflow === "dispatch") - Number(a.workflow === "dispatch"));
+  for (const l of ordered) {
     const c = classifyLog(l.text);
     // „Ohne Start“ ist nur bei startbarer Arbeit ein Fehler; leere Schlange ist normal.
     if (c.key !== "unbekannt" && !(c.key === "ohne-start" && !idle)) {

@@ -213,6 +213,18 @@ test("SIN-496: grüner dispatch-Lauf nennt den Grund aus seinem Log; Fixture →
   assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
 });
 
+test("SIN-584: neuerer planner-Lauf verdeckt den Grund aus dem dispatch-Lauf nicht; Fixture → ohne-start → Bug-Issue", () => {
+  const logs = [
+    { workflow: "planner", url: "p", text: "Kein roter Lauf: planner. Letzter Lauf #38411012448 success am 2026-10-13T14:09:56Z" },
+    { workflow: "dispatch", url: "d", text: "Kein roter Lauf: dispatch. Letzter Lauf #1 success am 2026-10-13T13:00:00Z\nNichts zu starten: kein freies Todo (Blocker)" },
+  ];
+  const diag = diagnoseStall({ running: 0, paused: false, startable: 1, idleMin: 690, logs });
+  assert.equal(diag?.cause, "ohne-start");
+  assert.equal(diag?.workflow, "dispatch");
+  assert.match(diag!.excerpt, /Nichts zu starten/);
+  assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+});
+
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
   const raw = JSON.stringify([
     { type: "assistant", message: { content: [{ type: "text", text: "Ich mache jetzt den PR." }] } },
