@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { approvalStillValid, classifyRisk, secretNames, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
+import { approvalStillValid, classifyRisk, einspruchFrist, secretNames, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
@@ -60,42 +60,69 @@ test("Gate: auf main bekannte Secrets sind medium, neue high (SIN-516)", () => {
     risk([file(guard, patch("+        X: ${{ secrets.NEUES_SECRET_XY }}"))], { knownSecrets: known }).risk,
     "risk:high",
   );
-  assert.equal(
-    risk([file(".github/workflows/pr-gate.yml", patch("+      - run: echo"))], { knownSecrets: known }).risk,
-    "risk:high",
-  );
+  // SIN-547: bekanntes Secret = medium mit Einspruchsfrist
+  assert.equal(risk([file(guard, used)], { knownSecrets: known }).einspruch[0].category, "workflow-recht");
 });
 
-test("Gate: Rechte in Workflows sind high (SIN-252 Punkt 6)", () => {
+test("Gate: Workflow-Rechte sind medium mit Einspruchsfrist, Neues bleibt high (SIN-547)", () => {
   const wf = ".github/workflows/ci.yml";
-  const cases = [
+  const frist = [
     patch("+  contents: write"),
     patch("+permissions: write-all"),
-    patch("+        token: ${{ secrets.NEW_TOKEN }}"),
-    patch("+      - uses: some-org/fancy-action@v1"),
     patch("-          claude_args: --allowedTools Read,Edit", "+          claude_args: --allowedTools Read,Edit,Bash"),
     patch("+          allowed_bots: dependabot"),
   ];
-  for (const c of cases) assert.equal(risk([file(wf, c)]).risk, "risk:high", c);
-  // bereits genutzt oder verkleinert: medium
+  for (const c of frist) {
+    const r = risk([file(wf, c)]);
+    assert.equal(r.risk, "risk:medium", c);
+    assert.equal(r.einspruch[0].category, "workflow-recht", c);
+  }
+  // Action eines in config.json erlaubten Owners: Frist; ohne Eintrag high
+  const ext = patch("+      - uses: github/codeql-action/init@v3");
+  const trusted = risk([file(wf, ext)], { trustedOwners: ["github"] });
+  assert.equal(trusted.risk, "risk:medium");
+  assert.equal(trusted.einspruch.length, 1);
+  const high = [
+    patch("+        token: ${{ secrets.NEW_TOKEN }}"),
+    patch("+      - uses: some-org/fancy-action@v1"),
+    patch("+  pull_request_target:"),
+    ext,
+  ];
+  for (const c of high) assert.equal(risk([file(wf, c)]).risk, "risk:high", c);
+  assert.equal(risk([file(".github/rulesets/main.json", patch("+x"))]).risk, "risk:high");
+  // bereits genutzt oder verkleinert: medium ohne Frist
+  const plain = risk([file(wf, patch("-          t: ${{ secrets.A }}", "+          u: ${{ secrets.A }}"))]);
+  assert.equal(plain.risk, "risk:medium");
+  assert.equal(plain.einspruch.length, 0);
   assert.equal(
-    risk([file(wf, patch("-          t: ${{ secrets.A }}", "+          u: ${{ secrets.A }}"))]).risk,
-    "risk:medium",
-  );
-  assert.equal(
-    risk([file(wf, patch("-          claude_args: --allowedTools Read,Edit,Bash", "+          claude_args: --allowedTools Read,Edit"))]).risk,
-    "risk:medium",
+    risk([file(wf, patch("-          claude_args: --allowedTools Read,Edit,Bash", "+          claude_args: --allowedTools Read,Edit"))]).einspruch.length,
+    0,
   );
   assert.equal(risk([file(wf, patch("-      - uses: some-org/x@v1", "+      - uses: some-org/x@v2"))]).risk, "risk:medium");
 });
 
-test("Gate: das Gate selbst ist high (SIN-252 Punkt 5)", () => {
-  for (const f of [".github/workflows/pr-gate.yml", "scripts/autonomy/risk.mjs"]) {
+test("Gate: das Gate selbst ist medium mit Einspruchsfrist (SIN-547)", () => {
+  for (const f of [".github/workflows/pr-gate.yml", ".github/workflows/dispatch.yml", "scripts/autonomy/risk.mjs"]) {
     const r = risk([file(f, patch("+x"))]);
-    assert.equal(r.risk, "risk:high", f);
-    assert.ok(r.reasons.some((x) => x.category === "gate"), f);
+    assert.equal(r.risk, "risk:medium", f);
+    assert.ok(r.einspruch.some((x: { category: string }) => x.category === "gate"), f);
   }
-  assert.equal(risk([file("scripts/autonomy/steckbrief.mjs", patch("+x"))]).risk, "risk:medium");
+  assert.equal(risk([file("scripts/autonomy/steckbrief.mjs", patch("+x"))]).einspruch.length, 0);
+});
+
+test("Einspruchsfrist: 2 h je Commit, neuer Commit setzt neu (SIN-547)", () => {
+  const t0 = Date.UTC(2026, 9, 13, 10);
+  const f1 = einspruchFrist(undefined, "abc", t0);
+  assert.equal(f1.bis, t0 + 2 * 3600_000);
+  assert.equal(f1.neu, true);
+  assert.equal(f1.vorbei, false);
+  const same = einspruchFrist(f1.comment, "abc", t0 + 119 * 60_000);
+  assert.equal(same.neu, false);
+  assert.equal(same.vorbei, false);
+  assert.equal(einspruchFrist(f1.comment, "abc", t0 + 2 * 3600_000).vorbei, true);
+  const fresh = einspruchFrist(f1.comment, "def", t0 + 3 * 3600_000);
+  assert.equal(fresh.neu, true);
+  assert.equal(fresh.vorbei, false);
 });
 
 test("Gate: Figma-Tokens, Docs, Tests sind medium (SIN-252)", () => {
@@ -161,10 +188,6 @@ test("Gate: geschwächte Sicherheit ist high", () => {
     risk([file("supabase/migrations/3_c.sql", patch("+alter table t disable row level security;"), "added")]).risk,
     "risk:high",
   );
-  assert.equal(
-    risk([file(".github/workflows/x.yml", patch("+  contents: write", "-  contents: read"))]).risk,
-    "risk:high",
-  );
   assert.equal(risk([file("src/proxy.ts", patch("+x"))]).risk, "risk:high");
 });
 
@@ -172,11 +195,10 @@ test("Gate: Zahlungen und Grundsatz-Entscheidungen sind high", () => {
   assert.equal(risk([file("src/lib/stripe/client.ts")]).risk, "risk:high");
   assert.equal(risk([file("docs/PRODUCT.md")]).risk, "risk:high");
   assert.equal(risk([file("docs/DECISIONS.md")]).risk, "risk:medium");
-  assert.equal(
-    risk([file("package.json", patch('-    "next": "16.3.8",', '+    "sveltekit": "1.0.0",'))]).risk,
-    "risk:high",
-  );
-  assert.equal(risk([file("package.json", patch('+    "@supabase/supabase-js": "^2.0.0",'))]).risk, "risk:high");
+  // Framework-Wechsel: medium mit Einspruchsfrist (SIN-547)
+  const fw = risk([file("package.json", patch('-    "next": "16.3.8",', '+    "sveltekit": "1.0.0",'))], { depInfo: { sveltekit: { license: "MIT", stars: 900 } } });
+  assert.equal(fw.risk, "risk:medium");
+  assert.ok(fw.einspruch.some((x: { category: string }) => x.category === "grundsatz"));
   assert.equal(
     risk([file("package.json", patch('-    "next": "16.3.7",', '+    "next": "16.3.8",'))]).risk,
     "risk:medium",

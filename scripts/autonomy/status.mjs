@@ -410,7 +410,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   // Leitstand (SIN-303): Schlange und offene PRs für `loop_snapshot` (nur Kennungen, Titel, Zahlen).
   const queue = { startable: order.length, in_progress: active.length, waiting: waiting.size, todo: todo.length, running: running.length, paused };
-  const openPrList = openPrs.map((p) => ({ number: p.number, title: p.title, risk: riskOf(p), draft: !!p.draft, ci: checks[p.number]?.ci ?? null }));
+  const openPrList = openPrs.map((p) => ({ number: p.number, title: p.title, risk: riskOf(p), draft: !!p.draft, ci: checks[p.number]?.ci ?? null, einspruch_bis: p.einspruch_bis ?? null }));
   return { body: out.join("\n"), incidents, fresh, actions, state, kick, quotaRows, refill, diagnosis, queue, openPrList };
 }
 
@@ -556,6 +556,12 @@ async function collectGithub(repo, now) {
       pr.sha = p.head.sha;
       pr.head_at = (await gh(`/repos/${repo}/commits/${p.head.sha}`)).commit?.committer?.date;
       pr.mergeable_state = (await gh(`/repos/${repo}/pulls/${p.number}`)).mergeable_state;
+      if (pr.labels.includes("einspruch:2h")) {
+        // SIN-547: Ende der Einspruchsfrist aus dem Kommentar des Gates (nur gültig für den aktuellen Commit).
+        const cs = await gh(`/repos/${repo}/issues/${p.number}/comments?per_page=100`).catch(() => []);
+        const m = cs.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/)).filter(Boolean).pop();
+        if (m && m[1] === p.head.sha) pr.einspruch_bis = new Date(Number(m[2])).toISOString();
+      }
       const cr = await gh(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`);
       checks[p.number] = { mergeGate: cr.check_runs.find((c) => c.name === "merge-gate")?.conclusion ?? null, ci: cr.check_runs.find((c) => c.name === "build")?.conclusion ?? undefined, checkRuns: cr.check_runs };
     }

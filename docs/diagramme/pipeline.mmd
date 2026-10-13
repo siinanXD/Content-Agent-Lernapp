@@ -22,6 +22,7 @@ flowchart TD
   Repair -- "nach Runde 3" --> Mensch["needs-human, Stopp"]
   Gate -- "risk:high" --> Freigabe["Label freigegeben (Sinan)"]
   Freigabe --> Merge
+  Gate -- "risk:medium + Einspruchsfrist 2 h" --> Merge
   Gate -- "risk:medium" --> Merge["Auto-Merge (Squash)"]
   Merge --> Dispatcher
   Merge --> Migr["Migrationen anwenden: additiv automatisch, sonst Sinan-Aufgabe (SIN-374, SIN-451)"]

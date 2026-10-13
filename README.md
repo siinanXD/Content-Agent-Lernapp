@@ -94,6 +94,7 @@ flowchart TD
   Repair -- "nach Runde 3" --> Mensch["needs-human, Stopp"]
   Gate -- "risk:high" --> Freigabe["Label freigegeben (Sinan)"]
   Freigabe --> Merge
+  Gate -- "risk:medium + Einspruchsfrist 2 h" --> Merge
   Gate -- "risk:medium" --> Merge["Auto-Merge (Squash)"]
   Merge --> Dispatcher
   Merge --> Migr["Migrationen anwenden: additiv automatisch, sonst Sinan-Aufgabe (SIN-374, SIN-451)"]
@@ -214,4 +215,4 @@ https://github.com/siinanXD/Content-Agent-Lernapp
 
 ## Pull Requests
 
-Jeder PR wird automatisch geprüft (`build`, `pr-title`, `merge-gate`). PRs mit `risk:low` oder `risk:medium` mergen von selbst, `risk:high` wartet auf das Label `freigegeben`. Details: `AGENTS.md`, Abschnitt „Pull Requests und Merge“. Hat Cursor kein Guthaben, übernimmt Claude: `@claude` in einem Issue-Kommentar.
+Jeder PR wird automatisch geprüft (`build`, `pr-title`, `merge-gate`). PRs mit `risk:low` oder `risk:medium` mergen von selbst, `risk:high` wartet auf das Label `freigegeben`. Workflow-Rechte und Gate-Änderungen sind `risk:medium` mit 2 h Einspruchsfrist (Label `einspruch:2h`, Stopp mit `no-automerge`). Details: `AGENTS.md`, Abschnitt „Pull Requests und Merge“. Hat Cursor kein Guthaben, übernimmt Claude: `@claude` in einem Issue-Kommentar.
