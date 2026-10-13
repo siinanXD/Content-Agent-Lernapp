@@ -1,0 +1,6 @@
+# SIN-566 — Serie, Tagesziel und Wiederholungs-Erinnerung: Blocker Design
+
+- **Links:** Linear [SIN-566](https://linear.app/sinan-kahraman/issue/SIN-566), [SIN-562](https://linear.app/sinan-kahraman/issue/SIN-562); Figma [0SWGDO2ioBD3MyXiAnrbRz](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) (gelesen mit `scripts/autonomy/figma.mjs --node 0:1`); Vorgänger `docs/decisions/SIN-290-serie-tagesziel.md`.
+- **Entscheidung:** Es wird kein Code geändert. Serie (Tage in Folge) und Tagesziel sind seit SIN-290 umgesetzt (`src/lib/learner/streak.ts`, `DailyGoal`, `StatChip`, Tests in `streak.test.ts`, Zustände nach Frame 24). Die Erinnerung an fällige Wiederholungen (1/3/7 Tage) hat in Figma keinen Frame: die Datei endet bei Frame 29, ein Frame aus SIN-562 fehlt. Nach AGENTS.md (Figma ist einzige Quelle, keine neuen Komponenten im Code) wird sie nicht improvisiert.
+- **Annahmen:** SIN-562 ist noch nicht erledigt oder nicht in diese Figma-Datei übernommen. Der Schalter „Lern-Erinnerung“ in `/einstellungen` (SIN-290) bleibt unverändert; es gibt weiterhin keinen Versand.
+- **Warum:** Ohne Frame wären Texte, Zustände und Abstände geschätzt. Sobald die Frames da sind, setzt ein Folgeauftrag die Erinnerung um (Fälligkeit aus `LEITNER_INTERVALS_DAYS`, nur mit Einwilligung, keine Personendaten in Prompts).
