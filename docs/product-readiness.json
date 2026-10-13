@@ -5,49 +5,71 @@
     "qual-offline": {
       "datum": "2026-10-06",
       "beleg": "SIN-256: Service Worker und Warteschlange, Playwright-Test nur in der CI (docs/decisions/SIN-256-offline-einheiten.md)",
-      "issues": ["SIN-256"],
+      "issues": [
+        "SIN-256"
+      ],
       "lauf": "Workflow run-task, Aufgabe offline-check (SIN-302)"
     },
     "content-safety": {
       "datum": "2026-10-06",
       "beleg": "SIN-272: scripts/safety-sample.mjs, Bericht nie erzeugt (docs/decisions/SIN-272-sicherheits-stichprobe.md)",
-      "issues": ["SIN-272"],
+      "issues": [
+        "SIN-272"
+      ],
       "lauf": "Workflow run-task, Aufgabe safety-sample (SIN-404; App-URL aus docs/autonomy/config.json); Mensch prüft den Bericht (SIN-338). Warum der Lauf aus der Agenten-Sandbox nicht möglich war: docs/decisions/SIN-404-sicherheits-lauf.md"
     },
     "betrieb-sentry": {
       "datum": "2026-10-07",
       "beleg": "SIN-289: Sentry (EU) in App-Routen und Pipeline (src/lib/sentry-pipeline.ts) mit PII-Scrubbing und Test (src/lib/sentry.test.ts); Planer-Kennzahlen sentry/sentry_kritisch, nie mit Live-Token gemessen (docs/decisions/SIN-289-sentry-fabrik-status.md)",
-      "issues": ["SIN-259", "SIN-289"],
+      "issues": [
+        "SIN-259",
+        "SIN-289"
+      ],
       "lauf": "Planer-Lauf mit SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT; Pipeline braucht NEXT_PUBLIC_SENTRY_DSN in content-grow.yml"
     },
     "betrieb-fabrik": {
       "datum": "2026-10-07",
       "beleg": "SIN-289: Statusdatensatz je Lauf (Tabelle content_factory_runs, scripts/content-grow.ts), Planer leitet „läuft“ und „hängt“ nach 2 Läufen ohne neues Modul ab (scripts/autonomy/fabrik.mjs, Test src/lib/autonomy/fabrik.test.ts); noch kein Live-Lauf geschrieben (docs/decisions/SIN-289-sentry-fabrik-status.md)",
-      "issues": ["SIN-289"],
+      "issues": [
+        "SIN-289"
+      ],
       "lauf": "Migration 20261007020000 in Supabase anwenden, danach Workflow content-grow; der nächste Planer-Lauf misst"
     },
     "betrieb-kosten": {
       "datum": "2026-10-06",
       "beleg": "SIN-258/SIN-268/SIN-280: Ledger pipeline_run_costs und Deckel, nie mit Live-Lauf gemessen (docs/decisions/SIN-258-kosten-ledger.md)",
-      "issues": ["SIN-258", "SIN-268", "SIN-280"],
+      "issues": [
+        "SIN-258",
+        "SIN-268",
+        "SIN-280"
+      ],
       "lauf": "Workflow content-grow oder run-task judge-backfill schreibt Ledger-Zeilen; danach run-task cost-report (SIN-302)"
     },
     "recht-ki": {
       "datum": "2026-10-07",
       "beleg": "SIN-301/SIN-344: /ki-hinweis erreichbar von Fußzeile, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
-      "issues": ["SIN-301", "SIN-344"],
+      "issues": [
+        "SIN-301",
+        "SIN-344"
+      ],
       "lauf": "PR claude/sin-344 mit Playwright-Test"
     },
     "recht-einwilligung": {
       "datum": "2026-10-07",
       "beleg": "SIN-279/SIN-344: /einwilligung erreichbar vom Onboarding, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
-      "issues": ["SIN-279", "SIN-344"],
+      "issues": [
+        "SIN-279",
+        "SIN-344"
+      ],
       "lauf": "PR claude/sin-344 mit Playwright-Test"
     },
     "recht-demo": {
       "datum": "2026-10-07",
       "beleg": "SIN-279/SIN-344: /demo erreichbar von Startseite, axe ohne Fehler, Playwright-Test e2e/rechtsseiten-reachable.spec.ts (docs/decisions/SIN-344-rechtsseiten-produktreife.md)",
-      "issues": ["SIN-279", "SIN-344"],
+      "issues": [
+        "SIN-279",
+        "SIN-344"
+      ],
       "lauf": "PR claude/sin-344 mit Playwright-Test"
     }
   },
@@ -97,5 +119,12 @@
       "beleg": "SIN-366: Lokaler Build mit npm ci && npm run build && npm test (566 Tests grün); /impressum erreichbar von Fußzeile (Startseite, Einstellungen) und als Link in /ki-hinweis, axe-core ohne Fehler (e2e/rechtsseiten-reachable.spec.ts), Build erfolgreich. 7 Platzhalter offen (SIN-340); Live-Abgleich nach dem Merge offen"
     }
   },
-  "abnahme": null
+  "abnahme": null,
+  "gelaufen": {
+    "betrieb-kosten": {
+      "datum": "2026-10-13",
+      "beleg": "Lauf https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/38350924181, Rohdaten docs/quality/runs/cost-report-2026-10-13.json",
+      "ergebnis": "3 Läufe (content-grow, judge-backfill): Ø 8.36 €, höchster 21.78 € (Deckel 20 €), 1 gestoppt"
+    }
+  }
 }
