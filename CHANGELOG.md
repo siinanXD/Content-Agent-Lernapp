@@ -6,6 +6,24 @@ Erzeugt aus den Titeln der gemergten Pull Requests (`npm run changelog`), nicht 
 
 ### Neu
 
+- autonomy: Worker lesen Doku per Context7 und WebFetch (SIN-537, #339)
+- gate: Freigaben halbieren, Einspruchsfrist 2 h statt risk:high (SIN-547, #336)
+- kosten: Kostenbericht mit Wochenkosten und Teilbatch-Stichtag (SIN-563, #343)
+- worker: Pause statt Dauerschleife bei leerem Kontingent (SIN-548, #338)
+- video: Higgsfield-Aufruf für Werbeclips mit Einblendung „Mit KI erstellt“ (SIN-520, #325)
+- kosten: Wochenkosten als Kennzahl mit Warnung (SIN-534, #334)
+- inhalte: Haiku 5.5 als Generator-Modell (SIN-222, #332)
+- loop: Fertig-Liste steuert den Loop, v1 zuerst, Ideen nach und nach (SIN-528, #329)
+- qualitaet: Layout-Prüfer als Gate und KI-Sichtprüfung gegen Figma (SIN-523, #328)
+- video: Handy-Format aufnehmen, Text neben der App (SIN-522, #327)
+- marketing: Werbetexte pro fertigem Kurs mit Prüfung und Freigabe (SIN-484, #319)
+- video: KI-Werbeclips mit Kostendeckel 5 € pro Produkt (SIN-485, #320)
+- gate: bekannte Secrets in Workflows nicht mehr als risk:high werten (SIN-516, #318)
+- autonomy: zurückgenommenes Issue in Linear wieder öffnen (SIN-492, #304)
+- video: Tutorial-Video aus den Playwright-Klickwegen (SIN-483, #295)
+- datenbank: Rechte härten: TRUNCATE, TRIGGER, REFERENCES entziehen (SIN-438, #245)
+- qualitaet: Bestehensquote lesend, Messfehler bei Frage-ID (SIN-507, #316)
+- content-fabrik: Teilbatches mit Kostenprüfung nach jedem Teil (SIN-493, #313)
 - content-fabrik: Batch in Teilbatches, Kosten nach jedem Teil prüfen (SIN-493, #306)
 - autonomy: Übergabe-Verträge als JSON-Schema je Agent, in CI geprüft (SIN-491, #302)
 - quality: Richter mit festem json_schema-Antwortformat (SIN-490, #301)
@@ -133,6 +151,17 @@ Erzeugt aus den Titeln der gemergten Pull Requests (`npm run changelog`), nicht 
 
 ### Behoben
 
+- live: UI-04 wartet auf Hydration (SIN-557, #342)
+- live-check: UI-04 folgt der Berufswahl ohne Weiter (SIN-549, #337)
+- live-check: Urgent-Bug ab dem zweiten roten Lauf (SIN-539, #335)
+- qualitaet: A/B-Bericht zeigt Quoten statt 0 (SIN-532, #331)
+- video: Revideo-Schnitt lauffähig machen (SIN-518, #326)
+- video: Einwilligung wirklich abwarten statt isVisible (SIN-518, #324)
+- autonomy: Fabrik-Überfälligkeit immer als Zahl (SIN-515, #322)
+- video: Klickweg beantwortet jeden Fragetyp, Fehlerkontext als Artefakt (SIN-518, #321)
+- revert-guard: nur zurücknehmen, wenn derselbe Schritt davor grün war (SIN-502, #312)
+- pr-gate: Freigabe bleibt bei Merge aus main (SIN-511, #317)
+- leistungsbudget: Startseite ohne Link-Prefetch, JS stabil unter 190 KB (SIN-500, #311)
 - content-fabrik: Batch-Fehler sichtbar, Lauf rot bei 0 Einheiten, Structured Outputs per Schalter (SIN-497, #309)
 - autonomy: Dispatcher-Grund im Stillstand-Bericht (SIN-496, #303)
 - kosten: Kostendeckel je Kurslauf inklusive Reparatur einhalten (SIN-478, #291)
@@ -194,6 +223,10 @@ Erzeugt aus den Titeln der gemergten Pull Requests (`npm run changelog`), nicht 
 
 ### Dokumentation
 
+- agenten: Ponytail-Regeln für schlanken Code (SIN-533, #333)
+- gate: bildvergleich-Bruch durch Revideo-JSX erklärt (SIN-519, #323)
+- content: Maps und Didaktik freigegeben (SIN-506, #315)
+- sentry: ungelösten Fehler dokumentiert, Ursache braucht Sentry-Zugriff (SIN-498, #314)
 - migrationen: Lage bei 13/15 festgehalten (SIN-471, #279)
 - migrationen: Lage bei 13/15 festgehalten (SIN-470, #278)
 - migrationen: SIN-467 ist Dublette von SIN-458 (SIN-467, #276)
@@ -263,6 +296,10 @@ Erzeugt aus den Titeln der gemergten Pull Requests (`npm run changelog`), nicht 
 
 ### Pflege
 
+- qualitaet: Lauf offline-check mit Beleg (SIN-302, #341)
+- qualitaet: Lauf cost-report mit Beleg (SIN-302, #340)
+- qualitaet: Lauf ab-haiku-sonnet mit Beleg (SIN-302, #330)
+- aufraeumen: Wochenpflege 2026-10-12 (SIN-300, #310)
 - qualitaet: Lauf ab-haiku-sonnet mit Beleg (SIN-302, #305)
 - deps: Bump the npm-minor-patch group with 11 updates (#299)
 - content: Content-Lauf 20261012-1009 (SIN-220, #282)
