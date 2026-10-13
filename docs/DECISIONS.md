@@ -15,6 +15,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | --- | --- | --- |
 | SIN-549 | SIN-549: Live-Check UI-04 folgt der Berufswahl ohne „Weiter“ | [SIN-549-live-check-beruf.md](decisions/SIN-549-live-check-beruf.md) |
 | SIN-539 | SIN-539: Live-Prüfung rot, Meldekette ab 2× rot | [SIN-539-live-check-meldekette.md](decisions/SIN-539-live-check-meldekette.md) |
+| SIN-537 | SIN-537: Worker lesen aktuelle Doku (Context7 + WebFetch) | [SIN-537-context7-doku.md](decisions/SIN-537-context7-doku.md) |
 | SIN-534 | SIN-534 — Kennzahl kosten_woche mit Warnung | [SIN-534-kosten-woche.md](decisions/SIN-534-kosten-woche.md) |
 | SIN-532 | SIN-532: A/B-Bericht zeigt Quoten statt 0/1 | [SIN-532-ab-quoten.md](decisions/SIN-532-ab-quoten.md) |
 | SIN-528 | SIN-528 — Fertig-Liste steuert den Loop: v1 Grundgerüst zuerst, Ideen nach und nach | [SIN-528-fertig-liste-steuert-loop.md](decisions/SIN-528-fertig-liste-steuert-loop.md) |

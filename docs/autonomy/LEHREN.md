@@ -143,3 +143,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)
 - Berufswahl führt seit SIN-476 ohne „Weiter“ weiter, Live-Check UI-04 klickte noch darauf → rot. Richtig: Beim Ändern eines Klickwegs `live/live.spec.ts` gegen den Seitencode abgleichen, nicht nur `e2e/`. (SIN-549)
+- Worker durften laut `--allowedTools` keine Doku lesen (kein WebFetch/MCP), Preise blieben `null` → Context7 (`mcp__context7__*`, `--mcp-config`) und `WebFetch` sind in `claude.yml` und `worker.yml` erlaubt; erst Context7, dann offizielle Doku, Quelle im PR nennen. (SIN-537)

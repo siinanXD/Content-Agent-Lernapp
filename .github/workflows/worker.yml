@@ -117,7 +117,8 @@ jobs:
           claude_args: |
             --model ${{ steps.pick.outputs.model }}
             --max-turns ${{ steps.pick.outputs.max_turns }}
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/live.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx tsc:*),Bash(npx eslint:*),Bash(node --check:*),Bash(node scripts/autonomy/figma.mjs:*),Bash(node scripts/autonomy/live.mjs:*),Bash(node scripts/autonomy/screenshots.mjs:*),Bash(npx playwright:*),mcp__context7__*,WebFetch"
+            --mcp-config '{"mcpServers":{"context7":{"type":"http","url":"https://mcp.context7.com/mcp"}}}'
 
       # Messen (SIN-320): Tokens, Runden, Dauer, API-Gegenwert → PR-Steckbrief („## Verbrauch“) und Linear-Kommentar.
       - name: Verbrauch melden
