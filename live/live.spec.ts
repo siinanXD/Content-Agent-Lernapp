@@ -98,19 +98,25 @@ for (const route of ["/", "/willkommen", "/lernpfad", "/einheit/M0-1-u1", "/prof
   });
 }
 
+/** Klickt, bis die Seite wechselt: ein Klick vor der Hydration der Live-Seite bewirkt sonst nichts. */
+async function clickUntil(page: Page, click: () => Promise<void>, url: RegExp) {
+  await expect(async () => {
+    if (!url.test(page.url())) await click();
+    await expect(page).toHaveURL(url, { timeout: 3_000 });
+  }).toPass({ timeout: 30_000 });
+}
+
 test("UI-04 Onboarding: Willkommen → Einwilligung → Beruf → Schwerpunkt → Lernpfad", async ({ page, context }) => {
   await stubData(context);
-  await page.goto("/willkommen");
+  await page.goto("/willkommen", { waitUntil: "networkidle" });
   await page.getByRole("link", { name: "Los geht’s" }).click();
   await expect(page).toHaveURL(/\/einwilligung$/);
-  await page.getByRole("button", { name: "Ablehnen" }).click();
+  await page.waitForLoadState("networkidle");
+  await clickUntil(page, () => page.getByRole("button", { name: "Ablehnen" }).click(), /\/beruf$/);
   // N1 Beruf wählen (SIN-414): die Wahl führt direkt weiter, ohne zweiten Knopf (SIN-476).
-  await expect(page).toHaveURL(/\/beruf$/);
-  await page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click();
-  await expect(page).toHaveURL(/\/schwerpunkt$/);
+  await clickUntil(page, () => page.getByRole("button", { name: /Maschinen- und Anlagenführer/ }).click(), /\/schwerpunkt$/);
   await page.getByRole("button", { name: "Metall + Kunststoff" }).click();
-  await page.getByRole("button", { name: "Lernpfad erstellen", exact: true }).click();
-  await expect(page).toHaveURL(/\/lernpfad$/);
+  await clickUntil(page, () => page.getByRole("button", { name: "Lernpfad erstellen", exact: true }).click(), /\/lernpfad$/);
   await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
 });
 
