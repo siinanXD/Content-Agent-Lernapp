@@ -17,6 +17,7 @@
  */
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { main as leitstandEreignis } from "./leitstand.mjs";
 import { claudeMayTake, isPaused, parsePausedUntil, pauseUntilFromLog, repeatFailurePause } from "./budget.mjs";
 import { MAX_NO_PR, needsHumanComment, noPrComment, noPrStreak, splitIssue, summarizeExecution, tooBig } from "./diagnose.mjs";
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
@@ -105,6 +106,41 @@ function output(name, value) {
   appendFileSync(file, `${name}<<${delim}\n${value}\n${delim}\n`);
 }
 
+/** Worker-Lauf ohne PR (SIN-291): Issue zurück auf Todo, Kommentar mit Grund, zu große Aufträge zerlegen. */
+async function noPrRun(identifier, file, dry) {
+  const issue = await findByIdentifier(identifier);
+  const raw = file && existsSync(file) ? readFileSync(file, "utf8") : "";
+  const summary = summarizeExecution(raw);
+  // Claude-Limit (auch Sofortabbruch ohne Text, SIN-362): kein Fehlversuch des Issues.
+  const limit = Boolean(raw && pauseUntilFromLog(raw));
+  const text = noPrComment(issue.identifier, summary, { limit });
+  const parts = tooBig(summary) ? splitIssue(issue) : [];
+  // Zweiter Lauf in Folge ohne PR (SIN-362): `needs-human` statt neuem Start.
+  const streak = limit || dry ? 0 : noPrStreak(await fetchComments(issue.id)) + 1;
+  if (!limit && !parts.length && streak >= MAX_NO_PR) {
+    await comment(issue.id, text);
+    await comment(issue.id, needsHumanComment(issue.identifier, summary));
+    // Fehlt das Label im Team, muss das Issue trotzdem zurück auf Todo (sonst blockiert es den Platz).
+    await addLabel(issue, "needs-human").catch((e) => console.log(`::warning::Label needs-human nicht gesetzt: ${e.message}`));
+    await setState(issue, "Todo");
+    return console.log(`${issue.identifier} → needs-human (${streak} Läufe ohne PR)`);
+  }
+  if (dry) return console.log(`[dry-run] ${issue.identifier} → ${parts.length ? `${parts.length} Teil-Issues` : "Todo"}\n${text}`);
+  await comment(issue.id, text);
+  if (parts.length) {
+    try {
+      const ids = await createLinearIssues(parts.map((p) => ({ ...p, parentId: issue.id })));
+      await comment(issue.id, `Zerlegt in ${ids.join(", ")}. Dieses Issue wird abgebrochen (SIN-291).`);
+      await setState(issue, "Canceled");
+      return console.log(`${issue.identifier} → Canceled, Teil-Issues ${ids.join(", ")}`);
+    } catch (e) {
+      console.log(`::warning::Zerlegen fehlgeschlagen (${e.message}), Issue geht zurück auf Todo.`);
+    }
+  }
+  await setState(issue, "Todo");
+  return console.log(`${issue.identifier} → Todo (kein PR)`);
+}
+
 export async function main(argv) {
   const dry = argv.includes("--dry-run");
   const fixtureAt = argv.indexOf("--fixture");
@@ -169,36 +205,15 @@ export async function main(argv) {
   // `--no-pr SIN-123 <execution_file>`: die Datei der Action (JSON-Array der Sitzung), darf fehlen.
   const noPrAt = argv.indexOf("--no-pr");
   if (noPrAt >= 0) {
-    const issue = await findByIdentifier(argv[noPrAt + 1]);
-    const file = argv[noPrAt + 2];
-    const summary = summarizeExecution(file && existsSync(file) ? readFileSync(file, "utf8") : "");
-    // Claude-Limit (auch Sofortabbruch ohne Text, SIN-362): kein Fehlversuch des Issues.
-    const limit = Boolean(file && existsSync(file) && pauseUntilFromLog(readFileSync(file, "utf8")));
-    const text = noPrComment(issue.identifier, summary, { limit });
-    const parts = tooBig(summary) ? splitIssue(issue) : [];
-    // Zweiter Lauf in Folge ohne PR (SIN-362): `needs-human` statt neuem Start.
-    const streak = limit || dry ? 0 : noPrStreak(await fetchComments(issue.id)) + 1;
-    if (!limit && !parts.length && streak >= MAX_NO_PR) {
-      await comment(issue.id, text);
-      await comment(issue.id, needsHumanComment(issue.identifier, summary));
-      await addLabel(issue, "needs-human");
-      await setState(issue, "Todo");
-      return console.log(`${issue.identifier} → needs-human (${streak} Läufe ohne PR)`);
+    // SIN-587: Scheitert die Auswertung (Linear, Label, Netz), steht der Grund als Ereignis im Leitstand und der
+    // Schritt bleibt grün; die Sicherung gegen Wiederholung (--repeat-fail) hängt nicht davon ab.
+    try {
+      return await noPrRun(argv[noPrAt + 1], argv[noPrAt + 2], dry);
+    } catch (e) {
+      const grund = `Fehler auswerten gescheitert: ${e.message}`;
+      console.log(`::warning::${grund}`);
+      return leitstandEreignis(["ereignis", "--schritt", "worker", "--status", "fehler", "--issue", argv[noPrAt + 1], "--grund", grund]);
     }
-    if (dry) return console.log(`[dry-run] ${issue.identifier} → ${parts.length ? `${parts.length} Teil-Issues` : "Todo"}\n${text}`);
-    await comment(issue.id, text);
-    if (parts.length) {
-      try {
-        const ids = await createLinearIssues(parts.map((p) => ({ ...p, parentId: issue.id })));
-        await comment(issue.id, `Zerlegt in ${ids.join(", ")}. Dieses Issue wird abgebrochen (SIN-291).`);
-        await setState(issue, "Canceled");
-        return console.log(`${issue.identifier} → Canceled, Teil-Issues ${ids.join(", ")}`);
-      } catch (e) {
-        console.log(`::warning::Zerlegen fehlgeschlagen (${e.message}), Issue geht zurück auf Todo.`);
-      }
-    }
-    await setState(issue, "Todo");
-    return console.log(`${issue.identifier} → Todo (kein PR)`);
   }
 
   const doneAt = argv.indexOf("--done");
