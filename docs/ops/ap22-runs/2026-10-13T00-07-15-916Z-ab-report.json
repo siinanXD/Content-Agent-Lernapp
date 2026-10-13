@@ -1,0 +1,98 @@
+{
+  "runId": "2026-10-13T00-07-15-916Z",
+  "judge": {
+    "model": "gpt-5.4-mini",
+    "promptVersion": "2026-10-v2"
+  },
+  "module": "LF3",
+  "unitTarget": 20,
+  "totalUsd": 1.3154,
+  "totalEur": 1.22,
+  "report": [
+    {
+      "model": "claude-haiku-5-5",
+      "batchId": "msgbatch_01GPD8MvLpPNPQtJX8z7pTq9",
+      "units": 20,
+      "failedChunks": [],
+      "failedChunkErrors": [],
+      "unitsPassing": 7,
+      "unitPassRate": 0.35,
+      "questions": 139,
+      "questionPassRate": 0.806,
+      "scores": {
+        "sourceFidelity": 0,
+        "uniqueness": 0,
+        "niveau": 3.9,
+        "language": 4.8,
+        "safetyFlag": true
+      },
+      "usage": {
+        "input": 36145,
+        "output": 207267,
+        "cache_creation_input": 3144,
+        "cache_read_input": 28296
+      },
+      "generationUsd": 0.054,
+      "judgeUsd": 0.0784,
+      "usdPerPassingUnit": 0.0077,
+      "repair": {
+        "unitsRepaired": 1,
+        "failedBatchRequests": [],
+        "repairUsd": 0.0041,
+        "repairJudgeUsd": 0.0074
+      },
+      "afterRepair": {
+        "unitsPublishable": 8,
+        "unitsDiscarded": 12,
+        "publishableRate": 0.4,
+        "totalUsd": 0.1439,
+        "usdPerUnit": 0.0072,
+        "eurPerUnit": 0.0067,
+        "usdPerPublishableUnit": 0.018
+      }
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "batchId": "msgbatch_015bMG1JT88mCbiCw8asDfnZ",
+      "units": 20,
+      "failedChunks": [],
+      "failedChunkErrors": [],
+      "unitsPassing": 10,
+      "unitPassRate": 0.5,
+      "questions": 140,
+      "questionPassRate": 0.907,
+      "scores": {
+        "sourceFidelity": 0,
+        "uniqueness": 0,
+        "niveau": 4,
+        "language": 4.8,
+        "safetyFlag": false
+      },
+      "usage": {
+        "input": 36145,
+        "output": 210717,
+        "cache_creation_input": 0,
+        "cache_read_input": 31440
+      },
+      "generationUsd": 1.0913,
+      "judgeUsd": 0.0802,
+      "usdPerPassingUnit": 0.1091,
+      "repair": {
+        "unitsRepaired": 0,
+        "failedBatchRequests": [],
+        "repairUsd": 0,
+        "repairJudgeUsd": 0
+      },
+      "afterRepair": {
+        "unitsPublishable": 10,
+        "unitsDiscarded": 10,
+        "publishableRate": 0.5,
+        "totalUsd": 1.1715,
+        "usdPerUnit": 0.0586,
+        "eurPerUnit": 0.0545,
+        "usdPerPublishableUnit": 0.1172
+      }
+    }
+  ],
+  "published": false
+}
