@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-588 | SIN-588: Kosten-Beleg für den nächsten Content-Lauf steht aus | [SIN-588-kosten-beleg-offen.md](decisions/SIN-588-kosten-beleg-offen.md) |
 | SIN-586 | SIN-586: Quellenauszug zeigt den Grund, wenn er fehlt | [SIN-586-auszug-quelle.md](decisions/SIN-586-auszug-quelle.md) |
 | SIN-584 | SIN-584: Stillstand `ohne-start` nennt den dispatch-Grund | [SIN-584-ohne-start-dispatch-zuerst.md](decisions/SIN-584-ohne-start-dispatch-zuerst.md) |
 | SIN-569 | SIN-569: Kosten je Kurslauf unter 20 €: Befund, kein neuer Code | [SIN-569-kosten-deckel-befund.md](decisions/SIN-569-kosten-deckel-befund.md) |
