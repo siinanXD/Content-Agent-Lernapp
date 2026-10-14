@@ -537,9 +537,11 @@ async function collectGithub(repo, now) {
   const since = new Date(now.getTime() - DAY_MS).toISOString().slice(0, 10);
   const { workflow_runs: all } = await gh(`/repos/${repo}/actions/runs?per_page=100&created=>=${since}`);
   // SIN-362: Die 100 jüngsten Läufe aller Workflows drängen Worker-Läufe heraus (17 in einer Nacht); sie getrennt holen.
-  const own = await gh(`/repos/${repo}/actions/workflows/worker.yml/runs?per_page=100&created=>=${since}`).catch(() => ({ workflow_runs: [] }));
+  // SIN-643: Ebenso dispatch.yml, sonst meldet der Wächter „Kein Lauf gefunden“, obwohl der Zeitplan feuert.
+  const own = await Promise.all(["worker.yml", "dispatch.yml"].map((f) => gh(`/repos/${repo}/actions/workflows/${f}/runs?per_page=100&created=>=${since}`).catch(() => ({ workflow_runs: [] }))));
   const seen = new Set(all.map((r) => r.id));
-  const workflow_runs = [...all, ...(own.workflow_runs ?? []).filter((r) => !seen.has(r.id))];
+  const workflow_runs = [...all];
+  for (const r of own.flatMap((o) => o.workflow_runs ?? [])) if (!seen.has(r.id)) { seen.add(r.id); workflow_runs.push(r); }
   const runs = workflow_runs.map((r) => ({
     id: r.id, name: r.name, display_title: r.display_title, status: r.status, conclusion: r.conclusion,
     created_at: r.created_at, updated_at: r.updated_at, html_url: r.html_url,
