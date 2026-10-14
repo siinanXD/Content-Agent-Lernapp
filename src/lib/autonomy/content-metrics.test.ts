@@ -123,6 +123,18 @@ test("SIN-395: Verwerfungsgründe nach Modul und Fragetyp, häufigste zuerst", (
   assert.equal(renderDiscarded([]), "(keine verworfenen Fragen)");
 });
 
+test("SIN-665: Kurs ohne eigene Map nutzt die Module der Metall-Map, Rest nennt die Ursache", () => {
+  const base = { quellentreue: 0, eindeutigkeit: 1, niveau: 4, sprache: 4, passed: false, type: "single" };
+  const evaluations = [
+    { ...base, course_id: "im", unit_id: "LF1-1-u1" },
+    { ...base, course_id: "x", unit_id: "LF1-1-u1" },
+    { ...base, course_id: "c1", unit_id: "ZZ-9-u9", type: undefined },
+  ];
+  const rows = discardedByModuleAndType(maps, evaluations, { c1: "maf-metall" }, { im: "maf-metall" });
+  const names = rows.map((r) => `${r.mapId}/${r.moduleId}/${r.type}`).sort();
+  assert.deepEqual(names, ["Kurs ohne Map/Einheit nicht in Map/single", "maf-metall/Einheit nicht in Map/Fragetyp fehlt", "maf-metall/LF1/single"]);
+});
+
 test("SIN-394: ratedQuestions zählt Mehrfachbewertungen einmal und ignoriert gelöschte Fragen", () => {
   const questions = [
     { course_id: "c1", unit_id: "u1", id: "q1" },
