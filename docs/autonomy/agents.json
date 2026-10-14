@@ -64,7 +64,7 @@
       "name": "Betrieb",
       "auftrag": "Liefert aus, migriert, sichert und berichtet den Stand an Sinan.",
       "ausloeser": "Merge, Zeitplan, manuell",
-      "workflows": ["production-deploy", "post-merge", "migrate", "backup", "status", "loop-pause", "aufraeumen", "digest"],
+      "workflows": ["production-deploy", "post-merge", "migrate", "backup", "restore-test", "status", "loop-pause", "aufraeumen", "digest"],
       "modell": "keins (Code), aufraeumen: Claude",
       "budget": { "proLauf": null, "proWoche": "aufraeumen: höchstens 1 PR" },
       "eingabe": "main, Migrationen, Schnappschuss",

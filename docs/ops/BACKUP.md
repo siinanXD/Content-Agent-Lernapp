@@ -35,11 +35,12 @@ node --import tsx scripts/backup.ts restore --latest               # schreiben +
 ## Teststand
 
 - Automatisiert (`src/lib/backup/backup.test.ts`): Export → gzip → Prüfung → Wiederherstellung in eine leere In-Memory-Datenbank, Reihenfolge der Fremdschlüssel, zweiter Lauf ohne Änderung, kaputte Dateien, Aufbewahrung.
-- **Offen: einmaliger Restore gegen einen echten Supabase-Branch.** In der Agent-Umgebung gibt es keine Supabase-Schlüssel und keine lokale Datenbank (siehe `SUPABASE.md`). Sinan oder ein späterer Lauf mit Schlüsseln führt die Schritte oben aus und trägt Datum, Zahlen und Ergebnis hier ein:
+- Echter Restore (SIN-337): Workflow `restore-test.yml` (monatlich am 1. um 04:17 UTC und per `workflow_dispatch`) startet eine wegwerfbare lokale Supabase im Runner, spielt die Migrationen ein, stellt die jüngste Sicherung wieder her (erst `--dry-run`), macht die Gegenprobe der Zeilenzahlen und prüft das Schema. Die Produktion wird nur gelesen. Ergebnis: Job-Zusammenfassung und Ereignis `restore-test` in `loop_events` (Spalte `grund` mit Zeilenzahlen und Dauer). Rot oder 40 Tage ohne Lauf = Alarm über die Status-Seite.
+- **Offen: erster grüner Lauf.** Nach dem Merge `restore-test` einmal von Hand starten und Datum, Zahlen und Ergebnis hier eintragen; dann diese Zeile streichen:
 
   | Datum | Ziel | Zeilen (Fragen / Einheiten) | Ergebnis |
   | --- | --- | --- | --- |
-  | – | – | – | noch nicht durchgeführt |
+  | – | lokale Supabase im Runner | – | noch kein Lauf |
 
 ## Grenzen
 

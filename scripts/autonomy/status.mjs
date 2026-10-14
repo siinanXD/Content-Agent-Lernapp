@@ -15,7 +15,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
-import { collectBackup } from "./backup.mjs";
+import { collectBackup, collectRestoreTest } from "./backup.mjs";
 import { collectMigrations, migrationBugPlan, migrationIncident, sinanTaskForMigrations } from "./migrationen.mjs";
 import { LIVE_CHECK_PREFIX, collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
@@ -235,6 +235,9 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   // Sicherung (SIN-293): Fehler oder überfällig = Meldung. Fehlt der Messwert (nicht lesbar), bleibt es still.
   const backup = snap.backup ?? null;
   if (backup?.incident) incidents.push(backup.incident);
+  // Restore-Test (SIN-337): rot oder überfällig = Alarm.
+  const restoreTest = snap.restoreTest ?? null;
+  if (restoreTest?.incident) incidents.push(restoreTest.incident);
   // Migrationen (SIN-374): fehlt eine Datei in Supabase → roter Punkt und Bug-Issue (ohne Duplikat).
   const migrations = snap.migrations ?? null;
   const migr = migrationIncident(migrations);
@@ -336,6 +339,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   } else out.push("- Kein Worker läuft.");
   if (paused) out.push(`- ⏸ Pausiert bis ${pausedUntil}. Fortsetzen: Workflow \`loop-pause\` mit „fortsetzen“.`);
   out.push(`- ${backup ? `${backup.ok ? "" : "⚠️ "}${backup.line}` : "Letzte Sicherung: nicht lesbar"}`);
+  if (restoreTest) out.push(`- ${restoreTest.ok ? "" : "⚠️ "}${restoreTest.line}`);
   out.push(`- ${migrations ? `${migrations.ok ? "" : "⚠️ "}${migrations.line}` : "Migrationen: nicht lesbar"}`);
   if (liveCheck) out.push(`- ${liveCheck.ok ? "" : "⚠️ "}${liveCheck.line}`);
   if (diagnosis) out.push(`- ⚠️ Stillstand: ${diagnosis.label} (${diagnosis.reason})`);
@@ -740,13 +744,14 @@ export async function main(argv, env = process.env) {
     const gateFailures = await collectGateFailures(repo, env.GITHUB_TOKEN, redPrs).catch(() => []);
     const mainChecks = await collectMainChecks(repo, env.GITHUB_TOKEN).catch(() => ({}));
     const backup = await collectBackup(repo, now, gh);
+    const restoreTest = await collectRestoreTest(repo, now, gh);
     const liveCheck = await collectLiveCheck(repo, gh);
     const migrations = await collectMigrations(env).catch(() => null);
     // SIN-310: Aufgaben für Sinan nachtragen, erledigte schließen, offene unter „Braucht dich“ zeigen.
     // SIN-451: nicht additive Migrationen legt der Wächter als Sinan-Aufgabe an (Doppelte überspringt createSinanIssues).
     const migrationTask = sinanTaskForMigrations(migrations);
     const sinanIssues = linearOk ? (await syncSinan({ dry, seed: migrationTask ? [...SEED, migrationTask] : SEED }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
-    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, pausedReason: env.AGENT_PAUSED_REASON, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, restoreTest, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, pausedReason: env.AGENT_PAUSED_REASON, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);

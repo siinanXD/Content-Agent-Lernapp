@@ -61,6 +61,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Projekt-Starter, nur Plan (SIN-202) | `scripts/autonomy/starter.mjs` (`plan`, `sql`), Entscheidung `docs/decisions/SIN-202-projekt-starter.md` |
 | Revert-Entscheidung des Wächters `revert-guard` (SIN-502) | `scripts/autonomy/revert-guard.mjs` (`decideRevert`), Test `src/lib/autonomy/revert-guard.test.ts` |
 | Fertig-Liste: v1/v2, Idee je Woche, Einsortieren, Fortschritt (SIN-528) | `scripts/autonomy/linear.mjs` (`startOrder`, `isIdea`, `classifyNew`, `fetchProgress`), `einsortieren.mjs`, Test `src/lib/autonomy/fertig-liste.test.ts`, Migration `20261020010000_sin528_loop_snapshot_fortschritt.sql` |
+| Restore-Test der Sicherung, monatlich in lokaler Supabase im Runner (SIN-337) | `.github/workflows/restore-test.yml`, Alarm `scripts/autonomy/backup.mjs` (`analyzeRestoreTest`), Doku `docs/ops/BACKUP.md` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
 
