@@ -8,7 +8,7 @@
 export const PRUEFHINWEIS_MUSTER = /stichprobe|gegenzuprüfen|abgleich mit|Quelle: KMK/i;
 
 export const ELEKTRO_MUSTER = /spannungsfrei|verdrahte|anklemm/i;
-const ELEKTRO_VORHANDEN = /Elektrofachkr(?:aft|äfte)|elektrotechnisch unterwiesen/i;
+export const ELEKTRO_VORHANDEN = /Elektrofachkr(?:aft|äfte)|elektrotechnisch unterwiesen/i;
 
 export const ELEKTRO_HINWEIS =
   "Arbeiten an elektrischen Anlagen führen nur Elektrofachkräfte oder elektrotechnisch unterwiesene Personen im erlaubten Umfang aus.";

@@ -1,0 +1,83 @@
+# Goldset-Prüfung (SIN-629): bei jedem PR, der Generator-Prompt, Richter-Prompt oder Modellwahl ändert, misst der Job
+# Richter und feste Prüfsätze einmal mit dem Stand von main und einmal mit dem PR (gleiches Goldset, gleicher Richter).
+# Mehr als 3 Prozentpunkte schlechter oder ein verletzter Prüfsatz = Job rot. Ergebnis als PR-Kommentar.
+# Der Job läuft immer und endet grün, wenn nichts Relevantes geändert wurde (so kann er Pflicht-Check werden).
+# Kosten: wenige Cent je Lauf (Deckel 2 €), Ledger `goldset-regression`, Trace in Langfuse. Nur PRs aus diesem Repo (Secrets).
+name: goldset
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: goldset-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  goldset:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COURSE_STORAGE: supabase
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BASIS: ${{ github.event.pull_request.base.sha }}
+      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Betroffen?
+        id: relevant
+        run: |
+          # Prompts des Generators, Richter-Prompt und Modellwahl, das Goldset und diese Prüfung selbst.
+          echo 'src/lib/generate/didaktik-prompts.ts
+          src/lib/generate/generate-agent.ts
+          src/lib/generate/batch-generate.ts
+          src/lib/generate/api-schema.ts
+          src/lib/quality/evaluate-agent.ts
+          src/lib/quality/claude-judge.ts
+          src/lib/quality/regression.ts
+          src/lib/anthropic/client.ts
+          src/lib/review/pruefhinweise.ts
+          docs/quality/maf-goldset-70.json
+          scripts/goldset-regression.ts' | sed 's/^ *//' > /tmp/beobachtet.txt
+          git diff --name-only "$BASIS"...HEAD | grep -Fxf /tmp/beobachtet.txt > /tmp/geaendert.txt || true
+          if [ -s /tmp/geaendert.txt ]; then echo "relevant=true" >> "$GITHUB_OUTPUT"; cat /tmp/geaendert.txt; else echo "Nichts Relevantes geändert."; fi
+      - uses: actions/setup-node@v4
+        if: steps.relevant.outputs.relevant == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Pakete
+        if: steps.relevant.outputs.relevant == 'true'
+        run: npm ci
+      - name: Messen mit dem Stand des PRs
+        if: steps.relevant.outputs.relevant == 'true'
+        run: npm run quality:regression -- messen --out /tmp/pr.json --ledger
+      - name: Messen mit dem Stand von main
+        if: steps.relevant.outputs.relevant == 'true'
+        run: |
+          # Beobachtete Dateien auf den Stand von main setzen; Dateien, die main noch nicht hat, bleiben wie im PR.
+          # Skript und Prüfsätze bleiben die des PRs, nur Prompts und Modellwahl wechseln.
+          while read -r datei; do
+            case "$datei" in scripts/goldset-regression.ts|src/lib/quality/regression.ts) continue ;; esac
+            git checkout "$BASIS" -- "$datei" 2>/dev/null || true
+          done < /tmp/geaendert.txt
+          npm run quality:regression -- messen --out /tmp/basis.json
+      - name: Vergleichen, Kommentar schreiben
+        if: steps.relevant.outputs.relevant == 'true'
+        run: |
+          rot=0
+          npm run quality:regression -- vergleichen --basis /tmp/basis.json --pr /tmp/pr.json --out /tmp/kommentar.md || rot=1
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/kommentar.md --edit-last --create-if-none
+          exit $rot

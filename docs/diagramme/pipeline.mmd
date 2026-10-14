@@ -11,6 +11,7 @@ flowchart TD
   subgraph Prüfung
     PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Layout-Test, Lighthouse, Leistungsbudget"]
     PR -- "Frontend geändert" --> Sicht["KI-Sichtprüfung gegen Figma: Kommentar, kein Gate (sichtpruefung.yml, SIN-523)"]
+    PR -- "Prompt, Richter oder Modell geändert" --> Gold["Goldset-Prüfung: Basis gegen PR, über 3 Prozentpunkte schlechter = rot (goldset.yml, SIN-629)"]
     PR --> CodeQL["CodeQL"]
     PR --> Review["Review-Agent (zweites Modell)"]
     CI --> Gate{"pr-gate: Risiko"}
