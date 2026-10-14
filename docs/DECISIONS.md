@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-653 | SIN-653: Kostenbericht nach jedem content-grow-Lauf, Structured Outputs live belegen | [SIN-653-kostenbericht-nach-content-lauf.md](decisions/SIN-653-kostenbericht-nach-content-lauf.md) |
+| SIN-652 | SIN-652: Lernkarte MAF Metall aus MaschFüAusbV und RLP MAF | [SIN-652-maf-lernkarte.md](decisions/SIN-652-maf-lernkarte.md) |
 | SIN-648 | SIN-648 Bildvergleich nur bei Oberflächen-Änderung | [SIN-648-bildvergleich-nur-bei-oberflaeche.md](decisions/SIN-648-bildvergleich-nur-bei-oberflaeche.md) |
 | SIN-645 | SIN-645: Wochenkosten unter 40 €, Einzellauf unter 20 € | [SIN-645-wochenkosten-unter-40.md](decisions/SIN-645-wochenkosten-unter-40.md) |
 | SIN-643 | SIN-643: dispatch-Läufe getrennt holen | [SIN-643-dispatch-laeufe-getrennt-holen.md](decisions/SIN-643-dispatch-laeufe-getrennt-holen.md) |
