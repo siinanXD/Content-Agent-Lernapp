@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-648 | SIN-648 Bildvergleich nur bei Oberflächen-Änderung | [SIN-648-bildvergleich-nur-bei-oberflaeche.md](decisions/SIN-648-bildvergleich-nur-bei-oberflaeche.md) |
+| SIN-645 | SIN-645: Wochenkosten unter 40 €, Einzellauf unter 20 € | [SIN-645-wochenkosten-unter-40.md](decisions/SIN-645-wochenkosten-unter-40.md) |
 | SIN-643 | SIN-643: dispatch-Läufe getrennt holen | [SIN-643-dispatch-laeufe-getrennt-holen.md](decisions/SIN-643-dispatch-laeufe-getrennt-holen.md) |
 | SIN-642 | SIN-642 Gate-Bruch bildvergleich: Revideo-Typen | [SIN-642-gate-bruch-revideo.md](decisions/SIN-642-gate-bruch-revideo.md) |
 | SIN-640 | SIN-640 Testnutzer-Agent | [SIN-640-testnutzer-agent.md](decisions/SIN-640-testnutzer-agent.md) |

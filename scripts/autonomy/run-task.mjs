@@ -186,7 +186,7 @@ export function costResult(rows, capEur = RUN_CAP_EUR, { now = new Date(), seit 
   return {
     ok: neuMax === null ? null : neuMax < capEur,
     wocheEur: Math.round(woche * 100) / 100,
-    ergebnis: `${rows.length} Läufe (${kinds}): Ø ${avg.toFixed(2)} €, höchster ${max.toFixed(2)} € (Deckel ${capEur} €), ${stopped} gestoppt; ${seitText}; letzte 7 Tage ${woche.toFixed(2)} € (Wochendeckel 60 €)`,
+    ergebnis: `${rows.length} Läufe (${kinds}): Ø ${avg.toFixed(2)} €, höchster ${max.toFixed(2)} € (Deckel ${capEur} €), ${stopped} gestoppt; ${seitText}; letzte 7 Tage ${woche.toFixed(2)} € (Wochendeckel 40 €)`,
   };
 }
 

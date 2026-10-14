@@ -19,8 +19,8 @@ import { formatSchemaStats, type SchemaStats } from "./question-schema";
 /** Deckel je Lauf (AGENTS.md); Stopp schon bei 19 €, weil der Richter nach dem Batch noch läuft (D-45). */
 export const RUN_CAP_EUR = 20;
 export const RUN_STOP_EUR = 19;
-/** SIN-469: Wochendeckel über alle Live-Läufe der letzten 7 Tage (3 Läufe × 20 €). */
-export const WEEK_CAP_EUR = 60;
+/** SIN-469/SIN-645: Wochendeckel über alle Live-Läufe der letzten 7 Tage; ein Lauf startet nur, wenn sein Deckel noch hineinpasst. */
+export const WEEK_CAP_EUR = 40;
 /** SIN-469: Mehrere Läufe pro Woche, aber höchstens einer je UTC-Tag. */
 export const MAX_RUNS_PER_DAY = 1;
 /** Sicherheitsfaktor auf die Kosten je Einheit bei der Vorab-Rechnung. */
@@ -183,7 +183,7 @@ export function buildQueue(
  * SIN-469: Darf die Fabrik jetzt laufen? Zählt Live-Läufe mit Kosten oder Ergebnis (ein Lauf, der
  * nach Sekunden an der API-Sperre endete, hinterlässt keinen Bericht und zählt nicht).
  * - höchstens ein Lauf je UTC-Tag
- * - Kosten der letzten 7 Tage unter `WEEK_CAP_EUR`
+ * - Kosten der letzten 7 Tage plus Lauf-Deckel höchstens `WEEK_CAP_EUR` (SIN-645)
  * Beides ist ein sauberes Überspringen (Exit 0), kein Fehler.
  */
 export function runAllowed(
@@ -200,8 +200,8 @@ export function runAllowed(
   }
   const since = now.getTime() - 7 * 86_400_000;
   const week = live.filter((r) => r.at > since).reduce((s, r) => s + r.costEur, 0);
-  if (week >= WEEK_CAP_EUR) {
-    return { ok: false, reason: `Wochendeckel erreicht: ${week.toFixed(2)} € von ${WEEK_CAP_EUR} € in 7 Tagen` };
+  if (week + RUN_CAP_EUR > WEEK_CAP_EUR) {
+    return { ok: false, reason: `Wochendeckel: ${week.toFixed(2)} € in 7 Tagen, ein weiterer Lauf (bis ${RUN_CAP_EUR} €) passt nicht unter ${WEEK_CAP_EUR} €` };
   }
   return { ok: true };
 }

@@ -233,7 +233,7 @@ test("SIN-469: Metall mit Modulen ohne Einheiten (LF3 bis LF6) geht vor dem Wech
   assert.equal(chooseRunMap(beide, keine, keine, "indkfl"), "maf-metall");
 });
 
-test("SIN-469: Läufe pro Woche: einer je Tag, Wochendeckel 60 €", () => {
+test("SIN-469: Läufe pro Woche: einer je Tag, Wochendeckel 40 €", () => {
   const lauf = (startedAt: string, costEur: number, generated = 10) => ({ mode: "live" as const, startedAt, costEur, generated });
   const now = new Date("2026-10-14T05:47:00Z");
   assert.deepEqual(runAllowed([], now), { ok: true });
@@ -242,11 +242,11 @@ test("SIN-469: Läufe pro Woche: einer je Tag, Wochendeckel 60 €", () => {
   // Probelauf und Lauf ohne Kosten und Ergebnis (API gesperrt) zählen nicht.
   assert.deepEqual(runAllowed([{ ...lauf("2026-10-14T01:00:00Z", 5), mode: "dry-run" as const }], now), { ok: true });
   assert.deepEqual(runAllowed([lauf("2026-10-14T01:00:00Z", 0, 0)], now), { ok: true });
-  const voll = [lauf("2026-10-09T05:00:00Z", 20), lauf("2026-10-10T05:00:00Z", 20), lauf("2026-10-12T05:00:00Z", 20)];
+  const voll = [lauf("2026-10-09T05:00:00Z", 10), lauf("2026-10-10T05:00:00Z", 10), lauf("2026-10-12T05:00:00Z", 10)];
   assert.equal(runAllowed(voll, now).ok, false);
   // Älter als 7 Tage fällt aus der Wochensumme.
-  assert.deepEqual(runAllowed([lauf("2026-10-06T05:00:00Z", 20), ...voll.slice(1)], now), { ok: true });
-  assert.equal(WEEK_CAP_EUR, 60);
+  assert.deepEqual(runAllowed([lauf("2026-10-06T05:00:00Z", 10), ...voll.slice(1)], now), { ok: true });
+  assert.equal(WEEK_CAP_EUR, 40);
 });
 
 test("Lauf: fertige Map wird übersprungen, nichts offen ergibt null, Fortsetzung zuerst", () => {
