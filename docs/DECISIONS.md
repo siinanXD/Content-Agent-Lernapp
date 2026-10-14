@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-628 | SIN-628 Staging für Inhalte | [SIN-628-staging.md](decisions/SIN-628-staging.md) |
 | SIN-621 | SIN-621: Industriemechaniker/in als eigener Kurs, MAF Metall aus MAF-Quellen | [SIN-621-industriemechaniker-eigener-kurs.md](decisions/SIN-621-industriemechaniker-eigener-kurs.md) |
 | SIN-620 | SIN-620: Interne Prüfhinweise entfernen, Elektro-Hinweis ergänzen | [SIN-620-pruefhinweise-elektro.md](decisions/SIN-620-pruefhinweise-elektro.md) |
 | SIN-605 | SIN-605 — PostHog-Key für Lernweg-Ereignisse prüfen und Live-Beleg nachholen | [SIN-605-posthog-key-status.md](decisions/SIN-605-posthog-key-status.md) |
