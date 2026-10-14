@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-648 | SIN-648 Bildvergleich nur bei Oberflächen-Änderung | [SIN-648-bildvergleich-nur-bei-oberflaeche.md](decisions/SIN-648-bildvergleich-nur-bei-oberflaeche.md) |
 | SIN-643 | SIN-643: dispatch-Läufe getrennt holen | [SIN-643-dispatch-laeufe-getrennt-holen.md](decisions/SIN-643-dispatch-laeufe-getrennt-holen.md) |
 | SIN-642 | SIN-642 Gate-Bruch bildvergleich: Revideo-Typen | [SIN-642-gate-bruch-revideo.md](decisions/SIN-642-gate-bruch-revideo.md) |
 | SIN-632 | SIN-632 Versionen und Rückgängig für Inhalte | [SIN-632-inhalte-versionen.md](decisions/SIN-632-inhalte-versionen.md) |
