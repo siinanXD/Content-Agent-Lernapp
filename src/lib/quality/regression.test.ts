@@ -19,6 +19,7 @@ test("feste Prüfsätze: fremder Beruf, interner Hinweis, fehlender Elektro-Hinw
   assert.equal(pruefe([{ ...q, unitId: "x", prompt: "Anlage spannungsfrei schalten und verdrahten" }]).length, 1);
   const schlecht = generatorSystemText().replace(ELEKTRO_HINWEIS, "").replace(/Prüfhinweise/g, "Hinweise");
   assert.equal(pruefe([], schlecht).length, 2);
+  assert.equal(pruefe([], generatorSystemText().replace(/zitierten Quelle/g, "Vorlage")).length, 1);
 });
 
 test("Vergleich: mehr als 3 Prozentpunkte schlechter = rot, genau 3 = grün", () => {

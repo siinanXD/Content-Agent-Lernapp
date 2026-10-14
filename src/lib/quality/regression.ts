@@ -54,6 +54,7 @@ export function festePruefsaetze(items: GoldQuestion[], beruf: string, generator
   }
   if (!generatorPrompt.includes(elektroHinweis)) fehler.push("Generator-Prompt: Elektro-Hinweis fehlt");
   if (!/Prüfhinweise/.test(generatorPrompt)) fehler.push("Generator-Prompt: Regel gegen interne Prüfhinweise fehlt");
+  if (!/zitierten Quelle/.test(generatorPrompt)) fehler.push("Generator-Prompt: Quellenbezug (zitierte Quelle) fehlt");
   return fehler;
 }
 
