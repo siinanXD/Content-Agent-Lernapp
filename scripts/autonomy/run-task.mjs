@@ -190,7 +190,7 @@ export function costResult(rows, capEur = RUN_CAP_EUR, { now = new Date(), seit 
   };
 }
 
-async function costReport(env, fetchImpl = fetch) {
+export async function costReport(env, fetchImpl = fetch) {
   const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=run_id,kind,cost_eur,stopped,created_at&order=created_at.desc&limit=200`;
   const headers = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
   const rows = await fetchJson("Supabase", url, { headers }, { fetchImpl });
@@ -456,6 +456,19 @@ async function main(argv) {
     console.log(line);
     if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${line}\n\n`);
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `changed=${r.changed}\n`);
+    return;
+  }
+  // SIN-653: content-grow hängt den Kostenbericht (nur lesend) an die Lauf-Zusammenfassung; Fehler bricht den Lauf nie ab.
+  const zeile = argv.indexOf("--kosten-zeile");
+  if (zeile >= 0) {
+    let line;
+    try {
+      line = `- Kostenbericht (SIN-653): ${(await costReport(process.env)).ergebnis}`;
+    } catch (e) {
+      line = `- Kostenbericht (SIN-653): nicht verfügbar (${e instanceof Error ? e.message : e})`;
+    }
+    console.log(line);
+    appendFileSync(argv[zeile + 1], `${line}\n`);
     return;
   }
   const task = argv[argv.indexOf("--task") + 1];
