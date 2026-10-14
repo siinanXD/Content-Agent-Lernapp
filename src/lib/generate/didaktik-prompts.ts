@@ -14,6 +14,7 @@ import {
   type CurriculumModule,
   type QuestionMix,
 } from "@/lib/content/curriculum";
+import { ELEKTRO_HINWEIS } from "@/lib/review/pruefhinweise";
 
 const VARIANT_RULES: Record<UnitVariant, string> = {
   standard:
@@ -23,7 +24,7 @@ const VARIANT_RULES: Record<UnitVariant, string> = {
   rechnen:
     "Variante rechnen: sections.kern nennt Größen, Einheiten und Formel; sections.beispiel ist vollständiger Rechenweg; sections.merksatz = Formel in Worten. Rechenfragen mit Toleranz/Rundung und sampleSolution.",
   sicherheit:
-    "Variante sicherheit: sections.kern in Folge Gefahr → Regel → Folge bei Verstoß. image.kind=sign wenn sinnvoll. safetyFlag=true auf jeder Einheit. 10 % menschliche Stichprobe vor publish.",
+    "Variante sicherheit: sections.kern in Folge Gefahr → Regel → Folge bei Verstoß. image.kind=sign wenn sinnvoll. safetyFlag=true auf jeder Einheit.",
 };
 
 export function formatMix(mix: QuestionMix): string {
@@ -100,13 +101,19 @@ export const FRAGE_FORMAT = `Feste Form je Fragetyp (type nur genau so; Pflicht:
 - rechnen: correct = Ergebnis mit Einheit (ein Text); sampleSolution = Rechenweg; sampleChecklist optional (Liste).
 `;
 
+/** SIN-620: Interne Hinweise standen in Erklärungen und Fragen. Muster und Wächter: src/lib/review/pruefhinweise.ts. */
+export const TEXT_REGELN = `Regeln für jeden Text, den Lernende sehen (Einheit und Frage; der Wächter blockiert sonst):
+- Keine internen Prüfhinweise wie "bei der Stichprobe gegenzuprüfen", "Abgleich mit …" oder "Quelle: KMK …". Die Quelle steht nur im Feld sourceUrl, nie im Text.
+- Nennt ein Text elektrische Eingriffe (spannungsfrei schalten, verdrahten, anklemmen), steht dort der Satz: ${ELEKTRO_HINWEIS}
+`;
+
 export function didaktikSchemaHint(): string {
   return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
 Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter mit Quelle.
 Offene Aufgaben (rechnen/kurze Begründung): nur sampleSolution + sampleChecklist zur Selbstkontrolle — keine KI-Bewertung.
 Phase A: nur generierte SVG (license Generated-SVG), keine Commons-/KI-Bilder.
 explanation muss immer gesetzt sein (Fallback aus sections).
-${FRAGE_FORMAT}${auswahlRegelnBlock()}`;
+${FRAGE_FORMAT}${TEXT_REGELN}${auswahlRegelnBlock()}`;
 }
 
 /** Full block prompt with variant rules (AP-14/AP-15 contract). */

@@ -131,7 +131,6 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Neues Unterpaket mit eigenen Abhängigkeiten (`video/schnitt`, Revideo) fiel in `**/*.tsx` der `tsconfig.json`, `next build` scheiterte mit „requires the module path …/jsx-runtime“ (Gate `bildvergleich`) → Unterpakete ohne Installation im Haupt-`npm ci` sofort in `exclude` der `tsconfig.json` eintragen und `npm run build` prüfen. (SIN-519)
 - Playwright `locator.isVisible({ timeout })` wartet nicht (timeout wird ignoriert) → optionale Schritte mit `waitFor({ state: "visible", timeout })` prüfen und danach die Ziel-URL erwarten. (SIN-518)
 - Revideo-Render aus dem Repo-Stamm findet `@revideo/*` und `public/` nicht → in `video/schnitt` arbeiten (`process.chdir`), `outDir` dort, `@revideo/ui` als Abhängigkeit, `Img`/`Video` mit `yield view.add(...)` einhängen, Export per `@revideo/core/ffmpeg`. (SIN-518)
-
 - Flex-Zeile mit `shrink-0` und langem Text (Region der Anbieter-Karten) → erzeugt auf dem Handy waagerechtes Scrollen, `bildvergleich` sah es nicht, weil es auf main schon da war. Richtig: Umbruch erlauben (`flex-wrap`, kein `shrink-0`); der Layout-Test `e2e/layout.spec.ts` fängt es. (SIN-523)
 - Tutorial-Video in 1280×720 aufgenommen, Textband lag über den Hauptknöpfen der Handy-App → Handy-Viewport 390×844 aufnehmen, im Schnitt Text in eigener Spalte neben der App; Standbilder je Schritt (`video-standbilder`) prüfen, nicht nur abspielen. (SIN-522)
 
@@ -148,3 +147,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Live-Check UI-04 blieb trotz richtigem Klickweg rot: Klicks auf der Live-Seite vor der Hydration bewirken nichts → mehrstufige Klickwege in `live/live.spec.ts` mit `clickUntil` (Klick wiederholen, bis die URL wechselt) und `networkidle` bauen. (SIN-557)
 - `cost-report` blieb wegen des alten Laufs (21,78 €) für immer rot und zeigte keine Wochenkosten → `ok` zählt nur Läufe seit `TEILBATCH_SEIT`, `wocheEur` (7 Tage) steht im Ergebnis. (SIN-563)
 - Stilles `catch → null` beim Abruf (Quellenauszug 0 von 35, Ursache unsichtbar) → Grund je URL loggen und im Bericht zählen; Abruf wie `content-check-sources.mjs` (User-Agent, 25 s, ein Wiederholversuch). (SIN-586)
+- Interne Hinweise („Stichprobe“, „Abgleich mit“, „Quelle: KMK“) landeten in Lerntexten, weil die Variantenregel im Prompt „menschliche Stichprobe vor publish“ nannte → Prozessregeln nie in den Generator-Prompt, Quelle nur in `sourceUrl`; Wächter `pruefhinweis` blockiert, Bestand mit `npm run content:bereinigen`. (SIN-620)
