@@ -21,6 +21,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Datenbank | `supabase/migrations/` (nur hinzufügen, nie bestehende ändern) |
 | Versionen und Rücksetzen von Einheiten/Fragen (SIN-632) | Tabelle `content_versions` (Trigger), `src/lib/versions/`, `scripts/inhalte-zuruecksetzen.ts`, Notfallplan `docs/ops/NOTFALL.md` |
 | Lerninhalte | `docs/content/` (Curriculum-Maps), `content/legal/` |
+| Lernkarte MAF Metall mit Quellen, Lücken (SIN-652) | `docs/content/MAF-LERNKARTE.md` (erzeugt: `npm run content:lernkarte`), Test `src/lib/autonomy/maf-lernkarte.test.ts` |
 | Umgebung | `.env.example`, `docs/ENV.md`, `src/lib/env.ts` |
 
 ## Pipeline und Qualität
