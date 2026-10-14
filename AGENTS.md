@@ -83,6 +83,12 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Beschreibung im festen Block: `wo`, `link`, `minuten`, `schritte` (nummeriert, mit kopierbaren Werten, nie Geheimnisse), `pruefung` (wie der Loop erkennt, dass es erledigt ist).
 - Tages-Update und Status-Seite zeigen offene `sinan`-Issues unter „Braucht dich“ mit Link und Minuten. Der Loop schließt sie selbst, wenn die Prüfung greift (`scripts/autonomy/sinan.mjs`, Standard-Aufgaben in `SEED`).
 
+## Done heißt live (SIN-616)
+
+- Ein Linear-Issue darf nur auf „Done“, wenn die Funktion läuft (Workflow aktiv, Migration angewendet, Secret gesetzt), nicht nur, wenn Code oder eine Vorlage gemergt ist.
+- Bleibt etwas für Sinan, entsteht ein `sinan`-Issue (siehe oben) und der PR verlinkt es. Das Original bleibt bis dahin „In Review“.
+- Fehlende Secrets bündelt der Worker in ein einziges `sinan`-Issue (bis SIN-611 sie aus Infisical holt).
+
 ## Technik (siehe DECISIONS.md)
 
 - App: Next.js auf Vercel
