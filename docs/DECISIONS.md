@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-656 | SIN-656: Sicherheits-Stichproben als Lauf-Auftrag starten und Ergebnis belegen | [SIN-656-sicherheits-stichprobe-lauf.md](decisions/SIN-656-sicherheits-stichprobe-lauf.md) |
 | SIN-653 | SIN-653: Kostenbericht nach jedem content-grow-Lauf, Structured Outputs live belegen | [SIN-653-kostenbericht-nach-content-lauf.md](decisions/SIN-653-kostenbericht-nach-content-lauf.md) |
 | SIN-652 | SIN-652: Lernkarte MAF Metall aus MaschFüAusbV und RLP MAF | [SIN-652-maf-lernkarte.md](decisions/SIN-652-maf-lernkarte.md) |
 | SIN-648 | SIN-648 Bildvergleich nur bei Oberflächen-Änderung | [SIN-648-bildvergleich-nur-bei-oberflaeche.md](decisions/SIN-648-bildvergleich-nur-bei-oberflaeche.md) |
