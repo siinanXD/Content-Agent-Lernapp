@@ -73,6 +73,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Bildvergleich | `visual/` | `npm run visual` |
 | Layout-Prüfer, Gate in `build` (SIN-523): Überlappung, Scrollen, Abschneiden, Ziele ≥ 44 px; Ausnahme `data-layout-ok` | `e2e/layout.spec.ts`, `e2e/layout-pruefer.ts` | `npx playwright test e2e/layout.spec.ts` |
 | KI-Sichtprüfung gegen Figma, nur Hinweis (SIN-523) | `.github/workflows/sichtpruefung.yml`, `scripts/autonomy/sichtpruefung.mjs`, `figma.mjs --bild`, Test `src/lib/autonomy/sichtpruefung.test.ts` | |
+| Testnutzer-Agent (SIN-640): Crawler nachts (ohne KI), 3 Personas montags (Haiku bewertet), Funde → Issues mit Dubletten-Prüfung | `.github/workflows/testnutzer.yml`, `scripts/autonomy/{crawler,personas,testnutzer}.mjs`, Test `src/lib/autonomy/testnutzer.test.ts` | `LIVE_URL=<url> node scripts/autonomy/crawler.mjs` |
 | Leistungsbudget | `performance-budget.json` (Grenzen nie anheben) | `npm run perf:budget` |
 
 ## Design
