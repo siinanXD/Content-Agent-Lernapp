@@ -249,6 +249,19 @@ test("SIN-469: Läufe pro Woche: einer je Tag, Wochendeckel 40 €", () => {
   assert.equal(WEEK_CAP_EUR, 40);
 });
 
+test("SIN-661: Wochendeckel Grenzfälle und Teilbatch", () => {
+  const lauf = (costEur: number) => ({ mode: "live" as const, startedAt: "2026-10-12T05:00:00Z", costEur, generated: 10 });
+  const now = new Date("2026-10-14T05:47:00Z");
+  // Wochenkosten + Lauf-Deckel genau 40 € startet noch, ein Cent mehr nicht (Grund im Text).
+  assert.equal(runAllowed([lauf(WEEK_CAP_EUR - RUN_CAP_EUR)], now).ok, true);
+  const zuViel = runAllowed([lauf(WEEK_CAP_EUR - RUN_CAP_EUR + 0.01)], now);
+  assert.equal(zuViel.ok, false);
+  assert.match(zuViel.ok ? "" : zuViel.reason, /Wochendeckel/);
+  // Teilbatch: gegen den Rest der Woche gerechnet kürzt partGate den Lauf.
+  assert.equal(partGate(4.5, 100, 0.059, 0, 5).ok, false);
+  assert.equal(partGate(0, 10, 0.059, 0, 5).ok, true);
+});
+
 test("Lauf: fertige Map wird übersprungen, nichts offen ergibt null, Fortsetzung zuerst", () => {
   const ids = (mapId: string) =>
     new Set(beide.filter((q) => q.mapId === mapId).flatMap((q) => slotIds(q.module)));
