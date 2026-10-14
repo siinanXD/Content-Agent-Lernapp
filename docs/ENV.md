@@ -68,6 +68,8 @@ Noch nicht auf Vercel (gegenüber Hermes-Vorlage / Cloud-Agent): `ANTHROPIC_WORK
 
 Observability (SIN-203, optional): `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` (+ optional `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`). Setup-Schritte: `docs/ops/SENTRY-POSTHOG.md`.
 
+**Status `NEXT_PUBLIC_POSTHOG_KEY` in Vercel (Production): nicht belegt.** Die Tabelle oben beschreibt nur die Cloud-Agent-Umgebung; „fehlt“ dort sagt nichts über Vercel. Die Kennzahl `posthog` ohne Ereignisse in 7 Tagen erklärt sich auch durch fehlende Einwilligung. Prüfung 2026-10-14 (SIN-605): kein Zugriff auf Vercel und keine Freigabe für die Live-URL im Lauf. Befund und offene Schritte: `docs/decisions/SIN-605-posthog-key-status.md`. Die Sinan-Aufgabe („Key in Vercel prüfen“) steht dort als Text; das Linear-Issue fehlt noch.
+
 ## Railway / Hermes
 
 Vorlage: `docs/ops/railway.env.example`. Live-Deploy bleibt blockiert, bis Telegram-Bot und Chat-ID gesetzt sind. AP-16 Quellen-Monitor: Live-HTTP auf Railway/GHA; Cloud-Agent nur offline/fixtures (`docs/ops/HERMES.md`).
