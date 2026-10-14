@@ -92,7 +92,7 @@ export function evaluateCheck(check, ctx) {
 }
 
 /** Dateien, die die Prüfungen brauchen. Nicht lesbar → fehlt (die Prüfung sagt dann „nicht erledigt“). */
-export const CHECK_FILES = ["docs/legal/checkliste-demo-zugang.md", "docs/autonomy/tokens.md", "docs/ops/BACKUP.md"];
+export const CHECK_FILES = ["docs/legal/checkliste-demo-zugang.md", "docs/autonomy/tokens.md"];
 
 export function readCheckFiles(read = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), "utf8")) {
   const files = {};
@@ -120,20 +120,6 @@ export const SEED = /** @type {SinanTask[]} */ ([
       "Speichern und einmal „Test run“ drücken: Antwort muss 200 sein.",
     ],
     pruefung: "Der Loop sieht den Job nicht. Du schließt das Issue nach dem Testlauf selbst.",
-  },
-  {
-    titel: "Wiederherstellung der Sicherung einmal testen",
-    wo: "Terminal mit Supabase-Schlüsseln (Supabase-Branch, nicht Production)",
-    link: "https://github.com/siinanXD/Content-Agent-Lernapp/blob/main/docs/ops/BACKUP.md",
-    minuten: 30,
-    schritte: [
-      "Einen Supabase-Branch als Ziel anlegen (nicht Production) und dessen Schlüssel in die Umgebung setzen.",
-      "`node --import tsx scripts/backup.ts restore --latest --dry-run`, danach `node --import tsx scripts/backup.ts restore --latest`.",
-      "`node scripts/verify-supabase-schema.mjs` mit den Ziel-Schlüsseln ausführen.",
-      "In `docs/ops/BACKUP.md` unter „Teststand“ Datum, Ziel, Zeilenzahlen und Ergebnis in die Tabelle eintragen und den Hinweis „Offen: einmaliger Restore …“ entfernen.",
-    ],
-    pruefung: "Der Loop schließt das Issue, sobald „Offen: einmaliger Restore“ nicht mehr in docs/ops/BACKUP.md steht.",
-    check: { type: "file-lacks", file: "docs/ops/BACKUP.md", text: "**Offen: einmaliger Restore" },
   },
   {
     titel: "Sicherheits-Stichprobe prüfen (13 Einheiten)",

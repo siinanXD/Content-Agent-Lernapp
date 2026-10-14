@@ -34,11 +34,13 @@ flowchart TD
   Deploy --> Smoke["Smoke-Test"]
   Smoke -- rot --> Revert
   Smoke -- grün --> Live["Live-Check (nach-deploy.yml)"]
+  Live -. "nachts / montags" .-> Testnutzer["Testnutzer-Agent: Crawler und 3 Personas, Funde werden Issues (testnutzer.yml, SIN-640)"]
   Deploy -- "grün, höchstens 1× pro Tag" --> Video["Tutorial-Video (video.yml): Freigabe nötig (SIN-483)"]
   Deploy -- "nur von Hand, freigabe ja" --> Werbeclip["KI-Werbeclip (werbeclip.yml): bis 5 €, Freigabe nötig (SIN-520)"]
   Kurs["Kurs veröffentlicht"] -- "von Hand" --> Marketing["Werbetexte (marketing.yml): Prüfung, dann Freigabe nötig (SIN-484)"]
   Live --> Waechter["Wächter / Loop-Status (status.yml)"]
   Waechter -- "neuer App-Code" --> Deploy
+  Backup["Sicherung (backup.yml) nachts, Restore-Test (restore-test.yml) monatlich in wegwerfbarer Supabase (SIN-337)"] --> Waechter
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
   Waechter --> Leitstand["Leitstand: Start/Ende jedes Schritts und Schnappschuss in Supabase (SIN-303)"]
   Worker -.-> Leitstand

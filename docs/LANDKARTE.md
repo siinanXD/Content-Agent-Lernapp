@@ -62,6 +62,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Projekt-Starter, nur Plan (SIN-202) | `scripts/autonomy/starter.mjs` (`plan`, `sql`), Entscheidung `docs/decisions/SIN-202-projekt-starter.md` |
 | Revert-Entscheidung des Wächters `revert-guard` (SIN-502) | `scripts/autonomy/revert-guard.mjs` (`decideRevert`), Test `src/lib/autonomy/revert-guard.test.ts` |
 | Fertig-Liste: v1/v2, Idee je Woche, Einsortieren, Fortschritt (SIN-528) | `scripts/autonomy/linear.mjs` (`startOrder`, `isIdea`, `classifyNew`, `fetchProgress`), `einsortieren.mjs`, Test `src/lib/autonomy/fertig-liste.test.ts`, Migration `20261020010000_sin528_loop_snapshot_fortschritt.sql` |
+| Restore-Test der Sicherung, monatlich in lokaler Supabase im Runner (SIN-337) | `.github/workflows/restore-test.yml`, Alarm `scripts/autonomy/backup.mjs` (`analyzeRestoreTest`), Doku `docs/ops/BACKUP.md` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
 
@@ -75,6 +76,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Bildvergleich | `visual/` | `npm run visual` |
 | Layout-Prüfer, Gate in `build` (SIN-523): Überlappung, Scrollen, Abschneiden, Ziele ≥ 44 px; Ausnahme `data-layout-ok` | `e2e/layout.spec.ts`, `e2e/layout-pruefer.ts` | `npx playwright test e2e/layout.spec.ts` |
 | KI-Sichtprüfung gegen Figma, nur Hinweis (SIN-523) | `.github/workflows/sichtpruefung.yml`, `scripts/autonomy/sichtpruefung.mjs`, `figma.mjs --bild`, Test `src/lib/autonomy/sichtpruefung.test.ts` | |
+| Testnutzer-Agent (SIN-640): Crawler nachts (ohne KI), 3 Personas montags (Haiku bewertet), Funde → Issues mit Dubletten-Prüfung | `.github/workflows/testnutzer.yml`, `scripts/autonomy/{crawler,personas,testnutzer}.mjs`, Test `src/lib/autonomy/testnutzer.test.ts` | `LIVE_URL=<url> node scripts/autonomy/crawler.mjs` |
 | Leistungsbudget | `performance-budget.json` (Grenzen nie anheben) | `npm run perf:budget` |
 
 ## Design

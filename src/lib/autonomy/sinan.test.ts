@@ -50,7 +50,7 @@ test("Beschreibung hat den festen Block und lässt sich zurücklesen", () => {
 
 test("Standard-Aufgaben: alle offenen Anweisungen aus SIN-310 sind da, Token-Issue fällig am 20.12.2026", () => {
   const titles = SEED.map((t) => t.titel.toLowerCase()).join("\n");
-  for (const re of [/cron-job\.org/, /wiederherstellung/, /stichprobe/, /av-verträge/, /impressum/, /datenschutz/, /pro umstellen/, /github-tokens erneuern/]) assert.match(titles, re);
+  for (const re of [/cron-job\.org/, /stichprobe/, /av-verträge/, /impressum/, /datenschutz/, /pro umstellen/, /github-tokens erneuern/]) assert.match(titles, re);
   const tokens = SEED.find((t) => /GitHub-Tokens/.test(t.titel))!;
   assert.equal(tokens.faellig, "2026-12-20");
   assert.equal(tokens.link, "https://github.com/settings/personal-access-tokens");
@@ -76,9 +76,6 @@ test("Prüfungen: Checkliste, Token-Datum, entfernter Hinweis", () => {
   const partly = { ...f, "docs/autonomy/tokens.md": f["docs/autonomy/tokens.md"].replace("| agent-workflows | Secret `AGENT_WORKFLOW_TOKEN` (GitHub, Infisical) | 03.01.2027", "| agent-workflows | Secret `AGENT_WORKFLOW_TOKEN` (GitHub, Infisical) | 20.03.2027") };
   assert.equal(evaluateCheck(tokens, { files: partly }).done, false, "ein Token fehlt noch");
 
-  const restore = SEED.find((t) => /Wiederherstellung/.test(t.titel))!.check;
-  assert.equal(evaluateCheck(restore, { files: f }).done, false);
-  assert.equal(evaluateCheck(restore, { files: { "docs/ops/BACKUP.md": "kein Hinweis mehr" } }).done, true);
   assert.equal(evaluateCheck(undefined, { files: f }).done, false);
   assert.ok(CHECK_FILES.every((x) => f[x] != null));
 });
@@ -137,7 +134,7 @@ test("Anzeige: früh Fälliges zuerst, Link und Minuten in Update und Status-Sei
   const sorted = sortSinan(issues);
   assert.match(sorted[0].title, /GitHub-Tokens/);
   assert.match(sinanLine(sorted[0]), /^SIN-\d+ GitHub-Tokens erneuern \(20 Min, fällig 20\.12\.\) https:\/\/linear\.app/);
-  assert.match(renderSinan(issues), /- \[SIN-27\]\(https:\/\/linear\.app\/x\/issue\/SIN-27\) GitHub-Tokens erneuern, 20 Min, fällig 20\.12\./);
+  assert.match(renderSinan(issues), /- \[SIN-26\]\(https:\/\/linear\.app\/x\/issue\/SIN-26\) GitHub-Tokens erneuern, 20 Min, fällig 20\.12\./);
   assert.match(renderSinan([]), /Keine offenen Aufgaben/);
 
   const need = needsYou({ sinan: issues, legalOpen: ["a"], now: NOW });
@@ -147,11 +144,11 @@ test("Anzeige: früh Fälliges zuerst, Link und Minuten in Update und Status-Sei
   const { text } = buildDigest({ now: NOW.toISOString(), slot: "morgen", issues: [], openPrs: [], mergedPrs: [], decisions: [], sinanIssues: issues });
   const block = text.split("**Braucht dich**\n")[1].split("\n\n")[0].split("\n");
   assert.equal(block.length, 6, "5 Aufgaben und „… und 3 weitere“");
-  assert.match(block[0], /^- Sinan SIN-27 GitHub-Tokens erneuern \(20 Min, fällig 20\.12\.\)/);
-  assert.equal(block[5], "… und 3 weitere");
+  assert.match(block[0], /^- Sinan SIN-26 GitHub-Tokens erneuern \(20 Min, fällig 20\.12\.\)/);
+  assert.equal(block[5], "… und 2 weitere");
 
   const fixture = JSON.parse(readFileSync("docs/autonomy/fixture-status.json", "utf8"));
   const limits = JSON.parse(readFileSync("docs/autonomy/free-tier-limits.json", "utf8"));
   const body = analyze({ ...fixture, sinanIssues: issues }, limits, {}).body;
-  assert.match(body, /## Braucht dich[\s\S]*Aufgaben mit Label `sinan`[\s\S]*\[SIN-27\]/);
+  assert.match(body, /## Braucht dich[\s\S]*Aufgaben mit Label `sinan`[\s\S]*\[SIN-26\]/);
 });

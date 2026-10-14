@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-648 | SIN-648 Bildvergleich nur bei Oberflächen-Änderung | [SIN-648-bildvergleich-nur-bei-oberflaeche.md](decisions/SIN-648-bildvergleich-nur-bei-oberflaeche.md) |
 | SIN-643 | SIN-643: dispatch-Läufe getrennt holen | [SIN-643-dispatch-laeufe-getrennt-holen.md](decisions/SIN-643-dispatch-laeufe-getrennt-holen.md) |
 | SIN-642 | SIN-642 Gate-Bruch bildvergleich: Revideo-Typen | [SIN-642-gate-bruch-revideo.md](decisions/SIN-642-gate-bruch-revideo.md) |
+| SIN-640 | SIN-640 Testnutzer-Agent | [SIN-640-testnutzer-agent.md](decisions/SIN-640-testnutzer-agent.md) |
 | SIN-632 | SIN-632 Versionen und Rückgängig für Inhalte | [SIN-632-inhalte-versionen.md](decisions/SIN-632-inhalte-versionen.md) |
 | SIN-629 | SIN-629: Goldset-Prüfung bei Änderungen an Generator oder Richter | [SIN-629-goldset-regression.md](decisions/SIN-629-goldset-regression.md) |
 | SIN-628 | SIN-628 Staging für Inhalte | [SIN-628-staging.md](decisions/SIN-628-staging.md) |
@@ -158,6 +159,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-346 | SIN-346: Trend-Radar KW 2026-41, Funde vorgemerkt | [SIN-346-trend-radar-kw41.md](decisions/SIN-346-trend-radar-kw41.md) |
 | SIN-345 | SIN-345: /start unter dem LCP-Budget | [SIN-345-start-lcp.md](decisions/SIN-345-start-lcp.md) |
 | SIN-344 | SIN-344 — Rechtsseiten prüfen und in der Produktreife belegen | [SIN-344-rechtsseiten-produktreife.md](decisions/SIN-344-rechtsseiten-produktreife.md) |
+| SIN-337 | SIN-337: Restore-Test der Sicherung als monatlicher Workflow | [SIN-337-restore-test-workflow.md](decisions/SIN-337-restore-test-workflow.md) |
 | SIN-335 | SIN-335: Gate auf main härten | [SIN-335-gate-haerten.md](decisions/SIN-335-gate-haerten.md) |
 | SIN-334 | SIN-334: Dispatcher sofort nach Merge und bei frei gewordenem Platz anstoßen | [SIN-334-dispatcher-anstossen.md](decisions/SIN-334-dispatcher-anstossen.md) |
 | SIN-333 | SIN-333: Gate-Bruch zählt nur frische Läufe, ohne Dependabot, mit Gegencheck auf main | [SIN-333-gate-bruch-frische-laeufe.md](decisions/SIN-333-gate-bruch-frische-laeufe.md) |
