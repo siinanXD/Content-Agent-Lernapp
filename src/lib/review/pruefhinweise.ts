@@ -47,7 +47,7 @@ const ABSCHNITTE = ["einstieg", "kern", "beispiel", "merksatz"] as const;
 
 /**
  * Bereinigt ein erzeugtes Lernfeld (`course.generated`) und liefert eine Kopie plus Bericht.
- * Der Elektro-Hinweis kommt einmal je Einheit an `explanation`, wenn Erklärung oder Abschnitte der Einheit
+ * Der Elektro-Hinweis kommt einmal je Einheit an `explanation` (fehlt sie: an den letzten Abschnitt), wenn Erklärung oder Abschnitte der Einheit
  * elektrische Eingriffe nennen und weder sie noch die Fragen eine Zuständigkeit nennen (Fragen lösen nichts aus).
  */
 export function bereinigeLernfeld<T>(generated: T): { generated: T; bericht: BereinigungsBericht } {
@@ -100,14 +100,19 @@ export function bereinigeLernfeld<T>(generated: T): { generated: T; bericht: Ber
       .filter((t): t is string => typeof t === "string")
       .join(" ");
     const fragentext = (u.questions ?? []).flatMap((q) => [q.prompt, q.explanation]).filter((t) => typeof t === "string");
-    if (
-      typeof u.explanation === "string" &&
-      ELEKTRO_MUSTER.test(einheitentext) &&
-      !ELEKTRO_VORHANDEN.test([einheitentext, ...fragentext].join(" "))
-    ) {
-      u.explanation = `${u.explanation.trimEnd()} ${ELEKTRO_HINWEIS}`;
-      geaendert = true;
-      bericht.elektro.push(uid);
+    if (ELEKTRO_MUSTER.test(einheitentext) && !ELEKTRO_VORHANDEN.test([einheitentext, ...fragentext].join(" "))) {
+      const abschnitt = [...ABSCHNITTE].reverse().find((a) => u.sections?.[a]);
+      if (typeof u.explanation === "string") {
+        u.explanation = `${u.explanation.trimEnd()} ${ELEKTRO_HINWEIS}`;
+      } else if (abschnitt && u.sections) {
+        u.sections[abschnitt] = `${u.sections[abschnitt]!.trimEnd()} ${ELEKTRO_HINWEIS}`;
+      } else {
+        bericht.manuell.push(`Einheit ${uid}`);
+      }
+      if (typeof u.explanation === "string" || abschnitt) {
+        geaendert = true;
+        bericht.elektro.push(uid);
+      }
     }
     if (geaendert) bericht.einheiten.push(uid);
   }
