@@ -26,6 +26,8 @@ export const COURSE_KEYWORDS = {
   "maf-druckverarbeitung": "Maschinen- und Anlagenführer – Schwerpunkt Druckverarbeitung",
   indkfl: "Industriekaufmann",
 };
+/** SIN-665: Kurse ohne eigene Map, deren Einheiten-IDs die Module einer anderen Map nutzen (SIN-621: Industriemechaniker teilt die Metall-IDs). */
+export const COURSE_KEYWORD_MODULE_MAP = { Industriemechaniker: "maf-metall" };
 
 /** Alle `docs/content/*.json` außer `*-curriculum*` und `sources.lock.json`. */
 export function loadMaps(dir = MAPS_DIR) {
@@ -230,15 +232,16 @@ export function discardReasons(e) {
 }
 
 /** Verworfene Fragen (letzte Bewertung nicht bestanden) je Modul und Fragetyp mit gezählten Gründen, häufigste zuerst. */
-export function discardedByModuleAndType(maps, evaluations, mapOfCourse) {
+export function discardedByModuleAndType(maps, evaluations, mapOfCourse, moduleMapOfCourse = {}) {
   const moduleOf = new Map();
   for (const map of maps) for (const m of map.modules) for (const s of slotIds(m)) moduleOf.set(`${map.id}:${s}`, m.id);
   const acc = new Map();
   for (const e of evaluations) {
     if (e.passed) continue;
-    const mapId = mapOfCourse[e.course_id] ?? "unbekannt";
-    const moduleId = moduleOf.get(`${mapId}:${e.unit_id}`) ?? "unbekannt";
-    const type = e.type ?? "unbekannt";
+    // SIN-665: Ursache statt „unbekannt“ nennen: Kurs ohne Map bzw. Einheit nicht in der Map.
+    const mapId = mapOfCourse[e.course_id] ?? moduleMapOfCourse[e.course_id] ?? "Kurs ohne Map";
+    const moduleId = moduleOf.get(`${mapId}:${e.unit_id}`) ?? "Einheit nicht in Map";
+    const type = e.type ?? "Fragetyp fehlt";
     const k = `${mapId}/${moduleId}/${type}`;
     const a = acc.get(k) ?? { mapId, moduleId, type, count: 0, reasons: {} };
     a.count++;
@@ -282,6 +285,8 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
         courseOfMap[map.id] = c.id;
       }
     }
+    const moduleMapOfCourse = {};
+    for (const c of courses) if (COURSE_KEYWORD_MODULE_MAP[c.keyword] && !mapOfCourse[c.id]) moduleMapOfCourse[c.id] = COURSE_KEYWORD_MODULE_MAP[c.keyword];
     const units = await fetchAll(env.SUPABASE_URL, "units", "select=id,course_id,shared_module_key", h);
     const published = {};
     for (const u of units) {
@@ -301,7 +306,7 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
       coverage: computeCoverage(maps, published),
       passRates: passRateByModule(maps, evaluationsWithExisting, mapOfCourse),
       offeneVerworfene: evaluationsWithExisting.filter((e) => !e.passed).length,
-      verworfenNachModulTyp: discardedByModuleAndType(maps, evaluationsWithExisting, mapOfCourse),
+      verworfenNachModulTyp: discardedByModuleAndType(maps, evaluationsWithExisting, mapOfCourse, moduleMapOfCourse),
       fragenGesamt,
       fragenBewertet: evaluationsWithExisting.length,
       runs: runSummary,
