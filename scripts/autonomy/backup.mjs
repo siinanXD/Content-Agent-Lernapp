@@ -58,8 +58,8 @@ export async function collectBackup(repo, now, call) {
 /** Restore-Test (SIN-337): monatlich; nach so vielen Tagen ohne Lauf gilt er als überfällig. */
 export const RESTORE_STALE_D = 40;
 
-/** @param {{ runs: { conclusion: string|null, status: string, updated_at: string, html_url: string }[], now: Date }} p neueste Läufe zuerst */
-export function analyzeRestoreTest({ runs, now }) {
+/** @param {{ runs: { conclusion: string|null, status: string, updated_at: string, html_url: string }[], now: Date, since?: string }} p neueste Läufe zuerst; since = Anlage des Workflows (nur ohne Läufe) */
+export function analyzeRestoreTest({ runs, now, since }) {
   const done = runs.filter((r) => r.status === "completed");
   const last = done[0];
   const lastOk = done.find((r) => r.conclusion === "success");
@@ -67,7 +67,9 @@ export function analyzeRestoreTest({ runs, now }) {
   let incident = null;
   let line;
   if (!last) {
-    line = "Restore-Test: noch nicht gelaufen";
+    const stale = since && now.getTime() - new Date(since).getTime() > RESTORE_STALE_D * 86400_000;
+    line = stale ? `Restore-Test überfällig, noch nie gelaufen (Workflow seit ${since.slice(0, 10)})` : "Restore-Test: noch nicht gelaufen";
+    if (stale) incident = { key: "restore-test-stale", text: `Kein Restore-Test seit über ${RESTORE_STALE_D} Tagen (nie gelaufen).` };
   } else if (last.conclusion !== "success") {
     line = `Restore-Test fehlgeschlagen (${last.updated_at.slice(0, 10)})${lastOk ? `, zuletzt ok ${lastOk.updated_at.slice(0, 10)}` : ""}`;
     incident = { key: `restore-test-failed:${last.html_url}`, text: `Restore-Test der Sicherung fehlgeschlagen: ${last.html_url}` };
@@ -84,7 +86,8 @@ export function analyzeRestoreTest({ runs, now }) {
 export async function collectRestoreTest(repo, now, call) {
   try {
     const { workflow_runs } = await call(`/repos/${repo}/actions/workflows/restore-test.yml/runs?per_page=5`);
-    return analyzeRestoreTest({ runs: workflow_runs.map((r) => ({ status: r.status, conclusion: r.conclusion, updated_at: r.updated_at, html_url: r.html_url })), now });
+    const since = workflow_runs.length ? undefined : (await call(`/repos/${repo}/actions/workflows/restore-test.yml`)).created_at;
+    return analyzeRestoreTest({ since, runs: workflow_runs.map((r) => ({ status: r.status, conclusion: r.conclusion, updated_at: r.updated_at, html_url: r.html_url })), now });
   } catch {
     return null;
   }

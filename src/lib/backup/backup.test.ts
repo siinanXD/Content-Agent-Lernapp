@@ -115,4 +115,6 @@ test("Restore-Test (SIN-337): grün zeigt Datum, rot und überfällig sind Meldu
   assert.match(bad.incident!.text, /fehlgeschlagen/);
   assert.equal(analyzeRestoreTest({ runs: [run("success", "2026-08-01T04:30:00Z")], now }).incident!.key, "restore-test-stale");
   assert.equal(analyzeRestoreTest({ runs: [], now }).incident, null);
+  assert.equal(analyzeRestoreTest({ runs: [], now, since: "2026-10-01T00:00:00Z" }).incident, null);
+  assert.equal(analyzeRestoreTest({ runs: [], now, since: "2026-08-01T00:00:00Z" }).incident!.key, "restore-test-stale");
 });
