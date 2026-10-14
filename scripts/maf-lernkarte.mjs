@@ -25,7 +25,7 @@ export function lernkarte(c) {
 
   w("# Lernkarte MAF Metall (SIN-652)");
   w();
-  w(`Stand der Map: ${c.version}. Erzeugt aus [${code("maf-metall.json")}](maf-metall.json) mit ${code("node scripts/maf-lernkarte.mjs")}; nicht von Hand ändern.`);
+  w(`Stand der Map: ${c.version}. Erzeugt aus [${code("maf-metall.json")}](maf-metall.json) mit ${code("node scripts/maf-lernkarte.mjs")}. KI-erzeugt, Prüfung und Freigabe macht ein Mensch; nicht von Hand ändern.`);
   w();
   w("## 1. Ausbildungsinhalte (Berufsbildpositionen)");
   w();

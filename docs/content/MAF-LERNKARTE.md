@@ -1,6 +1,6 @@
 # Lernkarte MAF Metall (SIN-652)
 
-Stand der Map: 2026-10-03. Erzeugt aus [`maf-metall.json`](maf-metall.json) mit `node scripts/maf-lernkarte.mjs`; nicht von Hand ändern.
+Stand der Map: 2026-10-03. Erzeugt aus [`maf-metall.json`](maf-metall.json) mit `node scripts/maf-lernkarte.mjs`. KI-erzeugt, Prüfung und Freigabe macht ein Mensch; nicht von Hand ändern.
 
 ## 1. Ausbildungsinhalte (Berufsbildpositionen)
 
