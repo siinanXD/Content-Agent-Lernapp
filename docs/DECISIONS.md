@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-595 | SIN-595: Wochenkosten der Content-Fabrik, Beleg für Lauf ≤ 20 € steht aus | [SIN-595-wochenkosten-beleg-offen.md](decisions/SIN-595-wochenkosten-beleg-offen.md) |
 | SIN-588 | SIN-588: Kosten-Beleg für den nächsten Content-Lauf steht aus | [SIN-588-kosten-beleg-offen.md](decisions/SIN-588-kosten-beleg-offen.md) |
 | SIN-587 | SIN-587: Worker-Sicherung hängt nicht mehr an „Fehler auswerten“ | [SIN-587-worker-sicherung-unabhaengig.md](decisions/SIN-587-worker-sicherung-unabhaengig.md) |
 | SIN-586 | SIN-586: Quellenauszug zeigt den Grund, wenn er fehlt | [SIN-586-auszug-quelle.md](decisions/SIN-586-auszug-quelle.md) |
