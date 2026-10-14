@@ -9,6 +9,8 @@
  */
 import { bereinigeLernfeld } from "../src/lib/review/pruefhinweise";
 import { getStorage } from "../src/lib/storage";
+import { getServiceSupabase } from "../src/lib/storage/supabase-client";
+import { setzeKontext, type VersionDb } from "../src/lib/versions/versions";
 
 async function main() {
   const apply = process.argv.includes("--apply");
@@ -23,7 +25,11 @@ async function main() {
     manuell += bericht.manuell.length;
     if (bericht.einheiten.length === 0 && bericht.manuell.length === 0) continue;
     console.log(JSON.stringify({ course: course.id, ...bericht }));
-    if (apply && bericht.einheiten.length > 0) await storage.setGenerated(course.id, generated);
+    if (apply && bericht.einheiten.length > 0) {
+      // SIN-632: Grund und Issue für die Versionen dieser Änderung.
+      await setzeKontext(getServiceSupabase() as unknown as VersionDb, { grund: "Interne Prüfhinweise entfernt", issue: "SIN-620" });
+      await storage.setGenerated(course.id, generated);
+    }
   }
   console.log(apply ? "angewendet" : "Trockenlauf (mit --apply schreiben)", `· manuell zu prüfen: ${manuell}`);
 }

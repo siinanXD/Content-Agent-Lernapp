@@ -286,18 +286,12 @@ export const supabaseStorage: CourseStorage = {
       throw new Error("generated_must_be_lernfeld");
     }
 
-    // Clear previous units/questions for this course, then insert fresh rows.
-    const { error: qDel } = await sb.from("questions").delete().eq("course_id", id);
-    if (qDel) throw new Error(`questions_clear: ${qDel.message}`);
-    const { error: uDel } = await sb.from("units").delete().eq("course_id", id);
-    if (uDel) throw new Error(`units_clear: ${uDel.message}`);
-
-    if (generated.units.length) {
-      const fallbackUrl =
-        "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";
-      const fallbackFetched = new Date().toISOString();
-      const { error: uIns } = await sb.from("units").insert(
-        generated.units.map((u, i) => ({
+    // SIN-632: upsert statt löschen und neu anlegen, damit der Versions-Trigger nur echte Änderungen festhält.
+    // Zeilen, die nicht mehr vorkommen, werden danach gelöscht (Fragen vor Einheiten).
+    const fallbackUrl =
+      "https://www.gesetze-im-internet.de/maschf_ausbv/BJNR064700004.html";
+    const fallbackFetched = new Date().toISOString();
+    const unitRows = generated.units.map((u, i) => ({
           id: u.id || `unit-${i + 1}`,
           course_id: id,
           title: u.title || `Einheit ${i + 1}`,
@@ -306,28 +300,44 @@ export const supabaseStorage: CourseStorage = {
           source_url: u.sourceUrl || fallbackUrl,
           source_fetched_at: u.sourceFetchedAt || fallbackFetched,
           sort_order: i,
-        })),
-      );
-      if (uIns) throw new Error(`units_insert: ${uIns.message}`);
+        }));
+    const questionRows = generated.units.flatMap((u, ui) =>
+      (u.questions ?? []).map((q, qi) => ({
+        id: q.id || `q${qi + 1}`,
+        course_id: id,
+        unit_id: u.id || `unit-${ui + 1}`,
+        type: q.type || "auswahl",
+        prompt: q.prompt || "",
+        choices: q.choices ?? null,
+        correct: q.correct ?? "",
+        explanation: q.explanation || "",
+        source_url: q.sourceUrl || u.sourceUrl || fallbackUrl,
+        sort_order: ui * 1000 + qi,
+      })),
+    );
 
-      const questionRows = generated.units.flatMap((u, ui) =>
-        (u.questions ?? []).map((q, qi) => ({
-          id: q.id || `q${qi + 1}`,
-          course_id: id,
-          unit_id: u.id || `unit-${ui + 1}`,
-          type: q.type || "auswahl",
-          prompt: q.prompt || "",
-          choices: q.choices ?? null,
-          correct: q.correct ?? "",
-          explanation: q.explanation || "",
-          source_url: q.sourceUrl || u.sourceUrl || fallbackUrl,
-          sort_order: ui * 1000 + qi,
-        })),
-      );
-      if (questionRows.length) {
-        const { error: qIns } = await sb.from("questions").insert(questionRows);
-        if (qIns) throw new Error(`questions_insert: ${qIns.message}`);
-      }
+    if (unitRows.length) {
+      const { error: uIns } = await sb.from("units").upsert(unitRows, { onConflict: "course_id,id" });
+      if (uIns) throw new Error(`units_insert: ${uIns.message}`);
+    }
+    if (questionRows.length) {
+      const { error: qIns } = await sb.from("questions").upsert(questionRows, { onConflict: "course_id,unit_id,id" });
+      if (qIns) throw new Error(`questions_insert: ${qIns.message}`);
+    }
+
+    const keepQ = new Set(questionRows.map((q) => `${q.unit_id}\u0000${q.id}`));
+    const { data: oldQ, error: oqErr } = await sb.from("questions").select("id, unit_id").eq("course_id", id);
+    if (oqErr) throw new Error(`questions_clear: ${oqErr.message}`);
+    for (const q of (oldQ ?? []).filter((r) => !keepQ.has(`${r.unit_id}\u0000${r.id}`))) {
+      const { error } = await sb.from("questions").delete().eq("course_id", id).eq("unit_id", q.unit_id).eq("id", q.id);
+      if (error) throw new Error(`questions_clear: ${error.message}`);
+    }
+    const keepU = new Set(unitRows.map((u) => u.id));
+    const { data: oldU, error: ouErr } = await sb.from("units").select("id").eq("course_id", id);
+    if (ouErr) throw new Error(`units_clear: ${ouErr.message}`);
+    for (const u of (oldU ?? []).filter((r) => !keepU.has(r.id))) {
+      const { error } = await sb.from("units").delete().eq("course_id", id).eq("id", u.id);
+      if (error) throw new Error(`units_clear: ${error.message}`);
     }
 
     // AP-15: persist full GeneratedLernfeld in courses.lernfeld jsonb (moduleId/blockId/sections).
