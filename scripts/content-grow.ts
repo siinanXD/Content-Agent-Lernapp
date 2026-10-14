@@ -68,6 +68,7 @@ import { MAX_QUESTIONS, MIN_PASSED_QUESTIONS, planFromEvals } from "../src/lib/g
 import { enforceQuestionSchema, type RepairFn } from "../src/lib/generate/schema-gate";
 import { trenneFremdeQuellen } from "../src/lib/generate/quellen-beruf";
 import { emptySchemaStats, gateUnit } from "../src/lib/generate/question-schema";
+import { freigabe, istVeroeffentlicht, nurVeroeffentlicht, probenGruen } from "../src/lib/generate/staging";
 import {
   addClaudeLedger,
   addOpenAIUsage,
@@ -209,7 +210,8 @@ async function main() {
     console.error("::error::Kurs fehlt:", COURSE);
     return abortRun("Kurs fehlt", 2);
   }
-  const publishedByMap = new Map([...unitsByMap].map(([m, us]) => [m, new Set(us.map((u) => u.id))]));
+  // SIN-628: Entwürfe und nur geprüfte Einheiten zählen nicht als veröffentlicht.
+  const publishedByMap = new Map([...unitsByMap].map(([m, us]) => [m, new Set(nurVeroeffentlicht(us).map((u) => u.id))]));
 
   const history = loadHistory();
   // SIN-469: mehrere Läufe pro Woche, aber höchstens einer je Tag und unter dem Wochendeckel (nur echte Läufe).
@@ -589,17 +591,28 @@ async function main() {
 
   // Veröffentlichen: erst jetzt, alles in einem Schritt.
   // Letzte Sperre (SIN-473): nie eine schema-ungültige Frage speichern.
-  for (let i = 0; i < live.length; i++) live[i] = gateUnit(live[i]!).unit;
-  const liveIds = new Set(live.map((u) => u.id));
-  if (live.length > 0) {
+  // SIN-628: Staging. Neues gilt als Entwurf; veröffentlicht wird nur mit Richter UND grünen Proben.
+  // Eine bestehende veröffentlichte Einheit wird nie durch eine nicht freigegebene Fassung ersetzt.
+  const staged = live
+    .map((u) => freigabe(gateUnit(u).unit, true, probenGruen(u, MIN_PASSED_QUESTIONS)))
+    .filter((u) => istVeroeffentlicht(u) || !published.has(u.id));
+  const held = staged.filter((u) => !istVeroeffentlicht(u));
+  if (held.length > 0) console.log(`::notice::Nicht freigegeben (Proben rot): ${held.map((u) => u.id).join(", ")}`);
+  live.splice(0, live.length, ...staged);
+  const entwuerfe = generatedUnits
+    .filter((u) => !live.some((l) => l.id === u.id) && !published.has(u.id))
+    .map((u) => freigabe(u, false, false));
+  const stagedIds = new Set([...live, ...entwuerfe].map((u) => u.id));
+  const liveIds = new Set(live.filter(istVeroeffentlicht).map((u) => u.id));
+  if (live.length + entwuerfe.length > 0) {
     const merged = mergePhaseLernfeld(
-      [...priorUnits.filter((u) => !liveIds.has(u.id)), ...live],
+      [...priorUnits.filter((u) => !stagedIds.has(u.id)), ...live, ...entwuerfe],
       MAP_ID === "maf-metall"
         ? {}
         : { id: `${MAP_ID}-fabrik`, title: curriculum.title, focus: "Content-Fabrik (SIN-431)" },
     );
     await storage.setGenerated(COURSE, merged);
-    await storage.setStatus(COURSE, "published");
+    if (liveIds.size > 0) await storage.setStatus(COURSE, "published");
   }
 
   const sample = pickSafetySample(live);
