@@ -1,0 +1,66 @@
+# Restore-Test der Sicherung (SIN-337): monatlich spielt der Lauf die jüngste Sicherung aus dem Bucket `backups` in eine
+# wegwerfbare lokale Supabase im Runner ein (Migrationen aus supabase/migrations/), prüft Zeilenzahlen und Schema und
+# schreibt das Ergebnis als Ereignis `restore-test` in `loop_events`. Die Produktion wird nur gelesen (Bucket) und
+# bekommt nur diese eine Ereigniszeile. Rot = Alarm über die Status-Seite (scripts/autonomy/backup.mjs).
+# Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (Produktion, lesen). Ziel-Werte kommen aus `supabase status`.
+name: restore-test
+
+on:
+  schedule:
+    - cron: "17 4 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restore-test
+  cancel-in-progress: false
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Wegwerfbare Supabase starten, Migrationen einspielen
+        run: |
+          echo "START=$(date +%s)" >> "$GITHUB_ENV"
+          supabase init --force
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor
+          supabase db reset
+          supabase status -o env > status.env
+          . ./status.env
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          echo "RESTORE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "RESTORE_SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+      - name: Sicherung prüfen und einspielen
+        run: |
+          set -o pipefail
+          node --import tsx scripts/backup.ts restore --latest --dry-run
+          node --import tsx scripts/backup.ts restore --latest | tee restore.log
+      - name: Schema gegen das Ziel prüfen
+        run: SUPABASE_URL="$RESTORE_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$RESTORE_SUPABASE_SERVICE_ROLE_KEY" node scripts/verify-supabase-schema.mjs
+      - name: Ergebnis festhalten
+        if: always()
+        run: |
+          rows=$(sed -n 's/^Wiederhergestellt: //p' restore.log 2>/dev/null | head -1)
+          sec=$(( $(date +%s) - START ))
+          status=fehler; [ "${{ job.status }}" = success ] && status=ok
+          {
+            echo "### Restore-Test: $status ($(date -u +%F), ${sec} s)"
+            echo "${rows:-keine Zeilenzahlen (Lauf vorher abgebrochen)}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          node scripts/autonomy/leitstand.mjs ereignis --schritt restore-test --status "$status" \
+            --grund "${rows:-abgebrochen}, ${sec} s" --seit "$((START * 1000))"

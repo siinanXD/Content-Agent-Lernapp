@@ -54,3 +54,38 @@ export async function collectBackup(repo, now, call) {
     return null;
   }
 }
+
+/** Restore-Test (SIN-337): monatlich; nach so vielen Tagen ohne Lauf gilt er als überfällig. */
+export const RESTORE_STALE_D = 40;
+
+/** @param {{ runs: { conclusion: string|null, status: string, updated_at: string, html_url: string }[], now: Date }} p neueste Läufe zuerst */
+export function analyzeRestoreTest({ runs, now }) {
+  const done = runs.filter((r) => r.status === "completed");
+  const last = done[0];
+  const lastOk = done.find((r) => r.conclusion === "success");
+  /** @type {{ key: string, text: string } | null} */
+  let incident = null;
+  let line;
+  if (!last) {
+    line = "Restore-Test: noch nicht gelaufen";
+  } else if (last.conclusion !== "success") {
+    line = `Restore-Test fehlgeschlagen (${last.updated_at.slice(0, 10)})${lastOk ? `, zuletzt ok ${lastOk.updated_at.slice(0, 10)}` : ""}`;
+    incident = { key: `restore-test-failed:${last.html_url}`, text: `Restore-Test der Sicherung fehlgeschlagen: ${last.html_url}` };
+  } else if (now.getTime() - new Date(last.updated_at).getTime() > RESTORE_STALE_D * 86400_000) {
+    line = `Restore-Test überfällig, zuletzt ${last.updated_at.slice(0, 10)}`;
+    incident = { key: "restore-test-stale", text: `Kein Restore-Test seit über ${RESTORE_STALE_D} Tagen (letzter: ${last.updated_at}).` };
+  } else {
+    line = `Sicherung zuletzt getestet am ${last.updated_at.slice(0, 10)}`;
+  }
+  return { line, incident, at: lastOk?.updated_at ?? null, ok: !incident };
+}
+
+/** Fehler beim Lesen → null (Status bleibt still). */
+export async function collectRestoreTest(repo, now, call) {
+  try {
+    const { workflow_runs } = await call(`/repos/${repo}/actions/workflows/restore-test.yml/runs?per_page=5`);
+    return analyzeRestoreTest({ runs: workflow_runs.map((r) => ({ status: r.status, conclusion: r.conclusion, updated_at: r.updated_at, html_url: r.html_url })), now });
+  } catch {
+    return null;
+  }
+}

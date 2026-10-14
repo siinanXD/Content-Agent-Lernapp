@@ -110,6 +110,7 @@ flowchart TD
   Kurs["Kurs veröffentlicht"] -- "von Hand" --> Marketing["Werbetexte (marketing.yml): Prüfung, dann Freigabe nötig (SIN-484)"]
   Live --> Waechter["Wächter / Loop-Status (status.yml)"]
   Waechter -- "neuer App-Code" --> Deploy
+  Backup["Sicherung (backup.yml) nachts, Restore-Test (restore-test.yml) monatlich in wegwerfbarer Supabase (SIN-337)"] --> Waechter
   Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
   Waechter --> Leitstand["Leitstand: Start/Ende jedes Schritts und Schnappschuss in Supabase (SIN-303)"]
   Worker -.-> Leitstand

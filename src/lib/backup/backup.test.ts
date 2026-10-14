@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { gzipSync } from "node:zlib";
-import { analyzeBackup } from "../../../scripts/autonomy/backup.mjs";
+import { analyzeBackup, analyzeRestoreTest } from "../../../scripts/autonomy/backup.mjs";
 import { BACKUP_TABLES, exportBackup, parseBackup, restoreBackup, selectPrune, serialize, type DbClient, type Row } from "./backup";
 
 /** Minimaler Supabase-Ersatz: Tabellen im Speicher, select/order/range und upsert nach Konfliktschlüssel. */
@@ -103,4 +103,16 @@ test("Status: Zeit und Fragenzahl, Fehler und Überfälligkeit sind Meldungen", 
   const stale = analyzeBackup({ runs: [run("success", "2026-10-04T02:25:00Z")], note, now });
   assert.equal(stale.incident!.key, "backup-stale");
   assert.equal(analyzeBackup({ runs: [], now }).incident, null);
+});
+
+test("Restore-Test (SIN-337): grün zeigt Datum, rot und überfällig sind Meldungen", () => {
+  const now = new Date("2026-10-14T10:00:00Z");
+  const run = (conclusion: string, updated_at: string) => ({ status: "completed", conclusion, updated_at, html_url: `u/${conclusion}` });
+  const ok = analyzeRestoreTest({ runs: [run("success", "2026-10-01T04:30:00Z")], now });
+  assert.equal(ok.line, "Sicherung zuletzt getestet am 2026-10-01");
+  assert.equal(ok.incident, null);
+  const bad = analyzeRestoreTest({ runs: [run("failure", "2026-10-01T04:30:00Z"), run("success", "2026-09-01T04:30:00Z")], now });
+  assert.match(bad.incident!.text, /fehlgeschlagen/);
+  assert.equal(analyzeRestoreTest({ runs: [run("success", "2026-08-01T04:30:00Z")], now }).incident!.key, "restore-test-stale");
+  assert.equal(analyzeRestoreTest({ runs: [], now }).incident, null);
 });
