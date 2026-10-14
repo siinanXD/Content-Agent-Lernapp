@@ -6,6 +6,7 @@ import {
   MAX_USD,
   PERSONAS,
   bewerten,
+  berichtText,
   buendeln,
   issueVon,
   kosten,
@@ -83,4 +84,10 @@ test("Crawler: nur gleiche Herkunft, keine Anker", () => {
   assert.equal(istInterneUrl("/lernpfad", base), true);
   assert.equal(istInterneUrl("#top", base), false);
   assert.equal(istInterneUrl("https://b.example/x", base), false);
+});
+
+test("Bericht: Persona-Lauf kennzeichnet die KI im Text, Crawler nicht", () => {
+  const p = berichtText({ quelle: "personas", funde: 0, neu: 0, doppelt: 0 });
+  assert.match(p, /KI-erzeugt \(Claude\)/);
+  assert.doesNotMatch(berichtText({ quelle: "crawler", funde: 0, neu: 0, doppelt: 0 }), /KI-erzeugt/);
 });

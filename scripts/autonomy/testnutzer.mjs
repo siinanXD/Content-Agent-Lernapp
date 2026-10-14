@@ -110,6 +110,7 @@ export function berichtText({ quelle, funde, neu, doppelt, ueberzaehlig = 0, ang
   return [
     `**${titel}**`,
     "",
+    quelle === "personas" ? "Die Bewertung ist KI-erzeugt (Claude) und nur ein Hinweis; ein Mensch prüft sie." : "",
     funde === 0 ? "Keine Funde." : `${funde} Fund(e) in ${neu + doppelt} Gruppe(n): ${angelegt.length} neue Issues, ${doppelt} schon bekannt${ueberzaehlig ? `, ${ueberzaehlig} wegen Deckel (${MAX_NEUE_ISSUES}) liegen gelassen` : ""}.`,
     angelegt.length ? `Neu: ${angelegt.join(", ")}` : "",
     notiz,
