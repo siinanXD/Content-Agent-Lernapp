@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { quelleGehoertZuBeruf } from "../generate/quellen-beruf";
 
 /**
  * Typed loader for the curriculum maps in docs/content/*.json (AP-13).
@@ -194,7 +195,8 @@ export function modulesForPhase(c: Curriculum, phaseId: string): CurriculumModul
 export function blockSources(c: Curriculum, block: CurriculumBlock): CurriculumSource[] {
   return block.sourceIds
     .map((id) => c.sources.find((s) => s.id === id))
-    .filter((s): s is CurriculumSource => Boolean(s));
+    .filter((s): s is CurriculumSource => Boolean(s))
+    .filter((s) => quelleGehoertZuBeruf(s.url, c.family)); // SIN-621: keine Quelle eines fremden Berufs
 }
 
 /** All exam area ids a module may reference: graded part ids, their Gebiete, ungraded ids. */

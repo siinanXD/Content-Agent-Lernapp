@@ -62,7 +62,8 @@ describe("AP-13 curriculum maps (docs/content/*.json)", () => {
             assert.ok(!ids.has(b.id), `duplicate block ${b.id}`);
             ids.add(b.id);
             assert.ok(b.units > 0 && b.topics.length > 0, b.id);
-            assert.equal(blockSources(c, b).length, b.sourceIds.length, `${b.id} unknown source`);
+            for (const id of b.sourceIds) assert.ok(c.sources.some((s) => s.id === id), `${b.id} unknown source ${id}`);
+            assert.ok(blockSources(c, b).length <= b.sourceIds.length, b.id);
           }
         }
         assert.deepEqual(curriculumTotals(c), c.totals);
