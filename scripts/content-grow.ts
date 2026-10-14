@@ -14,7 +14,7 @@
  *   COURSE_STORAGE=supabase npm run content:grow -- --dry-run --source-report=source-report.json
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GENERATOR_MODEL } from "../src/lib/anthropic/client";
 import { loadAllCurricula, type Curriculum } from "../src/lib/content/curriculum";
@@ -219,6 +219,8 @@ async function main() {
     const allowed = runAllowed(history);
     if (!allowed.ok) {
       console.log(`Fabrik übersprungen: ${allowed.reason}`);
+      // SIN-661: Grund ins Statusprotokoll des Laufs (pausieren statt rot laufen).
+      if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Fabrik pausiert\n\n${allowed.reason}\n`);
       process.exit(0);
     }
   }
