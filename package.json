@@ -14,6 +14,7 @@
     "quality:goldset-indkfl": "node --import tsx scripts/goldset-indkfl.ts",
     "quality:calibrate": "node --import tsx scripts/ap06-calibrate.ts",
     "content:bereinigen": "node --import tsx scripts/sin620-bereinigen.ts",
+    "inhalte:zuruecksetzen": "node --import tsx scripts/inhalte-zuruecksetzen.ts",
     "quality:judge-backfill": "node --import tsx scripts/sin260-judge-backfill.ts",
     "quality:quote": "node scripts/autonomy/quality-quote.mjs",
     "quality:smoke": "node --import tsx scripts/ap06-smoke.ts",
