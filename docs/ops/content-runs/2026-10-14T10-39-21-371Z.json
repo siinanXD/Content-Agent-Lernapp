@@ -1,0 +1,249 @@
+{
+  "runId": "2026-10-14T10-39-21-371Z",
+  "mode": "live",
+  "startedAt": "2026-10-14T10:39:21.371Z",
+  "mapId": "maf-metall",
+  "moduleId": "LF7",
+  "moduleIds": [
+    "LF7",
+    "LF6",
+    "LF8",
+    "LF9",
+    "QS",
+    "APPT"
+  ],
+  "nextModuleId": "APPT",
+  "resumeModuleId": "APPT",
+  "generated": 206,
+  "passed": 149,
+  "discarded": 71,
+  "discardedUnitIds": [
+    "LF6-1-u7",
+    "LF6-1-u8",
+    "LF6-2-u8",
+    "LF6-2-u1",
+    "LF6-2-u2",
+    "LF8-1-u3",
+    "LF6-5-u7",
+    "LF6-1-u4",
+    "LF8-1-u1",
+    "LF7-3-u10",
+    "LF6-5-u2",
+    "LF6-4-u7",
+    "LF6-3-u9",
+    "LF6-3-u10",
+    "LF6-4-u9",
+    "LF6-4-u10",
+    "LF9-3-u7",
+    "LF9-5-u1",
+    "LF9-1-u2",
+    "QS-2-u4",
+    "LF8-4-u10",
+    "QS-1-u6",
+    "LF8-5-u10",
+    "LF9-1-u7",
+    "LF9-1-u8",
+    "LF8-3-u8",
+    "LF9-2-u7",
+    "LF9-2-u8",
+    "LF9-2-u2",
+    "LF9-5-u5",
+    "QS-1-u1",
+    "QS-1-u2",
+    "LF9-4-u2",
+    "QS-3-u3",
+    "QS-3-u4",
+    "LF8-6-u3",
+    "QS-2-u1",
+    "QS-2-u2",
+    "QS-2-u7",
+    "QS-2-u8",
+    "LF9-3-u4",
+    "LF9-5-u3",
+    "LF9-5-u4",
+    "LF8-5-u5",
+    "LF8-3-u2",
+    "LF9-1-u5",
+    "LF9-1-u6",
+    "LF9-4-u6",
+    "LF9-2-u3",
+    "APPT-1-u15",
+    "APPT-1-u5",
+    "APPT-1-u6",
+    "APPT-1-u11",
+    "APPT-1-u12",
+    "QS-3-u5",
+    "APPT-1-u13",
+    "APPT-1-u14",
+    "LF7-3-u7",
+    "LF7-3-u8",
+    "LF8-1-u5",
+    "LF8-1-u6",
+    "APPT-1-u1",
+    "APPT-1-u2",
+    "APPT-1-u3",
+    "APPT-1-u4",
+    "APPT-1-u7",
+    "APPT-1-u8",
+    "APPT-1-u9",
+    "APPT-1-u10",
+    "APPT-1-u17",
+    "APPT-1-u18"
+  ],
+  "deferred": 52,
+  "schema": {
+    "generated": 1439,
+    "invalid": 4,
+    "repaired": 0,
+    "discarded": 4
+  },
+  "repair": {
+    "ran": true,
+    "costEur": 2.54
+  },
+  "sourceRefresh": {
+    "units": 0,
+    "replaced": 0,
+    "changeKeys": []
+  },
+  "model": "claude-haiku-5-5",
+  "costEur": 14.89,
+  "capEur": 20,
+  "stopReason": null,
+  "safetySampleUnitIds": [
+    "LF6-1-u1",
+    "LF6-2-u5",
+    "LF6-3-u5",
+    "LF6-4-u8",
+    "LF6-6-u3",
+    "LF8-1-u8",
+    "LF8-2-u9",
+    "LF8-4-u13",
+    "LF8-5-u1",
+    "LF8-6-u2",
+    "LF9-2-u1",
+    "LF9-3-u6"
+  ],
+  "batchIds": [
+    "msgbatch_01ERs9ieHXJq4QBqJz2TXXus",
+    "msgbatch_013L5KefCWUAfNxjUHVm1Bc1",
+    "msgbatch_01FmAiMqpQB9hvyxi5cNmikU",
+    "msgbatch_01SzVijBKSPQoCpDs8i5eXa4",
+    "msgbatch_01BiLoLYCAss2rQLfkRRsBLJ"
+  ],
+  "mapPlan": [
+    {
+      "mapId": "maf-metall",
+      "ziel": 890,
+      "vorhanden": 520,
+      "geteilt": 0,
+      "neu": 304
+    },
+    {
+      "mapId": "indkfl",
+      "ziel": 1160,
+      "vorhanden": 0,
+      "geteilt": 0,
+      "neu": 1160
+    },
+    {
+      "mapId": "maf-kunststoff",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-textil",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-textilveredelung",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-lebensmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-druckverarbeitung",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-packmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    }
+  ],
+  "nichtVersucht": [
+    {
+      "grund": "kostendeckel",
+      "units": 52
+    },
+    {
+      "grund": "begonnene-module",
+      "units": 32
+    },
+    {
+      "grund": "andere-map",
+      "units": 5500
+    }
+  ],
+  "batchFailures": {
+    "sent": 110,
+    "failed": 7,
+    "errors": [
+      {
+        "customId": "maf-LF7-3-u6-7",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      },
+      {
+        "customId": "maf-LF8-1-u4-5",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      },
+      {
+        "customId": "maf-APPT-1-u2-3",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      },
+      {
+        "customId": "maf-APPT-1-u8-9",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      },
+      {
+        "customId": "maf-APPT-1-u6-7",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      },
+      {
+        "customId": "maf-APPT-1-u16-17",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      },
+      {
+        "customId": "maf-APPT-1-u0-1",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      }
+    ]
+  },
+  "failReason": null,
+  "langfuseTraceId": "87bbacd0cb75420525a36ed286cf52d0"
+}
