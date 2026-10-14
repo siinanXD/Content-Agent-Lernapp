@@ -77,7 +77,7 @@ export function issueVon(g, { lauf = "", quelle = "crawler" } = {}) {
     title: `Testnutzer: ${TITEL[g.kategorie] ?? g.kategorie} auf ${g.route}`,
     description: [
       marker(g.key),
-      `Gefunden vom Testnutzer-Agent (${quelle === "personas" ? "Persona-Lauf" : "nächtlicher Crawler"}) auf der Live-App.`,
+      `Gefunden vom Testnutzer-Agent (${quelle === "personas" ? "Persona-Lauf, KI-erzeugte Bewertung (Claude), nur ein Hinweis" : "nächtlicher Crawler, ohne KI"}) auf der Live-App.`,
       "",
       `Seite: \`${g.route}\`${wo ? ` (${wo})` : ""}`,
       "",
@@ -106,7 +106,7 @@ export function ohneDubletten(gruppen, issues, now = new Date()) {
 
 /** Linear-Kommentar: Zusammenfassung des Laufs. */
 export function berichtText({ quelle, funde, neu, doppelt, ueberzaehlig = 0, angelegt = [], lauf = "", usd = null, notiz = "" }) {
-  const titel = quelle === "personas" ? "Testnutzer-Agent: Persona-Lauf (wöchentlich)" : "Testnutzer-Agent: Crawler (nächtlich)";
+  const titel = quelle === "personas" ? "Testnutzer-Agent: Persona-Lauf (wöchentlich, KI-erzeugt)" : "Testnutzer-Agent: Crawler (nächtlich)";
   return [
     `**${titel}**`,
     "",

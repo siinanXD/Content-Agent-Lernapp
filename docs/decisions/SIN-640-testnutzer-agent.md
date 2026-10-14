@@ -19,6 +19,7 @@ Funde werden je Kategorie und Seite gebündelt, mit Marker `<!-- testnutzer:KEY 
 - „Nur Testkonten, nie in Produktionsdaten schreiben“: Die App hat für Lernende keine Konten. Alle schreibenden Anfragen an `/api/**` werden im Browser abgefangen und nie gesendet; der Ausbilder nutzt die Beispielansicht `?demo=1`. Damit braucht es weder Vercel Preview noch Supabase-Branch. Das Auslesen echter Kursinhalte (GET) ist gewollt, sonst bewertet der Agent keine echten Inhalte.
 - Der Bericht liegt als Linear-Kommentar, nicht im Leitstand (`loop_events` kennt nur feste Schritte; neuer Schritt wäre Schema-/Registeränderung) und nicht im Gedächtnis (kein vorhandener Ort im Repo). Beides als Folge-Issue, falls Sinan es will.
 - Bildvergleich gegen main bleibt bei `visual.yml`; der Crawler wiederholt ihn nicht.
+- Issues und Bericht aus dem Persona-Lauf sind als KI-erzeugt gekennzeichnet (Text im Issue und Berichtstitel); Crawler-Funde nennen „ohne KI“.
 - Stil-Urteil des Modells ist ein Hinweis, kein Beweis; deshalb nur Haiku-Hinweise mit Priorität 3, kein Gate vor Merge.
 - Label `frontend` und `content` gibt es im Team (siehe `LANES` in `linear.mjs`).
 
