@@ -468,7 +468,8 @@ async function main(argv) {
       line = `- Kostenbericht (SIN-653): nicht verfügbar (${e instanceof Error ? e.message : e})`;
     }
     console.log(line);
-    appendFileSync(argv[zeile + 1], `${line}\n`);
+    const ziel = argv[zeile + 1];
+    if (ziel && !ziel.startsWith("--")) appendFileSync(ziel, `${line}\n`);
     return;
   }
   const task = argv[argv.indexOf("--task") + 1];
