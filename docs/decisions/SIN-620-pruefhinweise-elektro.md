@@ -1,0 +1,12 @@
+# SIN-620: Interne Prüfhinweise entfernen, Elektro-Hinweis ergänzen
+
+- **Links:** Linear [SIN-620](https://linear.app/sinan-kahraman/issue/SIN-620), Befund aus [SIN-338](https://linear.app/sinan-kahraman/issue/SIN-338); Muster und Funktionen `src/lib/review/pruefhinweise.ts`, Wächter `src/lib/review/content-guard.ts`, Generator-Regel `TEXT_REGELN` in `src/lib/generate/didaktik-prompts.ts`, Skript `scripts/sin620-bereinigen.ts`, Test `src/lib/review/pruefhinweise.test.ts`.
+- **Entscheidung:**
+  - Muster `stichprobe|gegenzuprüfen|abgleich mit|Quelle: KMK` (ohne Groß-/Kleinschreibung). Der Wächter vor `publish` meldet es als Verstoß `pruefhinweis`; der Generator-Prompt verbietet es und nennt die Quelle nur im Feld `sourceUrl`. Die alte Variantenregel „10 % menschliche Stichprobe vor publish“ steht nicht mehr im Prompt (das Modell kopierte sie in Erklärungen).
+  - Bestehende Texte: `npm run content:bereinigen` entfernt nur Sätze mit dem Muster (Einheit: `explanation`, `explanationSimple`, `sections`; Frage: `prompt`, `explanation`). Ohne `--apply` nur Bericht. Danach `npm run quality:judge-backfill`: der Inhalts-Hash der geänderten Fragen ist neu, der Richter v2 bewertet genau diese erneut.
+  - Elektro-Hinweis: Nennt irgendein Text einer Einheit „spannungsfrei“, „verdrahte…“ oder „anklemm…“ und steht keine Elektrofachkraft darin, hängt das Skript an `explanation` den Satz an: „Arbeiten an elektrischen Anlagen führen nur Elektrofachkräfte oder elektrotechnisch unterwiesene Personen im erlaubten Umfang aus.“ Der Generator-Prompt verlangt denselben Satz.
+- **Annahmen:**
+  - Die Lerninhalte liegen in Supabase, nicht im Repo; der Agent-Lauf hat keinen Zugriff darauf. Der Datenlauf (Trockenlauf, `--apply`, Richter) steht aus und läuft mit den Zugangsdaten außerhalb des Agenten. Das Issue wird erst nach dem Lauf mit 0 Treffern geschlossen. Die Liste der betroffenen Einheiten mit Elektro-Hinweis erzeugt der Trockenlauf (Feld `elektro`) und kommt als Kommentar ins Issue.
+  - Treffer in Antworttexten oder wenn ein Text nur aus dem Hinweis bestünde, ändert das Skript nicht (Feld `manuell`). Das Wort „Stichprobe“ kann fachlich richtig sein (QS-Einheiten, z. B. QS-1-u3-q1): diese Fälle schreibt ein Mensch um, statt den Begriff zu löschen.
+  - Der Elektro-Hinweis steht an der Einheit, nicht an jeder Frage.
+- **Warum:** Satzweises Entfernen ändert den Inhalt sonst nicht und braucht kein Modell (kein API-Kostenrisiko). Dasselbe Muster in Wächter, Prompt-Test und Skript verhindert, dass der Hinweis über neue Läufe zurückkommt.

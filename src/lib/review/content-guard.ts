@@ -4,9 +4,10 @@
  * (Verstöße nennen Ort und Art, nie den gefundenen Wert).
  */
 import type { Course } from "@/lib/storage/types";
+import { PRUEFHINWEIS_MUSTER } from "@/lib/review/pruefhinweise";
 
 export type Verstoss = {
-  regel: "quelle" | "abrufdatum" | "ki-kennzeichnung" | "personendaten" | "ihk-aehnlichkeit" | "inhalt";
+  regel: "quelle" | "abrufdatum" | "ki-kennzeichnung" | "personendaten" | "ihk-aehnlichkeit" | "pruefhinweis" | "inhalt";
   ort: string;
   hinweis: string;
 };
@@ -137,6 +138,9 @@ export function pruefeVeroeffentlichung(
   for (const { ort, text } of texte(lf)) {
     for (const [art, muster] of PII_MUSTER) {
       if (muster.test(text)) v.push({ regel: "personendaten", ort, hinweis: `${art} im Text.` });
+    }
+    if (PRUEFHINWEIS_MUSTER.test(text)) {
+      v.push({ regel: "pruefhinweis", ort, hinweis: "Interner Prüfhinweis im Lerntext (Quelle nur in sourceUrl)." });
     }
     if (IHK_MARKER.test(text)) {
       v.push({ regel: "ihk-aehnlichkeit", ort, hinweis: "Text nennt eine IHK-Prüfungsaufgabe als Vorlage." });
