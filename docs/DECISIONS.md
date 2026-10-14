@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-664 | SIN-664: Kosten pro Kurslauf nach Wochendeckel, Zwischenstand | [SIN-664-kosten-nach-wochendeckel.md](decisions/SIN-664-kosten-nach-wochendeckel.md) |
 | SIN-661 | SIN-661: Wochendeckel vor Start prüfen, Pause ins Statusprotokoll | [SIN-661-wochendeckel-vor-start.md](decisions/SIN-661-wochendeckel-vor-start.md) |
 | SIN-656 | SIN-656: Sicherheits-Stichproben als Lauf-Auftrag starten und Ergebnis belegen | [SIN-656-sicherheits-stichprobe-lauf.md](decisions/SIN-656-sicherheits-stichprobe-lauf.md) |
 | SIN-653 | SIN-653: Kostenbericht nach jedem content-grow-Lauf, Structured Outputs live belegen | [SIN-653-kostenbericht-nach-content-lauf.md](decisions/SIN-653-kostenbericht-nach-content-lauf.md) |
