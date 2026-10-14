@@ -133,9 +133,8 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Revideo-Render aus dem Repo-Stamm findet `@revideo/*` und `public/` nicht → in `video/schnitt` arbeiten (`process.chdir`), `outDir` dort, `@revideo/ui` als Abhängigkeit, `Img`/`Video` mit `yield view.add(...)` einhängen, Export per `@revideo/core/ffmpeg`. (SIN-518)
 - Flex-Zeile mit `shrink-0` und langem Text (Region der Anbieter-Karten) → erzeugt auf dem Handy waagerechtes Scrollen, `bildvergleich` sah es nicht, weil es auf main schon da war. Richtig: Umbruch erlauben (`flex-wrap`, kein `shrink-0`); der Layout-Test `e2e/layout.spec.ts` fängt es. (SIN-523)
 - Tutorial-Video in 1280×720 aufgenommen, Textband lag über den Hauptknöpfen der Handy-App → Handy-Viewport 390×844 aufnehmen, im Schnitt Text in eigener Spalte neben der App; Standbilder je Schritt (`video-standbilder`) prüfen, nicht nur abspielen. (SIN-522)
-
+- `pkill -f "<befehl>"` in einem Workflow-Schritt trifft die eigene Shell (Exit 143, Bildvergleich rot ohne Oberflächen-Änderung) → Server per `&` + `$!` starten, mit `kill "$server"` beenden; Bildvergleich läuft nur bei Oberflächen-Änderung (`visual-scope.mjs`). (SIN-648)
 - A/B-Bericht zeigt `scores.sourceFidelity`/`uniqueness` immer 0 → `aggregateScores` ist Alles-oder-nichts (Gate); für Berichte `aggregateRates` (Quote 0–1) nutzen. (SIN-532)
-
 - Roter `nach-deploy`-Lauf blieb 26 h unbemerkt: der Wächter schrieb ab dem 2. roten Lauf nur einen Kommentar → `liveCheckIssue` legt ein Urgent-Bug-Issue mit `dringend` an (ein offenes je Titel). (SIN-539)
 - Worker lief 244-mal rot im 7-Minuten-Takt, weil die Log-Erkennung kein Limit fand und `until` leer blieb → Pause zusätzlich unabhängig vom Log: derselbe Auftrag 3-mal in 60 Min ohne PR (`dispatch.mjs --repeat-fail`) setzt `AGENT_PAUSED_UNTIL`, ohne Dispatcher-Anstoß. Die Sicherung hing an `steps.limit.outcome == 'success'`; scheiterte „Fehler auswerten“, startete dieselbe Aufgabe alle 3 Minuten neu → Sicherungsschritte mit `if: always() && steps.pr.outputs.has_pr != 'true'`, Auswertung mit `continue-on-error`, Fehlergrund als `loop_events`-Ereignis. (SIN-548, SIN-587)
 

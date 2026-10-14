@@ -2,6 +2,9 @@
 # letzten Stand auf main. Hinweis, kein Gate: Abweichungen stehen mit Vorher/Nachher/Unterschied im Lauf-Bericht
 # (Step Summary) und im Artefakt `bildvergleich`. Gewollte Änderungen brauchen nichts: die Referenz wird bei jedem
 # Lauf neu aus main gebaut (kein Bild im Repo, keine Pflege).
+# SIN-648: läuft nur, wenn der PR src/app, src/components, Styles o. Ä. ändert (scripts/autonomy/visual-scope.mjs);
+# sonst ist der Job sofort grün. Der Server der Referenz wird per PID beendet (`pkill -f "next start"` traf die
+# eigene Shell des Schritts und ließ ihn mit Exit 143 scheitern).
 name: visual
 
 on:
@@ -22,40 +25,54 @@ jobs:
       COURSE_STORAGE: mock
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Oberfläche geändert?
+        id: scope
+        run: node scripts/autonomy/visual-scope.mjs "origin/${{ github.base_ref }}"
 
       - uses: actions/checkout@v4
+        if: steps.scope.outputs.relevant == 'true'
         with:
           ref: main
           path: main-stand
 
       - uses: actions/setup-node@v4
+        if: steps.scope.outputs.relevant == 'true'
         with:
           node-version: "22"
           cache: npm
 
       - name: Pakete (PR und main)
+        if: steps.scope.outputs.relevant == 'true'
         run: |
           npm ci
           (cd main-stand && npm ci)
 
       - name: Bauen (PR und main)
+        if: steps.scope.outputs.relevant == 'true'
         run: |
           npm run build
           (cd main-stand && npm run build)
 
       - name: Chromium
+        if: steps.scope.outputs.relevant == 'true'
         run: npx playwright install --with-deps chromium
 
       # Referenz: main läuft auf :43125, die Bilder werden mit dem Test des PRs aufgenommen.
       - name: Referenz von main fotografieren
+        if: steps.scope.outputs.relevant == 'true'
         run: |
-          (cd main-stand && npx next start --hostname 127.0.0.1 --port 43125 &)
+          (cd main-stand && exec npx next start --hostname 127.0.0.1 --port 43125) &
+          server=$!
           for i in $(seq 1 60); do curl -sf http://127.0.0.1:43125 >/dev/null && break; sleep 1; done
           PLAYWRIGHT_BASE_URL=http://127.0.0.1:43125 npx playwright test --config playwright.visual.config.ts --update-snapshots --reporter=dot
-          pkill -f "next start" || true
+          kill "$server" || true
 
       - name: PR gegen die Referenz vergleichen
         id: vergleich
+        if: steps.scope.outputs.relevant == 'true'
         continue-on-error: true
         run: npx playwright test --config playwright.visual.config.ts
 
