@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { quelleGehoertZuBeruf } from "../generate/quellen-beruf";
 import {
   blockSources,
   curriculumTotals,
@@ -62,7 +63,9 @@ describe("AP-13 curriculum maps (docs/content/*.json)", () => {
             assert.ok(!ids.has(b.id), `duplicate block ${b.id}`);
             ids.add(b.id);
             assert.ok(b.units > 0 && b.topics.length > 0, b.id);
-            assert.equal(blockSources(c, b).length, b.sourceIds.length, `${b.id} unknown source`);
+            for (const id of b.sourceIds) assert.ok(c.sources.some((s) => s.id === id), `${b.id} unknown source ${id}`);
+            const erwartet = b.sourceIds.filter((id) => quelleGehoertZuBeruf(c.sources.find((s) => s.id === id)!.url, c.family));
+            assert.deepEqual(blockSources(c, b).map((s) => s.id), erwartet, `${b.id} blockSources`);
           }
         }
         assert.deepEqual(curriculumTotals(c), c.totals);

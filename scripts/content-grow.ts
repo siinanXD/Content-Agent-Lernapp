@@ -66,6 +66,7 @@ import type { BatchChunkTarget } from "../src/lib/generate/batch-generate";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { MAX_QUESTIONS, MIN_PASSED_QUESTIONS, planFromEvals } from "../src/lib/generate/repair-questions";
 import { enforceQuestionSchema, type RepairFn } from "../src/lib/generate/schema-gate";
+import { trenneFremdeQuellen } from "../src/lib/generate/quellen-beruf";
 import { emptySchemaStats, gateUnit } from "../src/lib/generate/question-schema";
 import {
   addClaudeLedger,
@@ -410,7 +411,12 @@ async function main() {
       ledger = addClaudeLedger(ledger, got.ledger);
       return got.questions;
     };
-    const res = await enforceQuestionSchema(units, repair);
+    // SIN-621: Quelle muss zum Beruf des Kurses passen; fremde Einheiten werden nicht gespeichert.
+    const { passend, fremd } = trenneFremdeQuellen(units, curriculum.family);
+    if (fremd.length > 0) {
+      console.log(`::warning::${fremd.length} Einheit(en) mit Quelle eines fremden Berufs verworfen: ${fremd.map((u) => u.id).join(", ")}`);
+    }
+    const res = await enforceQuestionSchema(passend, repair);
     const s = report.schema!;
     s.generated += res.stats.generated;
     s.invalid += res.stats.invalid;
