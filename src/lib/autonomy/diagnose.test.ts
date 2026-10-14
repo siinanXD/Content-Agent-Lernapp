@@ -225,6 +225,15 @@ test("SIN-584: neuerer planner-Lauf verdeckt den Grund aus dem dispatch-Lauf nic
   assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
 });
 
+test("SIN-643: Fixture „Kein Lauf gefunden“ → Ursache ohne-start → Bug-Issue", async () => {
+  const logs = await collectLogs("o/r", [], { call: (async () => ({ jobs: [] })) as never, text: async () => "" });
+  const dispatch = logs.find((l) => l.workflow === "dispatch")!;
+  assert.equal(dispatch.text, "Kein roter Lauf: dispatch. Kein Lauf gefunden (Zeitplan feuert nicht?)");
+  const diag = diagnoseStall({ running: 0, paused: false, startable: 1, idleMin: 789, logs: [dispatch] });
+  assert.equal(diag?.cause, "ohne-start");
+  assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+});
+
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
   const raw = JSON.stringify([
     { type: "assistant", message: { content: [{ type: "text", text: "Ich mache jetzt den PR." }] } },
