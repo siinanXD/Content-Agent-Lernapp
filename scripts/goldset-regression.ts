@@ -74,6 +74,7 @@ function vergleichen(): void {
   const pr = lies(opt("pr"));
   const v = vergleiche(basis, pr);
   const kostenEur = Math.round((basis.costUsd + pr.costUsd) * (20 / 21.5) * 100) / 100;
+  assertWithinRunCap(kostenEur, GOLDSET_DECKEL_EUR);
   writeFileSync(opt("out") ?? "goldset-kommentar.md", renderKommentar(basis, pr, v, kostenEur));
   console.log(v.ok ? "grün" : `rot: ${v.gruende.join("; ")}`);
   if (!v.ok) process.exitCode = 1;
