@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-642 | SIN-642 Gate-Bruch bildvergleich: Revideo-Typen | [SIN-642-gate-bruch-revideo.md](decisions/SIN-642-gate-bruch-revideo.md) |
+| SIN-632 | SIN-632 Versionen und Rückgängig für Inhalte | [SIN-632-inhalte-versionen.md](decisions/SIN-632-inhalte-versionen.md) |
 | SIN-629 | SIN-629: Goldset-Prüfung bei Änderungen an Generator oder Richter | [SIN-629-goldset-regression.md](decisions/SIN-629-goldset-regression.md) |
 | SIN-628 | SIN-628 Staging für Inhalte | [SIN-628-staging.md](decisions/SIN-628-staging.md) |
 | SIN-621 | SIN-621: Industriemechaniker/in als eigener Kurs, MAF Metall aus MAF-Quellen | [SIN-621-industriemechaniker-eigener-kurs.md](decisions/SIN-621-industriemechaniker-eigener-kurs.md) |

@@ -29,6 +29,9 @@ const TABLES = [
   "loop_events",
   "loop_snapshot",
   "leitstand_nutzer",
+  // SIN-632: Versionen von Einheiten und Fragen
+  "content_versions",
+  "content_version_kontext",
 ];
 
 const url = process.env.SUPABASE_URL?.trim();
