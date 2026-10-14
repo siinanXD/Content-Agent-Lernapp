@@ -2,7 +2,6 @@
 
 Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → wie es richtig geht** (`Kennung`). Höchstens 150 Zeilen, keine Dopplungen: vor dem Ergänzen suchen, ob es die Lehre schon gibt. Wird es eng, fasst der Aufräum-Agent ältere Zeilen eines Themas zu einer zusammen.
 **Pflicht nach jedem behobenen Bug** (auch im Reparatur-Lauf): eine Zeile unter dem passenden Thema ergänzen, im selben PR. Kein Bug, keine Zeile. Wiederholt sich ein Arbeitsablauf, gehört er als Anleitung nach `docs/skills/<name>/SKILL.md` (siehe `docs/skills/README.md`), nicht hierher.
-
 ## Workflows und github-script
 
 - `getOctokit` in `actions/github-script@v7` nutzen → ist dort nicht definiert (in #66 behoben, in #72 wieder eingebaut). Richtig: `new github.constructor({ auth: process.env.AGENT_TOKEN })`. (SIN-240)
@@ -148,3 +147,4 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Stilles `catch → null` beim Abruf (Quellenauszug 0 von 35, Ursache unsichtbar) → Grund je URL loggen und im Bericht zählen; Abruf wie `content-check-sources.mjs` (User-Agent, 25 s, ein Wiederholversuch). (SIN-586)
 - Interne Hinweise („Stichprobe“, „Abgleich mit“, „Quelle: KMK“) landeten in Lerntexten, weil die Variantenregel im Prompt „menschliche Stichprobe vor publish“ nannte → Prozessregeln nie in den Generator-Prompt, Quelle nur in `sourceUrl`; Wächter `pruefhinweis` blockiert, Bestand mit `npm run content:bereinigen`. (SIN-620)
 - Wochendeckel im Code (60 €) lag über dem Ziel (40 €), Wochenkosten 40,49 € → Deckel gleich dem Ziel; ein Lauf startet nur, wenn Wochenkosten + Lauf-Deckel hineinpassen (`runAllowed`). (SIN-645)
+- Verworfene Fragen standen unter „unbekannt/unbekannt“, weil Kurse ohne eigene Map (Industriemechaniker) keine Modulzuordnung hatten → `COURSE_KEYWORD_MODULE_MAP` in `content-metrics.mjs` pflegen, wenn ein Kurs Einheiten-IDs einer fremden Map nutzt; Rest nennt die Ursache. (SIN-665)
