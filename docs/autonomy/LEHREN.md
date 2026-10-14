@@ -44,6 +44,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Reine Doku-, CI- oder Test-Commits bauen lassen → verbraucht Deployments. Richtig: `scripts/vercel-ignore.sh` überspringt sie; keine Reparatur-Pushes ohne Not. (SIN-264)
 - Linear-API ohne Wiederholung aufrufen → 429 oder eine HTML-Fehlerseite statt JSON bricht den Lauf. Richtig: `fetchJson` aus `scripts/autonomy/http.mjs` (3 Versuche bei 429, 5xx, Netzfehler, Fehlerseite). (SIN-263)
 - Beliebig viele Linear-Issues anlegen → das Free-Kontingent (250 aktive Issues) läuft voll. Richtig: ab 95 % legt der Planer nichts mehr an; Duplikate vorher prüfen. (SIN-291)
+- Status einer Umgebung aus der Tabelle einer anderen lesen (`docs/ENV.md`: „fehlt“ gilt für den Cloud-Agent, nicht für Vercel Production) → Befund als „Annahme“ schreiben, Vercel-Status einzeln belegen oder „nicht geprüft“. Richtig: Status je Umgebung nennen. (SIN-605)
 
 ## Läufe, Verbrauch und Prüfungen
 
