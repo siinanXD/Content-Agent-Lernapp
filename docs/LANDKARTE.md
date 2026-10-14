@@ -19,6 +19,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Recht-und-Inhalt-Wächter, Verbotsliste | `src/lib/review/` (`content-guard.ts` vor `publish`, `regeln.ts`) |
 | Speicher | `src/lib/storage/` (Supabase EU, Mock-Fallback bei `COURSE_STORAGE=mock`) |
 | Datenbank | `supabase/migrations/` (nur hinzufügen, nie bestehende ändern) |
+| Versionen und Rücksetzen von Einheiten/Fragen (SIN-632) | Tabelle `content_versions` (Trigger), `src/lib/versions/`, `scripts/inhalte-zuruecksetzen.ts`, Notfallplan `docs/ops/NOTFALL.md` |
 | Lerninhalte | `docs/content/` (Curriculum-Maps), `content/legal/` |
 | Umgebung | `.env.example`, `docs/ENV.md`, `src/lib/env.ts` |
 
