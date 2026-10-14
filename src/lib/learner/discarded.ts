@@ -1,4 +1,5 @@
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
+import { nurVeroeffentlicht } from "@/lib/generate/staging";
 import {
   latestPerQuestion,
   type QuestionEvaluationRecord,
@@ -18,9 +19,11 @@ export function discardedQuestionKeys(evaluations: QuestionEvaluationRecord[]): 
 }
 
 export function dropDiscardedQuestions(
-  units: GeneratedUnit[],
+  allUnits: GeneratedUnit[],
   evaluations: QuestionEvaluationRecord[],
 ): GeneratedUnit[] {
+  // SIN-628: Entwürfe und nur geprüfte Einheiten sind für Lernende nie sichtbar.
+  const units = nurVeroeffentlicht(allUnits);
   const discarded = discardedQuestionKeys(evaluations);
   if (discarded.size === 0) return units;
   return units

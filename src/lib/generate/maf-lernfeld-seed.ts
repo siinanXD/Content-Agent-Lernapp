@@ -42,8 +42,12 @@ export type GeneratedQuestion = {
   sampleChecklist?: string[];
 };
 
+/** SIN-628: Staging. Fehlt der Status (Bestand), gilt die Einheit als veröffentlicht. */
+export type UnitStatus = "entwurf" | "geprueft" | "veroeffentlicht";
+
 export type GeneratedUnit = {
   id: string;
+  status?: UnitStatus;
   title: string;
   minutes: number;
   /** Legacy summary; always kept in sync with sections when present. */
