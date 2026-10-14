@@ -76,6 +76,9 @@ jobs:
           flags="--source-report=source-report.json"
           if [ "$DRY_RUN" = "true" ]; then flags="$flags --dry-run"; fi
           npm run -s content:grow -- $flags
+      - name: Kostenbericht (SIN-653)
+        if: always() && env.DRY_RUN != 'true' && hashFiles('content-run-summary.md') != ''
+        run: node scripts/autonomy/run-task.mjs --kosten-zeile content-run-summary.md
       - name: Bericht sichern
         if: always()
         uses: actions/upload-artifact@v7

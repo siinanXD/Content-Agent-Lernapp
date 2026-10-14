@@ -644,7 +644,7 @@ export function linearSummary(r: RunReport): string {
     `- Verworfen (Richter unter Schwelle oder nicht geliefert): ${r.discarded}${r.discardedUnitIds.length ? ` (${r.discardedUnitIds.join(", ")})` : ""}`,
     `- Frageschema (SIN-473): ${r.schema ? formatSchemaStats(r.schema) : "nicht erfasst"}`,
     `- Nicht versucht: ${r.nichtVersucht?.length ? r.nichtVersucht.map((x) => `${x.units} wegen ${NICHT_VERSUCHT_TEXT[x.grund]}`).join("; ") : "nichts offen oder nicht erfasst"}`,
-    `- Vergleich Structured Outputs (SIN-489): ungültige Fragen ${r.schema && r.schema.generated > 0 ? `${Math.round((r.schema.invalid / r.schema.generated) * 100)} %` : "nicht erfasst"}, Reparatur ${r.costEur > 0 ? `${Math.round((r.repair.costEur / r.costEur) * 100)} %` : "–"} der Laufkosten (vorher am 08.10.: Reparatur 67 %)`,
+    `- Vergleich Structured Outputs (SIN-489, SIN-653): Schema erfüllt ${r.schema && r.schema.generated > 0 ? `${Math.round(((r.schema.generated - r.schema.invalid) / r.schema.generated) * 100)} %` : "nicht erfasst"} der Fragen, Verwerfungsquote ${r.generated > 0 ? `${Math.round((r.discarded / r.generated) * 100)} %` : "nicht erfasst"}, Reparatur ${r.costEur > 0 ? `${Math.round((r.repair.costEur / r.costEur) * 100)} %` : "–"} der Laufkosten (vorher am 08.10.: Reparatur 67 %)`,
     `- Reparatur (AP-21): ${r.repair.ran ? `€${r.repair.costEur.toFixed(2)}` : "nicht gelaufen"}; Quellen-Neuerzeugung: ${r.sourceRefresh.replaced}/${r.sourceRefresh.units}`,
     `- Kosten: €${r.costEur.toFixed(2)} von €${r.capEur} (Modell ${r.model})`,
     `- Stopp: ${r.stopReason ?? "kein"}`,
