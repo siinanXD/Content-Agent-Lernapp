@@ -47,8 +47,8 @@ const ABSCHNITTE = ["einstieg", "kern", "beispiel", "merksatz"] as const;
 
 /**
  * Bereinigt ein erzeugtes Lernfeld (`course.generated`) und liefert eine Kopie plus Bericht.
- * Der Elektro-Hinweis kommt einmal je Einheit an `explanation`, wenn irgendein Lerntext der Einheit
- * (Erklärung, Abschnitte, Fragen) elektrische Eingriffe nennt und keine Zuständigkeit nennt.
+ * Der Elektro-Hinweis kommt einmal je Einheit an `explanation`, wenn Erklärung oder Abschnitte der Einheit
+ * elektrische Eingriffe nennen und weder sie noch die Fragen eine Zuständigkeit nennen (Fragen lösen nichts aus).
  */
 export function bereinigeLernfeld<T>(generated: T): { generated: T; bericht: BereinigungsBericht } {
   const bericht: BereinigungsBericht = { einheiten: [], fragen: [], elektro: [], manuell: [] };
@@ -96,14 +96,15 @@ export function bereinigeLernfeld<T>(generated: T): { generated: T; bericht: Ber
       if ((q.choices ?? []).some((c) => PRUEFHINWEIS_MUSTER.test(c))) bericht.manuell.push(`Antwort ${ort}`);
     }
 
-    const lerntext = [
-      u.explanation,
-      ...ABSCHNITTE.map((a) => u.sections?.[a]),
-      ...(u.questions ?? []).flatMap((q) => [q.prompt, q.explanation]),
-    ]
+    const einheitentext = [u.explanation, ...ABSCHNITTE.map((a) => u.sections?.[a])]
       .filter((t): t is string => typeof t === "string")
       .join(" ");
-    if (typeof u.explanation === "string" && ELEKTRO_MUSTER.test(lerntext) && !ELEKTRO_VORHANDEN.test(lerntext)) {
+    const fragentext = (u.questions ?? []).flatMap((q) => [q.prompt, q.explanation]).filter((t) => typeof t === "string");
+    if (
+      typeof u.explanation === "string" &&
+      ELEKTRO_MUSTER.test(einheitentext) &&
+      !ELEKTRO_VORHANDEN.test([einheitentext, ...fragentext].join(" "))
+    ) {
       u.explanation = `${u.explanation.trimEnd()} ${ELEKTRO_HINWEIS}`;
       geaendert = true;
       bericht.elektro.push(uid);
