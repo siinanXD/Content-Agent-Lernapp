@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-667 | SIN-667: /ausbilder ohne Sitzung ohne API-Anfrage | [SIN-667-ausbilder-ohne-sitzung.md](decisions/SIN-667-ausbilder-ohne-sitzung.md) |
 | SIN-665 | SIN-665: Verworfene Fragen ohne Modulzuordnung | [SIN-665-verworfene-fragen-modul.md](decisions/SIN-665-verworfene-fragen-modul.md) |
 | SIN-664 | SIN-664: Kosten pro Kurslauf nach Wochendeckel, Zwischenstand | [SIN-664-kosten-nach-wochendeckel.md](decisions/SIN-664-kosten-nach-wochendeckel.md) |
 | SIN-661 | SIN-661: Wochendeckel vor Start prüfen, Pause ins Statusprotokoll | [SIN-661-wochendeckel-vor-start.md](decisions/SIN-661-wochendeckel-vor-start.md) |
