@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-703 | SIN-703: Stillstand `ohne-start` nicht direkt nach der Wahl durch den Dispatcher | [SIN-703-ohne-start-frisch-gewaehlt.md](decisions/SIN-703-ohne-start-frisch-gewaehlt.md) |
+| SIN-702 | SIN-702: Lauf-Skripte über npm run | [SIN-702-lauf-skripte-ueber-npm.md](decisions/SIN-702-lauf-skripte-ueber-npm.md) |
 | SIN-701 | SIN-701: Ideen-Sperre nach Thema statt nach Titel | [SIN-701-ideen-themenschluessel.md](decisions/SIN-701-ideen-themenschluessel.md) |
 | SIN-682 | SIN-682: Ein Wochenwert für Planer und cost-report, Beleg offen | [SIN-682-wochenwert-eine-zaehlweise.md](decisions/SIN-682-wochenwert-eine-zaehlweise.md) |
 | SIN-675 | SIN-675: Sicherheits-Stichproben: Lauf starten und Ergebnis mit Beleg eintragen | [SIN-675-sicherheits-stichproben-lauf.md](decisions/SIN-675-sicherheits-stichproben-lauf.md) |
@@ -31,6 +32,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-652 | SIN-652: Lernkarte MAF Metall aus MaschFüAusbV und RLP MAF | [SIN-652-maf-lernkarte.md](decisions/SIN-652-maf-lernkarte.md) |
 | SIN-648 | SIN-648 Bildvergleich nur bei Oberflächen-Änderung | [SIN-648-bildvergleich-nur-bei-oberflaeche.md](decisions/SIN-648-bildvergleich-nur-bei-oberflaeche.md) |
 | SIN-645 | SIN-645: Wochenkosten unter 40 €, Einzellauf unter 20 € | [SIN-645-wochenkosten-unter-40.md](decisions/SIN-645-wochenkosten-unter-40.md) |
+| SIN-644 | SIN-644: Sicherheits-Stichproben für MAF Metall durchgeführt | [SIN-644-sicherheits-stichproben-lauf.md](decisions/SIN-644-sicherheits-stichproben-lauf.md) |
 | SIN-643 | SIN-643: dispatch-Läufe getrennt holen | [SIN-643-dispatch-laeufe-getrennt-holen.md](decisions/SIN-643-dispatch-laeufe-getrennt-holen.md) |
 | SIN-642 | SIN-642 Gate-Bruch bildvergleich: Revideo-Typen | [SIN-642-gate-bruch-revideo.md](decisions/SIN-642-gate-bruch-revideo.md) |
 | SIN-640 | SIN-640 Testnutzer-Agent | [SIN-640-testnutzer-agent.md](decisions/SIN-640-testnutzer-agent.md) |

@@ -125,6 +125,11 @@
   },
   "abnahme": null,
   "gelaufen": {
+    "content-safety": {
+      "datum": "2026-10-15",
+      "beleg": "Lauf-Auftrag SIN-644 (npm run safety-sample -- --live --json), Rohdaten docs/quality/runs/safety-sample-2026-10-15.json, Bericht docs/quality/sicherheits-stichprobe-maf-metall.md",
+      "ergebnis": "15 von 393 sicherheitsrelevanten Einheiten gezogen (Seed 272), 0 mit Befund bei Quelle und Abrufdatum; fachlicher Abgleich mit der Quelle durch einen Menschen offen (SIN-338)"
+    },
     "betrieb-kosten": {
       "datum": "2026-10-13",
       "beleg": "Lauf https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/38350924181, Rohdaten docs/quality/runs/cost-report-2026-10-13.json",
