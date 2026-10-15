@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-672 | SIN-672: Wochendeckel zählt alle Ledger-Läufe | [SIN-672-wochendeckel-zaehlt-alle-laeufe.md](decisions/SIN-672-wochendeckel-zaehlt-alle-laeufe.md) |
+| SIN-671 | SIN-671: /ausbilder/archiv ohne Token ohne API-Anfrage | [SIN-671-archiv-ohne-token.md](decisions/SIN-671-archiv-ohne-token.md) |
 | SIN-670 | SIN-670: /ausbilder ohne Token keine Anfrage | [SIN-670-ausbilder-ohne-token-keine-anfrage.md](decisions/SIN-670-ausbilder-ohne-token-keine-anfrage.md) |
 | SIN-669 | SIN-669: /ausbilder/gruppen (und Archiv) ohne Sitzung ohne API-Anfrage | [SIN-669-gruppen-ohne-sitzung.md](decisions/SIN-669-gruppen-ohne-sitzung.md) |
 | SIN-668 | SIN-668: /ausbilder/archiv ohne Sitzung ohne API-Anfrage | [SIN-668-ausbilder-archiv-ohne-sitzung.md](decisions/SIN-668-ausbilder-archiv-ohne-sitzung.md) |
