@@ -574,9 +574,10 @@ export async function main(argv) {
     }
     const { rest, started } = await startRuns(fresh, rows, { dry });
     for (const r of started) console.log(`${r.started ? "Lauf gestartet" : "Lauf nicht gestartet"}: ${r.task}${r.grund ? ` (${r.grund})` : ""}`);
-    const ideaKeys = openIdeaThemes([...(issues ?? []), ...(issues ? await fetchBacklogIdeas(linear).catch(() => []) : [])]).map((i) => i.thema);
+    const backlogIdeas = issues ? await fetchBacklogIdeas(linear).catch(() => []) : [];
+    const ideaKeys = openIdeaThemes([...(issues ?? []), ...backlogIdeas]).map((i) => i.thema);
     const limits = refillLimits(process.env);
-    const items = validatePlan(rest, [...existingTitles, ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ideaKeys, ...limits });
+    const items = validatePlan(rest, [...existingTitles, ...backlogIdeas.map((i) => i.title), ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ideaKeys, ...limits });
     // Nachfüll-Lauf ohne neues Todo-Issue: found=false, damit der Leitstand nicht weiter nachstößt (SIN-701).
     if (limits.maxIssues != null && !items.length) {
       console.log("found=false");
