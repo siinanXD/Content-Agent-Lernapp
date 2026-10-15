@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-675 | SIN-675: Sicherheits-Stichproben: Lauf starten und Ergebnis mit Beleg eintragen | [SIN-675-sicherheits-stichproben-lauf.md](decisions/SIN-675-sicherheits-stichproben-lauf.md) |
 | SIN-672 | SIN-672: Wochendeckel zählt alle Ledger-Läufe | [SIN-672-wochendeckel-zaehlt-alle-laeufe.md](decisions/SIN-672-wochendeckel-zaehlt-alle-laeufe.md) |
 | SIN-671 | SIN-671: /ausbilder/archiv ohne Token ohne API-Anfrage | [SIN-671-archiv-ohne-token.md](decisions/SIN-671-archiv-ohne-token.md) |
 | SIN-670 | SIN-670: /ausbilder ohne Token keine Anfrage | [SIN-670-ausbilder-ohne-token-keine-anfrage.md](decisions/SIN-670-ausbilder-ohne-token-keine-anfrage.md) |
