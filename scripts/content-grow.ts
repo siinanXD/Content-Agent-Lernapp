@@ -87,7 +87,8 @@ import {
 } from "../src/lib/quality/langfuse-names";
 import { promptLink } from "../src/lib/quality/langfuse-verwaltung";
 import { toQuestionEvaluationRecords } from "../src/lib/quality/question-evaluations";
-import { assertWithinRunCap, RunBudgetExceededError, recordRunCost } from "../src/lib/quality/run-ledger";
+import { assertWithinRunCap, listRunCosts, RunBudgetExceededError, recordRunCost } from "../src/lib/quality/run-ledger";
+import { weekCost } from "./autonomy/week-cost.mjs";
 import {
   aggregateScores,
   QUALITY_THRESHOLDS,
@@ -215,8 +216,10 @@ async function main() {
 
   const history = loadHistory();
   // SIN-469: mehrere Läufe pro Woche, aber höchstens einer je Tag und unter dem Wochendeckel (nur echte Läufe).
+  // SIN-672: dieselbe 7-Tage-Summe wie die Kennzahl kosten_woche (alle Arten von Läufen im Ledger).
+  const weekBeforeEur = dry ? 0 : weekCost((await listRunCosts()).map((r) => ({ cost_eur: r.costEur, created_at: r.createdAt }))).sumEur;
   if (!dry) {
-    const allowed = runAllowed(history);
+    const allowed = runAllowed(history, new Date(), weekBeforeEur);
     if (!allowed.ok) {
       console.log(`Fabrik übersprungen: ${allowed.reason}`);
       // SIN-661: Grund ins Statusprotokoll des Laufs (pausieren statt rot laufen).
@@ -543,7 +546,7 @@ async function main() {
       const parts = splitTargets(targets);
       for (const [i, part] of parts.entries()) {
         const partUnits = part.reduce((n, t) => n + t.unitCount, 0);
-        const gate = partGate(spentTotal(), partUnits, partPerUnit, generatedUnits.length);
+        const gate = partGate(spentTotal(), partUnits, partPerUnit, generatedUnits.length, RUN_CAP_EUR, weekBeforeEur);
         if (!gate.ok) {
           report.deferred += parts.slice(i).flat().reduce((n, t) => n + t.unitCount, 0);
           deferredResume = resumeFor(sentTargets);

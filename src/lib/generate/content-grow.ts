@@ -189,6 +189,8 @@ export function buildQueue(
 export function runAllowed(
   history: ReadonlyArray<Pick<RunReport, "mode" | "startedAt" | "costEur" | "generated">>,
   now: Date = new Date(),
+  /** SIN-672: Wochenkosten aus pipeline_run_costs (alle Arten); zählt, wenn höher als die Fabrik-Berichte. */
+  ledgerWeekEur = 0,
 ): { ok: true } | { ok: false; reason: string } {
   const live = history
     .filter((r) => r.mode === "live" && (r.costEur > 0 || r.generated > 0))
@@ -199,7 +201,7 @@ export function runAllowed(
     return { ok: false, reason: `heute (${today}) schon gelaufen: höchstens ${MAX_RUNS_PER_DAY} Lauf je Tag` };
   }
   const since = now.getTime() - 7 * 86_400_000;
-  const week = live.filter((r) => r.at > since).reduce((s, r) => s + r.costEur, 0);
+  const week = Math.max(live.filter((r) => r.at > since).reduce((s, r) => s + r.costEur, 0), ledgerWeekEur);
   if (week + RUN_CAP_EUR > WEEK_CAP_EUR) {
     return { ok: false, reason: `Wochendeckel: ${week.toFixed(2)} € in 7 Tagen, ein weiterer Lauf (bis ${RUN_CAP_EUR} €) passt nicht unter ${WEEK_CAP_EUR} €` };
   }
@@ -442,9 +444,11 @@ export function partGate(
   perUnitEur: number,
   unitsSoFar: number,
   capEur = RUN_CAP_EUR,
+  /** SIN-672: Wochenkosten vor diesem Lauf (wie kosten_woche); mit dem erwarteten Lauf höchstens `WEEK_CAP_EUR`. */
+  weekBeforeEur = 0,
 ): { ok: boolean; expectedEur: number } {
   const expectedEur = spentEur + partUnits * perUnitEur * COST_MARGIN + judgeReserveEur(unitsSoFar + partUnits);
-  return { ok: expectedEur <= capEur, expectedEur };
+  return { ok: expectedEur <= capEur && weekBeforeEur + expectedEur <= WEEK_CAP_EUR, expectedEur };
 }
 
 /** SIN-493: Kosten je Einheit nach einem Teil: der höhere Wert aus Plan und Messung (nie optimistischer werden). */
