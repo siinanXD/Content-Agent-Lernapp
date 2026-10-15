@@ -1,3 +1,6 @@
+/** SIN-682: Planer und cost-report laden gleich viele Ledger-Zeilen (neueste zuerst). */
+export const LEDGER_LIMIT = 200;
+
 /**
  * SIN-672: Eine Summe für kosten_woche (Planer) und den Wochendeckel der Fabrik.
  * Zählt alle Zeilen von pipeline_run_costs (auch judge-backfill, goldset-regression) der letzten 7 Tage.

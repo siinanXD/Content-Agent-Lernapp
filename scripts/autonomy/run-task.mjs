@@ -12,6 +12,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSyn
 import { pathToFileURL } from "node:url";
 import { RUN_CAP_EUR } from "./duplicates.mjs";
 import { fetchJson } from "./http.mjs";
+import { LEDGER_LIMIT, weekCost } from "./week-cost.mjs";
 
 export const RESULT_DIR = "docs/quality/runs";
 export const READINESS_FILE = "docs/product-readiness.json";
@@ -177,8 +178,7 @@ export function costResult(rows, capEur = RUN_CAP_EUR, { now = new Date(), seit 
   const avg = eur.reduce((a, b) => a + b, 0) / eur.length;
   const stopped = rows.filter((r) => r.stopped).length;
   const kinds = [...new Set(rows.map((r) => r.kind))].join(", ");
-  const weekStart = now.getTime() - 7 * 864e5;
-  const woche = eurOf(rows.filter((r) => Date.parse(String(r.created_at)) >= weekStart)).reduce((a, b) => a + b, 0);
+  const { sumEur: woche } = weekCost(rows, now);
   const seitMs = Date.parse(seit);
   const neu = rows.filter((r) => Date.parse(String(r.created_at)) >= seitMs);
   const neuMax = neu.length ? Math.max(...eurOf(neu)) : null;
@@ -191,7 +191,7 @@ export function costResult(rows, capEur = RUN_CAP_EUR, { now = new Date(), seit 
 }
 
 export async function costReport(env, fetchImpl = fetch) {
-  const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=run_id,kind,cost_eur,stopped,created_at&order=created_at.desc&limit=200`;
+  const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=run_id,kind,cost_eur,stopped,created_at&order=created_at.desc&limit=${LEDGER_LIMIT}`;
   const headers = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
   const rows = await fetchJson("Supabase", url, { headers }, { fetchImpl });
   return { ...costResult(rows), rows: rows.length };
