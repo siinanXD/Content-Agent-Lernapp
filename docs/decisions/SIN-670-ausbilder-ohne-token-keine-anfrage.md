@@ -1,6 +1,5 @@
 # SIN-670: /ausbilder ohne Token keine Anfrage
 
 - Links: https://linear.app/sinan-kahraman/issue/SIN-670, Vorgänger SIN-667, SIN-668
-- Entscheidung: Ohne Zugriffstoken zeigt die Seite sofort „Bitte anmelden“, auch wenn die Browser-Anmeldung nicht eingerichtet ist. Keine Anfrage an die API.
-- Annahme: Ohne eingerichtete Anmeldung kann es nie ein Token geben, die API würde immer 401 melden.
-- Warum: Der Testnutzer meldet jeden 401 als Konsolenfehler.
+- Entscheidung: Keine Codeänderung. Die Regel „Anmeldung eingerichtet, kein Token → direkt Anmelden-Zustand, keine Anfrage“ bleibt. Ohne eingerichtete Anmeldung wird weiter gefragt.
+- Annahme: Ohne eingerichtete Anmeldung gibt es im Betrieb keinen Anmeldeweg und keinen echten Nutzer; ein Verzicht auf die Anfrage würde nur die E2E-Tests mit gemockter API brechen (CI hat kein Supabase, nie ein Token). Erster Versuch scheiterte daran in 8 Tests.

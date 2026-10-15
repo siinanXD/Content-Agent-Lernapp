@@ -8,7 +8,7 @@ import { InviteSection } from "@/components/ausbilder/invite-section";
 import { Button } from "@/components/ui/button";
 import { StateView } from "@/components/ui/state-view";
 import { MobileShell } from "@/components/learner/mobile-shell";
-import { getAccessToken, signOut } from "@/lib/auth/browser-client";
+import { getAccessToken, getBrowserSupabase, signOut } from "@/lib/auth/browser-client";
 import { demoOverview, isDemoSearch } from "@/lib/ausbilder/demo";
 import {
   INACTIVE_DAYS,
@@ -58,12 +58,12 @@ export default function AusbilderPage() {
     if (!still) setLoad({ kind: "laden" });
     try {
       const token = await getAccessToken();
-      // Keine Sitzung (auch ohne eingerichtete Anmeldung): gar nicht erst fragen (die API würde 401 melden, SIN-667, SIN-670).
-      if (!token) return setLoad({ kind: "anmelden" });
+      // Anmeldung eingerichtet, aber keine Sitzung: gar nicht erst fragen (die API würde 401 melden, SIN-667).
+      if (!token && (await getBrowserSupabase())) return setLoad({ kind: "anmelden" });
       // `?gruppe=` wählt eine bestimmte Gruppe, auch archiviert (SIN-415). Ohne: die einzige aktive.
       const gruppe = new URLSearchParams(window.location.search).get("gruppe");
       const res = await fetch(gruppe ? `/api/ausbilder/gruppe?id=${encodeURIComponent(gruppe)}` : "/api/ausbilder/gruppe", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         cache: "no-store",
       });
       // Antwort immer ganz lesen, auch bei 401/404: sonst bleibt die Anfrage offen.
