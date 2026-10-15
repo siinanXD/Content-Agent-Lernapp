@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { getAccessToken, getBrowserSupabase } from "@/lib/auth/browser-client";
 import { ausbilderFetch } from "@/lib/ausbilder/client";
 import { parseGruppen, type Gruppen } from "@/lib/ausbilder/gruppen";
 
@@ -17,6 +18,8 @@ export function useGruppen() {
   const reload = useCallback(async (still = false) => {
     if (!still) setLoad({ kind: "laden" });
     try {
+      // Anmeldung eingerichtet, aber keine Sitzung: gar nicht erst fragen (die API würde 401 melden, SIN-668).
+      if (!(await getAccessToken()) && (await getBrowserSupabase())) return setLoad({ kind: "anmelden" });
       const res = await ausbilderFetch("/api/ausbilder/gruppen");
       // Antwort immer ganz lesen, auch bei 401: sonst bleibt die Anfrage offen.
       const body: unknown = await res.json().catch(() => null);
