@@ -18,7 +18,7 @@ export function useGruppen() {
   const reload = useCallback(async (still = false) => {
     if (!still) setLoad({ kind: "laden" });
     try {
-      // Anmeldung eingerichtet, aber keine Sitzung: gar nicht erst fragen (die API würde 401 melden, SIN-667/669).
+      // Anmeldung eingerichtet, aber keine Sitzung: gar nicht erst fragen (die API würde 401 melden, SIN-668).
       if (!(await getAccessToken()) && (await getBrowserSupabase())) return setLoad({ kind: "anmelden" });
       const res = await ausbilderFetch("/api/ausbilder/gruppen");
       // Antwort immer ganz lesen, auch bei 401: sonst bleibt die Anfrage offen.
