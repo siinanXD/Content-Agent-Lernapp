@@ -262,6 +262,22 @@ test("SIN-661: Wochendeckel Grenzfälle und Teilbatch", () => {
   assert.equal(partGate(0, 10, 0.059, 0, 5).ok, true);
 });
 
+test("SIN-672: Ledger-Wochensumme (Richter-Läufe) zählt in Start und Teilbatch", () => {
+  const now = new Date("2026-10-14T05:47:00Z");
+  const kleinerBericht = [{ mode: "live" as const, startedAt: "2026-10-12T05:00:00Z", costEur: 5, generated: 10 }];
+  // Fabrik-Berichte allein: 5 €, Ledger inkl. judge-backfill: 20,01 € -> kein Start.
+  assert.equal(runAllowed(kleinerBericht, now).ok, true);
+  assert.equal(runAllowed(kleinerBericht, now, WEEK_CAP_EUR - RUN_CAP_EUR + 0.01).ok, false);
+  assert.equal(runAllowed(kleinerBericht, now, WEEK_CAP_EUR - RUN_CAP_EUR).ok, true);
+  // Knapp unter dem Deckel: der Teilbatch, der 40 € überschreiten würde, startet nicht (Lauf-Deckel allein ließe ihn zu).
+  const week = 36;
+  assert.equal(partGate(0, 10, 0.059, 0, RUN_CAP_EUR).ok, true);
+  const gate = partGate(0, 100, 0.059, 0, RUN_CAP_EUR, week);
+  assert.equal(gate.ok, false);
+  assert.ok(week + gate.expectedEur > WEEK_CAP_EUR);
+  assert.equal(partGate(0, 10, 0.059, 0, RUN_CAP_EUR, week).ok, true);
+});
+
 test("Lauf: fertige Map wird übersprungen, nichts offen ergibt null, Fortsetzung zuerst", () => {
   const ids = (mapId: string) =>
     new Set(beide.filter((q) => q.mapId === mapId).flatMap((q) => slotIds(q.module)));

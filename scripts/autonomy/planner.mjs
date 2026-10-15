@@ -30,6 +30,7 @@ import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error
 import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
 import { collectMigrations } from "./migrationen.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
+import { weekCost } from "./week-cost.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection, ratedQuestions, fetchAll } from "./content-metrics.mjs";
 import { DEFAULT_SIZE, SIZES } from "./sparen.mjs";
@@ -101,12 +102,10 @@ export function summarizeRunCosts(rows, capEur = 20) {
 
 /** Kennzahl kosten_woche (SIN-534): Summe der Läufe der letzten 7 Tage, Warnung über 2 x Lauf-Deckel. */
 export function summarizeWeekCosts(rows, capEur = 20, now = new Date()) {
-  const since = now.getTime() - 7 * 864e5;
-  const week = rows.filter((r) => new Date(r.created_at).getTime() >= since);
-  if (!week.length) return "keine Läufe in den letzten 7 Tagen";
-  const sum = week.reduce((a, r) => a + Number(r.cost_eur ?? 0), 0);
+  const { sumEur: sum, runs } = weekCost(rows, now);
+  if (!runs) return "keine Läufe in den letzten 7 Tagen";
   const warn = sum > 2 * capEur ? ` WARNUNG: über dem Doppelten des Lauf-Deckels (${2 * capEur} €)` : "";
-  return `${sum.toFixed(2)} € in ${week.length} Läufen (letzte 7 Tage)${warn}`;
+  return `${sum.toFixed(2)} € in ${runs} Läufen (letzte 7 Tage)${warn}`;
 }
 
 const costSummaries = (rows) => ({ kosten_pro_lauf: summarizeRunCosts(rows.slice(0, 20)), kosten_woche: summarizeWeekCosts(rows) });
