@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-703 | SIN-703: Stillstand `ohne-start` nicht direkt nach der Wahl durch den Dispatcher | [SIN-703-ohne-start-frisch-gewaehlt.md](decisions/SIN-703-ohne-start-frisch-gewaehlt.md) |
 | SIN-701 | SIN-701: Ideen-Sperre nach Thema statt nach Titel | [SIN-701-ideen-themenschluessel.md](decisions/SIN-701-ideen-themenschluessel.md) |
 | SIN-682 | SIN-682: Ein Wochenwert für Planer und cost-report, Beleg offen | [SIN-682-wochenwert-eine-zaehlweise.md](decisions/SIN-682-wochenwert-eine-zaehlweise.md) |
 | SIN-675 | SIN-675: Sicherheits-Stichproben: Lauf starten und Ergebnis mit Beleg eintragen | [SIN-675-sicherheits-stichproben-lauf.md](decisions/SIN-675-sicherheits-stichproben-lauf.md) |

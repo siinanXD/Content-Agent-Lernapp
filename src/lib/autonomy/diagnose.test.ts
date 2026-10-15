@@ -234,6 +234,18 @@ test("SIN-643: Fixture „Kein Lauf gefunden“ → Ursache ohne-start → Bug-I
   assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
 });
 
+test("SIN-703: Fixture dispatch wählte Issue → ohne-start erst nach Ablauf der Startfrist → Bug-Issue", () => {
+  const text = "Kein roter Lauf: dispatch. Letzter Lauf #38769899804 success am 2026-10-15T16:32:45Z\nNächstes Issue: SIN-702 (Worker: Lauf-Aufträge), Spur backend, Größe mittel, Priorität 2";
+  const logs = [{ workflow: "dispatch", url: "d", text, at: "2026-10-15T16:32:45Z" }];
+  const input = { running: 0, paused: false, startable: 1, idleMin: 486, logs };
+  // Gerade gestartet: der Worker ist nur noch nicht sichtbar.
+  assert.equal(diagnoseStall({ ...input, now: Date.parse("2026-10-15T16:40:00Z") }), null);
+  // Später ohne Worker: wirklich ohne Start.
+  const diag = diagnoseStall({ ...input, now: Date.parse("2026-10-15T18:00:00Z") });
+  assert.equal(diag?.cause, "ohne-start");
+  assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+});
+
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
   const raw = JSON.stringify([
     { type: "assistant", message: { content: [{ type: "text", text: "Ich mache jetzt den PR." }] } },

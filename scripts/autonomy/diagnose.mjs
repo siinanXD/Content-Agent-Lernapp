@@ -77,13 +77,17 @@ export function logExcerpt(text, max = 8) {
 
 /**
  * Wertet einen Stillstand aus.
- * @param {{ running: number, paused: boolean, startable: number, idleMin: number, logs?: { workflow: string, runId?: number | string, url?: string, text: string }[] }} input
+ * @param {{ running: number, paused: boolean, startable: number, idleMin: number, now?: number, logs?: { workflow: string, runId?: number | string, url?: string, text: string, at?: string }[] }} input
  *   `logs`: Logs der letzten fehlgeschlagenen (oder auffälligen) Läufe von planner, dispatch, worker, neueste zuerst.
  * @returns {null | { cause: string, label: string, fix: string, workflow: string | null, url: string | null, excerpt: string, reason: string }}
  *   null = kein Stillstand (oder nur die Pause, die schon gemeldet wird).
  */
-export function diagnoseStall({ running, paused, startable, idleMin, logs = [] }) {
+export function diagnoseStall({ running, paused, startable, idleMin, logs = [], now = Date.now() }) {
   if (running > 0 || paused) return null;
+  // SIN-703: Hat der letzte dispatch-Lauf gerade ein Issue gewählt („Nächstes Issue:“), ist der Worker nur noch nicht
+  // als laufend sichtbar (Start dauert Sekunden bis Minuten). Das ist kein Stillstand.
+  const d = logs.find((l) => l.workflow === "dispatch");
+  if (d && /^(?:\[dry-run\] )?Nächstes Issue:/m.test(d.text) && d.at && now - Date.parse(d.at) < STALL_MIN * 60_000) return null;
   const idle = startable > 0 && idleMin > STALL_MIN;
   const empty = startable === 0;
   if (!idle && !empty) return null;
