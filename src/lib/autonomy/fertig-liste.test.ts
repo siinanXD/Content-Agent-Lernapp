@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { einsortieren, main as einsortierenMain, parseFertigListe } from "../../../scripts/autonomy/einsortieren.mjs";
 import { buildSnapshot } from "../../../scripts/autonomy/leitstand.mjs";
 import { classifyNew, fetchProgress, ideaSlotFree, isIdea, pickMany, progressOf, startOrder } from "../../../scripts/autonomy/linear.mjs";
-import { validatePlan } from "../../../scripts/autonomy/planner.mjs";
+import { openIdeaThemes, validatePlan } from "../../../scripts/autonomy/planner.mjs";
 
 const mk = (identifier: string, over: Record<string, unknown> = {}, labels: string[] = [], milestone?: string) => ({
   id: identifier,
@@ -65,7 +65,7 @@ test("Neue Issues: Ideen → Backlog, v2, Label idee; dringend bleibt v1", () =>
 
 test("Planer: Ideen kommen am Ende, zählen nicht gegen die Spuren", () => {
   const entry = (title: string, over = {}) => ({ lane: "backend", title, description: "x", acceptance: ["a"], priority: 2, size: "mittel", ...over });
-  const plan = [entry("A"), entry("B"), entry("C"), entry("D"), entry("Idee 1", { idee: true }), entry("Idee 2", { idee: true, lane: "frontend" })];
+  const plan = [entry("A"), entry("B"), entry("C"), entry("D"), entry("Idee 1", { idee: true, thema: "t1" }), entry("Idee 2", { idee: true, thema: "t2", lane: "frontend" })];
   const out = validatePlan(plan);
   assert.deepEqual(out.map((i: { title: string }) => i.title), ["A", "B", "C", "Idee 1", "Idee 2"]);
   assert.deepEqual(out[3].labels, ["backend", "idee"]);
@@ -132,6 +132,37 @@ test("Einsortieren: Trockenlauf ändert nichts, echter Lauf setzt Meilenstein un
     assert.deepEqual(rows.map((r: { ziel: string }) => r.ziel), ["v1", "v2"]);
     assert.equal(calls.filter((q) => q.includes("issueUpdate")).length, 2);
     assert.equal(calls.filter((q) => q.includes("issueAddLabel")).length, 1);
+  } finally {
+    console.log = quiet;
+  }
+});
+
+test("Planer: Idee zu offenem Themenschlüssel wird verworfen, auch mit neuem Titel (SIN-701)", () => {
+  const entry = (title: string, over = {}) => ({ lane: "frontend", title, description: "x", acceptance: ["a"], priority: 4, size: "mittel", idee: true, ...over });
+  const offen = [mk("SIN-647", { title: "Screenreader-Test der Kernrouten", description: "<!-- thema: wcag-screenreader -->" }, ["idee"])];
+  const keys = openIdeaThemes(offen).map((i: { thema: string }) => i.thema);
+  assert.deepEqual(keys, ["wcag-screenreader"]);
+  const plan = [entry("Manueller Screenreader-Test für den Lernweg", { thema: "WCAG-Screenreader" }), entry("Neu", { thema: "wochenkosten" }), entry("Neu zwei", { thema: "wochenkosten" }), entry("Ohne Schlüssel")];
+  const quiet = console.log;
+  console.log = () => {};
+  try {
+    const out = validatePlan(plan, [], { ideaKeys: keys });
+    assert.deepEqual(out.map((i: { title: string }) => i.title), ["Neu"]);
+    assert.match(out[0].description, /<!-- thema: wochenkosten -->/);
+    assert.equal(validatePlan(plan.slice(0, 1), [], { ideaKeys: keys }).length, 0);
+  } finally {
+    console.log = quiet;
+  }
+});
+
+test("Planer: Nachfüll-Lauf mit nur Ideen legt nichts an (SIN-701)", () => {
+  const idee = { lane: "backend", title: "Idee", description: "x", acceptance: ["a"], priority: 4, idee: true, thema: "k" };
+  const quiet = console.log;
+  console.log = () => {};
+  try {
+    assert.equal(validatePlan([idee], [], { maxIssues: 3 }).length, 0);
+    assert.equal(validatePlan([idee], []).length, 1);
+    assert.equal(validatePlan([idee, { ...idee, title: "Bug", idee: false, priority: 2 }], [], { maxIssues: 3 }).length, 2);
   } finally {
     console.log = quiet;
   }

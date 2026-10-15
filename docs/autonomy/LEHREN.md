@@ -31,7 +31,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 ## Tages-Update und Planer
 
 - Den Tages-Update-Merker pro Kalendertag setzen → ein Testlauf um Mitternacht verbrauchte den ganzen Tag. Richtig: Wiederholungsschutz nur 6 h, Testläufe mit `-f force=true`. (SIN-267)
-- Kontingent-Issues ohne Dedup anlegen → jede Planer-Runde legte dasselbe Issue neu an. Richtig: nicht anlegen, wenn ein gleich betiteltes offen ist oder in den letzten 24 h erledigt wurde (`recentlyDoneTitles`). (SIN-266)
+- Kontingent-Issues ohne Dedup anlegen → jede Planer-Runde legte dasselbe Issue neu an. Richtig: nicht anlegen, wenn ein gleich betiteltes offen ist oder in den letzten 24 h erledigt wurde (`recentlyDoneTitles`). Ideen nie nur per Titel prüfen (19 Dubletten, jede Runde neu betitelt): `thema`-Schlüssel aus dem Beleg, Marker `<!-- thema: … -->`, offene Schlüssel im Prompt, `validatePlan` verwirft doppelte; Nachfüllen nur mit Ideen legt nichts an. (SIN-266, SIN-701)
 - „Nur noch Bugs planen“ bei jedem knappen Kontingent auslösen → bremst unnötig. Richtig: nur bei Claude-Limit-Pause oder fast erreichtem 20-€-Deckel; Vercel, Sentry, PostHog, Langfuse, Supabase lösen nur Gegenmaßnahmen aus. (SIN-266)
 - Kennzahl „bewertet“ exakt gegen `questions.id` abgleichen, obwohl der Lauf `question_id` als `<unit_id>-<id>` schreibt → blieb 0 von 1852. Richtig: IDs beim Lesen normalisieren (`ratedQuestions`) und Schreib-/Lese-Schlüssel per Test koppeln. (SIN-409)
 
