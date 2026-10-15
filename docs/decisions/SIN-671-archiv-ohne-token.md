@@ -1,6 +1,6 @@
 # SIN-671: /ausbilder/archiv ohne Token ohne API-Anfrage
 
 - Issue: https://linear.app/sinan-kahraman/issue/SIN-671
-- Entscheidung: `useGruppen` fragt `/api/ausbilder/gruppen` nur mit Token. Ohne Token sofort „Bitte anmelden“, auch wenn die Anmeldung im Browser nicht eingerichtet ist (Nachtrag zu SIN-669).
-- Annahme: Der Fund kann vom Stand vor SIN-669 stammen; ist die Live-App ohne `NEXT_PUBLIC_SUPABASE_*` gebaut, griff die SIN-669-Ausnahme und die API lieferte 401.
-- Warum: `ausbilderClient` antwortet ohne Token immer 401, bevor die Konfiguration geprüft wird; die Anfrage bringt nie etwas.
+- Entscheidung: Keine Code-Änderung. `useGruppen` fragt schon seit SIN-668/SIN-669 nicht ohne Sitzung, sobald die Anmeldung eingerichtet ist (`NEXT_PUBLIC_SUPABASE_*`).
+- Annahme: Der Fund stammt vom Stand vor SIN-669.
+- Warum nicht auch ohne eingerichtete Anmeldung: Die E2E-Tests (`e2e/ausbilder-gruppen.spec.ts`) mocken die API ohne Supabase-Konfiguration, also ohne Token; ein Token-Zwang ließe sie scheitern (CI-Lauf 38665102863). Ohne Konfiguration zeigt die Seite nach dem 401 ohnehin „Bitte anmelden“.
