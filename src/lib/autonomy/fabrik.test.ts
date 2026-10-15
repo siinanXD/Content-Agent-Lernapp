@@ -49,7 +49,7 @@ test("Fabrik: liest die letzten 2 Läufe aus Supabase", async () => {
   const urls: string[] = [];
   const fetchImpl = async (url: string) => (
     urls.push(url),
-    { ok: true, status: 200, json: async () => [run(1, false), run(8, false)], headers: new Headers() }
+    { ok: true, status: 200, json: async () => [1, 8].map((d) => ({ created_at: new Date(Date.now() - d * 86_400_000).toISOString(), new_module: false, queue_open: true })), headers: new Headers() }
   );
   const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
   const m = await collectFabrikMetrics(env as never, { fetchImpl: fetchImpl as never });

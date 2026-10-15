@@ -21,7 +21,7 @@
  */
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { LANES, classifyNew, commentOnIssue, countIssues, fetchProjectIssues, fetchRecentlyDone, linear, linearTeamAndProject, milestoneIdByName, stateIdByName } from "./linear.mjs";
+import { LANES, classifyNew, commentOnIssue, countIssues, fetchBacklogIdeas, fetchProjectIssues, fetchRecentlyDone, linear, linearTeamAndProject, milestoneIdByName, stateIdByName } from "./linear.mjs";
 import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { readLimits, runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
@@ -68,6 +68,15 @@ export const DESIGN_VORLAGEN_BLOCK = [
   "## Hinweis für Sinan",
   "Agenten können Figma-Community-Dateien nicht selbst übernehmen. Wird ein Treffer gebraucht: Datei in der Community öffnen, auf „In Entwurf öffnen“ (Kopie anlegen) klicken und den Link der Kopie ins Issue schreiben.",
 ].join("\n");
+/** Themenschlüssel einer Idee (SIN-701): steht als Marker in der Beschreibung, damit neue Formulierungen derselben Sache auffallen. */
+export const themaKey = (k) => String(k ?? "").trim().toLowerCase().replace(/[^a-z0-9/._-]+/g, "-").replace(/^-+|-+$/g, "");
+export const themaMarker = (key) => `<!-- thema: ${key} -->`;
+export const themaOf = (issue) => themaKey(/<!-- thema: ([^>]+?) -->/.exec(String(issue?.description ?? ""))?.[1]);
+const hasIdeaLabel = (i) => (i.labels?.nodes ?? []).some((l) => String(l.name).toLowerCase() === "idee");
+
+/** Offene Ideen (Backlog + Todo, Label `idee`) mit Schlüssel; Ideen ohne Marker (Altbestand) fehlen hier. */
+export const openIdeaThemes = (issues) => issues.filter(hasIdeaLabel).map((i) => ({ identifier: i.identifier, title: i.title, thema: themaOf(i) })).filter((i) => i.thema);
+
 export const PLAN_LANES =[...LANES, "design"];
 /** Pflege-Modus: nur Fehler (Backend) und Content. */
 export const MAINTENANCE_LANES = ["backend", "content"];
@@ -209,7 +218,7 @@ export async function assessReadiness({ metrics, issues, env = process.env, read
 
 export function buildPlannerPrompt(
   /** @type {{ definition: string, issues: unknown[], metrics: object, readiness?: string, content?: string, maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null }} */
-  { definition, issues, recentDone = [], metrics, readiness = "", content = "", maintenance = false, phase = null, maxIssues = null, bugsOnly = false },
+  { definition, issues, recentDone = [], ideaThemes = [], metrics, readiness = "", content = "", maintenance = false, phase = null, maxIssues = null, bugsOnly = false },
 ) {
   const betrieb = phase?.phase === "betrieb";
   return [
@@ -230,6 +239,8 @@ export function buildPlannerPrompt(
     "- Nutze die Vorschläge im Abschnitt „Content“; ohne Vorschlag kein Content-Issue.",
     "",
     `Fertig-Liste (SIN-528): Die Produktbeschreibung und die Produktreife-Tabelle sind das Grundgerüst v1. Neue Issues gibt es nur für Lücken dieser Liste. Alles andere (Nutzungsdaten, Trends, Verbesserungsideen) setzt du mit \`"idee": true\`: es landet im Backlog von „v2 Ideen“ und wird nach und nach aufgenommen (höchstens ${MAX_IDEEN_PER_RUN} je Lauf, Priorität egal). Nur Notwendiges und Dringendes ist kein \`idee\`.`,
+    "",
+    `Themenschlüssel (SIN-701): Jede Idee trägt \`"thema"\` = Schlüssel aus dem Beleg, nicht aus dem Titel (Produktreife-Zeile wie \`wcag-screenreader\`, Verwerfungsgruppe \`beruf/modul/fragetyp\`, Kennzahl wie \`wochenkosten\`). Vergib keinen Schlüssel, der unten schon offen ist; ein anderer Titel zum selben Thema ist eine Dublette und wird verworfen. Ideen ohne Schlüssel auch.`,
     "",
     "Keine Duplikate zu offenen Issues und zu den in den letzten 14 Tagen erledigten (Abschnitt unten). Ein Treffer wird nicht neu angelegt, sondern als Kommentar am alten Issue vermerkt. Pro Issue: ein Arbeitspaket, ein PR. Kein Inhalt ohne amtliche Quelle, keine Personendaten.",
     "",
@@ -274,11 +285,14 @@ export function buildPlannerPrompt(
     "## Offene Linear-Issues",
     ...(issues.length ? issues.map((i) => `- ${i.identifier} [${i.state.name}, Prio ${i.priority}] ${i.title}`) : ["(keine)"]),
     "",
+    "## Offene Ideen mit Themenschlüssel (nicht erneut vergeben)",
+    ...(ideaThemes.length ? ideaThemes.map((i) => `- ${i.thema}: ${i.identifier} ${i.title}`) : ["(keine)"]),
+    "",
     "## Kennzahlen",
     ...Object.entries(metrics).map(([k, v]) => `- ${k}: ${v}`),
     "",
     "## Ausgabe",
-    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "size": "klein|mittel", "area": "optional, nur für klein", "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft", "idee": "true, wenn es keine Lücke der Fertig-Liste ist"}].',
+    'Schreibe nur die Datei plan.json im Repo-Wurzelverzeichnis: [{"lane": "frontend|content|backend|design", "title": "...", "description": "...", "acceptance": ["..."], "priority": 1-4, "size": "klein|mittel", "area": "optional, nur für klein", "needsDesign": false, "blockedBy": "Titel oder SIN-123", "check": "Kennung aus der Produktreife-Tabelle, falls der Eintrag einen Punkt betrifft", "idee": "true, wenn es keine Lücke der Fertig-Liste ist", "thema": "Themenschlüssel, Pflicht bei idee"}].',
     "`needsDesign` und `blockedBy` nur bei Frontend-Issues, die ein Design-Paket brauchen (siehe oben). Priorität wie in Linear: 1 dringend, 2 hoch, 3 mittel, 4 niedrig. Danach nichts weiter tun.",
   ].join("\n");
 }
@@ -303,7 +317,7 @@ function betriebPrompt(phase) {
  * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
  * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string, idee?: boolean }[]}
  */
-export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean, readiness?: any[], built?: Record<string, any> }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly = false, readiness = [], built = {} } = {}) {
+export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean, readiness?: any[], built?: Record<string, any>, ideaKeys?: Iterable<string> }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly = false, readiness = [], built = {}, ideaKeys = [] } = {}) {
   const betrieb = phase?.phase === "betrieb";
   // Betrieb: im Beobachtungsfenster nur Fehler und Content, am Fensterende der Wochenplan.
   const observing = betrieb && !phase.due;
@@ -314,6 +328,7 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
   const count = {};
   const out = [];
   const ideas = [];
+  const takenThemes = new Set([...ideaKeys].map(themaKey));
   for (const [i, entry] of plan.entries()) {
     // Gebaut, nie gelaufen: Lauf-Auftrag statt Bau-Issue (SIN-292).
     const row = rowFor(entry, readiness);
@@ -339,14 +354,18 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
     if (taken.has(p.title.trim().toLowerCase())) continue;
     // Idee statt Lücke der Fertig-Liste (SIN-528): Backlog in „v2 Ideen“, nie startbar, kein Design-Paket, keine Abhängigkeit.
     if (p.idee === true && p.lane !== "design") {
-      if (ideas.length < MAX_IDEEN_PER_RUN) {
+      const thema = themaKey(p.thema);
+      if (!thema) console.log(`Idee verworfen (Themenschlüssel fehlt, SIN-701): ${p.title}`);
+      else if (takenThemes.has(thema)) console.log(`Idee verworfen (Thema „${thema}“ ist als Idee schon offen, SIN-701): ${p.title}`);
+      else if (ideas.length < MAX_IDEEN_PER_RUN) {
+        takenThemes.add(thema);
         ideas.push({
           lane: p.lane,
           title: p.title.trim(),
           priority: 4,
           idee: true,
           labels: [p.lane, "idee"],
-          description: `${p.description ?? ""}\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`.trim(),
+          description: `${p.description ?? ""}\n\n## Akzeptanzkriterien\n${p.acceptance.map((a) => `- [ ] ${a}`).join("\n")}\n\n${themaMarker(thema)}`.trim(),
         });
       }
       continue;
@@ -388,6 +407,11 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
     const kept = [...result].sort((a, b) => a.priority - b.priority).slice(0, Math.max(0, maxIssues));
     const titles = new Set(kept.map((r) => r.title.toLowerCase()));
     result = kept.filter((r) => !r.blockedBy || !planTitles.has(r.blockedBy.toLowerCase()) || titles.has(r.blockedBy.toLowerCase()));
+  }
+  // Nachfüll-Lauf nur mit Ideen: nichts anlegen, sonst stößt der Leitstand weiter nach (SIN-701).
+  if (maxIssues != null && !result.length && ideas.length) {
+    console.log(`Nachfüllen: nur Ideen im Plan, ${ideas.length} verworfen (SIN-701)`);
+    ideas.length = 0;
   }
   // Design zuerst, damit es beim Anlegen schon existiert, wenn das Frontend-Issue darauf wartet.
   return [...result.sort((a, b) => Number(b.lane === "design") - Number(a.lane === "design")), ...ideas];
@@ -515,9 +539,11 @@ export async function main(argv) {
     const definition = extractSection(readFileSync("docs/PRODUCT.md", "utf8"), "Definition fertig");
     const phase = await resolvePhase(argv, issues);
     const recentDone = issues ? await fetchRecentlyDone(linear).catch(() => []) : [];
+    const ideaThemes = issues ? openIdeaThemes([...issues, ...(await fetchBacklogIdeas(linear).catch(() => []))]) : [];
     const prompt = buildPlannerPrompt({
       phase,
       recentDone,
+      ideaThemes,
       ...refillLimits(process.env),
       definition,
       issues: issues ?? [],
@@ -548,7 +574,15 @@ export async function main(argv) {
     }
     const { rest, started } = await startRuns(fresh, rows, { dry });
     for (const r of started) console.log(`${r.started ? "Lauf gestartet" : "Lauf nicht gestartet"}: ${r.task}${r.grund ? ` (${r.grund})` : ""}`);
-    const items = validatePlan(rest, [...existingTitles, ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ...refillLimits(process.env) });
+    const backlogIdeas = issues ? await fetchBacklogIdeas(linear).catch(() => []) : [];
+    const ideaKeys = openIdeaThemes([...(issues ?? []), ...backlogIdeas]).map((i) => i.thema);
+    const limits = refillLimits(process.env);
+    const items = validatePlan(rest, [...existingTitles, ...backlogIdeas.map((i) => i.title), ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ideaKeys, ...limits });
+    // Nachfüll-Lauf ohne neues Todo-Issue: found=false, damit der Leitstand nicht weiter nachstößt (SIN-701).
+    if (limits.maxIssues != null && !items.length) {
+      console.log("found=false");
+      if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, "found=false\n");
+    }
     if (maintenance && !existingTitles.includes(ABNAHME_TITLE)) items.push({ ...abnahmeIssue(rows), lane: "abnahme" });
     console.log(`Produktreife\n\n${renderReadiness(rows)}\n\n${maintenance ? "Pflege-Modus: nur Fehler und Content.\n" : ""}`);
     if (dry) {
