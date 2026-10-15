@@ -22,7 +22,7 @@ import {
   stageResult,
   taskForCheck,
 } from "../../../scripts/autonomy/run-task.mjs";
-import { startRuns } from "../../../scripts/autonomy/planner.mjs";
+import { startRuns, summarizeWeekCosts } from "../../../scripts/autonomy/planner.mjs";
 
 const now = new Date("2026-10-06T10:00:00Z");
 
@@ -142,6 +142,18 @@ test("Kosten: Deckel, Wochenkosten und Stichtag der Teilbatches", () => {
   assert.match(good.ergebnis, /3 Läufe .*höchster 21\.78 €.*seit 2026-10-13 2 Läufe, höchster 4\.50 €.*7 Tage 27\.28 €/);
   assert.equal(costResult([{ cost_eur: 20, kind: "x", created_at: "2026-10-14T10:00:00Z" }], 20, { now }).ok, false);
   assert.equal(costResult([{ cost_eur: 21.78, kind: "x", created_at: "2026-10-12T10:00:00Z" }], 20, { now }).ok, null);
+});
+
+test("Kosten (SIN-682): cost-report und Planer-Kennzahl nennen dieselbe Wochensumme", () => {
+  const now = new Date("2026-10-15T12:00:00Z");
+  const rows = [
+    { cost_eur: 14.89, kind: "content-grow", created_at: "2026-10-14T10:00:00Z" },
+    { cost_eur: 2.2, kind: "goldset-regression", created_at: "2026-10-13T10:00:00Z" },
+    { cost_eur: 21.78, kind: "content-grow", created_at: "2026-10-08T11:59:00Z" }, // knapp außerhalb von 7 Tagen
+  ];
+  const bericht = costResult(rows, 20, { now });
+  assert.equal(bericht.wocheEur, 17.09);
+  assert.match(summarizeWeekCosts(rows, 20, now), /^17\.09 € in 2 Läufen/);
 });
 
 test("Migrationen: nur additive, fehlende nach Tabellen und Version", () => {

@@ -30,7 +30,7 @@ import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error
 import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
 import { collectMigrations } from "./migrationen.mjs";
 import { collectSentryMetrics } from "./sentry.mjs";
-import { weekCost } from "./week-cost.mjs";
+import { LEDGER_LIMIT, weekCost } from "./week-cost.mjs";
 import { ServiceError, fetchJson, fetchJsonFull } from "./http.mjs";
 import { collectContentMetrics, renderContentSection, ratedQuestions, fetchAll } from "./content-metrics.mjs";
 import { DEFAULT_SIZE, SIZES } from "./sparen.mjs";
@@ -149,7 +149,7 @@ export async function collectMetrics(env = process.env, http = {}) {
     }
     // Kosten separat mit Retry-Logik
     if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
-      const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped,created_at&order=created_at.desc&limit=100`;
+      const url = `${env.SUPABASE_URL}/rest/v1/pipeline_run_costs?select=cost_eur,stopped,created_at&order=created_at.desc&limit=${LEDGER_LIMIT}`;
       try {
         Object.assign(m, costSummaries(await fetchJson("Supabase", url, { headers: h }, http)));
       } catch (e) {
