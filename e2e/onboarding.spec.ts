@@ -45,8 +45,8 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   const lernpfadErstellen = page.getByRole("button", { name: "Lernpfad erstellen", exact: true });
   await expect(lernpfadErstellen).toBeDisabled();
   await page.getByRole("button", { name: "Metall + Kunststoff" }).click();
-  // Zwei Maps: zweite Auswahl (Betrieb) mit Default; kein „Referenzberuf“ mehr (SIN-249)
-  await expect(page.getByRole("group", { name: "Dein Betrieb" })).toBeVisible();
+  // Nur Maps mit Inhalt: Kunststoffbetrieb ist leer, daher keine Betriebsauswahl (SIN-772); kein „Referenzberuf“ (SIN-249)
+  await expect(page.getByRole("group", { name: "Dein Betrieb" })).toHaveCount(0);
   await expect(page.getByText("Referenzberuf")).toHaveCount(0);
   await lernpfadErstellen.click();
 

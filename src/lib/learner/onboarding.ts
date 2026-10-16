@@ -87,6 +87,17 @@ export const SCHWERPUNKTE: Schwerpunkt[] = [
   },
 ];
 
+/** Maps mit veröffentlichten Einheiten (SIN-772). Eine Map kommt erst hierher, wenn sie Inhalte hat. */
+export const MAPS_MIT_INHALT: readonly string[] = ["maf-metall"];
+
+/** Schwerpunkte für die Auswahl: nur Maps mit Inhalt, leere Platzhalter-Kurse bleiben weg. */
+export function verfuegbareSchwerpunkte(): Schwerpunkt[] {
+  return SCHWERPUNKTE.flatMap((s) => {
+    const maps = s.maps.filter((m) => MAPS_MIT_INHALT.includes(m.mapId));
+    return maps.length ? [{ ...s, maps, defaultMapId: maps.some((m) => m.mapId === s.defaultMapId) ? s.defaultMapId : maps[0].mapId }] : [];
+  });
+}
+
 export type Beruf = {
   id: string;
   title: string;
@@ -179,7 +190,7 @@ export function saveOnboarding(patch: Partial<OnboardingState>): OnboardingState
 }
 
 export function findSchwerpunkt(id: string | null): Schwerpunkt | undefined {
-  return SCHWERPUNKTE.find((s) => s.id === id);
+  return verfuegbareSchwerpunkte().find((s) => s.id === id);
 }
 
 /** Erster Start: Einwilligung noch nicht beantwortet. */
