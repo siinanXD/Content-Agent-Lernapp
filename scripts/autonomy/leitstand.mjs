@@ -95,6 +95,14 @@ export async function sendEvent(event, env = process.env, http = {}) {
   }
 }
 
+/** Zeitpunkt (ISO) des letzten Worker-Ereignisses in `loop_events`, sonst null (Secret fehlt, keine Zeile). Wirft bei Netzfehlern. */
+export async function fetchLastWorkerAt(env = process.env, http = {}) {
+  if (missingSecrets(env).length) return null;
+  const url = `${env.SUPABASE_URL}/rest/v1/loop_events?select=created_at&step=eq.worker&order=created_at.desc&limit=1`;
+  const rows = await fetchJson("Supabase", url, { headers: headers(env) }, http);
+  return rows[0]?.created_at ?? null;
+}
+
 /**
  * Schnappschuss je Projekt (überschreibt die Zeile): Kontingente, Schlange, offene PRs.
  * @param {{ quotas?: object[], queue?: object, openPrs?: object[], progress?: { fertig_v1: number, gesamt_v1: number, ideen_offen: number } | null }} s

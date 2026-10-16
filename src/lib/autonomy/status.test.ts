@@ -45,6 +45,28 @@ test("Status: Stillstand, hängendes In Progress, Freigabe-Wartezeit", () => {
   assert.ok(k.includes("approval:70")); // risk:high ohne Freigabe seit > 2 h
 });
 
+test("Status: Leerlauf rechnet ab dem letzten Worker in loop_events (SIN-789)", () => {
+  const snap = fixture();
+  snap.runs = [];
+  snap.now = "2026-10-05T13:00:00Z";
+  snap.issues = snap.issues.filter((i: { identifier: string }) => i.identifier !== "SIN-200");
+  assert.ok(keys(analyze(snap, limits, {})).includes("idle"));
+  snap.lastWorkerAt = "2026-10-05T12:40:00Z";
+  assert.ok(!keys(analyze(snap, limits, {})).includes("idle"));
+});
+
+test("Status: Ideen zählen nicht als startbar, der Loop wartet auf PRs (SIN-789)", () => {
+  const snap = fixture();
+  snap.runs = [];
+  snap.now = "2026-10-05T13:00:00Z";
+  const idea = { identifier: "SIN-535", title: "Idee", state: { name: "Todo", type: "unstarted" }, labels: { nodes: [{ name: "idee" }] }, updatedAt: "2026-10-03T00:00:00Z" };
+  snap.issues = [idea];
+  const r = analyze(snap, limits, {});
+  assert.ok(!keys(r).includes("idle"));
+  assert.ok(!keys(r).some((k: string) => k.startsWith("stall:")));
+  assert.match(r.body, /Kein startbares Todo, wartet auf \d+ offene PRs/);
+});
+
 test("Status: kein Alarm bei laufendem Worker und frischen Daten", () => {
   const snap = fixture();
   snap.runs = snap.runs.filter((r: { name: string; status?: string }) => r.name !== "worker" || r.status === "in_progress");
