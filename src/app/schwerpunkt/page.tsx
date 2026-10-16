@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { trackOnboardingCompleted, trackOnboardingStep } from "@/lib/analytics";
 import { OptionChoice } from "@/components/ui/option-choice";
 import { MobileShell } from "@/components/learner/mobile-shell";
-import { findSchwerpunkt, saveOnboarding, SCHWERPUNKTE } from "@/lib/learner/onboarding";
+import { findSchwerpunkt, saveOnboarding, verfuegbareSchwerpunkte } from "@/lib/learner/onboarding";
 import { saveSession } from "@/lib/learner/session";
 
 /** Kurzname und Zeichen je Schwerpunkt (Figma 56:401). Die amtlichen Namen stehen in `SCHWERPUNKTE`. */
@@ -68,7 +68,7 @@ export default function SchwerpunktPage() {
         </header>
 
         <div role="group" aria-label="Schwerpunkt" className="grid grid-cols-2 gap-2.5">
-          {SCHWERPUNKTE.map((s) => {
+          {verfuegbareSchwerpunkte().map((s) => {
             const selected = s.id === schwerpunktId;
             const kachel = KACHEL[s.id];
             return (
