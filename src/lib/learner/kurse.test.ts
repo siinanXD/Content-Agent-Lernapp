@@ -13,7 +13,7 @@ const unit = (id: string, withQuestion = true): GeneratedUnit => ({
     ? [
         {
           id: id + "-q1",
-          type: "mc",
+          type: "auswahl",
           level: 1,
           prompt: "Frage?",
           choices: ["a", "b"],
