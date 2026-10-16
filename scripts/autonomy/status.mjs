@@ -475,7 +475,7 @@ export function dispatchReasonLines(log) {
   return String(log ?? "")
     .split("\n")
     .map((l) => l.replace(/^\S+Z\s+/, "").trim())
-    .filter((l) => /^(?:\[dry-run\] )?(?:Nichts zu starten:|SIN-\d+ wartet |Abgleich:|Nächstes Issue:)/.test(l))
+    .filter((l) => /^(?:\[dry-run\] )?(?:Pausiert bis |Nichts zu starten:|SIN-\d+ wartet |Abgleich:|Nächstes Issue:)/.test(l))
     .slice(-6)
     .join("\n");
 }

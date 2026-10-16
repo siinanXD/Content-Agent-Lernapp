@@ -13,9 +13,11 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-782 | SIN-782: Stillstand `ohne-start` zeigt auch die Pause-Zeile des Dispatchers | [SIN-782-ohne-start-pause-zeile.md](decisions/SIN-782-ohne-start-pause-zeile.md) |
 | SIN-779 | SIN-779: Done nur, wenn alle Haken belegt sind | [SIN-779-done-nur-mit-haken.md](decisions/SIN-779-done-nur-mit-haken.md) |
 | SIN-778 | SIN-778 Gate-Bruch bildvergleich: main-stand im Typecheck | [SIN-778-gate-bruch-main-stand.md](decisions/SIN-778-gate-bruch-main-stand.md) |
 | SIN-777 | SIN-777: Lernpfad lädt den Kurs über einen Parameter | [SIN-777-lernpfad-kurs-parameter.md](decisions/SIN-777-lernpfad-kurs-parameter.md) |
+| SIN-773 | SIN-773: Seite „So funktioniert's“ wartet auf Figma-Frame | [SIN-773-so-funktionierts-braucht-design.md](decisions/SIN-773-so-funktionierts-braucht-design.md) |
 | SIN-772 | SIN-772: Leere Platzhalter-Kurse ausblenden | [SIN-772-leere-kurse-ausblenden.md](decisions/SIN-772-leere-kurse-ausblenden.md) |
 | SIN-770 | SIN-770 Crawler: Serie ohne Fund | [SIN-770-crawler-serie.md](decisions/SIN-770-crawler-serie.md) |
 | SIN-769 | SIN-769: Industriekaufleute bekommen Vorrang in der Content-Fabrik | [SIN-769-indkfl-vorrang.md](decisions/SIN-769-indkfl-vorrang.md) |

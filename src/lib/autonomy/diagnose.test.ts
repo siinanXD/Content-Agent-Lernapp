@@ -246,6 +246,19 @@ test("SIN-703: Fixture dispatch wählte Issue → ohne-start erst nach Ablauf de
   assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
 });
 
+test("SIN-782: Fixture grüner dispatch-Lauf mit Pause-Zeile → Grund sichtbar → ohne-start → Bug-Issue", async () => {
+  const runs = [{ id: 38931972445, name: "dispatch", status: "completed", conclusion: "success", event: "schedule", created_at: "2026-10-16T16:26:33Z", html_url: "u" }];
+  const call = (async () => ({ jobs: [{ id: 9, name: "dispatch", conclusion: "success" }] })) as never;
+  const log = "2026-10-16T16:26:35Z Pausiert bis 2026-10-18T00:00:00.000Z\nrauschen";
+  const logs = await collectLogs("o/r", runs, { call, text: async () => log });
+  assert.match(logs[0].text, /Pausiert bis 2026-10-18/);
+  assert.doesNotMatch(logs[0].text, /rauschen/);
+  const diag = diagnoseStall({ running: 0, paused: false, startable: 1, idleMin: 1975, logs });
+  assert.equal(diag?.cause, "ohne-start");
+  assert.match(diag!.excerpt, /Pausiert bis/);
+  assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+});
+
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
   const raw = JSON.stringify([
     { type: "assistant", message: { content: [{ type: "text", text: "Ich mache jetzt den PR." }] } },
