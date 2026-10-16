@@ -200,7 +200,9 @@ export async function figmaTokenMetric(env = process.env, fetchImpl = fetch) {
 }
 
 /** Produktreife-Zeilen aus Kennzahlen, offenen Issues, Bestätigungsdatei und (mit Token) Figma. */
-export async function assessReadiness({ metrics, issues, env = process.env, read = readFileSync }) {
+export async function assessReadiness({ metrics, issues, env = process.env, read = readFileSync, contentModules }) {
+  // SIN-758: Modul-Abdeckung nur mit Supabase-Zugang messen (sonst bleibt „nicht verfügbar“).
+  contentModules ??= env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY ? await collectContentMetrics(env) : null;
   const file = existsSync(READINESS_FILE) ? JSON.parse(read(READINESS_FILE, "utf8")) : {};
   const figmaMd = existsSync("docs/design/FIGMA.md") ? read("docs/design/FIGMA.md", "utf8") : "";
   const rows = evaluateReadiness({
@@ -212,6 +214,7 @@ export async function assessReadiness({ metrics, issues, env = process.env, read
     goldsetTarget: file.goldsetTarget ?? DEFAULT_GOLDSET_TARGET,
     figma: await fetchFigmaFrames(figmaFileKey(figmaMd), env),
     expected: expectedFrames(figmaMd),
+    contentModules,
   });
   return { rows, abnahme: file.abnahme ?? null, built: file.gebaut ?? {} };
 }
