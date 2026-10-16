@@ -19,7 +19,7 @@ import { collectBackup, collectRestoreTest } from "./backup.mjs";
 import { collectMigrations, migrationBugPlan, migrationIncident, sinanTaskForMigrations } from "./migrationen.mjs";
 import { LIVE_CHECK_PREFIX, collectLiveCheck } from "./live-check.mjs";
 import { planDeploy, renderDeploy, triggerDeploy } from "./deploy.mjs";
-import { buildSnapshot, sendSnapshot } from "./leitstand.mjs";
+import { buildSnapshot, fetchLastWorkerAt, sendSnapshot } from "./leitstand.mjs";
 import { sendTelegramPlain } from "./telegram.mjs";
 import { parseTokens, renderTokens } from "./tokens.mjs";
 import { SEED, renderSinan, syncSinan } from "./sinan.mjs";
@@ -157,7 +157,8 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   // Phase (SIN-244): im Betrieb startet der Dispatcher nur bug, security, content und den Wochenplan.
   const phase = phaseState({ ...snap.phaseEnv, now });
   const mayTake = (i) => phaseAllowsIssue(phase.phase, i) && claudeMayTake(i, { now, openPrs: prLite });
-  const order = startOrder(issues, mayTake);
+  // SIN-789: Der Wächter kennt den Wochen-Platz für Ideen nicht und zählt sie nie als startbar (der Dispatcher startet sie von sich aus).
+  const order = startOrder(issues, mayTake, { ideaSlot: false });
   const started = issues.filter((i) => i.state?.type === "started");
   // Wartende PRs (SIN-327): Issue bleibt „In Progress“, belegt aber keinen Platz; getrennt von laufenden Workern.
   const waiting = waitingIssues(issues, prs.map((p) => ({ ...p, ci: checks[p.number]?.ci })), running.map((r) => idOf(r.display_title)).filter(Boolean));
@@ -188,7 +189,8 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   const startable = order.length > 0 && active.length < MAX_PARALLEL;
   const lastWorkerEnd = workers.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), "");
-  const idleSince = [lastWorkerEnd, ...order.map((i) => i.updatedAt)].filter(Boolean).sort().pop();
+  // SIN-789: Letzter Worker laut loop_events (step=worker); die Actions-Läufe sind nur der Rückfall.
+  const idleSince = [snap.lastWorkerAt ?? lastWorkerEnd,...order.map((i) => i.updatedAt)].filter(Boolean).sort().pop();
   if (!running.length && startable && !paused && mins(idleSince, now) > IDLE_MIN) {
     incidents.push({ key: "idle", text: `Kein Worker läuft seit ${hm(mins(idleSince, now))}, obwohl ${order.length} startbare Todo-Issues da sind (nächstes: ${order[0].identifier}).` });
   }
@@ -250,7 +252,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   // --- Selbst-Diagnose (SIN-291): Ursache aus den letzten Logs, Bug-Issue ohne Duplikat ---
   const diagnosis =
-    active.length < MAX_PARALLEL
+    active.length < MAX_PARALLEL && !(order.length === 0 && openPrs.length)
       ? diagnoseStall({ running: running.length, paused, startable: order.length, idleMin: mins(idleSince, now), logs: snap.logs ?? [] })
       : null;
   if (diagnosis) incidents.push({ key: `stall:${diagnosis.cause}`, text: `Stillstand: ${diagnosis.label}. ${diagnosis.reason}` });
@@ -377,7 +379,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   if (!issues.length) out.push("Linear nicht lesbar.");
   else {
     order.slice(0, 5).forEach((i, n) => out.push(`${n + 1}. ${i.identifier} ${cell(i.title)} (Spur ${laneOf(i)})`));
-    if (!order.length) out.push("Kein startbares Todo.");
+    if (!order.length) out.push(openPrs.length ? `Kein startbares Todo, wartet auf ${openPrs.length} offene PRs und das nächste Nachfüllen.` : "Kein startbares Todo, wartet auf das nächste Nachfüllen.");
     const blocked = todo.filter((i) => !order.includes(i));
     for (const i of blocked.slice(0, 5)) {
       const why = hasOpenBlockers(i)
@@ -736,6 +738,7 @@ export async function main(argv, env = process.env) {
       }
     }
     // Selbst-Diagnose (SIN-291): Logs der letzten roten Läufe, offene Entscheidungen, kürzlich erledigte Bug-Issues.
+    const lastWorkerAt = await fetchLastWorkerAt(env).catch(() => null);
     const logs = await collectLogs(repo, g.runs).catch(() => []);
     const decisions = await collectDecisions(repo, g.prs, now).catch(() => []);
     const doneTitles = linearOk ? [...(await doneTitlesSince(STALL_PREFIX, now).catch(() => [])), ...(await doneTitlesSince(GATE_PREFIX, now).catch(() => []))] : [];
@@ -751,7 +754,7 @@ export async function main(argv, env = process.env) {
     // SIN-451: nicht additive Migrationen legt der Wächter als Sinan-Aufgabe an (Doppelte überspringt createSinanIssues).
     const migrationTask = sinanTaskForMigrations(migrations);
     const sinanIssues = linearOk ? (await syncSinan({ dry, seed: migrationTask ? [...SEED, migrationTask] : SEED }).catch((e) => (console.log(`Sinan-Aufgaben nicht lesbar: ${e.message}`), { open: [] }))).open : [];
-    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, restoreTest, migrations, liveCheck, sinanIssues, issues, linearOk, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, pausedReason: env.AGENT_PAUSED_REASON, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
+    snap = { now: now.toISOString(), ...g, conflictResults: readConflictResults(env), backup, restoreTest, migrations, liveCheck, sinanIssues, issues, linearOk, lastWorkerAt, failures, phaseEnv, paused: env.AGENT_PAUSED_UNTIL, pausedReason: env.AGENT_PAUSED_REASON, tokens: readTokens(), usage, deploy, logs, decisions, doneTitles, gateFailures, mainChecks };
   }
   const prev = parseState(snap.previousBody ?? statusIssue?.body);
   const res = analyze(snap, limitsFile, prev);
