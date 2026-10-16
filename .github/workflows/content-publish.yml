@@ -1,0 +1,74 @@
+# SIN-796 Veröffentlichen: setzt einen Kurs nach Prüfung auf courses.status = published.
+# Nur von Hand (Datenänderung in Production). Standard ist der Trockenlauf: zeigt die Prüfungen, schreibt nichts.
+# Prüfungen (src/lib/review/veroeffentlichen.ts): Quelle + Abrufdatum je Einheit, Richter bestanden je sichtbarer Frage, Verbotsliste.
+# Mängel: Job rot mit Liste, nichts wird geschrieben. Danach: Ereignis `publish` in loop_events, Kurs im Lernpfad prüfen, Live-Check starten.
+# Secrets kommen aus Infisical (/content-agent-lernapp) per GitHub-Sync; nie von Hand anlegen.
+name: Kurs veröffentlichen (SIN-796)
+
+on:
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: "Kurs-Stichwort, z. B. Industriemechaniker"
+        type: string
+        required: true
+      dry_run:
+        description: "Nur prüfen: nichts wird geschrieben"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COURSE_STORAGE: supabase
+      KEYWORD: ${{ inputs.keyword }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      LIVE_URL: https://content-agent-ashen-nu.vercel.app
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Secrets prüfen
+        run: node scripts/check-env.mjs --require=SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY
+      - name: Abhängigkeiten installieren
+        run: npm ci --no-audit --no-fund
+      - name: Prüfen und veröffentlichen
+        run: |
+          flags=""
+          if [ "$DRY_RUN" = "true" ]; then flags="--dry-run"; fi
+          node --import tsx scripts/content-publish.ts --keyword "$KEYWORD" $flags
+      - name: Bericht in die Zusammenfassung
+        if: always() && hashFiles('content-publish-bericht.md') != ''
+        run: cat content-publish-bericht.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Ereignis publish
+        if: env.DRY_RUN != 'true'
+        run: node scripts/autonomy/leitstand.mjs ereignis --schritt publish --status ok --issue SIN-796
+      - name: Kurs im Lernpfad auswählbar?
+        if: env.DRY_RUN != 'true'
+        run: |
+          for try in 1 2 3 4 5 6; do
+            if curl -fsS -m 20 "${LIVE_URL%/}/api/kurse" | KEYWORD="$KEYWORD" node -e '
+              let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+                const k = JSON.parse(s).courses.map((c) => c.keyword.toLowerCase());
+                process.exit(k.includes(process.env.KEYWORD.trim().toLowerCase()) ? 0 : 1);
+              });'; then echo "Kurs ist im Lernpfad auswählbar"; exit 0; fi
+            echo "Versuch ${try}: noch nicht sichtbar"; sleep 10
+          done
+          echo "::error::Kurs „$KEYWORD“ fehlt in /api/kurse"; exit 1
+      - name: Live-Check starten
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+        run: gh workflow run nach-deploy.yml --repo "$GITHUB_REPOSITORY"

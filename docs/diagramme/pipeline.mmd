@@ -58,4 +58,5 @@ flowchart TD
   subgraph Inhalte
     Fabrik["Content-Fabrik (content-grow.yml, Mo/Mi/Fr, höchstens ein Lauf je Tag, jeder Lauf im Statusprotokoll, bei API-Limit pausiert, am Ende Kostenbericht)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
+    Bewertung --> Freigabe["Kurs veröffentlichen (content-publish.yml, von Hand, Prüfung vor published, danach Live-Check)"]
   end
