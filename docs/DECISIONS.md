@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-782 | SIN-782: Stillstand `ohne-start` zeigt auch die Pause-Zeile des Dispatchers | [SIN-782-ohne-start-pause-zeile.md](decisions/SIN-782-ohne-start-pause-zeile.md) |
 | SIN-778 | SIN-778 Gate-Bruch bildvergleich: main-stand im Typecheck | [SIN-778-gate-bruch-main-stand.md](decisions/SIN-778-gate-bruch-main-stand.md) |
 | SIN-777 | SIN-777: Lernpfad lädt den Kurs über einen Parameter | [SIN-777-lernpfad-kurs-parameter.md](decisions/SIN-777-lernpfad-kurs-parameter.md) |
 | SIN-773 | SIN-773: Seite „So funktioniert's“ wartet auf Figma-Frame | [SIN-773-so-funktionierts-braucht-design.md](decisions/SIN-773-so-funktionierts-braucht-design.md) |
