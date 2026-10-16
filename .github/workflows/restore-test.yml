@@ -37,6 +37,16 @@ jobs:
       - name: Wegwerfbare Supabase starten, Migrationen einspielen
         run: |
           echo "START=$(date +%s)" >> "$GITHUB_ENV"
+          # Die CLI führt die Version als Primärschlüssel: Altlast 20261006010000 (zwei Dateien, SIN-374) bricht
+          # `db reset`. Nur im Runner-Checkout die spätere Datei um 1 verschieben; die Repo-Dateien bleiben.
+          prev=""
+          for f in supabase/migrations/*.sql; do
+            b=$(basename "$f"); v=${b%%_*}
+            if [ "$v" = "$prev" ]; then
+              v=$((10#$v + 1)); mv "$f" "supabase/migrations/${v}_${b#*_}"
+            fi
+            prev=$v
+          done
           supabase init --force
           supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,postgres-meta,supavisor
           supabase db reset
