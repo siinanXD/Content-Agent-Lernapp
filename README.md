@@ -75,7 +75,7 @@ Quelle: [`docs/diagramme/pipeline.mmd`](docs/diagramme/pipeline.mmd), Nutzerwege
 flowchart TD
   subgraph Planung
     Radar["Trend-Radar (sonntags)"] --> Planer
-    Planer["Planer (planner.yml, sonntags)"] --> Schlange["Linear-Schlange"]
+    Planer["Planer (planner.yml, sonntags; offene Fertig-Liste sperrt Ideen)"] --> Schlange["Linear-Schlange"]
   end
   Schlange --> Dispatcher["Dispatcher (dispatch.yml): dringend, dann v1, höchstens 1 Idee pro Woche; sofort nach Merge, höchstens 2 parallel"]
   Dispatcher --> Worker["Worker (worker.yml, Claude)"]

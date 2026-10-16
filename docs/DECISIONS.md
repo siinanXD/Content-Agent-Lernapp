@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-764 | SIN-764 — Fertig-Liste Lern-App v1 anlegen, Planer sperrt Ideen, solange v1 offen ist | [SIN-764-fertig-v1-planer-sperre.md](decisions/SIN-764-fertig-v1-planer-sperre.md) |
 | SIN-758 | SIN-758: Produktreife „Alle Module veröffentlicht“ aus Supabase messen | [SIN-758-content-module-messung.md](decisions/SIN-758-content-module-messung.md) |
 | SIN-756 | SIN-756: Kostenbeleg nach Wochendeckel-Fix, Blocker: kein Live-Kostenbericht in diesem Lauf | [SIN-756-kostenbeleg-nach-wochendeckel-blocker.md](decisions/SIN-756-kostenbeleg-nach-wochendeckel-blocker.md) |
 | SIN-753 | SIN-753: /ausbilder/gruppen meldet weiter 401 im Testnutzer-Lauf | [SIN-753-gruppen-401-ohne-anmeldung.md](decisions/SIN-753-gruppen-401-ohne-anmeldung.md) |
