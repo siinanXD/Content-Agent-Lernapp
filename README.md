@@ -78,7 +78,7 @@ flowchart TD
     Planer["Planer (planner.yml, sonntags; offene Fertig-Liste sperrt Ideen)"] --> Schlange["Linear-Schlange"]
   end
   Schlange --> Dispatcher["Dispatcher (dispatch.yml): dringend, dann v1, höchstens 1 Idee pro Woche; sofort nach Merge, höchstens 2 parallel"]
-  Dispatcher --> Worker["Worker (worker.yml, Claude)"]
+  Dispatcher --> Worker["Worker (worker.yml, Claude; bei offenen Haken nur daran, derselbe Haken-Stand höchstens 2-mal, sonst needs-human, SIN-795)"]
   Worker --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
   subgraph Prüfung
     PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Layout-Test, Lighthouse, Leistungsbudget"]

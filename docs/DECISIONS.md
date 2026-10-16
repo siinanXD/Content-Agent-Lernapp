@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-796 | SIN-796: Workflow `content-publish` setzt einen Kurs nach Prüfung auf published | [SIN-796-veroeffentlichen-workflow.md](decisions/SIN-796-veroeffentlichen-workflow.md) |
+| SIN-795 | SIN-795: Worker bei offenen Haken | [SIN-795-worker-offene-haken.md](decisions/SIN-795-worker-offene-haken.md) |
 | SIN-793 | SIN-793: Restore-Test scheitert an doppelter Migrationsversion | [SIN-793-restore-test-doppelte-version.md](decisions/SIN-793-restore-test-doppelte-version.md) |
 | SIN-789 | SIN-789: Fehlalarm „Kein Worker seit 2119 Min“ | [SIN-789-stillstand-fehlalarm.md](decisions/SIN-789-stillstand-fehlalarm.md) |
 | SIN-782 | SIN-782: Stillstand `ohne-start` zeigt auch die Pause-Zeile des Dispatchers | [SIN-782-ohne-start-pause-zeile.md](decisions/SIN-782-ohne-start-pause-zeile.md) |
