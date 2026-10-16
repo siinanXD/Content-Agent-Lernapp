@@ -201,6 +201,19 @@ export function pickNext(issues, maxParallel = MAX_PARALLEL, mayTake = () => tru
 
 const numberOf = (i) => Number(String(i.identifier).split("-")[1] ?? 0);
 
+/** Prompt-Abschnitt mit den offenen Haken (SIN-795); leer, wenn alle belegt sind. */
+export function hakenPrompt(issue) {
+  const { offen } = pruefeHaken(issue.description);
+  if (!offen.length) return "";
+  return [
+    "Offene Haken (SIN-795), genau daran arbeitest du, sonst an nichts:",
+    ...offen.map((t) => `- [ ] ${t}`),
+    "Ältere, gemergte PRs mit „Part of " + issue.identifier + "“ sind kein Ergebnis und kein Beleg. Baue für diese Haken neuen Code in einem neuen PR. Schreibe jeden erledigten Haken mit genau diesem Wortlaut als `- [x] …` in den PR-Text (nur so gilt er als belegt).",
+    `Kannst du keinen Haken erledigen, melde das ehrlich: \`node scripts/autonomy/live.mjs blockiert ${issue.identifier} "<Grund>"\` (setzt \`needs-human\`), öffne keinen PR und verweise nicht auf einen alten. Braucht es etwas nur von Sinan, lege ein \`sinan\`-Issue an (siehe unten).`,
+    "",
+  ].join("\n");
+}
+
 /** Prompt für claude-code-action im Automationsmodus. */
 export function buildPrompt(issue) {
   return [
@@ -209,6 +222,7 @@ export function buildPrompt(issue) {
     "",
     issue.description ?? "(ohne Beschreibung)",
     "",
+    hakenPrompt(issue),
     "Regeln: AGENTS.md. Lies zuerst docs/LANDKARTE.md (wo liegt was), docs/PRODUCT.md und docs/DECISIONS.md (Index; die Einzeldateien liegen in docs/decisions/).",
     "Lehren (SIN-296): Lies docs/autonomy/LEHREN.md. Nach jedem behobenen Bug ergänze dort eine Zeile (Was nicht geht → wie es richtig geht; keine Dopplungen, höchstens 150 Zeilen). Wiederholt sich ein Arbeitsablauf, lege docs/skills/<name>/SKILL.md an (Aufbau: docs/skills/README.md), nutze passende vorhandene Skills und nenne neue im PR unter `## Neue Skills`. Das Laufprotokoll erzeugt der Workflow, du schreibst es nicht.",
     `Entscheidungen und Annahmen: eine neue Datei docs/decisions/${issue.identifier}-<kurz>.md (Kopf: Links, Entscheidung, Annahmen, Warum). docs/DECISIONS.md nie von Hand bearbeiten: vor dem Push \`npm run decisions:index\` ausführen und den Index im selben PR committen (CI prüft ihn).`,
@@ -254,6 +268,28 @@ export function pruefeHaken(description, prBodies = []) {
     return zeile;
   });
   return { offen, description: neu };
+}
+
+/** Derselbe Haken darf höchstens so oft in Folge ohne Fortschritt dispatcht werden (SIN-795). */
+export const MAX_HAKEN_STARTS = 2;
+
+/** Kennzeichen der offenen Haken: gleich = kein Fortschritt seit dem letzten Start. */
+export const hakenHash = (offen) => offen.map((t) => t.trim().toLowerCase()).sort().join("|").split("").reduce((h, c) => ((h * 31 + c.charCodeAt(0)) >>> 0), 7).toString(36);
+
+export const hakenStartKommentar = (offen) => `Haken-Start ${hakenHash(offen)}: ${offen.length} offen`;
+
+/** Starts in Folge mit demselben Haken-Stand (neueste zuerst gezählt, bis ein anderer Stand kommt). */
+export function hakenStreak(comments, offen) {
+  const hash = hakenHash(offen);
+  const sorted = [...comments].sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
+  let n = 0;
+  for (const c of sorted) {
+    const m = /^Haken-Start (\w+):/.exec(String(c.body ?? ""));
+    if (!m) continue;
+    if (m[1] !== hash) break;
+    n++;
+  }
+  return n;
 }
 
 /** Kommentartext, wenn ein Issue trotz gemergtem PR offen bleibt (fester Wortlaut: Dublettenschutz). */

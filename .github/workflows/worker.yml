@@ -80,6 +80,8 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           echo "LEITSTAND_SEIT=$(date +%s%3N)" >> "$GITHUB_ENV"
+          # SIN-795: Nur ein offener oder in diesem Lauf entstandener PR zählt, nicht ein alter gemergter vom selben Branch.
+          echo "LAUF_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
           node scripts/autonomy/leitstand.mjs ereignis --schritt worker --status start --issue "$IDENTIFIER"
       # Schnellerer Start (SIN-298): Browser-Download zwischenspeichern; Systempakete installiert install-deps immer.
       - name: Playwright-Cache
@@ -139,7 +141,7 @@ jobs:
           EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
-          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json state,createdAt --jq "[.[] | select(.state==\"OPEN\" or .createdAt >= \"$LAUF_START\")] | length")
           limit=""
           if [ -f "$EXECUTION_FILE" ]; then
             limit=$(node scripts/autonomy/dispatch.mjs --limit-from-log "$EXECUTION_FILE" | tail -1 | grep -E '^Claude-Limit' || true)
@@ -216,7 +218,7 @@ jobs:
         if: steps.claude.outcome == 'failure' || steps.claude.outcome == 'success' || steps.claude2.outcome == 'failure' || steps.claude2.outcome == 'success'
         run: |
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
-          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq 'length')
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json state,createdAt --jq "[.[] | select(.state==\"OPEN\" or .createdAt >= \"$LAUF_START\")] | length")
           echo "has_pr=$([ "${n:-0}" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - name: Leitstand Ende
@@ -233,7 +235,7 @@ jobs:
           args=()
           [ -n "$FILE1" ] && args+=(--file "$FILE1")
           [ -n "$FILE2" ] && args+=(--file "$FILE2")
-          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number --jq '.[0].number // empty' || true)
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number,state,createdAt --jq "[.[] | select(.state==\"OPEN\" or .createdAt >= \"$LAUF_START\")] | .[0].number // empty" || true)
           [ -n "$pr" ] && args+=(--pr "$pr")
           status=$([ "$HAS_PR" = "true" ] && echo ok || echo fehler)
           node scripts/autonomy/leitstand.mjs ereignis --schritt worker --status "$status" --seit "$LEITSTAND_SEIT" --issue "$IDENTIFIER" "${args[@]}"
@@ -247,7 +249,7 @@ jobs:
           run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
           if [ "$HAS_PR" = "true" ]; then
-            url=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json url --jq '.[0].url')
+            url=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json url,state,createdAt --jq "[.[] | select(.state==\"OPEN\" or .createdAt >= \"$LAUF_START\")] | .[0].url")
             node scripts/autonomy/live.mjs fertig "$IDENTIFIER" --pr "$url" --run "$run"
           else
             node scripts/autonomy/live.mjs gescheitert "$IDENTIFIER" "Lauf ohne PR beendet, das Issue geht zurück auf Todo." --run "$run"
