@@ -98,6 +98,14 @@ export default function AnmeldenPage() {
           >
             Demo-Zugang anfragen
           </Link>
+          {" · "}
+          <Link
+            href="/abo"
+            prefetch={false}
+            className="inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-primary)] underline underline-offset-2"
+          >
+            Abo im Testmodus
+          </Link>
         </p>
       </main>
     </MobileShell>

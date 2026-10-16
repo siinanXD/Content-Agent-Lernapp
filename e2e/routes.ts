@@ -4,6 +4,8 @@ export const routes = [
   "/start",
   "/demo",
   "/anmelden",
+  "/abo",
+  "/abo/bestaetigung",
   "/ausbilder",
   "/ausbilder/gruppen",
   "/ausbilder/archiv",
