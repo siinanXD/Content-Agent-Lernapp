@@ -21,6 +21,8 @@ test("Prompt ohne offene Haken hat keinen Haken-Abschnitt", () => {
 test("blockiert: Kommentar „blockiert: Grund“, ohne Grund keiner", () => {
   assert.equal(liveText("blockiert", { text: "Secret fehlt" }), "blockiert: Secret fehlt");
   assert.equal(liveText("blockiert"), "");
+  assert.equal(liveText("wieder-offen", { text: "Haken ohne Beleg" }), "Wieder geöffnet: Haken ohne Beleg");
+  assert.equal(liveText("wieder-offen"), "");
 });
 
 test("Derselbe Haken-Stand: nach MAX_HAKEN_STARTS Starts Pause, neuer Stand zählt neu", () => {
