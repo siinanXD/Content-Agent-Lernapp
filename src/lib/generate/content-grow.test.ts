@@ -293,6 +293,13 @@ test("Lauf: fertige Map wird übersprungen, nichts offen ergibt null, Fortsetzun
   assert.equal(chooseRunMap(beide, keine, keine, "indkfl", "LF1"), "indkfl");
 });
 
+test("SIN-769: Industriekaufleute ohne Einheit geht vor der Fortsetzung eines Metall-Moduls", () => {
+  assert.equal(chooseRunMap(beide, metallBegonnen, keine, "maf-metall", "LF1"), "indkfl");
+  // Hat indkfl schon Einheiten, bleibt die Fortsetzung vorn.
+  const beideBegonnen = new Map([...metallBegonnen, ["indkfl", new Set([slotIds(beide.find((q) => q.mapId === "indkfl")!.module)[0]!])]]);
+  assert.equal(chooseRunMap(beide, beideBegonnen, keine, "maf-metall", "LF1"), "maf-metall");
+});
+
 test("Plan eines Laufs bleibt in der gewählten Map, Modulreihenfolge unverändert", () => {
   const nurIndkfl = beide.filter((q) => q.mapId === "indkfl");
   const plan = nextOpenItems(nurIndkfl, new Set(), new Set(), null, 100);

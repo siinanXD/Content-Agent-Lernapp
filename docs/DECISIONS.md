@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-769 | SIN-769: Industriekaufleute bekommen Vorrang in der Content-Fabrik | [SIN-769-indkfl-vorrang.md](decisions/SIN-769-indkfl-vorrang.md) |
 | SIN-768 | SIN-768: Industriemechaniker veröffentlichen, Befund und Blocker | [SIN-768-industriemechaniker-veroeffentlichen.md](decisions/SIN-768-industriemechaniker-veroeffentlichen.md) |
 | SIN-764 | SIN-764 — Fertig-Liste Lern-App v1 anlegen, Planer sperrt Ideen, solange v1 offen ist | [SIN-764-fertig-v1-planer-sperre.md](decisions/SIN-764-fertig-v1-planer-sperre.md) |
 | SIN-758 | SIN-758: Produktreife „Alle Module veröffentlicht“ aus Supabase messen | [SIN-758-content-module-messung.md](decisions/SIN-758-content-module-messung.md) |
