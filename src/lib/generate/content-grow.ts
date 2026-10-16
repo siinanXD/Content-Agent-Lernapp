@@ -237,6 +237,12 @@ export function chooseRunMap(
     ? queue.filter((q) => withOpen.includes(q.mapId) && q.module.id === resumeModuleId)
     : [];
   const resumed = resumeCandidates.find((q) => q.mapId === lastMapId) ?? resumeCandidates[0];
+  // SIN-769: Eine Kern-Map ohne eine veröffentlichte Einheit (Industriekaufleute) geht vor der Fortsetzung einer anderen Map,
+  // sonst hält ein offenes Metall-Modul (APPT) sie dauerhaft zurück.
+  const leer = SUPPORTED_MAP_IDS.find(
+    (id) => withOpen.includes(id) && (published.get(id)?.size ?? 0) === 0 && (published.get(resumed?.mapId ?? "")?.size ?? 0) > 0,
+  );
+  if (leer && resumed && leer !== resumed.mapId) return leer;
   if (resumed) return resumed.mapId;
   // SIN-469: MAF Metall mit Modulen ohne veröffentlichte Einheit (z. B. LF3 bis LF6) kommt vor dem Wechsel.
   const metallPub = published.get("maf-metall") ?? none;
