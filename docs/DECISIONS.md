@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-779 | SIN-779: Done nur, wenn alle Haken belegt sind | [SIN-779-done-nur-mit-haken.md](decisions/SIN-779-done-nur-mit-haken.md) |
+| SIN-778 | SIN-778 Gate-Bruch bildvergleich: main-stand im Typecheck | [SIN-778-gate-bruch-main-stand.md](decisions/SIN-778-gate-bruch-main-stand.md) |
 | SIN-777 | SIN-777: Lernpfad lädt den Kurs über einen Parameter | [SIN-777-lernpfad-kurs-parameter.md](decisions/SIN-777-lernpfad-kurs-parameter.md) |
 | SIN-772 | SIN-772: Leere Platzhalter-Kurse ausblenden | [SIN-772-leere-kurse-ausblenden.md](decisions/SIN-772-leere-kurse-ausblenden.md) |
 | SIN-770 | SIN-770 Crawler: Serie ohne Fund | [SIN-770-crawler-serie.md](decisions/SIN-770-crawler-serie.md) |
