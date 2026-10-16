@@ -22,6 +22,7 @@ flowchart LR
     B2 --> B8["Beispielansicht ohne Konto (/ausbilder?demo=1)"]
     B2 --> B9["Lernansichten mit Beispieldaten (/lernpfad?demo=1)"]
     B2 --> B3["Anmelden (/anmelden)"]
+    B3 --> B4["Abo im Testmodus (/abo → Stripe → /abo/bestaetigung)"]
     B0["Einladungslink von Sinan (/ausbilder/zugang)"] --> B3
     B3 --> B10["Meine Gruppen (/ausbilder/gruppen)"]
     B10 --> B4["Gruppe anlegen"]

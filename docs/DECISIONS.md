@@ -18,6 +18,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-777 | SIN-777: Lernpfad lädt den Kurs über einen Parameter | [SIN-777-lernpfad-kurs-parameter.md](decisions/SIN-777-lernpfad-kurs-parameter.md) |
 | SIN-773 | SIN-773: Seite „So funktioniert's“ wartet auf Figma-Frame | [SIN-773-so-funktionierts-braucht-design.md](decisions/SIN-773-so-funktionierts-braucht-design.md) |
 | SIN-772 | SIN-772: Leere Platzhalter-Kurse ausblenden | [SIN-772-leere-kurse-ausblenden.md](decisions/SIN-772-leere-kurse-ausblenden.md) |
+| SIN-771 | SIN-771: Stripe-Abo im Testmodus | [SIN-771-abo-testmodus.md](decisions/SIN-771-abo-testmodus.md) |
 | SIN-770 | SIN-770 Crawler: Serie ohne Fund | [SIN-770-crawler-serie.md](decisions/SIN-770-crawler-serie.md) |
 | SIN-769 | SIN-769: Industriekaufleute bekommen Vorrang in der Content-Fabrik | [SIN-769-indkfl-vorrang.md](decisions/SIN-769-indkfl-vorrang.md) |
 | SIN-768 | SIN-768: Industriemechaniker veröffentlichen, Befund und Blocker | [SIN-768-industriemechaniker-veroeffentlichen.md](decisions/SIN-768-industriemechaniker-veroeffentlichen.md) |
