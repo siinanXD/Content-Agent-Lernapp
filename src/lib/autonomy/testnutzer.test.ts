@@ -14,6 +14,8 @@ import {
   melden,
   ohneDubletten,
   parseFunde,
+  serie,
+  serieMarker,
   typOf,
 } from "../../../scripts/autonomy/testnutzer.mjs";
 
@@ -84,6 +86,22 @@ test("Crawler: nur gleiche Herkunft, keine Anker", () => {
   assert.equal(istInterneUrl("/lernpfad", base), true);
   assert.equal(istInterneUrl("#top", base), false);
   assert.equal(istInterneUrl("https://b.example/x", base), false);
+});
+
+test("Serie: zählt Tage in Folge ohne Fund, Lücke oder Fund beendet sie", () => {
+  const k = (tag: string, n: number) => ({ body: serieMarker(tag, n), createdAt: `${tag}T21:50:00Z` });
+  const alt = [k("2026-10-13", 0), k("2026-10-14", 0)];
+  assert.equal(serie(alt, "2026-10-15", true), 3);
+  assert.equal(serie(alt, "2026-10-15", false), 0);
+  assert.equal(serie(alt, "2026-10-16", true), 1, "Lücke am 15.");
+  assert.equal(serie([k("2026-10-14", 2), k("2026-10-14", 0)], "2026-10-15", true), 2, "letzter Lauf des Tages zählt");
+  assert.equal(serie([{ body: "kein Marker", createdAt: "2026-10-14T00:00:00Z" }], "2026-10-15", true), 1);
+});
+
+test("Bericht: Crawler nennt die Serie mit Marker", () => {
+  const t = berichtText({ quelle: "crawler", funde: 0, neu: 0, doppelt: 0, tage: 3, tag: "2026-10-15" });
+  assert.match(t, /3 von 3 Tagen in Folge \(Ziel erreicht\)/);
+  assert.match(t, /testnutzer-serie:2026-10-15:0/);
 });
 
 test("Bericht: Persona-Lauf kennzeichnet die KI im Text, Crawler nicht", () => {

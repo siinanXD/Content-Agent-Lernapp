@@ -104,13 +104,37 @@ export function ohneDubletten(gruppen, issues, now = new Date()) {
   return { neu, doppelt };
 }
 
+/** Tage in Folge ohne Crawler-Fund (SIN-770: Ziel 3). */
+export const SERIE_ZIEL = 3;
+const SERIE_MARKER = /<!-- testnutzer-serie:(\d{4}-\d{2}-\d{2}):(\d+) -->/;
+export const serieMarker = (tag, funde) => `<!-- testnutzer-serie:${tag}:${funde} -->`;
+
+/**
+ * Zählt rückwärts ab `heute` die Tage, an denen der Crawler lief und 0 Funde meldete. Ein Tag ohne Lauf oder mit Fund beendet die Serie;
+ * mehrere Läufe am Tag: der letzte zählt. `heute` (JJJJ-MM-TT) zählt mit, wenn `heuteSauber`.
+ * @param {{ body: string, createdAt: string }[]} kommentare
+ */
+export function serie(kommentare, heute, heuteSauber) {
+  const proTag = new Map();
+  for (const k of [...kommentare].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+    const m = SERIE_MARKER.exec(k.body ?? "");
+    if (m) proTag.set(m[1], Number(m[2]));
+  }
+  proTag.set(heute, heuteSauber ? 0 : 1);
+  let n = 0;
+  for (let d = new Date(`${heute}T00:00:00Z`); proTag.get(d.toISOString().slice(0, 10)) === 0; d.setUTCDate(d.getUTCDate() - 1)) n++;
+  return n;
+}
+
 /** Linear-Kommentar: Zusammenfassung des Laufs. */
-export function berichtText({ quelle, funde, neu, doppelt, ueberzaehlig = 0, angelegt = [], lauf = "", usd = null, notiz = "" }) {
-  const titel = quelle === "personas" ? "Testnutzer-Agent: Persona-Lauf (wöchentlich, KI-erzeugt)" : "Testnutzer-Agent: Crawler (nächtlich)";
+export function berichtText({ quelle, funde, neu, doppelt, ueberzaehlig = 0, angelegt = [], lauf = "", usd = null, notiz = "", tage = /** @type {number | null} */ (null), tag = "" }) {
+  const titel = quelle === "personas" ? "Testnutzer-Agent: Persona-Lauf (wöchentlich, KI-erzeugt)" : "Testnutzer-Agent: Crawler (täglich)";
   return [
     `**${titel}**`,
     "",
     quelle === "personas" ? "Die Bewertung ist KI-erzeugt (Claude) und nur ein Hinweis; ein Mensch prüft sie." : "",
+    tage != null ? `Serie ohne Fund: ${tage} von ${SERIE_ZIEL} Tagen in Folge${tage >= SERIE_ZIEL ? " (Ziel erreicht)" : ""}.` : "",
+    tage != null ? serieMarker(tag, funde) : "",
     funde === 0 ? "Keine Funde." : `${funde} Fund(e) in ${neu + doppelt} Gruppe(n): ${angelegt.length} neue Issues, ${doppelt} schon bekannt${ueberzaehlig ? `, ${ueberzaehlig} wegen Deckel (${MAX_NEUE_ISSUES}) liegen gelassen` : ""}.`,
     angelegt.length ? `Neu: ${angelegt.join(", ")}` : "",
     notiz,
@@ -210,17 +234,19 @@ const readBild = (ordner, datei) => readFileSync(`${ordner}/${datei}`).toString(
 // ---- Melden (Linear) ----
 
 /** Legt neue Issues an (höchstens MAX_NEUE_ISSUES), schreibt den Bericht als Kommentar. */
-export async function melden({ quelle, funde, lauf = "", usd = null, notiz = "", dry = false, call = linear }) {
+export async function melden({ quelle, funde, lauf = "", usd = null, notiz = "", dry = false, call = linear, jetzt = new Date() }) {
   const gruppen = buendeln(funde);
   const issues = [...(await fetchProjectIssues(call)), ...(await fetchRecentlyDone(call))];
   const { neu, doppelt } = ohneDubletten(gruppen, issues);
   const anlegen = neu.slice(0, MAX_NEUE_ISSUES);
   const items = anlegen.map((g) => issueVon(g, { lauf, quelle }));
   const angelegt = dry ? items.map((i) => `(Trockenlauf) ${i.title}`) : await createLinearIssues(items, call);
-  const text = berichtText({ quelle, funde: funde.length, neu: neu.length, doppelt: doppelt.length, ueberzaehlig: neu.length - anlegen.length, angelegt, lauf, usd, notiz });
+  const data = await call(`query($id: String!) { issue(id: $id) { id comments(last: 50) { nodes { body createdAt } } } }`, { id: BERICHT_ISSUE });
+  const tag = jetzt.toISOString().slice(0, 10);
+  const tage = quelle === "crawler" ? serie(data.issue?.comments?.nodes ?? [], tag, funde.length === 0) : null;
+  const text = berichtText({ quelle, funde: funde.length, neu: neu.length, doppelt: doppelt.length, ueberzaehlig: neu.length - anlegen.length, angelegt, lauf, usd, notiz, tage, tag });
   console.log(text);
   if (dry) return { text, angelegt };
-  const data = await call(`query($id: String!) { issue(id: $id) { id } }`, { id: BERICHT_ISSUE });
   if (data.issue?.id) await commentOnIssue(data.issue.id, text, call);
   return { text, angelegt };
 }
