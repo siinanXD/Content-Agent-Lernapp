@@ -23,7 +23,7 @@ import { MAX_NO_PR, needsHumanComment, noPrComment, noPrStreak, splitIssue, summ
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
 import { collectPrStates, waitingIssues } from "./warten.mjs";
-import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, addLabel, buildPrompt, comment, createLinearIssues, fetchBacklogIdeas, fetchComments, fetchProjectIssues, fetchRecentIdeaStarts, ideaSlotFree, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
+import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, addLabel, applyDone, pruefeHaken, buildPrompt, comment, createLinearIssues, fetchBacklogIdeas, fetchComments, fetchProjectIssues, fetchRecentIdeaStarts, ideaSlotFree, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -44,7 +44,7 @@ async function fetchAllPrs() {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
   });
   if (!res.ok) throw new Error(`GitHub-PRs nicht lesbar: ${res.status}`);
-  return (await res.json()).map((p) => ({ title: p.title, head: p.head?.ref, state: p.state, merged: Boolean(p.merged_at) }));
+  return (await res.json()).map((p) => ({ title: p.title, head: p.head?.ref, state: p.state, merged: Boolean(p.merged_at), body: p.merged_at ? p.body : undefined }));
 }
 
 /** Kennungen (SIN-123) der Worker-Läufe, die gerade laufen oder warten (Lauf-Titel „worker SIN-123“, SIN-238). */
@@ -81,13 +81,16 @@ async function fetchFailedWorkers() {
  */
 async function syncWithPrs(issues, prs, dry, runningWorkers) {
   const actions = reconcile(issues, prs, { runningWorkers });
-  for (const { issue, to } of actions) {
-    console.log(`${dry ? "[dry-run] " : ""}Abgleich: ${issue.identifier} → ${to}`);
-    if (!dry) await setState(issue, to);
+  for (const action of actions) {
+    const { issue, to } = action;
+    console.log(`${dry ? "[dry-run] " : ""}Abgleich: ${issue.identifier} → ${to === "Offen" ? `bleibt offen (${action.offen.length} Haken ohne Beleg)` : to}`);
+    if (to === "Done" || to === "Offen") await applyDone(action, { dry });
+    else if (!dry) await setState(issue, to);
   }
   const target = new Map(actions.map((a) => [a.issue.identifier, a.to]));
+  // „Offen“ (SIN-779): fertig gemergt, wartet auf Belege; belegt keinen Platz und wird nicht neu gestartet.
   return issues
-    .filter((i) => target.get(i.identifier) !== "Done")
+    .filter((i) => !["Done", "Offen"].includes(target.get(i.identifier)))
     .map((i) => (target.get(i.identifier) === "Todo" ? { ...i, state: { ...i.state, name: "Todo", type: "unstarted" } } : i));
 }
 
@@ -224,9 +227,12 @@ export async function main(argv) {
       return null;
     });
     if (!issue) return;
-    if (dry) return console.log(`[dry-run] ${issue.identifier} → Done`);
-    await setState(issue, "Done");
-    return console.log(`${issue.identifier} → Done`);
+    // SIN-779: Done nur, wenn alle Haken belegt sind; Belege = `- [x]`-Zeilen im PR-Text (Datei oder Umgebung `PR_BODY`).
+    const bodyAt = argv.indexOf("--body");
+    const body = bodyAt >= 0 ? readFileSync(argv[bodyAt + 1], "utf8") : process.env.PR_BODY;
+    const { offen, description } = pruefeHaken(issue.description, [body]);
+    const erledigt = await applyDone({ issue, offen, description }, { dry });
+    return console.log(`${issue.identifier} → ${dry ? "[dry-run] " : ""}${erledigt ? "Done" : `bleibt offen (${offen.length} Haken ohne Beleg)`}`);
   }
 
   const blockerAt = argv.indexOf("--blocker");

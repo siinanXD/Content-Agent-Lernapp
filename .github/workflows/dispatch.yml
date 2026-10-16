@@ -114,8 +114,9 @@ jobs:
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
           TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          # Gebündelte PRs (SIN-320) nennen mehrere Kennungen im Titel: alle auf Done.
+          # Gebündelte PRs (SIN-320) nennen mehrere Kennungen im Titel: je Issue Done, wenn alle Haken belegt sind (SIN-779).
           ids=$(printf '%s' "$TITLE" | grep -Eo 'SIN-[0-9]+' | sort -u)
           [ -n "$ids" ] || echo "Keine Linear-ID im Titel."
           for id in $ids; do node scripts/autonomy/dispatch.mjs --done "$id"; done

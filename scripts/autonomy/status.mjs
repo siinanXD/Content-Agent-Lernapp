@@ -30,6 +30,7 @@ import { lastPlanAt, phaseAllowsIssue, phaseState, renderPhase } from "./phase.m
 import {
   MAX_PARALLEL,
   PROJECT_NAME,
+  applyDone,
   fetchProgress,
   linear,
   comment,
@@ -308,8 +309,8 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   // Abgleich wie im Dispatcher (SIN-240): Merge → Done; ohne Worker und PR seit 15 Min (SIN-291) → Todo.
   const runningWorkers = running.map((r) => idOf(r.display_title)).filter(Boolean);
-  const reconciled = reconcile(issues, prs.map((p) => ({ title: p.title, head: p.head, state: p.state, merged: Boolean(p.merged_at) })), { runningWorkers, now });
-  for (const { issue } of reconciled.filter((a) => a.to === "Done")) actions.push({ type: "linear-done", issue });
+  const reconciled = reconcile(issues, prs.map((p) => ({ title: p.title, head: p.head, state: p.state, merged: Boolean(p.merged_at), body: p.body })), { runningWorkers, now });
+  for (const a of reconciled.filter((x) => x.to === "Done" || x.to === "Offen")) actions.push({ type: "linear-done", ...a });
   for (const { issue } of reconciled.filter((a) => a.to === "Todo")) actions.push({ type: "linear-todo", issue });
 
   // Merker: nur aktive Vorfälle bleiben; eine Meldung je Schlüssel, bis er verschwindet und später wiederkommt.
@@ -760,7 +761,7 @@ export async function main(argv, env = process.env) {
   if (alert) console.log(`\n--- Erwähnung ---\n${alert}`);
   for (const a of res.actions) {
     const what =
-      a.type === "linear-done" ? `${a.issue.identifier} → Done`
+      a.type === "linear-done" ? `${a.issue.identifier} → ${a.offen?.length ? `bleibt offen (${a.offen.length} Haken ohne Beleg)` : "Done"}`
       : a.type === "linear-todo" ? `${a.issue.identifier} → Todo`
       : a.type === "create-issue" ? `Bug-Issue: ${a.issue.title}\n${a.issue.description}`
       : a.type === "comment-issue" ? `Kommentar an ${a.issueId}: ${a.body}`
@@ -831,8 +832,8 @@ export async function main(argv, env = process.env) {
       }
     }
     if (a.type === "linear-done") {
-      await setState(a.issue, "Done");
-      await comment(a.issue.id, "Status auf Done gesetzt: der PR ist gemergt (Loop-Wächter, SIN-238).");
+      // SIN-779: Done nur, wenn alle Haken belegt sind; sonst bleibt das Issue offen (Kommentar nennt die offenen).
+      if (await applyDone(a)) await comment(a.issue.id, "Status auf Done gesetzt: der PR ist gemergt und alle Haken sind belegt (Loop-Wächter, SIN-238, SIN-779).");
     }
     if (a.type === "linear-todo") {
       await setState(a.issue, "Todo");
