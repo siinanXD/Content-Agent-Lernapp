@@ -36,6 +36,7 @@ import { collectContentMetrics, renderContentSection, ratedQuestions, fetchAll }
 import { DEFAULT_SIZE, SIZES } from "./sparen.mjs";
 import { MAX_PLAN_ISSUES_BETRIEB, MIN_ACTIVE_USERS, PLAN_LABEL, lastPlanAt, phaseFromEnv, renderPhase } from "./phase.mjs";
 import { DEFAULT_FILE_KEY, diffColorTokens } from "./figma.mjs";
+import { FERTIG_FILE, fertigIssues, fertigMarkdown, offeneFertigPunkte } from "./fertig.mjs";
 import { dispatchRun, taskForCheck } from "./run-task.mjs";
 import { RUN_LABEL, duplicateComment, isRunnable, rowFor, splitDuplicates, toRunOrder } from "./duplicates.mjs";
 import {
@@ -220,13 +221,16 @@ export async function assessReadiness({ metrics, issues, env = process.env, read
 }
 
 export function buildPlannerPrompt(
-  /** @type {{ definition: string, issues: unknown[], metrics: object, readiness?: string, content?: string, maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null }} */
-  { definition, issues, recentDone = [], ideaThemes = [], metrics, readiness = "", content = "", maintenance = false, phase = null, maxIssues = null, bugsOnly = false },
+  /** @type {{ definition: string, issues: unknown[], metrics: object, readiness?: string, content?: string, maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, fertigOffen?: boolean }} */
+  { definition, issues, recentDone = [], ideaThemes = [], metrics, readiness = "", content = "", maintenance = false, phase = null, maxIssues = null, bugsOnly = false, fertigOffen = false },
 ) {
   const betrieb = phase?.phase === "betrieb";
   return [
     "Du bist der Planer für die Content-Agent-Lernapp (Regeln: AGENTS.md).",
     "Ziel: ein fertiges Produkt mit einem Modul (MAF Metall komplett), kein MVP. Vergleiche den Ist-Stand mit der Definition fertig und der Produktreife-Tabelle.",
+    ...(fertigOffen
+      ? [`**Fertig-Liste Lern-App offen (${FERTIG_FILE}, SIN-764):** Die offenen Punkte legt der Planer selbst an. Plane NUR Bugs mit Nutzerwirkung (Spur backend, Label bug). Keine Ideen, keine neuen Features, keine frontend- oder content-Einträge.`]
+      : []),
     betrieb && phase.due
       ? `Plane getrennt nach drei Spuren, zusammen höchstens ${MAX_PLAN_ISSUES_BETRIEB} neue Linear-Issues, sortiert nach Wirkung (je Spur höchstens ${MAX_PER_LANE}):`
       : `Plane getrennt nach drei Spuren, je Spur höchstens ${MAX_PER_LANE} neue Linear-Issues (zusammen höchstens ${MAX_ISSUES_PER_WEEK}):`,
@@ -318,9 +322,11 @@ function betriebPrompt(phase) {
 /**
  * Prüft den Plan des Modells. Wirft bei ungültigen Einträgen, kürzt je Spur auf MAX_PER_LANE
  * (Design: MAX_DESIGN_PER_WEEK). Im Pflege-Modus bleiben nur MAINTENANCE_LANES.
+ * Offene Punkte der Fertig-Liste (SIN-764) sperren Ideen und lassen nur Bugs durch.
  * @returns {{ lane: string, title: string, priority: number, description: string, labels: string[], needsDesign?: boolean, blockedBy?: string, idee?: boolean }[]}
  */
-export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean, readiness?: any[], built?: Record<string, any>, ideaKeys?: Iterable<string> }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly = false, readiness = [], built = {}, ideaKeys = [] } = {}) {
+export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance?: boolean, phase?: import("./phase.mjs").PhaseState | null, maxIssues?: number | null, bugsOnly?: boolean, fertigOffen?: boolean, readiness?: any[], built?: Record<string, any>, ideaKeys?: Iterable<string> }} */ { maintenance = false, phase = null, maxIssues = null, bugsOnly: nurBugs = false, fertigOffen = false, readiness = [], built = {}, ideaKeys = [] } = {}) {
+  const bugsOnly = nurBugs || fertigOffen;
   const betrieb = phase?.phase === "betrieb";
   // Betrieb: im Beobachtungsfenster nur Fehler und Content, am Fensterende der Wochenplan.
   const observing = betrieb && !phase.due;
@@ -357,6 +363,10 @@ export function validatePlan(plan, existingTitles = [], /** @type {{ maintenance
     if (taken.has(p.title.trim().toLowerCase())) continue;
     // Idee statt Lücke der Fertig-Liste (SIN-528): Backlog in „v2 Ideen“, nie startbar, kein Design-Paket, keine Abhängigkeit.
     if (p.idee === true && p.lane !== "design") {
+      if (fertigOffen) {
+        console.log(`Idee verworfen (Fertig-Liste Lern-App offen, SIN-764): ${p.title}`);
+        continue;
+      }
       const thema = themaKey(p.thema);
       if (!thema) console.log(`Idee verworfen (Themenschlüssel fehlt, SIN-701): ${p.title}`);
       else if (takenThemes.has(thema)) console.log(`Idee verworfen (Thema „${thema}“ ist als Idee schon offen, SIN-701): ${p.title}`);
@@ -554,6 +564,7 @@ export async function main(argv) {
       readiness: renderReadiness(rows),
       content,
       maintenance: inMaintenanceMode(rows, abnahme),
+      fertigOffen: offeneFertigPunkte(fertigMarkdown()).length > 0,
     });
     if (argv.includes("--out")) writeFileSync(arg("--out"), prompt);
     else console.log(prompt);
@@ -580,7 +591,11 @@ export async function main(argv) {
     const backlogIdeas = issues ? await fetchBacklogIdeas(linear).catch(() => []) : [];
     const ideaKeys = openIdeaThemes([...(issues ?? []), ...backlogIdeas]).map((i) => i.thema);
     const limits = refillLimits(process.env);
-    const items = validatePlan(rest, [...existingTitles, ...backlogIdeas.map((i) => i.title), ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ideaKeys, ...limits });
+    // Fertig-Liste Lern-App (SIN-764): offene Punkte werden je genau einmal Issue, solange sie offen sind, sperrt das Ideen.
+    const fertigMd = fertigMarkdown();
+    const fertigOffen = offeneFertigPunkte(fertigMd).length > 0;
+    const fertig = fertigIssues(fertigMd, [...existingTitles, ...recentDone.map((i) => i.title)]);
+    const items = [...fertig, ...validatePlan(rest, [...existingTitles, ...backlogIdeas.map((i) => i.title), ...recentDone.map((i) => i.title)], { maintenance, phase, readiness: rows, built, ideaKeys, ...limits, fertigOffen })];
     // Nachfüll-Lauf ohne neues Todo-Issue: found=false, damit der Leitstand nicht weiter nachstößt (SIN-701).
     if (limits.maxIssues != null && !items.length) {
       console.log("found=false");
