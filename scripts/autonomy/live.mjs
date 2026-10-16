@@ -7,6 +7,7 @@
  *   node scripts/autonomy/live.mjs frage SIN-123 "Welche Quelle gilt?"      (Rückfrage im Issue, nicht nur im PR)
  *   node scripts/autonomy/live.mjs fertig SIN-123 --pr https://github.com/…/pull/1
  *   node scripts/autonomy/live.mjs gescheitert SIN-123 "Grund"
+ *   node scripts/autonomy/live.mjs blockiert SIN-123 "Grund"      (nichts Neues baubar: Kommentar, Label needs-human, zurück auf Todo; SIN-795)
  *
  * Fehler sind nie fatal (Exit 0): ein Linear-Ausfall darf einen Lauf nicht abbrechen.
  */
@@ -14,7 +15,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { comment, linear } from "./linear.mjs";
+import { addLabel, comment, linear, setState } from "./linear.mjs";
 
 export const MAX_FORTSCHRITT = 3;
 
@@ -29,7 +30,7 @@ export function allowFortschritt(identifier, dir = process.env.RUNNER_TEMP || tm
 
 /** Issue per Kennung, unabhängig vom Status (fertig/gescheitert kommen nach dem Statuswechsel). */
 export async function findIssue(identifier, call = linear) {
-  const data = await call(`query($id: String!) { issue(id: $id) { id identifier } }`, { id: identifier });
+  const data = await call(`query($id: String!) { issue(id: $id) { id identifier team { id } } }`, { id: identifier });
   return data.issue;
 }
 
@@ -49,6 +50,8 @@ export function liveText(kind, { text = "", pr = "", run = "" } = {}) {
       return pr ? `Worker fertig: ${pr}${lauf}` : `Worker fertig${lauf}.`;
     case "gescheitert":
       return `Worker gescheitert${lauf}: ${trim(text) || "ohne PR beendet"}`;
+    case "blockiert":
+      return text ? `blockiert: ${trim(text)}` : "";
     default:
       return "";
   }
@@ -69,12 +72,17 @@ export function parseArgs(argv) {
 export async function main(argv = process.argv.slice(2)) {
   const { kind, identifier, text, pr, run } = parseArgs(argv);
   const body = liveText(kind, { text, pr, run });
-  if (!body || !identifier) return console.log("Aufruf: live.mjs gestartet|fortschritt|frage|fertig|gescheitert SIN-123 [Text] [--pr URL] [--run URL]");
+  if (!body || !identifier) return console.log("Aufruf: live.mjs gestartet|fortschritt|frage|fertig|gescheitert|blockiert SIN-123 [Text] [--pr URL] [--run URL]");
   try {
     if (kind === "fortschritt" && !allowFortschritt(identifier)) return console.log(`Grenze von ${MAX_FORTSCHRITT} Fortschritts-Kommentaren erreicht, kein Kommentar`);
     const issue = await findIssue(identifier);
     if (!issue) return console.log(`${identifier} nicht gefunden, kein Kommentar`);
     await comment(issue.id, body);
+    // SIN-795: Ohne neue Änderung kein Erfolg melden; ein Mensch klärt, der Dispatcher startet das Issue nicht mehr.
+    if (kind === "blockiert") {
+      await addLabel(issue, "needs-human").catch((e) => console.log(`::warning::Label needs-human nicht gesetzt: ${e.message}`));
+      await setState(issue, "Todo");
+    }
     console.log(`Kommentar in ${identifier}: ${body}`);
   } catch (e) {
     console.log(`::warning::Live-Kommentar für ${identifier} nicht gesendet: ${e.message}`);

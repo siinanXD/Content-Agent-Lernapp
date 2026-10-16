@@ -23,7 +23,7 @@ import { MAX_NO_PR, needsHumanComment, noPrComment, noPrStreak, splitIssue, summ
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
 import { collectPrStates, waitingIssues } from "./warten.mjs";
-import { MAX_PARALLEL, MAX_REPAIR_ROUNDS, addLabel, applyDone, pruefeHaken, buildPrompt, comment, createLinearIssues, fetchBacklogIdeas, fetchComments, fetchProjectIssues, fetchRecentIdeaStarts, ideaSlotFree, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
+import { MAX_HAKEN_STARTS, MAX_PARALLEL, MAX_REPAIR_ROUNDS, hakenStartKommentar, hakenStreak, addLabel, applyDone, pruefeHaken, buildPrompt, comment, createLinearIssues, fetchBacklogIdeas, fetchComments, fetchProjectIssues, fetchRecentIdeaStarts, ideaSlotFree, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -142,6 +142,39 @@ async function noPrRun(identifier, file, dry) {
   }
   await setState(issue, "Todo");
   return console.log(`${issue.identifier} → Todo (kein PR)`);
+}
+
+/**
+ * Issues mit offenen Haken, die schon MAX_HAKEN_STARTS-mal mit demselben Stand gestartet wurden, bekommen `needs-human`
+ * und einen Grund in loop_events; alle anderen werden gemerkt (Kommentar „Haken-Start“) und gestartet. Fehler beim Lesen: Issue startet.
+ */
+async function withoutStalledHaken(candidates, dry) {
+  const go = [];
+  for (const issue of candidates) {
+    const { offen } = pruefeHaken(issue.description);
+    if (!offen.length) {
+      go.push(issue);
+      continue;
+    }
+    try {
+      const streak = hakenStreak(await fetchComments(issue.id), offen);
+      if (streak >= MAX_HAKEN_STARTS) {
+        const grund = `${issue.identifier}: ${offen.length} Haken seit ${streak} Starts unverändert, Pause (SIN-795)`;
+        console.log(`${dry ? "[dry-run] " : ""}${grund}`);
+        if (!dry) {
+          await comment(issue.id, `${grund}\nOffen:\n${offen.map((t) => `- ${t}`).join("\n")}\nLabel \`needs-human\`; nach der Klärung entfernen.`);
+          await addLabel(issue, "needs-human").catch((e) => console.log(`::warning::Label needs-human nicht gesetzt: ${e.message}`));
+          await leitstandEreignis(["ereignis", "--schritt", "worker_pause", "--status", "uebersprungen", "--issue", issue.identifier, "--grund", grund]);
+        }
+        continue;
+      }
+      if (!dry) await comment(issue.id, hakenStartKommentar(offen));
+    } catch (e) {
+      console.log(`::warning::Haken-Prüfung für ${issue.identifier} gescheitert: ${e.message}`);
+    }
+    go.push(issue);
+  }
+  return go;
 }
 
 export async function main(argv) {
@@ -278,7 +311,9 @@ export async function main(argv) {
   const ideaSlot = fixtureAt >= 0 ? true : await fetchRecentIdeaStarts().then((t) => ideaSlotFree(t), () => false);
   const queue = [...issues, ...backlogIdeas];
   const order = { ideaSlot };
-  const { issues: picked, reason } = pickMany(queue, MAX_PARALLEL, may, new Set(waiting.keys()), order);
+  const { issues: candidates, reason } = pickMany(queue, MAX_PARALLEL, may, new Set(waiting.keys()), order);
+  // SIN-795: Derselbe Haken-Stand höchstens MAX_HAKEN_STARTS-mal ohne Fortschritt; danach Pause mit Grund.
+  const picked = fixtureAt >= 0 ? candidates : await withoutStalledHaken(candidates, dry);
   if (!picked.length) {
     console.log(`Nichts zu starten: ${reason}`);
     output("found", "false");
