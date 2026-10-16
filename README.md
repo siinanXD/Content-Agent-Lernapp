@@ -97,6 +97,9 @@ flowchart TD
   Freigabe --> Merge
   Gate -- "risk:medium + Einspruchsfrist 2 h" --> Merge
   Gate -- "risk:medium" --> Merge["Auto-Merge (Squash)"]
+  Merge --> Haken{"Alle Fertig-Kriterien belegt? (SIN-779)"}
+  Haken -- ja --> Done["Linear: Done"]
+  Haken -- nein --> Offen["Issue bleibt offen, Kommentar nennt offene Haken"]
   Merge --> Dispatcher
   Merge --> Migr["Migrationen anwenden: additiv automatisch, sonst Sinan-Aufgabe (SIN-374, SIN-451)"]
   Merge --> Bruch{"gate-bruch-Erkennung"}

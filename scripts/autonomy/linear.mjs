@@ -233,16 +233,66 @@ export function prMentions(pr, identifier) {
   return re.test(pr.title ?? "") || re.test(pr.head ?? "");
 }
 
+const HAKEN = /^([-*] )\[( |x|X)\] (.+?)\s*$/gm;
+
+/**
+ * Haken (`- [ ]`) der Issue-Beschreibung gegen die Belege der gemergten PRs (SIN-779): ein Haken gilt als belegt,
+ * wenn ein PR-Text dieselbe Zeile als `- [x]` führt. Belegte werden in der Beschreibung auf `[x]` gesetzt.
+ * „Part of“ allein belegt nichts: bleibt ein Haken offen, bleibt das Issue offen. Ohne Haken gibt es nichts zu belegen.
+ * @returns {{ offen: string[], description: string }}
+ */
+export function pruefeHaken(description, prBodies = []) {
+  const norm = (s) => s.trim().toLowerCase();
+  const belegt = new Set(
+    prBodies.flatMap((b) => [...String(b ?? "").matchAll(HAKEN)].filter((m) => m[2] !== " ").map((m) => norm(m[3]))),
+  );
+  const offen = [];
+  const neu = String(description ?? "").replace(HAKEN, (zeile, punkt, box, text) => {
+    if (box !== " ") return zeile;
+    if (belegt.has(norm(text))) return `${punkt}[x] ${text}`;
+    offen.push(text);
+    return zeile;
+  });
+  return { offen, description: neu };
+}
+
+/** Kommentartext, wenn ein Issue trotz gemergtem PR offen bleibt (fester Wortlaut: Dublettenschutz). */
+export const offenKommentar = (offen) =>
+  `Bleibt offen: ${offen.length} von den Fertig-Kriterien ohne Beleg (Loop-Wächter, SIN-779):\n${offen.map((t) => `- ${t}`).join("\n")}`;
+
+/**
+ * Setzt Haken, dann Done (alle belegt) oder Kommentar „bleibt offen“ (einmal je Stand). `action` aus `reconcile`.
+ * `dry`: nichts ändern. Gibt zurück, ob das Issue Done wurde.
+ */
+export async function applyDone(action, { dry = false, call = linear } = {}) {
+  const { issue, offen = [], description } = action;
+  if (dry) return !offen.length;
+  if (description !== undefined && description !== issue.description) {
+    await call(`mutation($id: String!, $d: String!) { issueUpdate(id: $id, input: { description: $d }) { success } }`, { id: issue.id, d: description });
+  }
+  if (!offen.length) {
+    await setState(issue, "Done", call);
+    return true;
+  }
+  const text = offenKommentar(offen);
+  if (!(await fetchComments(issue.id, call)).some((c) => c.body === text)) await comment(issue.id, text, call);
+  return false;
+}
+
 /**
  * Abgleich vor der Auswahl (SIN-237): Issues in „In Progress“ mit gemergtem PR → Done, nur geschlossene
- * PRs ohne offenen → Todo. Ohne PR bleibt das Issue (der Worker läuft evtl. noch). PRs: { title, head, state, merged }.
+ * PRs ohne offenen → Todo. Ohne PR bleibt das Issue (der Worker läuft evtl. noch). PRs: { title, head, state, merged, body }.
+ * Mit offenen Haken (SIN-779) lautet die Aktion `Offen` statt `Done`: das Issue bleibt „In Progress“, belegt sich nicht selbst.
  */
 export function reconcile(issues, prs, /** @type {{ runningWorkers?: string[], now?: Date }} */ { runningWorkers, now = new Date() } = {}) {
   const actions = [];
   for (const issue of issues) {
     if (issue.state?.name !== "In Progress") continue;
     const mine = prs.filter((p) => prMentions(p, issue.identifier));
-    if (mine.some((p) => p.merged)) actions.push({ issue, to: "Done" });
+    if (mine.some((p) => p.merged)) {
+      const { offen, description } = pruefeHaken(issue.description, mine.filter((p) => p.merged).map((p) => p.body));
+      actions.push({ issue, to: offen.length ? "Offen" : "Done", offen, description });
+    }
     else if (mine.length && !mine.some((p) => p.state === "open")) actions.push({ issue, to: "Todo" });
     // SIN-240/SIN-291: weder PR noch laufender Worker seit STUCK_MIN (Geister-Issue) → zurück auf Todo (nur, wenn die Läufe bekannt sind).
     else if (!mine.length && runningWorkers && !runningWorkers.includes(issue.identifier) && stuckMinutes(issue, now) > STUCK_MIN) {
