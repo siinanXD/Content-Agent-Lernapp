@@ -1,5 +1,7 @@
 # AP-23 Content-Fabrik (SIN-220): Content wächst ohne manuellen Start.
-# Montag, Mittwoch, Freitag 05:47 UTC, 30 Min nach dem Quellen-Monitor (source-check.yml, 05:17). SIN-469: 3 Läufe pro Woche, höchstens einer je Tag und 60 € je 7 Tage (runAllowed in src/lib/generate/content-grow.ts).
+# SIN-797: Alle 2 h (Minute 47), solange docs/FERTIG.md offene Content-Punkte hat: keine Tages-/Wochengrenze, nur 20 € je Lauf; concurrency verhindert parallele Läufe.
+# Sind alle Content-Punkte abgehakt, gilt wieder der alte Takt (Mo/Mi/Fr, höchstens einer je Tag, Wochendeckel; runAllowed in src/lib/generate/content-grow.ts, SIN-469).
+# Meldet die Anthropic-API kein Guthaben, endet der Lauf als „pausiert“; weiter erst nach manuellem Start, ein `sinan`-Issue sagt Bescheid.
 # Ablauf und Deckel (20 € je Lauf, Stopp bei 19 €): scripts/content-grow.ts, src/lib/generate/content-grow.ts.
 # Secrets kommen aus Infisical (/content-agent-lernapp) per GitHub-Sync; nie von Hand anlegen.
 # Fehlende Secrets: Job rot, bevor irgendetwas erzeugt oder veröffentlicht wird.
@@ -8,7 +10,7 @@ name: Content-Fabrik (AP-23)
 
 on:
   schedule:
-    - cron: "47 5 * * 1,3,5"
+    - cron: "47 */2 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -71,6 +73,8 @@ jobs:
             exit 1
           fi
       - name: Content-Lauf
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
         shell: bash
         run: |
           flags="--source-report=source-report.json"

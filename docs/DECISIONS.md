@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-797 | SIN-797: Content-Fabrik läuft durch, bis die Content-Punkte der Fertig-Liste stehen | [SIN-797-fabrik-durchlauf.md](decisions/SIN-797-fabrik-durchlauf.md) |
 | SIN-795 | SIN-795: Worker bei offenen Haken | [SIN-795-worker-offene-haken.md](decisions/SIN-795-worker-offene-haken.md) |
 | SIN-793 | SIN-793: Restore-Test scheitert an doppelter Migrationsversion | [SIN-793-restore-test-doppelte-version.md](decisions/SIN-793-restore-test-doppelte-version.md) |
 | SIN-789 | SIN-789: Fehlalarm „Kein Worker seit 2119 Min“ | [SIN-789-stillstand-fehlalarm.md](decisions/SIN-789-stillstand-fehlalarm.md) |

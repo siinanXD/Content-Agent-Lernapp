@@ -180,6 +180,14 @@ export function buildQueue(
 }
 
 /**
+ * SIN-797: Offene Content-Punkte der Fertig-Liste (docs/FERTIG.md): unabgehakte Zeilen zu
+ * Industriekaufmann (erzeugen) oder Industriemechaniker (belegen/veröffentlichen). Solange es welche gibt, läuft die Fabrik durch.
+ */
+export function contentPunkteOffen(fertigMd: string): boolean {
+  return fertigMd.split("\n").some((l) => /^\s*- \[ \]/.test(l) && /Industriekaufmann|Industriemechaniker/i.test(l));
+}
+
+/**
  * SIN-469: Darf die Fabrik jetzt laufen? Zählt Live-Läufe mit Kosten oder Ergebnis (ein Lauf, der
  * nach Sekunden an der API-Sperre endete, hinterlässt keinen Bericht und zählt nicht).
  * - höchstens ein Lauf je UTC-Tag
@@ -191,7 +199,18 @@ export function runAllowed(
   now: Date = new Date(),
   /** SIN-672: Wochenkosten aus pipeline_run_costs (alle Arten); zählt, wenn höher als die Fabrik-Berichte. */
   ledgerWeekEur = 0,
+  /** SIN-797: Durchlauf (offene Content-Punkte der Fertig-Liste): weder Tages- noch Wochengrenze, nur der Lauf-Deckel. */
+  opts: { durchlauf?: boolean; pausiert?: boolean; manuell?: boolean } = {},
 ): { ok: true } | { ok: false; reason: string } {
+  // SIN-797: Nach einer API-Guthaben-Pause startet nur ein manueller Lauf wieder.
+  if (opts.pausiert && !opts.manuell) {
+    return { ok: false, reason: "pausiert: API-Guthaben/Limit; weiter erst nach manuellem Start (workflow_dispatch)" };
+  }
+  if (opts.durchlauf) return { ok: true };
+  // Alter Takt: Der Zeitplan feuert alle 2 h, geplant gilt wieder nur Mo/Mi/Fr (manuell jederzeit).
+  if (!opts.manuell && ![1, 3, 5].includes(now.getUTCDay())) {
+    return { ok: false, reason: "alter Takt: Fertig-Liste ohne offene Content-Punkte, geplant nur Mo/Mi/Fr" };
+  }
   const live = history
     .filter((r) => r.mode === "live" && (r.costEur > 0 || r.generated > 0))
     .map((r) => ({ ...r, at: Date.parse(r.startedAt) }))

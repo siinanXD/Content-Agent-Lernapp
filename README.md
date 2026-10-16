@@ -128,7 +128,7 @@ flowchart TD
   PWS --> Schlange
   PWR --> Repair
   subgraph Inhalte
-    Fabrik["Content-Fabrik (content-grow.yml, Mo/Mi/Fr, höchstens ein Lauf je Tag, jeder Lauf im Statusprotokoll, bei API-Limit pausiert, am Ende Kostenbericht)"] --> Bewertung["Bewertungslauf"]
+    Fabrik["Content-Fabrik (content-grow.yml, alle 2 h solange Content-Punkte der Fertig-Liste offen sind (sonst Mo/Mi/Fr), jeder Lauf im Statusprotokoll, bei API-Limit pausiert und sinan-Issue, am Ende Kostenbericht)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
   end
 ```
@@ -216,7 +216,7 @@ Langfuse quality-gate tracing uses JS/TS SDK v5 / platform v4 OTEL ingestion (`d
 - Die Content-Fabrik erzeugt zwei Berufe: MAF Metall und Industriekaufleute (SIN-431, `docs/decisions/SIN-431-indkfl-fabrik.md`). Jeder Lauf bedient eine Map und wechselt zum nächsten Lauf; Kurs und amtliche Quellen für Industriekaufleute legt die Migration `20261012010000` an.
 - Die 6 weiteren MAF-Schwerpunkte (Kunststoff, Textil, Textilveredelung, Lebensmittel, Druckverarbeitung, Packmittel) stehen in `MAP_COURSES`, erzeugt werden sie erst mit `CONTENT_GROW_SCHWERPUNKTE=1` und nach Metall und Industriekaufleuten. Gemeinsame Module erzeugt nur MAF Metall. Der Trockenlauf (`npm run content:grow -- --dry-run`) nennt je Map Ziel, vorhanden, geteilt, neu (SIN-479, `docs/decisions/SIN-479-schwerpunkte.md`).
 - Staging (SIN-628, `docs/decisions/SIN-628-staging.md`): Neue Einheiten der Fabrik tragen den Status `entwurf`, `geprueft` oder `veroeffentlicht`. Die App zeigt nur `veroeffentlicht`; Einheiten ohne Status (Bestand) gelten als veröffentlicht. Freigabe automatisch, wenn der Richter bestanden hat und die Proben grün sind, sonst bleibt die Einheit unsichtbar.
-- Die Content-Fabrik läuft Montag, Mittwoch und Freitag, höchstens einmal je Tag und unter 40 € je 7 Tage (ein Lauf startet nur, wenn sein Deckel von 20 € noch hineinpasst; SIN-645); MAF-Metall-Module ohne Einheiten (LF3 bis LF6) kommen zuerst (SIN-469, `docs/decisions/SIN-469-fabrik-laeufe-pro-woche.md`).
+- Die Content-Fabrik läuft alle 2 Stunden ohne Tages- und Wochengrenze (nur 20 € je Lauf), solange `docs/FERTIG.md` offene Content-Punkte hat; leeres API-Guthaben pausiert sie bis zum manuellen Start und legt ein `sinan`-Issue an (SIN-797, `docs/decisions/SIN-797-fabrik-durchlauf.md`). Danach gilt wieder: Montag, Mittwoch und Freitag, höchstens einmal je Tag und unter 40 € je 7 Tage (ein Lauf startet nur, wenn sein Deckel von 20 € noch hineinpasst; SIN-645); MAF-Metall-Module ohne Einheiten (LF3 bis LF6) kommen zuerst (SIN-469, `docs/decisions/SIN-469-fabrik-laeufe-pro-woche.md`).
 - Die Content-Fabrik schreibt je Live-Lauf eine Zeile in `content_factory_runs` (Migrationen `20261007020000`, `20261010010000`), mit Start, Ende und Ergebnis. Auch ein Abbruch (fehlende Secrets, fehlender Kurs, Absturz) hinterlässt eine Zeile mit `stop_reason`. Der Planer leitet daraus „läuft wöchentlich“ und „hängt“ (2 Läufe ohne neues Modul) ab (`scripts/autonomy/fabrik.mjs`).
 - Gesperrte Anthropic-API (Ausgabenlimit, SIN-450): Der Lauf endet ohne Wiederholung mit Exit 0 und `stop_reason` „pausiert: API-Limit am <Datum>“; `content_fabrik_status` zeigt „pausiert“ statt „hängt“, der Planer legt kein Issue an, der nächste Lauf startet normal (`docs/decisions/SIN-450-fabrik-pausiert-bei-api-limit.md`).
 - Der Kennzahlen-Bericht nennt die Verwerfungsgründe verworfener Fragen je Modul und Fragetyp (SIN-395). Verworfene Fragen werden in Lernpfad, Wiederholung und Prüfung nie ausgespielt.

@@ -35,6 +35,7 @@ import {
   affordableUnits,
   buildQueue,
   chooseRunMap,
+  contentPunkteOffen,
   COST_MARGIN,
   judgeReserveEur,
   linearSummary,
@@ -98,7 +99,7 @@ import {
 import { reportPipelineError, initPipelineSentry } from "../src/lib/sentry-pipeline";
 import { getStorage } from "../src/lib/storage";
 import { isApiLimitError, pauseReason } from "../src/lib/anthropic/limit-error";
-import { recordFactoryRun, toAbortedRunRecord, toFactoryRunRecord } from "../src/lib/generate/factory-status";
+import { lastRunPaused, recordFactoryRun, toAbortedRunRecord, toFactoryRunRecord } from "../src/lib/generate/factory-status";
 
 const ROOT = process.cwd();
 const OUT_DIR = join(ROOT, "docs", "ops", "content-runs");
@@ -156,6 +157,28 @@ function runRepair(dry: boolean): { ran: boolean; costEur: number; budgetStop: b
     }
   }
   return { ran: true, costEur, budgetStop: r.status === 3 };
+}
+
+const FERTIG_PFAD = join(ROOT, "docs", "FERTIG.md");
+
+/** SIN-797: API-Guthaben leer: `sinan`-Issue „API-Guthaben aufladen“ (Linear benachrichtigt Sinan). Best effort, der Lauf endet trotzdem sauber. */
+function meldeGuthabenLeer(grund: string) {
+  if (hasFlag("dry-run")) return;
+  const r = spawnSync(
+    process.execPath,
+    [
+      "scripts/autonomy/sinan.mjs", "create",
+      "--titel", "API-Guthaben aufladen (Content-Fabrik pausiert)",
+      "--wo", "Anthropic Console, Billing",
+      "--link", "https://console.anthropic.com/settings/billing",
+      "--minuten", "5",
+      "--schritt", "1. Guthaben bzw. Ausgabenlimit in der Anthropic Console erhöhen",
+      "--schritt", "2. GitHub Actions, Workflow „Content-Fabrik (AP-23)“, Run workflow starten (ohne Haken bei dry_run)",
+      "--pruefung", `Ein manueller Lauf der Content-Fabrik endet ohne „pausiert: API-Limit“ (Grund: ${grund.slice(0, 120)})`,
+    ],
+    { stdio: "inherit", env: process.env },
+  );
+  if (r.status !== 0) console.error("::warning::sinan-Issue „API-Guthaben aufladen“ nicht angelegt");
 }
 
 const STARTED_AT = new Date().toISOString();
@@ -217,9 +240,16 @@ async function main() {
   const history = loadHistory();
   // SIN-469: mehrere Läufe pro Woche, aber höchstens einer je Tag und unter dem Wochendeckel (nur echte Läufe).
   // SIN-672: dieselbe 7-Tage-Summe wie die Kennzahl kosten_woche (alle Arten von Läufen im Ledger).
-  const weekBeforeEur = dry ? 0 : weekCost((await listRunCosts()).map((r) => ({ cost_eur: r.costEur, created_at: r.createdAt }))).sumEur;
+  // SIN-797: Solange die Fertig-Liste offene Content-Punkte hat, gelten weder Tages- noch Wochengrenze (nur 20 € je Lauf).
+  const durchlauf = contentPunkteOffen(existsSync(FERTIG_PFAD) ? readFileSync(FERTIG_PFAD, "utf8") : "");
+  const weekEur = dry ? 0 : weekCost((await listRunCosts()).map((r) => ({ cost_eur: r.costEur, created_at: r.createdAt }))).sumEur;
+  const weekBeforeEur = durchlauf ? 0 : weekEur;
   if (!dry) {
-    const allowed = runAllowed(history, new Date(), weekBeforeEur);
+    const allowed = runAllowed(history, new Date(), weekBeforeEur, {
+      durchlauf,
+      pausiert: await lastRunPaused(),
+      manuell: process.env.GITHUB_EVENT_NAME === "workflow_dispatch",
+    });
     if (!allowed.ok) {
       console.log(`Fabrik übersprungen: ${allowed.reason}`);
       // SIN-661: Grund ins Statusprotokoll des Laufs (pausieren statt rot laufen).
@@ -483,6 +513,7 @@ async function main() {
     if (isApiLimitError(e)) {
       report.stopReason = pauseReason(e);
       console.log(`::notice::${report.stopReason}`);
+      meldeGuthabenLeer(report.stopReason);
       return;
     }
     if (!(e instanceof RunBudgetExceededError)) {
@@ -691,6 +722,7 @@ main().catch(async (err) => {
   if (isApiLimitError(err)) {
     // SIN-450: Limit vor dem Ergebnis (z. B. in der Reparatur): Status „pausiert“, Exit 0, keine Reparaturschleife.
     console.log(`::notice::${pauseReason(err)}`);
+    meldeGuthabenLeer(pauseReason(err));
     await abortRun(pauseReason(err), 0);
   }
   console.error(err);

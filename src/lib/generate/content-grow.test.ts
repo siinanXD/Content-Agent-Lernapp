@@ -39,6 +39,7 @@ import {
   RUN_CAP_EUR,
   RUN_STOP_EUR,
   runAllowed,
+  contentPunkteOffen,
   WEEK_CAP_EUR,
   slotIds,
   trimTargets,
@@ -276,6 +277,38 @@ test("SIN-672: Ledger-Wochensumme (Richter-Läufe) zählt in Start und Teilbatch
   assert.equal(gate.ok, false);
   assert.ok(week + gate.expectedEur > WEEK_CAP_EUR);
   assert.equal(partGate(0, 10, 0.059, 0, RUN_CAP_EUR, week).ok, true);
+});
+
+test("SIN-797: Durchlauf: zwei Läufe am selben Tag, Wochensumme egal; Lauf-Deckel bleibt", () => {
+  const lauf = (startedAt: string, costEur: number) => ({ mode: "live" as const, startedAt, costEur, generated: 10 });
+  const now = new Date("2026-10-17T10:47:00Z"); // Samstag
+  const heute = [lauf("2026-10-17T06:47:00Z", 19), lauf("2026-10-17T08:47:00Z", 19)];
+  assert.deepEqual(runAllowed(heute, now, 76, { durchlauf: true }), { ok: true });
+  assert.equal(runAllowed(heute, now, 76).ok, false);
+  assert.equal(RUN_CAP_EUR, 20);
+});
+
+test("SIN-797: Pause nach leerem API-Guthaben: nur manueller Start geht weiter", () => {
+  const now = new Date("2026-10-17T10:47:00Z");
+  const r = runAllowed([], now, 0, { durchlauf: true, pausiert: true });
+  assert.equal(r.ok, false);
+  assert.match(r.ok ? "" : r.reason, /pausiert/);
+  assert.deepEqual(runAllowed([], now, 0, { durchlauf: true, pausiert: true, manuell: true }), { ok: true });
+});
+
+test("SIN-797: Fertig-Liste ohne offene Content-Punkte: alter Takt (Mo/Mi/Fr, 1 je Tag, Wochendeckel)", () => {
+  const offen = "- [x] MAF Metall live\n- [ ] Industriekaufmann/-frau: Content erzeugen\n- [ ] Seite für Ausbilder";
+  const fertig = "- [x] Industriemechaniker veröffentlichen\n- [x] Industriekaufmann/-frau: Content\n- [ ] Seite für Ausbilder";
+  assert.equal(contentPunkteOffen(offen), true);
+  assert.equal(contentPunkteOffen(fertig), false);
+  const lauf = { mode: "live" as const, startedAt: "2026-10-12T05:00:00Z", costEur: 12, generated: 10 };
+  const samstag = new Date("2026-10-17T10:47:00Z");
+  assert.equal(runAllowed([], samstag, 0, { durchlauf: false }).ok, false);
+  assert.deepEqual(runAllowed([], samstag, 0, { durchlauf: false, manuell: true }), { ok: true });
+  const mittwoch = new Date("2026-10-14T05:47:00Z");
+  assert.equal(runAllowed([{ ...lauf, startedAt: "2026-10-14T01:00:00Z" }], mittwoch).ok, false);
+  assert.equal(runAllowed([], mittwoch, WEEK_CAP_EUR - RUN_CAP_EUR + 0.01).ok, false);
+  assert.deepEqual(runAllowed([lauf], mittwoch), { ok: true });
 });
 
 test("Lauf: fertige Map wird übersprungen, nichts offen ergibt null, Fortsetzung zuerst", () => {
