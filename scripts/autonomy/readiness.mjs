@@ -22,7 +22,7 @@ export const STUFE = {
 
 /** Prüfungen je Bereich. `auto` misst, sonst zählt die Bestätigung. */
 export const CHECKS = [
-  { id: "content-module", area: "Content", label: "Alle Module von MAF Metall veröffentlicht" },
+  { id: "content-module", area: "Content", label: "Alle Module von MAF Metall veröffentlicht", auto: "module" },
   { id: "content-quote", area: "Content", label: "Bestehensquote ≥ Goldset-Zielwert", auto: "quote" },
   { id: "content-safety", area: "Content", label: "Sicherheits-Stichproben erledigt" },
   { id: "lernen-e2e", area: "Lernen", label: "Start → Lernpfad → Einheit → Ergebnis → Wiederholung (1/3/7 Tage) → Prüfungsmodus, E2E grün" },
@@ -45,6 +45,26 @@ export const CHECKS = [
 
 const NA = "nicht verfügbar";
 const hasDesignLabel = (i) => (i.labels?.nodes ?? []).some((l) => l.name.toLowerCase() === "design");
+
+/**
+ * Offene Module von MAF Metall (SIN-758): Ist < Soll oder Bestehensquote unter Ziel (oder noch keine Bewertung).
+ * `data` = `collectContentMetrics`-Ergebnis; ohne Supabase-Messung `null`.
+ * @returns {string[] | null}
+ */
+export function openModules(data, goldsetTarget = DEFAULT_GOLDSET_TARGET) {
+  if (!data?.verfuegbar) return null;
+  const map = data.coverage?.find((c) => c.mapId === "maf-metall");
+  if (!map) return null;
+  const target = Math.round(goldsetTarget * 100);
+  return map.modules.flatMap((m) => {
+    const rate = data.passRates?.find((p) => p.mapId === "maf-metall" && p.moduleId === m.id);
+    const why = [];
+    if (m.ist < m.soll) why.push(`${m.ist}/${m.soll} Einheiten`);
+    if (!rate) why.push("keine Bewertung");
+    else if (rate.pct < target) why.push(`Quote ${rate.pct} % < ${target} %`);
+    return why.length ? [`${m.id} (${why.join(", ")})`] : [];
+  });
+}
 
 /** Frame-Namen aus der Tabelle „Screens“ in docs/design/FIGMA.md (`01 Start` …). */
 export function expectedFrames(figmaMd) {
@@ -89,8 +109,13 @@ export async function fetchFigmaFrames(fileKey, env = process.env, fetchImpl = f
  * `issues: null` = Linear nicht erreichbar.
  * @returns {{ id: string, area: string, label: string, status: Status, detail: string, stufe: string }[]}
  */
-export function evaluateReadiness({ metrics, issues, confirmations = {}, built = {}, ran = {}, goldsetTarget = DEFAULT_GOLDSET_TARGET, figma = null, expected = [] }) {
+export function evaluateReadiness({ metrics, issues, confirmations = {}, built = {}, ran = {}, goldsetTarget = DEFAULT_GOLDSET_TARGET, figma = null, expected = [], contentModules = null }) {
   const auto = {
+    module() {
+      const open = openModules(contentModules, goldsetTarget);
+      if (!open) return [NA, "kein Supabase-Zugang"];
+      return open.length ? ["offen", `offen: ${open.join("; ")}`] : ["ok", "alle Module mit Ist ≥ Soll und Bestehensquote im Ziel"];
+    },
     quote() {
       const pct = Number(metrics.bestehensquote_pct);
       if (!Number.isFinite(pct)) return [NA, String(metrics.bestehensquote ?? "keine Messung")];

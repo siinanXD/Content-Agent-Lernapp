@@ -320,10 +320,30 @@ test("Planer: Pflege-Modus plant nur Backend und Content", () => {
   assert.deepEqual(validatePlan(plan, [], { maintenance: true }).map((i) => i.lane).sort(), ["backend", "content"]);
 });
 
+function modulData(open = false) {
+  const mod = (id: string, ist: number) => ({ id, soll: 4, ist, pct: ist * 25 });
+  return {
+    verfuegbar: true,
+    coverage: [{ mapId: "maf-metall", modules: [mod("M0", 4), mod("M1", open ? 3 : 4)] }],
+    passRates: [{ mapId: "maf-metall", moduleId: "M0", pct: 95 }, { mapId: "maf-metall", moduleId: "M1", pct: 92 }],
+  };
+}
+
+test("Produktreife: content-module aus Abdeckung und Quote (SIN-758)", () => {
+  const row = (contentModules: unknown) => evaluateReadiness({ metrics: {}, issues: [], contentModules } as never).find((r) => r.id === "content-module")!;
+  assert.equal(row(modulData()).status, "ok");
+  const offen = row(modulData(true));
+  assert.equal(offen.status, "offen");
+  assert.match(offen.detail, /M1 \(3\/4 Einheiten\)/);
+  assert.doesNotMatch(offen.detail, /M0/);
+  assert.equal(row(null).status, "nicht verfügbar");
+  assert.equal(row({ verfuegbar: false, coverage: [] }).status, "nicht verfügbar");
+});
+
 test("Produktreife: Messung, Bestätigung, Tabelle, Abnahme und Pflege-Modus", () => {
   const metrics = { bestehensquote_pct: 95, sentry_kritisch: 0, content_fabrik_status: "läuft", content_fabrik: "letzter Lauf vor 2 Tagen" };
   const expected = ["01 Start", "02 Lernpfad"];
-  const base = { metrics, issues: [issue("SIN-1", 2)], expected, figma: { frames: ["01 Start", "02 Lernpfad"] } };
+  const base = { metrics, issues: [issue("SIN-1", 2)], expected, figma: { frames: ["01 Start", "02 Lernpfad"] }, contentModules: modulData() };
   const rows = evaluateReadiness(base);
   const status = (id: string) => rows.find((r) => r.id === id)?.status;
   assert.equal(status("content-quote"), "ok");

@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-758 | SIN-758: Produktreife „Alle Module veröffentlicht“ aus Supabase messen | [SIN-758-content-module-messung.md](decisions/SIN-758-content-module-messung.md) |
 | SIN-756 | SIN-756: Kostenbeleg nach Wochendeckel-Fix, Blocker: kein Live-Kostenbericht in diesem Lauf | [SIN-756-kostenbeleg-nach-wochendeckel-blocker.md](decisions/SIN-756-kostenbeleg-nach-wochendeckel-blocker.md) |
 | SIN-753 | SIN-753: /ausbilder/gruppen meldet weiter 401 im Testnutzer-Lauf | [SIN-753-gruppen-401-ohne-anmeldung.md](decisions/SIN-753-gruppen-401-ohne-anmeldung.md) |
 | SIN-703 | SIN-703: Stillstand `ohne-start` nicht direkt nach der Wahl durch den Dispatcher | [SIN-703-ohne-start-frisch-gewaehlt.md](decisions/SIN-703-ohne-start-frisch-gewaehlt.md) |
