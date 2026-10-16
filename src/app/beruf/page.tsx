@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { PathCourse } from "@/lib/learner/kurse";
 import { useEffect, useId, useState } from "react";
 import { trackOnboardingCompleted, trackOnboardingStep } from "@/lib/analytics";
 import { MobileShell } from "@/components/learner/mobile-shell";
@@ -20,9 +22,22 @@ export default function BerufPage() {
   const searchId = useId();
   const [query, setQuery] = useState("");
   const treffer = filterBerufe(query);
+  const [kurse, setKurse] = useState<PathCourse[]>([]);
+  const q = query.trim().toLowerCase();
+  const kursTreffer = kurse.filter((k) => k.keyword.toLowerCase().includes(q));
 
   useEffect(() => {
     trackOnboardingStep({ step: "beruf" });
+  }, []);
+
+  // SIN-777: weitere veröffentlichte Kurse (ohne den Standardkurs, den die MAF-Kachel schon öffnet).
+  useEffect(() => {
+    fetch("/api/kurse")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { standardId?: string; courses: PathCourse[] } | null) =>
+        setKurse((d?.courses ?? []).filter((c) => c.id !== d?.standardId)),
+      )
+      .catch(() => {});
   }, []);
 
   function choose(beruf: Beruf) {
@@ -86,9 +101,21 @@ export default function BerufPage() {
               <span className="text-sm text-[var(--color-text-secondary)]">{b.next}</span>
             </button>
           ))}
+          {kursTreffer.map((k) => (
+            <Link
+              key={k.id}
+              href={`/lernpfad/${k.id}`}
+              className={`flex flex-col gap-1.5 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-6 text-left text-[var(--color-text-primary)] ${focus}`}
+            >
+              <span className="mono-label text-[var(--color-text-secondary)]">{k.unitCount} Einheiten</span>
+              <span className="text-xl font-bold leading-[26px]" style={{ fontFamily: "var(--font-display)" }}>
+                {k.keyword}
+              </span>
+            </Link>
+          ))}
         </div>
         <p role="status" className="text-sm text-[var(--color-text-secondary)]">
-          {treffer.length === 0 ? "Zu dieser Suche gibt es noch keinen Beruf." : ""}
+          {treffer.length + kursTreffer.length === 0 ? "Zu dieser Suche gibt es noch keinen Beruf." : ""}
         </p>
 
         <p className="rounded-[var(--radius-xl)] bg-[var(--color-bg-hint)] p-5 text-[13px] font-medium leading-[17px] text-[var(--color-text-hint)]">

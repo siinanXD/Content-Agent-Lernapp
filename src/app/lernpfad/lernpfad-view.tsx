@@ -15,7 +15,7 @@ import {
   type PathUnit,
   type PathUnitStatus,
 } from "@/lib/learner/playable-path";
-import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
+import { fetchPhaseAPathUnits, setActiveCourse } from "@/lib/learner/phase-a-path";
 import { begruessung, type Begruessung } from "@/lib/learner/begruessung";
 import {
   dueItems,
@@ -67,8 +67,11 @@ const focus =
 export function LernpfadView({
   initialUnits,
   modules = [],
+  courseId = null,
 }: {
   initialUnits: PathUnit[];
+  /** Kurs aus `/lernpfad/[kurs]`; ohne Angabe der Standardkurs (SIN-777). */
+  courseId?: string | null;
   /** Alle Module des Kurses; solche ohne Einheiten zeigen den Leerzustand (SIN-452). */
   modules?: Array<{ id: string; title: string }>;
 }) {
@@ -94,7 +97,8 @@ export function LernpfadView({
   // die Einheiten von denen des Servers abweichen (z. B. frisch veröffentlicht); sonst bleibt sie stehen.
   useEffect(() => {
     let cancelled = false;
-    fetchPhaseAPathUnits().then((units) => {
+    setActiveCourse(courseId);
+    fetchPhaseAPathUnits(courseId).then((units) => {
       const same =
         units.length === initialUnits.length && units.every((u, i) => u.id === initialUnits[i].id);
       if (!cancelled && units.length && !same) setPathUnits(units);
@@ -102,7 +106,7 @@ export function LernpfadView({
     return () => {
       cancelled = true;
     };
-  }, [initialUnits]);
+  }, [initialUnits, courseId]);
 
   // „Als Nächstes“: heutige Einheit, sonst die erste offene.
   const nextUnit =
