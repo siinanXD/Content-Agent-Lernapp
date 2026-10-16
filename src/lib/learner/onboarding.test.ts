@@ -7,7 +7,9 @@ import {
   findBeruf,
   findSchwerpunkt,
   needsOnboarding,
+  MAPS_MIT_INHALT,
   SCHWERPUNKTE,
+  verfuegbareSchwerpunkte,
 } from "./onboarding";
 
 test("5 amtliche Schwerpunkte, Default-Map ist je Schwerpunkt enthalten", () => {
@@ -36,5 +38,15 @@ test("Berufswahl: Suche filtert nur vorhandene Berufe, Monoberuf ohne Schwerpunk
 test("Erster Start ohne Einwilligung braucht Onboarding", () => {
   assert.equal(needsOnboarding(EMPTY_ONBOARDING), true);
   assert.equal(needsOnboarding({ ...EMPTY_ONBOARDING, consent: false }), false);
-  assert.equal(findSchwerpunkt("textiltechnik")?.defaultMapId, "maf-textil");
+  assert.equal(findSchwerpunkt("metall-kunststoff")?.defaultMapId, "maf-metall");
+});
+
+test("Leere Platzhalter-Kurse sind ausgeblendet (SIN-772)", () => {
+  const sichtbar = verfuegbareSchwerpunkte();
+  assert.deepEqual(sichtbar.map((s) => s.id), ["metall-kunststoff"]);
+  assert.deepEqual(sichtbar[0].maps.map((m) => m.mapId), ["maf-metall"]);
+  for (const s of sichtbar) {
+    for (const m of s.maps) assert.ok(MAPS_MIT_INHALT.includes(m.mapId), m.mapId);
+  }
+  assert.equal(findSchwerpunkt("textiltechnik"), undefined);
 });
