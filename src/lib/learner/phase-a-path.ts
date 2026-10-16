@@ -129,9 +129,30 @@ export function setPhaseAPathUnits(units: GeneratedUnit[]): PathUnit[] {
   return mapped;
 }
 
-export async function fetchPhaseAPathUnits(): Promise<PathUnit[]> {
+const COURSE_KEY = "cal-kurs";
+
+/** Merkt den gewählten Kurs, damit Einheit und Wiederholung beim Neuladen denselben laden (SIN-777). `null` = Standardkurs. */
+export function setActiveCourse(courseId: string | null) {
   try {
-    const res = await fetch("/api/learner/phase-a", { cache: "no-store" });
+    if (courseId) window.localStorage.setItem(COURSE_KEY, courseId);
+    else window.localStorage.removeItem(COURSE_KEY);
+  } catch {
+    /* ohne Speicher gilt der Standardkurs */
+  }
+}
+
+function activeCourse(): string | null {
+  try {
+    return window.localStorage.getItem(COURSE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchPhaseAPathUnits(courseId: string | null = activeCourse()): Promise<PathUnit[]> {
+  try {
+    const query = courseId ? `?kurs=${encodeURIComponent(courseId)}` : "";
+    const res = await fetch(`/api/learner/phase-a${query}`, { cache: "no-store" });
     if (!res.ok) return phaseAPathUnits();
     const data = (await res.json()) as { units?: GeneratedUnit[] };
     if (data.units?.length) {
