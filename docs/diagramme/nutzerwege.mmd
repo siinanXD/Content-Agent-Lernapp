@@ -6,6 +6,8 @@ flowchart LR
     A2 --> A2b["Beruf wählen (/beruf)"]
     A2b --> A3["Schwerpunkt (/schwerpunkt)"]
     A2b -- "Industriekaufmann/-frau" --> A4
+    A2b -- "weiterer veröffentlichter Beruf" --> A4b["Lernpfad (/lernpfad/kurs)"]
+    A4b --> A5
     A3 --> A4["Lernpfad (/lernpfad)"]
     A4 --> A5["Einheit (/einheit/id)"]
     A5 --> A6["Ergebnis (/ergebnis)"]
