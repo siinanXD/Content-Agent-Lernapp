@@ -7,7 +7,7 @@ Links: [Checkout-Sitzung anlegen](https://docs.stripe.com/api/checkout/sessions/
 **Annahmen:**
 - Kein Webhook und keine Speicherung nötig: „durchspielbar bis zur Bestätigung“ heißt Anmeldung → Checkout → Bestätigungsseite. Ein Webhook (Abo einem Konto zuordnen) folgt mit dem Live-Schalter.
 - Es gibt keinen Preis im Code. Sinan legt Produkt und Preis im Stripe-Testmodus an (Aufgabe `sinan`).
-- Figma hat keinen Screen für das Abo. Die Seiten nutzen vorhandene Komponenten; Design-Issue mit Label `design` angelegt.
+- Figma hat keinen Screen für das Abo. Die Seiten nutzen vorhandene Komponenten; Ein Design-Issue (Label `design`) ist noch nicht angelegt; der Planer bündelt es ins nächste Design-Paket.
 - Der Pfad enthält „abo“, Code berührt Zahlung: Sinan prüft den PR (risk:high ist zu erwarten).
 
 **Warum:** Zwei REST-Aufrufe sind weniger Abhängigkeit als das Stripe-SDK; Checkout nimmt uns Kartendaten und PCI-Pflichten ab.
