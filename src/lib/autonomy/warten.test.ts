@@ -73,6 +73,15 @@ test("SIN-439: merge-gate rot, weil risk:high auf Freigabe wartet → kein Gate-
   assert.equal(detectGateBreaks([warten(245, "a"), warten(246, "b")]).breaks.length, 0);
 });
 
+test("SIN-806: merge-gate rot während der Einspruchsfrist → kein Gate-Bruch", () => {
+  const frist = (number: number, sha: string) => ({
+    number,
+    sha,
+    failures: [{ check: "merge-gate", step: "Ergebnis des Gates melden", lines: "Einspruchsfrist läuft bis 2026-10-17T03:03:31.008Z (SIN-547). Danach merged der PR von selbst." }],
+  });
+  assert.equal(detectGateBreaks([frist(403, "a"), frist(406, "b")]).breaks.length, 0);
+});
+
 test("SIN-439: Fehlerzeile ist die erste spezifische Anmerkung, nicht „exit code 1“", () => {
   const notes = [
     { annotation_level: "failure", message: "Process completed with exit code 1." },
