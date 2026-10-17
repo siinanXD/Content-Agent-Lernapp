@@ -8,6 +8,7 @@
  *   node scripts/autonomy/live.mjs fertig SIN-123 --pr https://github.com/…/pull/1
  *   node scripts/autonomy/live.mjs gescheitert SIN-123 "Grund"
  *   node scripts/autonomy/live.mjs blockiert SIN-123 "Grund"      (nichts Neues baubar: Kommentar, Label needs-human, zurück auf Todo; SIN-795)
+ *   node scripts/autonomy/live.mjs wieder-offen SIN-123 "Grund"   (fälschlich geschlossenes Issue zurück auf In Progress; SIN-779)
  *
  * Fehler sind nie fatal (Exit 0): ein Linear-Ausfall darf einen Lauf nicht abbrechen.
  */
@@ -52,6 +53,8 @@ export function liveText(kind, { text = "", pr = "", run = "" } = {}) {
       return `Worker gescheitert${lauf}: ${trim(text) || "ohne PR beendet"}`;
     case "blockiert":
       return text ? `blockiert: ${trim(text)}` : "";
+    case "wieder-offen":
+      return text ? `Wieder geöffnet: ${trim(text)}` : "";
     default:
       return "";
   }
@@ -72,7 +75,7 @@ export function parseArgs(argv) {
 export async function main(argv = process.argv.slice(2)) {
   const { kind, identifier, text, pr, run } = parseArgs(argv);
   const body = liveText(kind, { text, pr, run });
-  if (!body || !identifier) return console.log("Aufruf: live.mjs gestartet|fortschritt|frage|fertig|gescheitert|blockiert SIN-123 [Text] [--pr URL] [--run URL]");
+  if (!body || !identifier) return console.log("Aufruf: live.mjs gestartet|fortschritt|frage|fertig|gescheitert|blockiert|wieder-offen SIN-123 [Text] [--pr URL] [--run URL]");
   try {
     if (kind === "fortschritt" && !allowFortschritt(identifier)) return console.log(`Grenze von ${MAX_FORTSCHRITT} Fortschritts-Kommentaren erreicht, kein Kommentar`);
     const issue = await findIssue(identifier);
@@ -83,6 +86,7 @@ export async function main(argv = process.argv.slice(2)) {
       await addLabel(issue, "needs-human").catch((e) => console.log(`::warning::Label needs-human nicht gesetzt: ${e.message}`));
       await setState(issue, "Todo");
     }
+    if (kind === "wieder-offen") await setState(issue, "In Progress");
     console.log(`Kommentar in ${identifier}: ${body}`);
   } catch (e) {
     console.log(`::warning::Live-Kommentar für ${identifier} nicht gesendet: ${e.message}`);
