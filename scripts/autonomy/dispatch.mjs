@@ -147,17 +147,21 @@ async function noPrRun(identifier, file, dry) {
 /**
  * Issues mit offenen Haken, die schon MAX_HAKEN_STARTS-mal mit demselben Stand gestartet wurden, bekommen `needs-human`
  * und einen Grund in loop_events; alle anderen werden gemerkt (Kommentar „Haken-Start“) und gestartet. Fehler beim Lesen: Issue startet.
+ * Läuft über die ganze Schlange und hört bei `want` Treffern auf: angehaltene Issues blockieren keinen Platz (SIN-818).
+ * @returns {Promise<{ go: any[], skipped: string[] }>}
  */
-async function withoutStalledHaken(candidates, dry) {
+export async function withoutStalledHaken(queue, want, dry, lese = fetchComments) {
   const go = [];
-  for (const issue of candidates) {
+  const skipped = [];
+  for (const issue of queue) {
+    if (go.length >= want) break;
     const { offen } = pruefeHaken(issue.description);
     if (!offen.length) {
       go.push(issue);
       continue;
     }
     try {
-      const streak = hakenStreak(await fetchComments(issue.id), offen);
+      const streak = hakenStreak(await lese(issue.id), offen);
       if (streak >= MAX_HAKEN_STARTS) {
         const grund = `${issue.identifier}: ${offen.length} Haken seit ${streak} Starts unverändert, Pause (SIN-795)`;
         console.log(`${dry ? "[dry-run] " : ""}${grund}`);
@@ -166,6 +170,7 @@ async function withoutStalledHaken(candidates, dry) {
           await addLabel(issue, "needs-human").catch((e) => console.log(`::warning::Label needs-human nicht gesetzt: ${e.message}`));
           await leitstandEreignis(["ereignis", "--schritt", "worker_pause", "--status", "uebersprungen", "--issue", issue.identifier, "--grund", grund]);
         }
+        skipped.push(issue.identifier);
         continue;
       }
       if (!dry) await comment(issue.id, hakenStartKommentar(offen));
@@ -174,7 +179,7 @@ async function withoutStalledHaken(candidates, dry) {
     }
     go.push(issue);
   }
-  return go;
+  return { go, skipped };
 }
 
 export async function main(argv) {
@@ -311,11 +316,13 @@ export async function main(argv) {
   const ideaSlot = fixtureAt >= 0 ? true : await fetchRecentIdeaStarts().then((t) => ideaSlotFree(t), () => false);
   const queue = [...issues, ...backlogIdeas];
   const order = { ideaSlot };
-  const { issues: candidates, reason } = pickMany(queue, MAX_PARALLEL, may, new Set(waiting.keys()), order);
+  const { issues: candidates, reason, want } = pickMany(queue, MAX_PARALLEL, may, new Set(waiting.keys()), order);
   // SIN-795: Derselbe Haken-Stand höchstens MAX_HAKEN_STARTS-mal ohne Fortschritt; danach Pause mit Grund.
-  const picked = fixtureAt >= 0 ? candidates : await withoutStalledHaken(candidates, dry);
+  // SIN-818: Der Filter läuft über die ganze Schlange, angehaltene Issues lassen die nächsten nachrücken.
+  const { go: picked, skipped } = fixtureAt >= 0 || !candidates.length ? { go: candidates, skipped: [] } : await withoutStalledHaken(startOrder(queue, may, order), want, dry);
+  if (skipped.length) console.log(`Übersprungen (Haken-Pause): ${skipped.join(", ")}`);
   if (!picked.length) {
-    console.log(`Nichts zu starten: ${reason}`);
+    console.log(`Nichts zu starten: ${reason}${skipped.length ? `; angehalten: ${skipped.join(", ")}` : ""}`);
     output("found", "false");
     return;
   }
