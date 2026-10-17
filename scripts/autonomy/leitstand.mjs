@@ -16,7 +16,7 @@ import { agentOf } from "./agents.mjs";
 import { fetchJson } from "./http.mjs";
 import { usageFromExecution } from "./sparen.mjs";
 
-export const STEPS = ["dispatch", "worker", "pr-gate", "planner", "digest", "status", "REVERT", "worker_pause", "restore-test", "publish"];
+export const STEPS = ["dispatch", "worker", "pr-gate", "planner", "digest", "status", "REVERT", "worker_pause", "restore-test", "publish", "fabrik-anstoss"];
 export const STATUSES = ["start", "ok", "fehler", "uebersprungen"];
 
 /** Projektname: LEITSTAND_PROJEKT, sonst der Teil nach dem „/“ in GITHUB_REPOSITORY. */
