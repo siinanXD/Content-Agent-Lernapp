@@ -21,7 +21,7 @@ const patch = (...lines: string[]) => lines.map((l) => (/^[+-]/.test(l) ? l : ` 
 const file = (filename: string, p = "", status = "modified") => ({ filename, patch: p, status });
 const risk = (files: ReturnType<typeof file>[], extra = {}) => classifyRisk({ files, ...extra });
 
-test("Gate: Standard ist risk:medium, auch für Storage, Config", () => {
+test("Gate: Standard ist risk:low, auch für Storage, Config (SIN-811)", () => {
   for (const f of [
     "src/lib/storage/store.ts",
     "next.config.ts",
@@ -29,25 +29,25 @@ test("Gate: Standard ist risk:medium, auch für Storage, Config", () => {
     "docs/README.md",
     "src/app/page.tsx",
   ]) {
-    assert.equal(risk([file(f, patch("+foo: bar"))]).risk, "risk:medium", f);
+    assert.equal(risk([file(f, patch("+foo: bar"))]).risk, "risk:low", f);
   }
-  assert.equal(risk([file(".env.example", patch("+NEW_KEY="))]).risk, "risk:medium");
+  assert.equal(risk([file(".env.example", patch("+NEW_KEY="))]).risk, "risk:low");
   assert.equal(
     risk([file("supabase/migrations/1_a.sql", patch("+create table if not exists t (id int);"), "added")]).risk,
-    "risk:medium",
+    "risk:low",
   );
 });
 
-test("Gate: normale Workflow-Änderungen sind medium (SIN-252)", () => {
+test("Gate: normale Workflow-Änderungen sind low (SIN-252, SIN-811)", () => {
   const wf = ".github/workflows/ci.yml";
-  assert.equal(risk([file(wf, patch("+      - run: npm run lint"))]).risk, "risk:medium");
-  assert.equal(risk([file(wf, patch("-  - cron: '0 6 * * *'", "+  - cron: '0 8 * * *'"))]).risk, "risk:medium");
-  assert.equal(risk([file(wf, patch("+      - uses: actions/checkout@v4"))]).risk, "risk:medium");
-  assert.equal(risk([file(wf, patch("+      - uses: anthropics/claude-code-action@v1"))]).risk, "risk:medium");
-  assert.equal(risk([file(wf, patch("+  contents: read"))]).risk, "risk:medium");
-  assert.equal(risk([file(wf, patch("-  contents: write", "+  contents: read"))]).risk, "risk:medium");
-  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:medium");
-  assert.equal(risk([file(".github/dependabot.yml", patch("+a: b"))]).risk, "risk:medium");
+  assert.equal(risk([file(wf, patch("+      - run: npm run lint"))]).risk, "risk:low");
+  assert.equal(risk([file(wf, patch("-  - cron: '0 6 * * *'", "+  - cron: '0 8 * * *'"))]).risk, "risk:low");
+  assert.equal(risk([file(wf, patch("+      - uses: actions/checkout@v4"))]).risk, "risk:low");
+  assert.equal(risk([file(wf, patch("+      - uses: anthropics/claude-code-action@v1"))]).risk, "risk:low");
+  assert.equal(risk([file(wf, patch("+  contents: read"))]).risk, "risk:low");
+  assert.equal(risk([file(wf, patch("-  contents: write", "+  contents: read"))]).risk, "risk:low");
+  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:low");
+  assert.equal(risk([file(".github/dependabot.yml", patch("+a: b"))]).risk, "risk:low");
 });
 
 test("Gate: auf main bekannte Secrets sind medium, neue high (SIN-516)", () => {
@@ -91,15 +91,15 @@ test("Gate: Workflow-Rechte sind medium mit Einspruchsfrist, Neues bleibt high (
   ];
   for (const c of high) assert.equal(risk([file(wf, c)]).risk, "risk:high", c);
   assert.equal(risk([file(".github/rulesets/main.json", patch("+x"))]).risk, "risk:high");
-  // bereits genutzt oder verkleinert: medium ohne Frist
+  // bereits genutzt oder verkleinert: low ohne Frist
   const plain = risk([file(wf, patch("-          t: ${{ secrets.A }}", "+          u: ${{ secrets.A }}"))]);
-  assert.equal(plain.risk, "risk:medium");
+  assert.equal(plain.risk, "risk:low");
   assert.equal(plain.einspruch.length, 0);
   assert.equal(
     risk([file(wf, patch("-          claude_args: --allowedTools Read,Edit,Bash", "+          claude_args: --allowedTools Read,Edit"))]).einspruch.length,
     0,
   );
-  assert.equal(risk([file(wf, patch("-      - uses: some-org/x@v1", "+      - uses: some-org/x@v2"))]).risk, "risk:medium");
+  assert.equal(risk([file(wf, patch("-      - uses: some-org/x@v1", "+      - uses: some-org/x@v2"))]).risk, "risk:low");
 });
 
 test("Gate: das Gate selbst ist medium mit Einspruchsfrist (SIN-547)", () => {
@@ -111,16 +111,16 @@ test("Gate: das Gate selbst ist medium mit Einspruchsfrist (SIN-547)", () => {
   assert.equal(risk([file("scripts/autonomy/steckbrief.mjs", patch("+x"))]).einspruch.length, 0);
 });
 
-test("Einspruchsfrist: 2 h je Commit, neuer Commit setzt neu (SIN-547)", () => {
+test("Einspruchsfrist: 30 Min je Commit, neuer Commit setzt neu (SIN-547, SIN-811)", () => {
   const t0 = Date.UTC(2026, 9, 13, 10);
   const f1 = einspruchFrist(undefined, "abc", t0);
-  assert.equal(f1.bis, t0 + 2 * 3600_000);
+  assert.equal(f1.bis, t0 + 30 * 60_000);
   assert.equal(f1.neu, true);
   assert.equal(f1.vorbei, false);
-  const same = einspruchFrist(f1.comment, "abc", t0 + 119 * 60_000);
+  const same = einspruchFrist(f1.comment, "abc", t0 + 29 * 60_000);
   assert.equal(same.neu, false);
   assert.equal(same.vorbei, false);
-  assert.equal(einspruchFrist(f1.comment, "abc", t0 + 2 * 3600_000).vorbei, true);
+  assert.equal(einspruchFrist(f1.comment, "abc", t0 + 30 * 60_000).vorbei, true);
   const fresh = einspruchFrist(f1.comment, "def", t0 + 3 * 3600_000);
   assert.equal(fresh.neu, true);
   assert.equal(fresh.vorbei, false);
@@ -138,7 +138,7 @@ test("Einspruchsfrist: Commit ohne neue Frist-Gründe (z. B. main einmergen) sta
   assert.equal(einspruchFrist(merge.comment, "ghi", t0 + 2 * 3600_000, gruende).vorbei, true);
   // Neuer Frist-Grund: neue Frist.
   const anders = einspruchFrist(f1.comment, "def", t0 + 90 * 60_000, [...gruende, "secret:NEU"]);
-  assert.equal(anders.bis, t0 + 90 * 60_000 + 2 * 3600_000);
+  assert.equal(anders.bis, t0 + 90 * 60_000 + 30 * 60_000);
   // Leser des Markers (einspruch-ende in pr-gate.yml, status.mjs) erkennen das neue Feld.
   for (const datei of [".github/workflows/pr-gate.yml", "scripts/autonomy/status.mjs"]) {
     const quelle = readFileSync(datei, "utf8").match(/\/<!-- pr-gate-einspruch sha=.*? -->\//)?.[0];
@@ -146,12 +146,25 @@ test("Einspruchsfrist: Commit ohne neue Frist-Gründe (z. B. main einmergen) sta
     assert.match(merge.comment, new RegExp(quelle.slice(1, -1)), datei);
   }
   // Alter Marker ohne Gründe: einmal neue Frist (keine Annahme über alte Gründe).
-  assert.equal(einspruchFrist("<!-- pr-gate-einspruch sha=abc bis=1 -->", "def", t0, gruende).bis, t0 + 2 * 3600_000);
+  assert.equal(einspruchFrist("<!-- pr-gate-einspruch sha=abc bis=1 -->", "def", t0, gruende).bis, t0 + 30 * 60_000);
 });
 
-test("Gate: Figma-Tokens, Docs, Tests sind medium (SIN-252)", () => {
+test("Frist je Risiko: low ohne, medium mit Frist, high wartet (SIN-811)", () => {
+  const wf = ".github/workflows/ci.yml";
+  const low = risk([file("docs/a.md", patch("+x"))]);
+  assert.equal(low.risk, "risk:low");
+  assert.equal(low.einspruch.length, 0);
+  const medium = risk([file(wf, patch("+  contents: write"))]);
+  assert.equal(medium.risk, "risk:medium");
+  assert.ok(medium.einspruch.length > 0);
+  const high = risk([file("docs/PRODUCT.md")]);
+  assert.equal(high.risk, "risk:high");
+  assert.ok(high.reasons.length > 0);
+});
+
+test("Gate: Figma-Tokens, Docs, Tests sind low (SIN-252, SIN-811)", () => {
   for (const f of ["docs/design/tokens.md", "docs/ARCHITECTURE.md", "src/app/globals.css", "docs/decisions/SIN-1-x.md", "e2e/a.spec.ts"]) {
-    assert.equal(risk([file(f, patch("+--color-brand-primary: #C2410C;"))]).risk, "risk:medium", f);
+    assert.equal(risk([file(f, patch("+--color-brand-primary: #C2410C;"))]).risk, "risk:low", f);
   }
 });
 
@@ -160,7 +173,7 @@ test("Gate: Geld, Service-Role im Client, Spalte umbenennen sind high (SIN-252)"
   assert.equal(risk([file("src/lib/pricing/plans.ts", patch("+x"))]).risk, "risk:high");
   assert.equal(risk([file("src/components/a.tsx", patch("+const k = process.env.SUPABASE_SERVICE_ROLE_KEY;"))]).risk, "risk:high");
   assert.equal(risk([file("src/lib/x.ts", patch("+NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY"))]).risk, "risk:high");
-  assert.equal(risk([file("src/lib/supabase/admin.ts", patch("+const k = process.env.SUPABASE_SERVICE_ROLE_KEY;"))]).risk, "risk:medium");
+  assert.equal(risk([file("src/lib/supabase/admin.ts", patch("+const k = process.env.SUPABASE_SERVICE_ROLE_KEY;"))]).risk, "risk:low");
   assert.equal(
     risk([file("supabase/migrations/4_d.sql", patch("+alter table t rename column a to b;"), "added")]).risk,
     "risk:high",
@@ -171,8 +184,8 @@ test("Gate: neue npm-Abhängigkeit nur mit MIT/Apache und > 500 Sternen medium (
   const pkg = [file("package.json", patch('+    "left-pad": "^1.3.0",'))];
   assert.deepEqual(newDependencies(pkg), ["left-pad"]);
   assert.equal(risk(pkg).risk, "risk:high");
-  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "MIT", stars: 900 } } }).risk, "risk:medium");
-  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "Apache-2.0", stars: 501 } } }).risk, "risk:medium");
+  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "MIT", stars: 900 } } }).risk, "risk:low");
+  assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "Apache-2.0", stars: 501 } } }).risk, "risk:low");
   assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "MIT", stars: 500 } } }).risk, "risk:high");
   assert.equal(risk(pkg, { depInfo: { "left-pad": { license: "GPL-3.0", stars: 9000 } } }).risk, "risk:high");
   assert.equal(risk(pkg, { depInfo: { "left-pad": null } }).risk, "risk:high");
@@ -203,7 +216,7 @@ test("Gate: Datenverlust in Migrationen ist high", () => {
   for (const sql of ["drop table x;", "DELETE FROM x;", "truncate x;", "alter table x drop column y;"]) {
     assert.equal(risk([file("supabase/migrations/2_b.sql", patch(`+${sql}`), "added")]).risk, "risk:high", sql);
   }
-  assert.equal(risk([file("supabase/migrations/2_b.sql", patch("+-- drop table x"), "added")]).risk, "risk:medium");
+  assert.equal(risk([file("supabase/migrations/2_b.sql", patch("+-- drop table x"), "added")]).risk, "risk:low");
   assert.equal(risk([file("supabase/migrations/1_a.sql", patch("+select 1;"), "modified")]).risk, "risk:high");
 });
 
@@ -218,14 +231,14 @@ test("Gate: geschwächte Sicherheit ist high", () => {
 test("Gate: Zahlungen und Grundsatz-Entscheidungen sind high", () => {
   assert.equal(risk([file("src/lib/stripe/client.ts")]).risk, "risk:high");
   assert.equal(risk([file("docs/PRODUCT.md")]).risk, "risk:high");
-  assert.equal(risk([file("docs/DECISIONS.md")]).risk, "risk:medium");
+  assert.equal(risk([file("docs/DECISIONS.md")]).risk, "risk:low");
   // Framework-Wechsel: medium mit Einspruchsfrist (SIN-547)
   const fw = risk([file("package.json", patch('-    "next": "16.3.8",', '+    "sveltekit": "1.0.0",'))], { depInfo: { sveltekit: { license: "MIT", stars: 900 } } });
   assert.equal(fw.risk, "risk:medium");
   assert.ok(fw.einspruch.some((x: { category: string }) => x.category === "grundsatz"));
   assert.equal(
     risk([file("package.json", patch('-    "next": "16.3.7",', '+    "next": "16.3.8",'))]).risk,
-    "risk:medium",
+    "risk:low",
   );
 });
 

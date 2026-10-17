@@ -1,7 +1,8 @@
 # PR-Gate (SIN-207, ausgerollt mit SIN-208): prüft den PR-Titel, setzt das
 # Risiko-Label automatisch und schaltet Auto-Merge ein.
 #
-#   risk:medium (Standard) → Auto-Merge (Squash), sobald alle Pflicht-Checks grün sind
+#   risk:low (Standard)    → Auto-Merge (Squash), sobald alle Pflicht-Checks grün sind, ohne Frist (SIN-811)
+#   risk:medium            → Auto-Merge nach 30 Min Einspruchsfrist (SIN-547, SIN-811)
 #   risk:high              → Job `merge-gate` endet rot („wartet auf Freigabe von Sinan“) und sperrt den
 #                            Merge, bis Sinan das Label `freigegeben` setzt; der neue Lauf ersetzt das
 #                            Ergebnis (SIN-261, löst das Check-Run-Verfahren aus SIN-247 ab).
@@ -27,7 +28,7 @@ on:
     types: [completed]
   # SIN-547: Einspruchsfrist abgelaufen? Dann den letzten pr-gate-Lauf neu starten (Job `einspruch-ende`).
   schedule:
-    - cron: "*/20 * * * *"
+    - cron: "*/10 * * * *"
 
 permissions:
   contents: write
@@ -89,7 +90,7 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const prs = await github.paginate(github.rest.pulls.list, { owner, repo, state: "open", per_page: 100 });
-            for (const pr of prs.filter((p) => !p.draft && p.labels.some((l) => l.name === "einspruch:2h"))) {
+            for (const pr of prs.filter((p) => !p.draft && p.labels.some((l) => l.name === "einspruch:30m"))) {
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number, per_page: 100 });
               const m = comments.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+)(?: gruende=\w+)? -->/)).filter(Boolean).pop();
               if (!m || m[1] !== pr.head.sha || Date.now() < Number(m[2])) continue;
@@ -241,7 +242,8 @@ jobs:
             const APPROVALS = ["freigegeben", "owner-approved"];
             const NO_AUTOMERGE = "no-automerge";
             const RISK_LABELS = {
-              "risk:medium": { color: "FBCA04", description: "Automatisch: Standard, Auto-Merge" },
+              "risk:low": { color: "0E8A16", description: "Automatisch: Standard, Auto-Merge ohne Frist" },
+              "risk:medium": { color: "FBCA04", description: "Automatisch: Auto-Merge nach 30 Min Einspruchsfrist" },
               "risk:high": { color: "B60205", description: "Automatisch: braucht Freigabe von Sinan" },
             };
 
@@ -287,10 +289,10 @@ jobs:
               core.setFailed("PR aus einem Fork: wird nie automatisch gemerged.");
             }
 
-            // Labels anlegen (falls neu) und genau ein Risiko-Label setzen (risk:low entfällt).
+            // Labels anlegen (falls neu) und genau ein Risiko-Label setzen.
             for (const [name, meta] of Object.entries({ ...RISK_LABELS,
               freigegeben: { color: "1D76DB", description: "Sinan hat einen risk:high-PR freigegeben" },
-              "einspruch:2h": { color: "FEF2C0", description: "Automatisch: Auto-Merge nach 2 h Einspruchsfrist, Stopp mit no-automerge" } })) {
+              "einspruch:30m": { color: "FEF2C0", description: "Automatisch: Auto-Merge nach 30 Min Einspruchsfrist, Stopp mit no-automerge" } })) {
               try { await agent.rest.issues.createLabel({ owner, repo, name, ...meta }); }
               catch (e) { if (e.status !== 422) core.warning(`Label ${name} nicht angelegt (SIN-335): ${e.message}`); }
             }
@@ -349,7 +351,7 @@ jobs:
               }
             }
             // SIN-547: Einspruchsfrist nur bei risk:medium mit Frist-Gründen; Zeitstempel im eigenen Kommentar, neu nur bei geänderten Gründen.
-            const FRIST = "einspruch:2h";
+            const FRIST = "einspruch:30m";
             const fristMine = comments.find((c) => c.user?.login === BOT && c.body?.includes("<!-- pr-gate-einspruch "));
             let fristOffen = false;
             if (einspruchFrist && risk === "risk:medium" && einspruch.length) {
