@@ -74,6 +74,19 @@ export function toAbortedRunRecord(
   };
 }
 
+/** SIN-797: Endete der jüngste Lauf mit „pausiert: API-Limit“? Dann startet nur ein manueller Lauf wieder. */
+export async function lastRunPaused(
+  client: Pick<ReturnType<typeof getServiceSupabase>, "from"> = getServiceSupabase(),
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("content_factory_runs")
+    .select("stop_reason")
+    .order("started_at", { ascending: false })
+    .limit(1);
+  if (error) throw new Error(`content_factory_runs_select: ${error.message}`);
+  return String(data?.[0]?.stop_reason ?? "").startsWith(PAUSE_PREFIX);
+}
+
 export async function recordFactoryRun(
   record: FactoryRunRecord,
   client: Pick<ReturnType<typeof getServiceSupabase>, "from"> = getServiceSupabase(),

@@ -56,7 +56,7 @@ flowchart TD
   PWS --> Schlange
   PWR --> Repair
   subgraph Inhalte
-    Fabrik["Content-Fabrik (content-grow.yml, Mo/Mi/Fr, höchstens ein Lauf je Tag, jeder Lauf im Statusprotokoll, bei API-Limit pausiert, am Ende Kostenbericht)"] --> Bewertung["Bewertungslauf"]
+    Fabrik["Content-Fabrik (content-grow.yml, alle 2 h solange Content-Punkte der Fertig-Liste offen sind (sonst Mo/Mi/Fr), jeder Lauf im Statusprotokoll, bei API-Limit pausiert und sinan-Issue, am Ende Kostenbericht)"] --> Bewertung["Bewertungslauf"]
     Bewertung --> Update
     Bewertung --> Freigabe["Kurs veröffentlichen (content-publish.yml, von Hand, Prüfung vor published, danach Live-Check)"]
   end
