@@ -52,11 +52,28 @@ describe("Veröffentlichen-Prüfung (SIN-796)", () => {
     assert.ok(m.every((x) => x.pruefung === "quelle") && m.length >= 2);
   });
 
-  it("meldet Fragen ohne oder mit nicht bestandenem Richter", () => {
+  it("meldet Fragen ohne Bewertung des Richters", () => {
     const c = kurs();
     const alle = bewertungen(c);
     assert.equal(pruefeKursFuerVeroeffentlichung(c, alle.slice(1)).filter((x) => x.pruefung === "richter").length, 1);
-    assert.equal(pruefeKursFuerVeroeffentlichung(c, bewertungen(c, false)).length, alle.length);
+  });
+
+  it("nicht bestandene und geflaggte Fragen sind ausgeblendet und zählen nicht (SIN-808)", () => {
+    const c = kurs();
+    const alle = bewertungen(c);
+    const mit = alle.map((r, i) => (i === 0 ? { ...r, passed: false } : i === 1 ? { ...r, sicherheitFlag: true } : r));
+    assert.deepEqual(pruefeKursFuerVeroeffentlichung(c, mit), []);
+  });
+
+  it("ohne eine sichtbare bestandene Frage ist der Kurs nicht freigabefähig", () => {
+    const c = kurs();
+    assert.deepEqual(pruefeKursFuerVeroeffentlichung(c, bewertungen(c, false)).map((x) => x.ort), ["Kurs"]);
+  });
+
+  it("Bewertungen mit Einheiten-Präfix in der Fragen-ID passen zu den heutigen Fragen (SIN-808)", () => {
+    const c = kurs();
+    const mitPraefix = bewertungen(c).map((r) => ({ ...r, questionId: `${r.unitId}-${r.questionId}` }));
+    assert.deepEqual(pruefeKursFuerVeroeffentlichung(c, mitPraefix), []);
   });
 
   it("meldet Treffer der Verbotsliste, ohne den Wert zu nennen", () => {
@@ -96,7 +113,7 @@ describe("content-publish (SIN-796)", () => {
 
   it("bricht bei Mängeln ab, ohne zu schreiben, und listet sie", async () => {
     const c = kurs();
-    const s = speicher(c, bewertungen(c, false));
+    const s = speicher(c, bewertungen(c).slice(1));
     const e = await publishKurs(s.storage, "Industriemechaniker", false);
     assert.equal(e.veroeffentlicht, false);
     assert.ok(e.mangel.length > 0);

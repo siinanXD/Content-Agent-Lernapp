@@ -36,6 +36,7 @@ import {
   buildQueue,
   chooseRunMap,
   contentPunkteOffen,
+  offeneContentMaps,
   COST_MARGIN,
   judgeReserveEur,
   linearSummary,
@@ -245,7 +246,10 @@ async function main() {
   // SIN-469: mehrere Läufe pro Woche, aber höchstens einer je Tag und unter dem Wochendeckel (nur echte Läufe).
   // SIN-672: dieselbe 7-Tage-Summe wie die Kennzahl kosten_woche (alle Arten von Läufen im Ledger).
   // SIN-797: Solange die Fertig-Liste offene Content-Punkte hat, gelten weder Tages- noch Wochengrenze (nur 20 € je Lauf).
-  const durchlauf = contentPunkteOffen(existsSync(FERTIG_PFAD) ? readFileSync(FERTIG_PFAD, "utf8") : "");
+  const fertigMd = existsSync(FERTIG_PFAD) ? readFileSync(FERTIG_PFAD, "utf8") : "";
+  const durchlauf = contentPunkteOffen(fertigMd);
+  // SIN-809: Im Durchlauf nur die Maps der offenen Punkte (Industriekaufmann), nie ein abgehakter Kurs.
+  const nurMaps = durchlauf ? offeneContentMaps(fertigMd) : undefined;
   const weekEur = dry ? 0 : weekCost((await listRunCosts()).map((r) => ({ cost_eur: r.costEur, created_at: r.createdAt }))).sumEur;
   const weekBeforeEur = durchlauf ? 0 : weekEur;
   if (!dry) {
@@ -274,7 +278,11 @@ async function main() {
   const resumeModuleId = lastLive[0]?.resumeModuleId ?? null;
   // Nur Maps mit Kurs kommen in Frage.
   const usable = queueAll.filter((q) => unitsByMap.has(q.mapId));
-  const chosen = chooseRunMap(usable, publishedByMap, discardedByMap, lastMapId, resumeModuleId);
+  const chosen = chooseRunMap(usable, publishedByMap, discardedByMap, lastMapId, resumeModuleId, nurMaps);
+  if (nurMaps && !chosen) {
+    console.log(`Fabrik übersprungen: Fertig-Liste offen, aber in ${nurMaps.join(", ") || "keiner Map"} gibt es nichts zu erzeugen`);
+    process.exit(0);
+  }
   if (chosen) MAP_ID = chosen;
   COURSE = courseIdByMap.get(MAP_ID) ?? MAP_COURSES[MAP_ID]!.courseId;
   KEYWORD = MAP_COURSES[MAP_ID]!.keyword;

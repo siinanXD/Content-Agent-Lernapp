@@ -8,7 +8,7 @@ import {
   estimateUsd,
   type ClaudeUsage,
 } from "./cost-guard";
-import { latestPerQuestion, toQuestionEvaluationRecords } from "./question-evaluations";
+import { frageId, latestPerQuestion, toQuestionEvaluationRecords } from "./question-evaluations";
 import { clearMockProgress, mockStorage } from "@/lib/storage/mock-adapter";
 
 const EVAL_ITEMS = [
@@ -46,8 +46,16 @@ describe("question evaluations (AP-19)", () => {
     assert.ok(rows.every((r) => r.niveau >= 1 && r.niveau <= 5));
     assert.deepEqual(
       new Set(rows.map((r) => r.questionId)),
-      new Set(["u1-q1", "u1-q2"]),
+      new Set(["q1", "q2"]),
+      "SIN-808: gespeichert wird questions.id, nicht Einheit-Frage",
     );
+  });
+
+  it("frageId entfernt nur das Präfix der eigenen Einheit", () => {
+    assert.equal(frageId("u1", "u1-q1"), "q1");
+    assert.equal(frageId("u1", "q1"), "q1");
+    assert.equal(frageId("u1", "u2-q1"), "u2-q1");
+    assert.equal(frageId("u1", "u1-"), "u1-");
   });
 
   it("latestPerQuestion returns the newest row per question", async () => {

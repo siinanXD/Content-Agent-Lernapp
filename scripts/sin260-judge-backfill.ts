@@ -13,6 +13,7 @@ import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
 import { liveJudgeWithUsage } from "../src/lib/quality/evaluate-agent";
 import {
   BACKFILL_STOP_EUR,
+  ordneBewertungenZu,
   planBackfill,
   runJudgeBackfill,
   unitsToEvalItems,
@@ -46,9 +47,13 @@ async function main() {
     const units = (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [];
     const items = unitsToEvalItems(units, yearOf);
     if (items.length === 0) continue;
+    // SIN-808: Erst Bewertungen mit gleichem Inhalts-Hash den heutigen Fragen zuordnen (ohne API-Kosten).
+    const zugeordnet = ordneBewertungenZu(items, await storage.listQuestionEvaluations(course.id), `${baseRunId}-zuordnung`);
+    if (!dry && zugeordnet.length > 0) await storage.appendQuestionEvaluations(zugeordnet);
     if (dry) {
-      const { pending, skipped } = planBackfill(items, await storage.listQuestionEvaluations(course.id));
-      summary.push({ course: course.id, total: items.length, pending: pending.length, skipped });
+      const vorhanden = [...(await storage.listQuestionEvaluations(course.id)), ...zugeordnet];
+      const { pending, skipped } = planBackfill(items, vorhanden);
+      summary.push({ course: course.id, total: items.length, zugeordnet: zugeordnet.length, pending: pending.length, skipped });
       continue;
     }
     // Deckel gilt für den ganzen Lauf, nicht je Kurs.

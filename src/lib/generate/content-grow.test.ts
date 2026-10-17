@@ -40,6 +40,7 @@ import {
   RUN_STOP_EUR,
   runAllowed,
   contentPunkteOffen,
+  offeneContentMaps,
   WEEK_CAP_EUR,
   slotIds,
   trimTargets,
@@ -331,6 +332,18 @@ test("SIN-769: Industriekaufleute ohne Einheit geht vor der Fortsetzung eines Me
   // Hat indkfl schon Einheiten, bleibt die Fortsetzung vorn.
   const beideBegonnen = new Map([...metallBegonnen, ["indkfl", new Set([slotIds(beide.find((q) => q.mapId === "indkfl")!.module)[0]!])]]);
   assert.equal(chooseRunMap(beide, beideBegonnen, keine, "maf-metall", "LF1"), "maf-metall");
+});
+
+test("SIN-809: offene Fertig-Liste erzeugt nur Industriekaufmann, nie den abgehakten Metall-Kurs", () => {
+  assert.deepEqual(offeneContentMaps("- [x] MAF live\n- [ ] Industriekaufmann/-frau: Content erzeugen"), ["indkfl"]);
+  assert.deepEqual(offeneContentMaps("- [ ] Industriemechaniker veröffentlichen"), []);
+  // Auch mit begonnenem Metall-Modul (Fortsetzung) und mit Industriekaufmann-Einheiten gewinnt indkfl.
+  const beideBegonnen = new Map([...metallBegonnen, ["indkfl", new Set([slotIds(beide.find((q) => q.mapId === "indkfl")!.module)[0]!])]]);
+  assert.equal(chooseRunMap(beide, beideBegonnen, keine, "maf-metall", "LF1", ["indkfl"]), "indkfl");
+  assert.equal(chooseRunMap(beide, keine, keine, null, null, ["indkfl"]), "indkfl");
+  // Industriekaufmann fertig: null statt Metall.
+  const indkflFertig = new Map([["indkfl", new Set(beide.filter((q) => q.mapId === "indkfl").flatMap((q) => slotIds(q.module)))]]);
+  assert.equal(chooseRunMap(beide, indkflFertig, keine, null, null, ["indkfl"]), null);
 });
 
 test("Plan eines Laufs bleibt in der gewählten Map, Modulreihenfolge unverändert", () => {

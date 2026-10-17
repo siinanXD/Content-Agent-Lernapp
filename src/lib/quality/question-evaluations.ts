@@ -22,6 +22,20 @@ export type QuestionEvaluationRecord = {
   createdAt: string;
 };
 
+/**
+ * SIN-808: Eine Kennung je Frage. Der Richter bekommt `${unitId}-${q.id}` (EvalItem.id), `questions.id` ist nur `q.id`.
+ * Gespeichert und verglichen wird immer `q.id`; Altzeilen mit Einheiten-Präfix werden beim Lesen mitgenommen.
+ */
+export function frageId(unitId: string, questionId: string): string {
+  const prefix = `${unitId}-`;
+  return questionId.startsWith(prefix) && questionId.length > prefix.length ? questionId.slice(prefix.length) : questionId;
+}
+
+/** Schlüssel (Einheit, Frage) für die Zuordnung Bewertung ↔ Frage. */
+export function frageSchluessel(unitId: string, questionId: string): string {
+  return `${unitId}\u0000${frageId(unitId, questionId)}`;
+}
+
 /** Split a course-level EvaluateResult into one record per judged question. */
 export function toQuestionEvaluationRecords(
   result: EvaluateResult,
@@ -31,7 +45,7 @@ export function toQuestionEvaluationRecords(
   const runId = result.runId ?? crypto.randomUUID();
   return result.questions.map((q) => ({
     id: crypto.randomUUID(),
-    questionId: q.questionId,
+    questionId: frageId(q.unitId, q.questionId),
     unitId: q.unitId,
     courseId: result.courseId,
     runId,
@@ -56,7 +70,7 @@ export function latestPerQuestion(
 ): QuestionEvaluationRecord[] {
   const latest = new Map<string, QuestionEvaluationRecord>();
   for (const r of records) {
-    const key = `${r.courseId}\u0000${r.unitId}\u0000${r.questionId}`;
+    const key = `${r.courseId}\u0000${frageSchluessel(r.unitId, r.questionId)}`;
     const prev = latest.get(key);
     if (!prev || r.createdAt >= prev.createdAt) latest.set(key, r);
   }

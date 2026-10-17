@@ -188,6 +188,15 @@ export function contentPunkteOffen(fertigMd: string): boolean {
 }
 
 /**
+ * SIN-809: Maps, für die offene Content-Punkte der Fertig-Liste etwas zu erzeugen verlangen
+ * (Industriekaufmann → `indkfl`). Leer, wenn nichts zu erzeugen ist (z. B. nur Industriemechaniker veröffentlichen).
+ */
+export function offeneContentMaps(fertigMd: string): string[] {
+  const offen = fertigMd.split("\n").some((l) => /^\s*- \[ \]/.test(l) && /Industriekaufmann/i.test(l));
+  return offen ? ["indkfl"] : [];
+}
+
+/**
  * SIN-469: Darf die Fabrik jetzt laufen? Zählt Live-Läufe mit Kosten oder Ergebnis (ein Lauf, der
  * nach Sekunden an der API-Sperre endete, hinterlässt keinen Bericht und zählt nicht).
  * - höchstens ein Lauf je UTC-Tag
@@ -239,7 +248,10 @@ export function chooseRunMap(
   discarded: ReadonlyMap<string, ReadonlySet<string>>,
   lastMapId?: string | null,
   resumeModuleId?: string | null,
+  /** SIN-809: Nur diese Maps (offene Fertig-Liste); alle anderen, auch abgehakte, bleiben außen vor. */
+  nurMaps?: readonly string[],
 ): string | null {
+  if (nurMaps) queue = queue.filter((q) => nurMaps.includes(q.mapId));
   const none: ReadonlySet<string> = new Set();
   const order = [...new Set(queue.filter((q) => q.supported).map((q) => q.mapId))];
   const withOpen = order.filter((mapId) =>
