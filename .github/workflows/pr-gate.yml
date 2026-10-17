@@ -90,7 +90,9 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const prs = await github.paginate(github.rest.pulls.list, { owner, repo, state: "open", per_page: 100 });
-            for (const pr of prs.filter((p) => !p.draft && p.labels.some((l) => l.name === "einspruch:30m"))) {
+            // SIN-843: alte PRs tragen noch `einspruch:2h`; ihre Frist (bis im Kommentar) läuft weiter ab und wird nicht neu gestartet.
+            const FRIST_LABELS = ["einspruch:30m", "einspruch:2h"];
+            for (const pr of prs.filter((p) => !p.draft && p.labels.some((l) => FRIST_LABELS.includes(l.name)))) {
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number, per_page: 100 });
               const m = comments.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+)(?: gruende=\w+)? -->/)).filter(Boolean).pop();
               if (!m || m[1] !== pr.head.sha || Date.now() < Number(m[2])) continue;
@@ -366,6 +368,11 @@ jobs:
               }
             } else if (labels.includes(FRIST)) {
               try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: FRIST }); }
+              catch (e) { if (e.status !== 404) throw e; }
+            }
+            // SIN-843: altes Label auf `einspruch:30m` umstellen; der Zeitstempel im Kommentar bleibt, die Frist startet nicht neu.
+            if (labels.includes("einspruch:2h")) {
+              try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: "einspruch:2h" }); }
               catch (e) { if (e.status !== 404) throw e; }
             }
             const allowAutoMerge = !pr.draft && !labels.includes(NO_AUTOMERGE) && !fristOffen

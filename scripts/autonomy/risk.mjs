@@ -4,7 +4,7 @@
  * `docs/PRODUCT.md`, Fork, `pull_request_target`, neuen Secrets, Drittanbieter-Actions außerhalb der Liste und Branch-Protection.
  * Workflow-Rechte, das Gate selbst und übrige Grundsatz-Änderungen sind `risk:medium` mit Einspruchsfrist
  * (`einspruch` im Ergebnis, `EINSPRUCH_MINUTEN`): Auto-Merge erst danach, Sinan stoppt mit `no-automerge`.
- * Normale Workflow-Änderungen, Design-Tokens aus Figma, Docs und Tests sind `risk:low`: keine Frist.
+ * Jede Workflow-Änderung ist mindestens `risk:medium` mit Frist. Design-Tokens aus Figma, Docs und Tests sind `risk:low`: keine Frist.
  * `classifyRisk` ist eine reine Funktion ohne Netz, damit pr-gate sie testbar aus main laden kann.
  * Nur `fetchDependencyInfo` ruft npm und GitHub ab; pr-gate reicht das Ergebnis als `depInfo` herein.
  */
@@ -179,6 +179,11 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
     }
 
     // SIN-252: Workflow-Änderungen sind normal (medium). High nur bei mehr Rechten (Punkt 6).
+    // SIN-811: Workflow-Dateien, `permissions:` und Secrets in YAML sind nie risk:low, mindestens Frist.
+    if (WORKFLOW.test(f.filename)) addFrist("workflow", `Workflow geändert: ${f.filename}`);
+    else if (/\.ya?ml$/.test(f.filename) && [...added, ...removed].some((l) => /^\s*permissions:|\bsecrets\./.test(l))) {
+      addFrist("workflow-recht", `permissions/Secrets in ${f.filename}`);
+    }
     if (WORKFLOW.test(f.filename)) {
       const before = new Set(removed.map((l) => l.trim()));
       const beforeTokens = new Set(removed.flatMap(tokens));
