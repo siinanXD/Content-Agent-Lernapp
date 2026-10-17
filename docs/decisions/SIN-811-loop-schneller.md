@@ -12,10 +12,10 @@
 
 ## Annahmen
 
-- Bisher waren PRs ohne Frist-Grund `risk:medium`; das sind jetzt `risk:low`. `risk:medium` heißt nur noch „mit Frist“ (Workflow-Rechte, Gate, Framework-Wechsel).
+- Bisher waren PRs ohne Frist-Grund `risk:medium`; das sind jetzt `risk:low`. `risk:medium` heißt nur noch „mit Frist“ (Workflows, `permissions:`/Secrets in YAML, Gate, `risk.mjs`, Framework-Wechsel). Diese Änderungen sind nie `risk:low`; erweiterte Rechte bleiben `risk:high`.
 - Der Frist-Prüflauf (`einspruch-ende`) läuft alle 10 statt 20 Min, damit die Frist nicht um bis zu 20 Min überzogen wird.
 - Offene PRs mit Label `einspruch:2h` werden beim nächsten Gate-Lauf auf `einspruch:30m` umgestellt, die Frist wird dann neu gesetzt.
 
 ## Warum
 
-Die Frist von 2 h war der größte Zeitfresser im Loop (Sinan, 17.10.2026).
+Die Frist von 2 h war der größte Zeitfresser im Loop.

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { approvalStillValid, classifyRisk, einspruchFrist, secretNames, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
@@ -37,15 +38,16 @@ test("Gate: Standard ist risk:low, auch für Storage, Config (SIN-811)", () => {
   );
 });
 
-test("Gate: normale Workflow-Änderungen sind low (SIN-252, SIN-811)", () => {
+test("Gate: Workflow-Änderungen sind nie low, sondern medium mit Frist (SIN-811)", () => {
   const wf = ".github/workflows/ci.yml";
-  assert.equal(risk([file(wf, patch("+      - run: npm run lint"))]).risk, "risk:low");
-  assert.equal(risk([file(wf, patch("-  - cron: '0 6 * * *'", "+  - cron: '0 8 * * *'"))]).risk, "risk:low");
-  assert.equal(risk([file(wf, patch("+      - uses: actions/checkout@v4"))]).risk, "risk:low");
-  assert.equal(risk([file(wf, patch("+      - uses: anthropics/claude-code-action@v1"))]).risk, "risk:low");
-  assert.equal(risk([file(wf, patch("+  contents: read"))]).risk, "risk:low");
-  assert.equal(risk([file(wf, patch("-  contents: write", "+  contents: read"))]).risk, "risk:low");
-  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:low");
+  for (const p of [patch("+      - run: npm run lint"), patch("-  contents: write", "+  contents: read"), patch("+      - uses: actions/checkout@v4")]) {
+    const r = risk([file(wf, p)]);
+    assert.equal(r.risk, "risk:medium", p);
+    assert.ok(r.einspruch.length > 0, p);
+  }
+  assert.equal(risk([file(".github/workflows/new.yml", "", "renamed")]).risk, "risk:medium");
+  assert.equal(risk([file("scripts/autonomy/risk.mjs", patch("+x"))]).risk, "risk:medium");
+  assert.equal(risk([file(".github/dependabot.yml", patch("+permissions: read-all"))]).risk, "risk:medium");
   assert.equal(risk([file(".github/dependabot.yml", patch("+a: b"))]).risk, "risk:low");
 });
 
@@ -61,7 +63,7 @@ test("Gate: auf main bekannte Secrets sind medium, neue high (SIN-516)", () => {
     "risk:high",
   );
   // SIN-547: bekanntes Secret = medium mit Einspruchsfrist
-  assert.equal(risk([file(guard, used)], { knownSecrets: known }).einspruch[0].category, "workflow-recht");
+  assert.ok(risk([file(guard, used)], { knownSecrets: known }).einspruch.some((x: { category: string }) => x.category === "workflow-recht"));
 });
 
 test("Gate: Workflow-Rechte sind medium mit Einspruchsfrist, Neues bleibt high (SIN-547)", () => {
@@ -75,13 +77,13 @@ test("Gate: Workflow-Rechte sind medium mit Einspruchsfrist, Neues bleibt high (
   for (const c of frist) {
     const r = risk([file(wf, c)]);
     assert.equal(r.risk, "risk:medium", c);
-    assert.equal(r.einspruch[0].category, "workflow-recht", c);
+    assert.ok(r.einspruch.some((x: { category: string }) => x.category === "workflow-recht"), c);
   }
   // Action eines in config.json erlaubten Owners: Frist; ohne Eintrag high
   const ext = patch("+      - uses: github/codeql-action/init@v3");
   const trusted = risk([file(wf, ext)], { trustedOwners: ["github"] });
   assert.equal(trusted.risk, "risk:medium");
-  assert.equal(trusted.einspruch.length, 1);
+  assert.ok(trusted.einspruch.some((x: { category: string }) => x.category === "workflow-recht"));
   const high = [
     patch("+        token: ${{ secrets.NEW_TOKEN }}"),
     patch("+      - uses: some-org/fancy-action@v1"),
@@ -90,15 +92,13 @@ test("Gate: Workflow-Rechte sind medium mit Einspruchsfrist, Neues bleibt high (
   ];
   for (const c of high) assert.equal(risk([file(wf, c)]).risk, "risk:high", c);
   assert.equal(risk([file(".github/rulesets/main.json", patch("+x"))]).risk, "risk:high");
-  // bereits genutzt oder verkleinert: low ohne Frist
+  // bereits genutzt oder verkleinert: kein Rechte-Grund, aber Workflow-Änderung bleibt medium (SIN-811)
+  const noRight = (r: { einspruch: { category: string }[] }) => !r.einspruch.some((x) => x.category === "workflow-recht");
   const plain = risk([file(wf, patch("-          t: ${{ secrets.A }}", "+          u: ${{ secrets.A }}"))]);
-  assert.equal(plain.risk, "risk:low");
-  assert.equal(plain.einspruch.length, 0);
-  assert.equal(
-    risk([file(wf, patch("-          claude_args: --allowedTools Read,Edit,Bash", "+          claude_args: --allowedTools Read,Edit"))]).einspruch.length,
-    0,
-  );
-  assert.equal(risk([file(wf, patch("-      - uses: some-org/x@v1", "+      - uses: some-org/x@v2"))]).risk, "risk:low");
+  assert.equal(plain.risk, "risk:medium");
+  assert.ok(noRight(plain));
+  assert.ok(noRight(risk([file(wf, patch("-          claude_args: --allowedTools Read,Edit,Bash", "+          claude_args: --allowedTools Read,Edit"))])));
+  assert.equal(risk([file(wf, patch("-      - uses: some-org/x@v1", "+      - uses: some-org/x@v2"))]).risk, "risk:medium");
 });
 
 test("Gate: das Gate selbst ist medium mit Einspruchsfrist (SIN-547)", () => {
@@ -482,6 +482,14 @@ test("Planer-Dry-Run: Frontend ohne Design und mit Design unterscheidbar", () =>
   assert.equal(out.find((i) => i.title === "Leerzustand")?.needsDesign, false);
   assert.equal(out.find((i) => i.title === "Neuer Screen")?.needsDesign, true);
   assert.equal(validatePlan([{ ...plain, lane: "backend" }])[0].needsDesign, undefined);
+});
+
+test("post-merge: Dispatch läuft vor der Bot-Prüfung, also auch bei Merge durch den Agent-Token (SIN-811)", () => {
+  const yml = readFileSync(".github/workflows/post-merge.yml", "utf8");
+  const dispatch = yml.indexOf('workflow_id: "dispatch.yml"');
+  const botCheck = yml.indexOf("pr.merged_by?.login !== BOT");
+  assert.ok(dispatch > 0 && botCheck > 0 && dispatch < botCheck);
+  assert.equal(yml.split('workflow_id: "dispatch.yml"').length - 1, 1);
 });
 
 test("Figma: Worker liest Werte über die API (Mock)", async () => {
