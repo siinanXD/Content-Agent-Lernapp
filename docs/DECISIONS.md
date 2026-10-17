@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-811 | SIN-811: Loop schneller (Einspruchsfrist 30 Min, risk:low, Dispatch nach Merge) | [SIN-811-loop-schneller.md](decisions/SIN-811-loop-schneller.md) |
+| SIN-809 | SIN-809: Fabrik erzeugt im Durchlauf nur für offene Content-Punkte | [SIN-809-fabrik-nur-offene-kurse.md](decisions/SIN-809-fabrik-nur-offene-kurse.md) |
 | SIN-808 | SIN-808: Richter-Bewertungen passen nicht zu den Fragen-IDs (Industriemechaniker) | [SIN-808-bewertungen-fragen-id.md](decisions/SIN-808-bewertungen-fragen-id.md) |
 | SIN-806 | SIN-806: Einspruchsfrist ist kein Gate-Bruch | [SIN-806-einspruchsfrist-kein-gate-bruch.md](decisions/SIN-806-einspruchsfrist-kein-gate-bruch.md) |
 | SIN-797 | SIN-797: Content-Fabrik läuft durch, bis die Content-Punkte der Fertig-Liste stehen | [SIN-797-fabrik-durchlauf.md](decisions/SIN-797-fabrik-durchlauf.md) |
