@@ -164,6 +164,10 @@ const FERTIG_PFAD = join(ROOT, "docs", "FERTIG.md");
 /** SIN-797: API-Guthaben leer: `sinan`-Issue „API-Guthaben aufladen“ (Linear benachrichtigt Sinan). Best effort, der Lauf endet trotzdem sauber. */
 function meldeGuthabenLeer(grund: string) {
   if (hasFlag("dry-run")) return;
+  if (!process.env.LINEAR_API_KEY) {
+    console.error("::warning::LINEAR_API_KEY fehlt: sinan-Issue „API-Guthaben aufladen“ nicht angelegt, Pause steht nur im Fabrik-Status");
+    return;
+  }
   const r = spawnSync(
     process.execPath,
     [
@@ -178,7 +182,7 @@ function meldeGuthabenLeer(grund: string) {
     ],
     { stdio: "inherit", env: process.env },
   );
-  if (r.status !== 0) console.error("::warning::sinan-Issue „API-Guthaben aufladen“ nicht angelegt");
+  if (r.error || r.status !== 0) console.error(`::warning::sinan-Issue „API-Guthaben aufladen“ nicht angelegt (Exit ${r.status ?? r.error?.message})`);
 }
 
 const STARTED_AT = new Date().toISOString();
