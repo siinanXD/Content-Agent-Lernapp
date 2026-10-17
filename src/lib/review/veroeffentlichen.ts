@@ -1,6 +1,7 @@
 import type { GeneratedLernfeld } from "@/lib/generate/maf-lernfeld-seed";
 import { nurVeroeffentlicht } from "@/lib/generate/staging";
-import { latestPerQuestion } from "@/lib/quality/question-evaluations";
+import { discardedQuestionKeys } from "@/lib/learner/discarded";
+import { frageSchluessel, latestPerQuestion } from "@/lib/quality/question-evaluations";
 import type { Course, QuestionEvaluationRecord } from "@/lib/storage/types";
 import { pruefeVeroeffentlichung } from "./content-guard";
 
@@ -31,14 +32,19 @@ export function pruefeKursFuerVeroeffentlichung(course: Course, evaluations: Que
     hinweis: v.hinweis,
   }));
 
-  // Richter: jede sichtbare Frage hat als letzte Bewertung „bestanden“ (ohne Bewertung gilt als nicht bestanden).
-  const letzte = new Map(latestPerQuestion(evaluations).map((r) => [`${r.unitId}\u0000${r.questionId}`, r]));
+  // Richter: jede sichtbare Frage hat eine Bewertung. Nicht bestandene und geflaggte Fragen blendet discarded.ts für
+  // Lernende aus (SIN-808) und zählen nicht; ohne Bewertung wäre eine Frage ungeprüft sichtbar.
+  const bewertet = new Set(latestPerQuestion(evaluations).map((r) => frageSchluessel(r.unitId, r.questionId)));
+  const versteckt = discardedQuestionKeys(evaluations);
+  let sichtbareFragen = 0;
   for (const u of sichtbar?.units ?? []) {
     for (const q of u.questions ?? []) {
-      const r = letzte.get(`${u.id}\u0000${q.id}`);
-      if (!r) mangel.push({ pruefung: "richter", ort: `Frage ${u.id}/${q.id}`, hinweis: "Keine Bewertung des Richters." });
-      else if (!r.passed) mangel.push({ pruefung: "richter", ort: `Frage ${u.id}/${q.id}`, hinweis: "Richter nicht bestanden." });
+      const key = frageSchluessel(u.id, q.id);
+      if (versteckt.has(key)) continue;
+      sichtbareFragen += 1;
+      if (!bewertet.has(key)) mangel.push({ pruefung: "richter", ort: `Frage ${u.id}/${q.id}`, hinweis: "Keine Bewertung des Richters." });
     }
   }
+  if (sichtbareFragen === 0) mangel.push({ pruefung: "richter", ort: "Kurs", hinweis: "Keine sichtbare Frage mit bestandener Bewertung." });
   return mangel;
 }
