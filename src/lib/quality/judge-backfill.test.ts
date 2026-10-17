@@ -1,7 +1,8 @@
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { fixtureJudge, type EvalItem } from "./evaluate-agent";
-import { planBackfill, questionContentHash, runJudgeBackfill, type JudgeFn } from "./judge-backfill";
+import { ordneBewertungenZu, planBackfill, questionContentHash, runJudgeBackfill, type JudgeFn } from "./judge-backfill";
+import { frageId } from "./question-evaluations";
 import { clearMockProgress, listMockJudgeRuns, mockStorage } from "@/lib/storage/mock-adapter";
 
 const item = (n: number, prompt = `Frage ${n}?`): EvalItem => ({
@@ -36,7 +37,8 @@ describe("Bewertungslauf bestehender Fragen (SIN-260)", () => {
     assert.equal(r.judged, 3);
     const rows = await mockStorage.listQuestionEvaluations(courseId);
     assert.equal(rows.length, 3);
-    assert.ok(rows.every((x) => x.contentHash === questionContentHash(items.find((i) => i.id === x.questionId)!)));
+    assert.ok(rows.every((x) => x.contentHash === questionContentHash(items.find((i) => frageId(i.unitId, i.id) === x.questionId)!)));
+    assert.deepEqual(rows.map((x) => x.questionId).sort(), ["q1", "q2", "q3"], "gespeichert wird questions.id, nicht Einheit-Frage (SIN-808)");
     const runs = listMockJudgeRuns();
     assert.equal(runs.length, 1);
     assert.equal(runs[0]!.questionsJudged, 3);
@@ -162,5 +164,20 @@ describe("Bewertungslauf bestehender Fragen (SIN-260)", () => {
     assert.equal(r.failed, 1);
     const rows = await mockStorage.listQuestionEvaluations(courseId);
     assert.equal(rows[0]!.passed, false);
+  });
+
+  it("SIN-808: Bewertungen an alter Kennung werden über den Hash zugeordnet, Altzeilen mit Präfix zählen mit", async () => {
+    const { judge } = countingJudge();
+    const items = [1, 2, 3].map((n) => item(n));
+    await runJudgeBackfill({ storage: mockStorage, courseId, items, judge });
+    const alt = (await mockStorage.listQuestionEvaluations(courseId)).map((r) => ({ ...r, questionId: `alt-${r.questionId}`, unitId: "u-alt" }));
+    const neu = ordneBewertungenZu(items, alt, "zuordnung");
+    assert.equal(neu.length, 3);
+    assert.deepEqual(neu.map((r) => `${r.unitId}/${r.questionId}`).sort(), ["u1/q1", "u1/q2", "u1/q3"]);
+    assert.ok(neu.every((r) => r.runId === "zuordnung" && r.passed));
+    assert.equal(ordneBewertungenZu(items, [...alt, ...neu], "x").length, 0, "zweiter Lauf ordnet nichts neu zu");
+    // Altzeile mit Präfix "u1-q1" gilt als Bewertung von q1.
+    const praefix = alt.map((r) => ({ ...r, unitId: "u1", questionId: `u1-${r.questionId.slice(4)}` }));
+    assert.equal(planBackfill(items, praefix).pending.length, 0);
   });
 });

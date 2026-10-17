@@ -69,6 +69,16 @@ test("dropDiscardedQuestions: nur die letzte Bewertung zählt, Einheit ohne Frag
   assert.deepEqual(out[0]!.questions.map((q) => q.id), ["q1", "q3"]);
 });
 
+test("SIN-808: Frage mit Sicherheits-Flag ist ausgeblendet, auch bestanden; Bewertung mit Einheiten-Präfix greift", () => {
+  const units = [unit("u1", ["q1", "q2", "q3"])];
+  const evals = [
+    { ...evaluation("c", "u1", "q1", true, "2026-10-01"), sicherheitFlag: true },
+    evaluation("c", "u1", "u1-q2", false, "2026-10-01"),
+    evaluation("c", "u1", "q3", true, "2026-10-01"),
+  ];
+  assert.deepEqual(dropDiscardedQuestions(units, evals)[0]!.questions.map((q) => q.id), ["q3"]);
+});
+
 test("Lernpfad, Wiederholung und Prüfung liefern keine verworfene Frage", async () => {
   const units = [unit("u1", ["good1", "bad1", "good2"]), unit("u2", ["bad2"])];
   const evals = [

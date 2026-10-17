@@ -10,6 +10,8 @@ import {
   type QuestionEval,
 } from "./schemas";
 import {
+  frageId,
+  frageSchluessel,
   latestPerQuestion,
   toQuestionEvaluationRecords,
   type QuestionEvaluationRecord,
@@ -76,13 +78,41 @@ export function planBackfill(
   items: EvalItem[],
   existing: QuestionEvaluationRecord[],
 ): { pending: EvalItem[]; skipped: number } {
-  const latest = new Map(latestPerQuestion(existing).map((r) => [`${r.unitId}\u0000${r.questionId}`, r]));
+  const latest = new Map(latestPerQuestion(existing).map((r) => [frageSchluessel(r.unitId, r.questionId), r]));
   const pending = items.filter((item) => {
-    const prev = latest.get(`${item.unitId}\u0000${item.id}`);
+    const prev = latest.get(frageSchluessel(item.unitId, item.id));
     if (!prev) return true;
     return prev.contentHash !== undefined && prev.contentHash !== questionContentHash(item);
   });
   return { pending, skipped: items.length - pending.length };
+}
+
+/**
+ * SIN-808: Bewertungen, die an einer anderen Kennung hängen (z. B. neu angelegte Fragen), über den Inhalts-Hash der
+ * heutigen Fragen zuordnen. Liefert Kopien mit der heutigen Kennung (append-only, gleiche Zeit, kein Richter-Aufruf).
+ * Fragen mit eigener Bewertung bleiben unberührt; bei mehreren Treffern gilt die jüngste Bewertung.
+ */
+export function ordneBewertungenZu(
+  items: EvalItem[],
+  existing: QuestionEvaluationRecord[],
+  runId: string,
+): QuestionEvaluationRecord[] {
+  const belegt = new Set(existing.map((r) => frageSchluessel(r.unitId, r.questionId)));
+  const nachHash = new Map<string, QuestionEvaluationRecord>();
+  for (const r of existing) {
+    if (!r.contentHash) continue;
+    const prev = nachHash.get(r.contentHash);
+    if (!prev || r.createdAt >= prev.createdAt) nachHash.set(r.contentHash, r);
+  }
+  const out: QuestionEvaluationRecord[] = [];
+  for (const item of items) {
+    if (belegt.has(frageSchluessel(item.unitId, item.id))) continue;
+    const hash = questionContentHash(item);
+    const treffer = nachHash.get(hash);
+    if (!treffer) continue;
+    out.push({ ...treffer, id: crypto.randomUUID(), questionId: frageId(item.unitId, item.id), unitId: item.unitId, runId, contentHash: hash });
+  }
+  return out;
 }
 
 /** Meldung an Langfuse (best effort, von außen eingehängt; Tests nutzen eine Attrappe). */

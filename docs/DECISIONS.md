@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-808 | SIN-808: Richter-Bewertungen passen nicht zu den Fragen-IDs (Industriemechaniker) | [SIN-808-bewertungen-fragen-id.md](decisions/SIN-808-bewertungen-fragen-id.md) |
 | SIN-806 | SIN-806: Einspruchsfrist ist kein Gate-Bruch | [SIN-806-einspruchsfrist-kein-gate-bruch.md](decisions/SIN-806-einspruchsfrist-kein-gate-bruch.md) |
 | SIN-797 | SIN-797: Content-Fabrik läuft durch, bis die Content-Punkte der Fertig-Liste stehen | [SIN-797-fabrik-durchlauf.md](decisions/SIN-797-fabrik-durchlauf.md) |
 | SIN-796 | SIN-796: Workflow `content-publish` setzt einen Kurs nach Prüfung auf published | [SIN-796-veroeffentlichen-workflow.md](decisions/SIN-796-veroeffentlichen-workflow.md) |
