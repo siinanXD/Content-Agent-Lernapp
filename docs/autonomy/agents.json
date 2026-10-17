@@ -76,7 +76,7 @@
       "auftrag": "Erzeugt Lerninhalte nur mit amtlicher Quelle; Bewertung und Zulassung macht ein Mensch.",
       "ausloeser": "Zeitplan und manuell",
       "workflows": ["content-grow", "content-publish", "run-task"],
-      "schritte": ["publish"],
+      "schritte": ["publish", "fabrik-anstoss"],
       "modell": "claude-sonnet-5-5",
       "budget": { "proLauf": "20 Euro je Kurslauf", "proWoche": null },
       "eingabe": "Curriculum-Maps, amtliche Quellen",
