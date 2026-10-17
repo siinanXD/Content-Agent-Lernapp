@@ -16,9 +16,9 @@ const APPROVAL = ["freigegeben", "approved"];
 const MIN_PRS = 2;
 /**
  * `merge-gate` ist absichtlich rot, solange ein `risk:high`-PR auf `freigegeben` wartet (pr-gate.yml, Schritt
- * „Ergebnis des Gates melden“). Das ist kein Gate-Bruch (SIN-439).
+ * „Ergebnis des Gates melden“). Ebenso während der Einspruchsfrist (SIN-547). Das ist kein Gate-Bruch (SIN-439, SIN-806).
  */
-export const WAITING_RE = /wartet auf das Label freigegeben/i;
+export const WAITING_RE = /wartet auf das Label freigegeben|Einspruchsfrist läuft bis/i;
 const GENERIC_RE = /^Process completed with exit code/i;
 
 /** Die aussagekräftigste Fehlerzeile: erst die erste spezifische Fehler-Anmerkung, sonst die erste überhaupt. */
