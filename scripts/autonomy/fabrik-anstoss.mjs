@@ -6,7 +6,7 @@
  * - kein Lauf aktiv ist (laufend oder wartend),
  * - der letzte Lauf länger als 2 h her ist,
  * - keine Pause wegen leerem API-Guthaben aktiv ist (jüngster Eintrag in content_factory_runs).
- * Jeder Anstoß schreibt das Ereignis `fabrik-anstoss` in loop_events.
+ * Jeder Anstoß (auch ein gescheiterter, Status fehler) schreibt das Ereignis `fabrik-anstoss` in loop_events.
  *
  *   node scripts/autonomy/fabrik-anstoss.mjs [--dry-run]
  *
@@ -72,7 +72,11 @@ export async function main(argv, env = process.env, http = {}) {
       headers: { ...gh(env.GH_TOKEN || token), "Content-Type": "application/json" },
       body: JSON.stringify({ ref: "main" }),
     });
-    if (!res.ok) throw new Error(`Anstoß gescheitert: ${res.status} ${(await res.text()).slice(0, 80)}`);
+    if (!res.ok) {
+      const fehler = `Anstoß gescheitert: ${res.status} ${(await res.text()).slice(0, 80)}`;
+      await leitstandEreignis(["ereignis", "--schritt", "fabrik-anstoss", "--status", "fehler", "--grund", fehler]);
+      throw new Error(fehler);
+    }
     await leitstandEreignis(["ereignis", "--schritt", "fabrik-anstoss", "--status", "ok", "--grund", grund]);
     return { anstossen: true, grund };
   } catch (e) {
