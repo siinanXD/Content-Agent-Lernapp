@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { buildPrompt, hakenStartKommentar, hakenStreak, MAX_HAKEN_STARTS } from "../../../scripts/autonomy/linear.mjs";
+import { withoutStalledHaken } from "../../../scripts/autonomy/dispatch.mjs";
 import { liveText } from "../../../scripts/autonomy/live.mjs";
 
 const issue = { identifier: "SIN-768", title: "t", description: "## Fertig, wenn\n- [x] A erledigt\n- [ ] B offen\n- [ ] C offen" };
@@ -35,6 +36,17 @@ test("Derselbe Haken-Stand: nach MAX_HAKEN_STARTS Starts Pause, neuer Stand zäh
   // Fortschritt dazwischen (anderer Stand) unterbricht die Folge
   assert.equal(hakenStreak([start(offen, "2026-10-16T10:00:00Z"), start(["B offen"], "2026-10-16T11:00:00Z")], ["B offen"]), 1);
   assert.equal(hakenStreak([start(["B offen"], "2026-10-16T10:00:00Z"), start(offen, "2026-10-16T11:00:00Z")], offen), 1);
+});
+
+test("Angehaltene Issues vorn lassen die freien nachrücken (SIN-818)", async () => {
+  const offen = ["B offen"];
+  const stall = (id: string) => ({ identifier: id, id, description: "- [ ] B offen" });
+  const frei = (id: string) => ({ identifier: id, id, description: "- [x] fertig" });
+  const queue = [stall("SIN-1"), stall("SIN-2"), frei("SIN-3"), frei("SIN-4"), frei("SIN-5")];
+  const lese = async () => Array.from({ length: MAX_HAKEN_STARTS }, (_, i) => ({ body: hakenStartKommentar(offen), createdAt: `2026-10-16T1${i}:00:00Z` }));
+  const { go, skipped } = await withoutStalledHaken(queue, 2, true, lese);
+  assert.deepEqual(go.map((i) => i.identifier), ["SIN-3", "SIN-4"]);
+  assert.deepEqual(skipped, ["SIN-1", "SIN-2"]);
 });
 
 test("Worker zählt nur offene oder neue PRs als Ergebnis, nicht alte gemergte vom selben Branch", () => {

@@ -156,11 +156,11 @@ export function pickMany(issues, slots = MAX_PARALLEL, mayTake = () => true, wai
   const started = issues.filter((i) => i.state.type === "started" && !waiting.has(i.identifier));
   const free = Math.max(0, MAX_PARALLEL - started.length);
   const want = Math.min(slots, free);
-  if (want === 0) return { issues: [], reason: `${started.length} Issues laufen schon (max. ${MAX_PARALLEL})` };
+  if (want === 0) return { issues: [], want, reason: `${started.length} Issues laufen schon (max. ${MAX_PARALLEL})` };
   const picked = startOrder(issues, mayTake, opts).slice(0, want);
   return picked.length
-    ? { issues: picked, reason: "ok" }
-    : { issues: [], reason: "kein freies Todo (Blocker, Design/Mensch, oder Cursor hat noch Vorrang)" };
+    ? { issues: picked, want, reason: "ok" }
+    : { issues: [], want, reason: "kein freies Todo (Blocker, Design/Mensch, oder Cursor hat noch Vorrang)" };
 }
 
 /**

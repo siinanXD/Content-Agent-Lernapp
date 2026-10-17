@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-818 | SIN-818: Haken-Pause blockiert keine Startplätze | [SIN-818-haken-pause-nachruecken.md](decisions/SIN-818-haken-pause-nachruecken.md) |
 | SIN-809 | SIN-809: Fabrik erzeugt im Durchlauf nur für offene Content-Punkte | [SIN-809-fabrik-nur-offene-kurse.md](decisions/SIN-809-fabrik-nur-offene-kurse.md) |
 | SIN-808 | SIN-808: Richter-Bewertungen passen nicht zu den Fragen-IDs (Industriemechaniker) | [SIN-808-bewertungen-fragen-id.md](decisions/SIN-808-bewertungen-fragen-id.md) |
 | SIN-806 | SIN-806: Einspruchsfrist ist kein Gate-Bruch | [SIN-806-einspruchsfrist-kein-gate-bruch.md](decisions/SIN-806-einspruchsfrist-kein-gate-bruch.md) |
