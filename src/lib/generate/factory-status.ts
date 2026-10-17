@@ -91,7 +91,22 @@ export async function recordFactoryRun(
   record: FactoryRunRecord,
   client: Pick<ReturnType<typeof getServiceSupabase>, "from"> = getServiceSupabase(),
 ): Promise<void> {
-  const { error } = await client.from("content_factory_runs").insert({
+  // SIN-809: Netzfehler ("fetch failed") kurz wiederholen, statt den Lauf rot zu machen.
+  let error: { message: string } | null = null;
+  for (let versuch = 0; versuch < 3; versuch++) {
+    if (versuch > 0) await new Promise((r) => setTimeout(r, versuch * 2000));
+    try {
+      ({ error } = await insertRun(record, client));
+    } catch (e) {
+      error = { message: e instanceof Error ? e.message : String(e) };
+    }
+    if (!error || !/fetch failed/i.test(error.message)) break;
+  }
+  if (error) throw new Error(`content_factory_runs_insert: ${error.message}`);
+}
+
+function insertRun(record: FactoryRunRecord, client: Pick<ReturnType<typeof getServiceSupabase>, "from">) {
+  return client.from("content_factory_runs").insert({
     run_id: record.runId,
     course_id: record.courseId,
     module_id: record.moduleId,
@@ -105,5 +120,4 @@ export async function recordFactoryRun(
     started_at: record.startedAt,
     finished_at: record.finishedAt,
   });
-  if (error) throw new Error(`content_factory_runs_insert: ${error.message}`);
 }
