@@ -1,17 +1,17 @@
 /**
- * Risiko-Gate (SIN-223, gelockert mit SIN-252 und SIN-547): Standard ist `risk:medium`. `risk:high` gibt es nur bei
+ * Risiko-Gate (SIN-223, gelockert mit SIN-252, SIN-547 und SIN-811): Standard ist `risk:low` (Auto-Merge ohne Frist). `risk:high` gibt es nur bei
  * Secret-Leak, Datenverlust, Auth/RLS/Service-Role-Key im Client, Geld, unbestätigten npm-Abhängigkeiten,
  * `docs/PRODUCT.md`, Fork, `pull_request_target`, neuen Secrets, Drittanbieter-Actions außerhalb der Liste und Branch-Protection.
  * Workflow-Rechte, das Gate selbst und übrige Grundsatz-Änderungen sind `risk:medium` mit Einspruchsfrist
- * (`einspruch` im Ergebnis, `EINSPRUCH_STUNDEN`): Auto-Merge erst danach, Sinan stoppt mit `no-automerge`.
- * Normale Workflow-Änderungen, Design-Tokens aus Figma, Docs und Tests sind `risk:medium` ohne Frist.
+ * (`einspruch` im Ergebnis, `EINSPRUCH_MINUTEN`): Auto-Merge erst danach, Sinan stoppt mit `no-automerge`.
+ * Jede Workflow-Änderung ist mindestens `risk:medium` mit Frist. Design-Tokens aus Figma, Docs und Tests sind `risk:low`: keine Frist.
  * `classifyRisk` ist eine reine Funktion ohne Netz, damit pr-gate sie testbar aus main laden kann.
  * Nur `fetchDependencyInfo` ruft npm und GitHub ab; pr-gate reicht das Ergebnis als `depInfo` herein.
  */
 
 /** @typedef {{ filename: string, previous_filename?: string, status?: string, patch?: string }} GateFile */
 
-export const EINSPRUCH_STUNDEN = 2;
+export const EINSPRUCH_MINUTEN = 30;
 const PRINCIPLE_PATHS = [/^docs\/PRODUCT\.md$/];
 // Das Gate selbst: Frist statt Freigabe (SIN-547). Branch-Protection als Datei bleibt high.
 const GATE_PATHS = [/^\.github\/workflows\/(pr-gate|dispatch)\.ya?ml$/, /^scripts\/autonomy\/risk\.mjs$/];
@@ -131,7 +131,7 @@ export function secretNames(texts) {
 
 /**
  * @param {{ files: GateFile[], labels?: string[], isFork?: boolean, secretLeak?: boolean, depInfo?: Record<string, { license: string, stars: number } | null>, knownSecrets?: string[], trustedOwners?: string[] }} input
- * @returns {{ risk: "risk:medium" | "risk:high", reasons: { key: string, category: string, text: string }[], einspruch: { key: string, category: string, text: string }[] }}
+ * @returns {{ risk: "risk:low" | "risk:medium" | "risk:high", reasons: { key: string, category: string, text: string }[], einspruch: { key: string, category: string, text: string }[] }}
  *   `reasons` sind nur High-Gründe; `einspruch` sind die Gründe, die medium bleiben, aber die Frist auslösen.
  */
 export function classifyRisk({ files, labels = [], isFork = false, secretLeak = false, depInfo = {}, knownSecrets = [], trustedOwners = [] }) {
@@ -179,6 +179,11 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
     }
 
     // SIN-252: Workflow-Änderungen sind normal (medium). High nur bei mehr Rechten (Punkt 6).
+    // SIN-811: Workflow-Dateien, `permissions:` und Secrets in YAML sind nie risk:low, mindestens Frist.
+    if (WORKFLOW.test(f.filename)) addFrist("workflow", `Workflow geändert: ${f.filename}`);
+    else if (/\.ya?ml$/.test(f.filename) && [...added, ...removed].some((l) => /^\s*permissions:|\bsecrets\./.test(l))) {
+      addFrist("workflow-recht", `permissions/Secrets in ${f.filename}`);
+    }
     if (WORKFLOW.test(f.filename)) {
       const before = new Set(removed.map((l) => l.trim()));
       const beforeTokens = new Set(removed.flatMap(tokens));
@@ -235,7 +240,8 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
 
   const uniq = (list) => [...new Map(list.map((r) => [r.key, r])).values()];
   const unique = uniq(reasons);
-  return { risk: unique.length ? "risk:high" : "risk:medium", reasons: unique, einspruch: uniq(einspruch) };
+  const frist = uniq(einspruch);
+  return { risk: unique.length ? "risk:high" : frist.length ? "risk:medium" : "risk:low", reasons: unique, einspruch: frist };
 }
 
 const FRIST_RE = /<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/;
@@ -248,7 +254,7 @@ const FRIST_RE = /<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/;
 export function einspruchFrist(body, sha, now = Date.now()) {
   const m = body?.match(FRIST_RE);
   const neu = !m || m[1] !== sha;
-  const bis = neu ? now + EINSPRUCH_STUNDEN * 3600_000 : Number(m[2]);
+  const bis = neu ? now + EINSPRUCH_MINUTEN * 60_000 : Number(m[2]);
   return { bis, neu, vorbei: now >= bis, comment: `<!-- pr-gate-einspruch sha=${sha} bis=${bis} -->` };
 }
 
