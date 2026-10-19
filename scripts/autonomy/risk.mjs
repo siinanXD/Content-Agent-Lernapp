@@ -238,18 +238,27 @@ export function classifyRisk({ files, labels = [], isFork = false, secretLeak = 
   return { risk: unique.length ? "risk:high" : "risk:medium", reasons: unique, einspruch: uniq(einspruch) };
 }
 
-const FRIST_RE = /<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/;
+const FRIST_RE = /<!-- pr-gate-einspruch sha=(\w+) bis=(\d+)(?: gruende=(\w+))? -->/;
+
+/** Kurzer, stabiler Fingerabdruck der Frist-Gründe (Reihenfolge egal). */
+const gruendeHash = (keys) => [...new Set(keys)].sort().join("|").split("").reduce((h, c) => ((h * 31 + c.charCodeAt(0)) >>> 0), 7).toString(36);
 
 /**
- * Einspruchsfrist (SIN-547) je Commit: Zeitstempel `bis` (ms) im Fristkommentar. Neuer Commit = neue Frist.
+ * Einspruchsfrist (SIN-547): Zeitstempel `bis` (ms) im Fristkommentar. Ein neuer Commit startet die Frist nur neu,
+ * wenn sich die Frist-Gründe ändern. Ein Commit, der nur main einmergt, behält die Frist; sonst lief sie bei
+ * jedem Merge von main erneut 2 h und der PR mergte nie (#425/#426 am 19.10.).
  * @param {string | undefined} body Text des Fristkommentars (oder undefined)
+ * @param {string[]} [gruende] Schlüssel der aktuellen Frist-Gründe (`einspruch[].key`)
  * @returns {{ bis: number, comment: string, neu: boolean, vorbei: boolean }}
  */
-export function einspruchFrist(body, sha, now = Date.now()) {
+export function einspruchFrist(body, sha, now = Date.now(), gruende) {
   const m = body?.match(FRIST_RE);
-  const neu = !m || m[1] !== sha;
-  const bis = neu ? now + EINSPRUCH_STUNDEN * 3600_000 : Number(m[2]);
-  return { bis, neu, vorbei: now >= bis, comment: `<!-- pr-gate-einspruch sha=${sha} bis=${bis} -->` };
+  const hash = gruende ? gruendeHash(gruende) : null;
+  const gleicherHead = !!m && m[1] === sha;
+  const gleicheGruende = !!m && !!hash && m[3] === hash;
+  const neu = !gleicherHead;
+  const bis = gleicherHead || gleicheGruende ? Number(m[2]) : now + EINSPRUCH_STUNDEN * 3600_000;
+  return { bis, neu, vorbei: now >= bis, comment: `<!-- pr-gate-einspruch sha=${sha} bis=${bis}${hash ? ` gruende=${hash}` : ""} -->` };
 }
 
 /**

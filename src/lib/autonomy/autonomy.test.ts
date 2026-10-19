@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import { approvalStillValid, classifyRisk, einspruchFrist, secretNames, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
@@ -123,6 +124,29 @@ test("Einspruchsfrist: 2 h je Commit, neuer Commit setzt neu (SIN-547)", () => {
   const fresh = einspruchFrist(f1.comment, "def", t0 + 3 * 3600_000);
   assert.equal(fresh.neu, true);
   assert.equal(fresh.vorbei, false);
+});
+
+test("Einspruchsfrist: Commit ohne neue Frist-Gründe (z. B. main einmergen) startet die Frist nicht neu", () => {
+  const t0 = Date.UTC(2026, 9, 19, 13);
+  const gruende = ["workflow-recht:repair.yml allowed_bots", "gate:dispatch.yml"];
+  const f1 = einspruchFrist(undefined, "abc", t0, gruende);
+  // Neuer Head nur durch Merge von main, dieselben Gründe in anderer Reihenfolge: Frist bleibt, Marker zeigt den neuen Head.
+  const merge = einspruchFrist(f1.comment, "def", t0 + 90 * 60_000, [...gruende].reverse());
+  assert.equal(merge.bis, f1.bis);
+  assert.equal(merge.neu, true, "Kommentar wird auf den neuen Head aktualisiert");
+  assert.match(merge.comment, /sha=def /);
+  assert.equal(einspruchFrist(merge.comment, "ghi", t0 + 2 * 3600_000, gruende).vorbei, true);
+  // Neuer Frist-Grund: neue Frist.
+  const anders = einspruchFrist(f1.comment, "def", t0 + 90 * 60_000, [...gruende, "secret:NEU"]);
+  assert.equal(anders.bis, t0 + 90 * 60_000 + 2 * 3600_000);
+  // Leser des Markers (einspruch-ende in pr-gate.yml, status.mjs) erkennen das neue Feld.
+  for (const datei of [".github/workflows/pr-gate.yml", "scripts/autonomy/status.mjs"]) {
+    const quelle = readFileSync(datei, "utf8").match(/\/<!-- pr-gate-einspruch sha=.*? -->\//)?.[0];
+    assert.ok(quelle, datei);
+    assert.match(merge.comment, new RegExp(quelle.slice(1, -1)), datei);
+  }
+  // Alter Marker ohne Gründe: einmal neue Frist (keine Annahme über alte Gründe).
+  assert.equal(einspruchFrist("<!-- pr-gate-einspruch sha=abc bis=1 -->", "def", t0, gruende).bis, t0 + 2 * 3600_000);
 });
 
 test("Gate: Figma-Tokens, Docs, Tests sind medium (SIN-252)", () => {
