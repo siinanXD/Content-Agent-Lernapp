@@ -365,7 +365,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   }
   if (waiting.size) {
     out.push("Wartende PRs (belegen keinen Platz, Issue bleibt „In Progress“):", "");
-    for (const [id, w] of waiting) out.push(`- ${id}: PR #${w.pr}, ${w.reason}`);
+    for (const [id, w] of waiting) out.push(`- ${id}: ${w.pr ? `PR #${w.pr}, ` : ""}${w.reason}`);
     out.push("");
   }
   if (openPrs.length) {

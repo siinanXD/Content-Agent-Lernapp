@@ -257,3 +257,16 @@ test("SIN-362: Loop-Status zählt gescheiterte Worker und nennt das Claude-Limit
   assert.match(r.body, /Claude-Limit erkannt: 1 Läufe, keine Pause gesetzt/);
   assert.ok(keys(r).includes("claude-limit"));
 });
+
+
+test("SIN-824: In Review ohne Produkt-PR lässt Slots und Stillstands-Kick frei", () => {
+  const snap = fixture();
+  snap.runs = snap.runs.filter((r: { name: string }) => r.name !== "worker");
+  snap.issues = snap.issues.filter((i: { state: { type: string } }) => i.state.type !== "started");
+  snap.issues.push({ id: "review", identifier: "SIN-537", title: "Abnahme", state: {name: "In Review", type: "started"}, labels: {nodes: []}, inverseRelations: {nodes: []} });
+  const r = analyze(snap, limits, {});
+  assert.equal(r.queue.in_progress, 0);
+  assert.equal(r.queue.waiting, 1);
+  assert.equal(r.kick, true);
+  assert.doesNotMatch(r.body, /PR #null/);
+});

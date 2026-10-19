@@ -308,8 +308,8 @@ export async function main(argv) {
   const running = fixtureAt >= 0 ? undefined : await fetchRunningWorkers();
   // Ohne bekannte Worker-Läufe oder PR-Stand lieber nichts freigeben.
   const prStates = fixtureAt >= 0 || !repo || !token || !running ? [] : await collectPrStates(repo, token).catch(() => []);
-  const waiting = waitingIssues(issues, prStates, running ?? []);
-  for (const [id, w] of waiting) console.log(`${id} wartet (PR #${w.pr}: ${w.reason}), belegt keinen Platz`);
+  const waiting = running === undefined ? new Map() : waitingIssues(issues, prStates, running);
+  for (const [id, w] of waiting) console.log(`${id} wartet (${w.pr ? `PR #${w.pr}: ` : ""}${w.reason}), belegt keinen Platz`);
   // Ideen (SIN-528): Backlog-Ideen sind Kandidaten, aber höchstens eine je Woche und erst nach allen v1-Issues.
   // Ist der Wochenstand unlesbar, startet keine Idee.
   const backlogIdeas = fixtureAt >= 0 ? [] : await fetchBacklogIdeas().catch(() => []);
