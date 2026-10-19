@@ -18,5 +18,6 @@ test("Anstoß (SIN-334): Worker ohne PR stößt den Dispatcher an", () => {
 test("Anstoß (SIN-334): Gruppe dispatch ohne Abbruch verhindert Doppelstarts, Zeitplan bleibt", () => {
   const s = wf("dispatch");
   assert.match(s, /group: dispatch\n\s+cancel-in-progress: false/);
-  assert.match(s, /cron: "\*\/30 \* \* \* \*"/);
+  // SIN-847: Rückfall-Cron auf krummen Minuten; den eigentlichen Takt gibt pg_cron (Supabase) per workflow_dispatch.
+  assert.match(s, /cron: "13,43 \* \* \* \*"/);
 });
