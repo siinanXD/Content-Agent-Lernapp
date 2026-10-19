@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   MARKER,
+  MAX_WIDERLEGUNGEN,
   applyRefutations,
   parseWiderlegt,
   sameFinding,
@@ -96,7 +98,7 @@ test("Review: schwerer Fund → Kommentar mit Schwere und Ausgabe severe=true (T
 
 const jsonRes = (data: unknown) => new Response(JSON.stringify(data), { status: 200, headers: { "content-type": "application/json" } });
 
-async function runReview(opts: { buildConclusion: string | null; commits?: string[]; finding: { datei: string; text: string } }) {
+async function runReview(opts: { buildConclusion: string | null; commits?: string[]; comments?: string[]; finding: { datei: string; text: string } }) {
   const calls: Array<{ url: string; method: string; body?: string }> = [];
   const realFetch = globalThis.fetch;
   globalThis.fetch = (async (url: string, init: { method?: string; body?: string } = {}) => {
@@ -107,7 +109,10 @@ async function runReview(opts: { buildConclusion: string | null; commits?: strin
     if (url.includes("/check-runs")) {
       return jsonRes({ check_runs: opts.buildConclusion ? [{ name: "build", status: "completed", conclusion: opts.buildConclusion }] : [] });
     }
-    if (url.includes("/issues/comments") || url.includes("/issues/9/comments")) return (init.method ?? "GET") === "POST" ? jsonRes({}) : jsonRes([]);
+    if (url.includes("/issues/comments")) return jsonRes([]);
+    if (url.includes("/issues/9/comments")) {
+      return (init.method ?? "GET") === "POST" ? jsonRes({}) : jsonRes((opts.comments ?? []).map((body, id) => ({ id, body })));
+    }
     if (new URL(url).hostname === "api.openai.com") {
       return jsonRes({
         choices: [{ message: { content: JSON.stringify({ zusammenfassung: "x", funde: [{ schwere: "schwer", ...opts.finding }] }) } }],
@@ -166,6 +171,35 @@ test("Review (SIN-381): wiederholter, begründet verworfener Fund zählt nicht n
   assert.match(body, /Schon geprüft/);
   assert.match(prompt, /schon geprüft und mit Begründung widerlegt/);
   assert.match(prompt, /Nullzugriff in load\(\)/);
+});
+
+test("Review (SIN-844): im Marker-Kommentar widerlegter Fund wird im Folge-Review nicht erneut schwer gemeldet", async () => {
+  const kommentar = [
+    "<!-- fund-widerlegt sha=abc1234 -->",
+    "- src/lib/storage/x.ts: Nullzugriff in load() wirft (load() prüft vorher auf null, siehe Zeile 12)",
+  ].join("\n");
+  const { body, prompt } = await runReview({
+    buildConclusion: null,
+    comments: [kommentar],
+    finding: { datei: "src/lib/storage/x.ts", text: "load() wirft bei Nullzugriff" },
+  });
+  assert.match(body, /review-severe: false/);
+  assert.match(body, /Schon geprüft/);
+  assert.match(prompt, /Nullzugriff in load\(\)/);
+  assert.deepEqual([readLedger(body)[0].gesamt, readLedger(body)[0].widerlegt], [1, 1]);
+});
+
+test("Review (SIN-844): Marker-Kommentar ohne Fund-Zeilen und fremde Kommentare widerlegen nichts", () => {
+  assert.deepEqual(parseWiderlegt(["<!-- fund-widerlegt sha=abc -->\n- src/a.ts: Nullzugriff (Begründung)\nkein Fund"]).length, 1);
+  assert.deepEqual(parseWiderlegt(["- src/a.ts: Nullzugriff (ohne Marker)"]), []);
+});
+
+test("Review (SIN-844): höchstens 2 Widerlegungen nehmen die Runde zurück, danach zählt sie (review.yml)", () => {
+  const yml = readFileSync(".github/workflows/review.yml", "utf8");
+  assert.equal(MAX_WIDERLEGUNGEN, 2);
+  assert.match(yml, new RegExp(`MAX_WIDERLEGUNGEN: "${MAX_WIDERLEGUNGEN}"`));
+  assert.match(yml, /refuted\.length > Number\(process\.env\.MAX_WIDERLEGUNGEN\)/);
+  assert.doesNotMatch(yml, /--allow-empty/);
 });
 
 test("Review (SIN-381): anderer Fund in derselben Datei bleibt schwer", () => {
