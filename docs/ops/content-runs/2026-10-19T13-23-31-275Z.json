@@ -1,0 +1,186 @@
+{
+  "runId": "2026-10-19T13-23-31-275Z",
+  "mode": "live",
+  "startedAt": "2026-10-19T13:23:31.275Z",
+  "mapId": "indkfl",
+  "moduleId": "LF3",
+  "moduleIds": [
+    "LF3",
+    "LF4",
+    "LF5",
+    "LF6",
+    "LF7"
+  ],
+  "nextModuleId": "LF7",
+  "resumeModuleId": "LF7",
+  "generated": 240,
+  "passed": 192,
+  "discarded": 50,
+  "discardedUnitIds": [
+    "LF5-2-u12",
+    "LF4-2-u1",
+    "LF4-2-u2",
+    "LF4-1-u8",
+    "LF4-1-u3",
+    "LF3-7-u13",
+    "LF3-7-u14",
+    "LF5-1-u8",
+    "LF3-7-u5",
+    "LF3-7-u6",
+    "LF4-2-u7",
+    "LF5-3-u9",
+    "LF5-3-u10",
+    "LF5-1-u5",
+    "LF5-1-u6",
+    "LF4-1-u2",
+    "LF3-7-u2",
+    "LF3-7-u3",
+    "LF4-4-u3",
+    "LF6-1-u6",
+    "LF6-2-u1",
+    "LF6-2-u2",
+    "LF5-6-u12",
+    "LF6-5-u8",
+    "LF5-4-u14",
+    "LF5-4-u6",
+    "LF6-1-u3",
+    "LF6-1-u4",
+    "LF5-6-u1",
+    "LF5-5-u11",
+    "LF5-5-u2",
+    "LF5-5-u7",
+    "LF5-5-u8",
+    "LF5-6-u9",
+    "LF5-6-u10",
+    "LF6-5-u12",
+    "LF6-4-u10",
+    "LF6-4-u12",
+    "LF6-2-u9",
+    "LF5-4-u3",
+    "LF7-2-u6",
+    "LF7-1-u2",
+    "LF6-7-u8",
+    "LF6-7-u9",
+    "LF6-7-u10",
+    "LF7-3-u3",
+    "LF7-3-u4",
+    "LF7-2-u2",
+    "LF5-3-u3",
+    "LF5-3-u4"
+  ],
+  "deferred": 18,
+  "schema": {
+    "generated": 1674,
+    "invalid": 7,
+    "repaired": 0,
+    "discarded": 7
+  },
+  "repair": {
+    "ran": true,
+    "costEur": 0.46
+  },
+  "sourceRefresh": {
+    "units": 0,
+    "replaced": 0,
+    "changeKeys": []
+  },
+  "model": "claude-haiku-5-5",
+  "costEur": 14.63,
+  "capEur": 20,
+  "stopReason": null,
+  "safetySampleUnitIds": [
+    "LF6-2-u10"
+  ],
+  "batchIds": [
+    "msgbatch_01VVTdW3RTzytqCXTqcWS99R",
+    "msgbatch_01C9Qsr571nfcxjXknsUM14z",
+    "msgbatch_016yRJHFWWVyegrQHCGfFrxu",
+    "msgbatch_01SggLS1LWEazvYfEP6xj4bE",
+    "msgbatch_01MB8mrnin5mxvk7S2xrHVHb"
+  ],
+  "mapPlan": [
+    {
+      "mapId": "maf-metall",
+      "ziel": 890,
+      "vorhanden": 701,
+      "geteilt": 0,
+      "neu": 52
+    },
+    {
+      "mapId": "indkfl",
+      "ziel": 1160,
+      "vorhanden": 161,
+      "geteilt": 0,
+      "neu": 931
+    },
+    {
+      "mapId": "maf-kunststoff",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-textil",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-textilveredelung",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-lebensmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-druckverarbeitung",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-packmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    }
+  ],
+  "nichtVersucht": [
+    {
+      "grund": "kostendeckel",
+      "units": 678
+    },
+    {
+      "grund": "begonnene-module",
+      "units": 11
+    },
+    {
+      "grund": "andere-map",
+      "units": 4392
+    }
+  ],
+  "batchFailures": {
+    "sent": 122,
+    "failed": 1,
+    "errors": [
+      {
+        "customId": "maf-LF5-3-u2-3",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      }
+    ]
+  },
+  "failReason": null,
+  "langfuseTraceId": "9e3918d048857f2717730183be1b47c3"
+}
