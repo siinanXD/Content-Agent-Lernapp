@@ -49,6 +49,15 @@ test("Angehaltene Issues vorn lassen die freien nachrücken (SIN-818)", async ()
   assert.deepEqual(skipped, ["SIN-1", "SIN-2"]);
 });
 
+test("Schlange [angehalten, angehalten, frei, frei] mit 2 Plätzen: die beiden freien starten (SIN-818)", async () => {
+  const stall = (id: string) => ({ identifier: id, id, description: "- [ ] B offen" });
+  const frei = (id: string) => ({ identifier: id, id, description: "- [x] fertig" });
+  const lese = async () => Array.from({ length: MAX_HAKEN_STARTS }, (_, i) => ({ body: hakenStartKommentar(["B offen"]), createdAt: `2026-10-16T1${i}:00:00Z` }));
+  const { go, skipped } = await withoutStalledHaken([stall("SIN-1"), stall("SIN-2"), frei("SIN-3"), frei("SIN-4")], 2, true, lese);
+  assert.deepEqual(go.map((i) => i.identifier), ["SIN-3", "SIN-4"]);
+  assert.deepEqual(skipped, ["SIN-1", "SIN-2"]);
+});
+
 test("Worker zählt nur offene oder neue PRs als Ergebnis, nicht alte gemergte vom selben Branch", () => {
   const w = readFileSync(".github/workflows/worker.yml", "utf8");
   assert.doesNotMatch(w, /--state all --json (number|url) --jq/);
