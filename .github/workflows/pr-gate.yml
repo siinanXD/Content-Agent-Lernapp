@@ -225,6 +225,9 @@ jobs:
               : [];
             // SIN-547: Fristregeln aus der Basis; fehlen sie dort noch, gibt es keine Frist (alter Stand).
             const einspruchFrist = typeof riskModule.einspruchFrist === "function" ? riskModule.einspruchFrist : null;
+            // SIN-855: Aufbauphase ohne Frist, Regel aus der Basis (main); fehlt `fristGilt` dort, gilt der alte Stand mit Frist.
+            const fristGilt = typeof riskModule.fristGilt === "function"
+              ? riskModule.fristGilt : (r, e) => r === "risk:medium" && e.length > 0;
             const trustedOwners = (JSON.parse(fs.readFileSync("docs/autonomy/config.json", "utf8")).ERLAUBTE_ACTION_OWNER) ?? [];
             const { owner, repo } = context.repo;
             const action = context.payload.action;
@@ -356,7 +359,7 @@ jobs:
             const FRIST = "einspruch:30m";
             const fristMine = comments.find((c) => c.user?.login === BOT && c.body?.includes("<!-- pr-gate-einspruch "));
             let fristOffen = false;
-            if (einspruchFrist && risk === "risk:medium" && einspruch.length) {
+            if (einspruchFrist && fristGilt(risk, einspruch)) {
               const fr = einspruchFrist(fristMine?.body, pr.head.sha, Date.now(), einspruch.map((r) => r.key));
               if (!fristMine) await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: `${fr.comment}\nEinspruchsfrist bis ${new Date(fr.bis).toISOString()}. Stopp mit dem Label \`no-automerge\`.` });
               else if (fr.neu) await github.rest.issues.updateComment({ owner, repo, comment_id: fristMine.id, body: `${fr.comment}\nEinspruchsfrist bis ${new Date(fr.bis).toISOString()}. Stopp mit dem Label \`no-automerge\`.` });
@@ -370,7 +373,7 @@ jobs:
               try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: FRIST }); }
               catch (e) { if (e.status !== 404) throw e; }
             }
-            // SIN-843: altes Label auf `einspruch:30m` umstellen; der Zeitstempel im Kommentar bleibt, die Frist startet nicht neu.
+            // SIN-843: altes Label `einspruch:2h` entfernen (gilt die Frist, ersetzt durch `einspruch:30m`, `bis` bleibt).
             if (labels.includes("einspruch:2h")) {
               try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: "einspruch:2h" }); }
               catch (e) { if (e.status !== 404) throw e; }

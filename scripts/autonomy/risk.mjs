@@ -12,6 +12,17 @@
 /** @typedef {{ filename: string, previous_filename?: string, status?: string, patch?: string }} GateFile */
 
 export const EINSPRUCH_MINUTEN = 30;
+/**
+ * Aufbauphase (SIN-855, Sinan 19.10.2026): keine feste Einspruchsfrist für risk:low und risk:medium.
+ * Merge nach grünen Pflicht-Checks; risk:high, `no-automerge` und Draft sperren weiter.
+ * Wieder auf `false` erst nach belegter Produktreife und Workflow-Abnahme (eigener PR, nicht nach Datum).
+ */
+export const AUFBAUPHASE = true;
+
+/** Sperrt eine Einspruchsfrist diesen PR? In der Aufbauphase nie, auch nicht bei altem `bis` im Marker. */
+export function fristGilt(risk, einspruch = [], aufbauphase = AUFBAUPHASE) {
+  return !aufbauphase && risk === "risk:medium" && einspruch.length > 0;
+}
 const PRINCIPLE_PATHS = [/^docs\/PRODUCT\.md$/];
 // Das Gate selbst: Frist statt Freigabe (SIN-547). Branch-Protection als Datei bleibt high.
 const GATE_PATHS = [/^\.github\/workflows\/(pr-gate|dispatch)\.ya?ml$/, /^scripts\/autonomy\/risk\.mjs$/];

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { approvalStillValid, classifyRisk, einspruchFrist, secretNames, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
+import { AUFBAUPHASE, approvalStillValid, classifyRisk, einspruchFrist, fristGilt, secretNames, fetchDependencyInfo, newDependencies, newReasons } from "../../../scripts/autonomy/risk.mjs";
 import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
@@ -161,6 +161,25 @@ test("Einspruchsfrist: PR mit altem Label einspruch:2h und abgelaufener Frist wi
   assert.match(gate, /FRIST_LABELS = \["einspruch:30m", "einspruch:2h"\]/);
   assert.match(gate, /FRIST_LABELS\.includes\(l\.name\)/);
   assert.match(gate, /name: "einspruch:2h"/);
+});
+
+test("Aufbauphase: low und medium ohne Frist, auch bei altem bis in der Zukunft (SIN-855)", () => {
+  assert.equal(AUFBAUPHASE, true);
+  const gruende = [{ key: "gate:pr-gate.yml", category: "gate", text: "Gate" }];
+  assert.equal(fristGilt("risk:medium", gruende), false, "medium mit Frist-Grund sperrt nicht");
+  assert.equal(fristGilt("risk:low", []), false);
+  // Alter PR: Marker mit bis in der Zukunft; in der Aufbauphase wird er gar nicht ausgewertet.
+  const zukunft = `<!-- pr-gate-einspruch sha=abc bis=${Date.now() + 3600_000} -->`;
+  assert.equal(einspruchFrist(zukunft, "abc").vorbei, false, "Marker allein würde sperren");
+  assert.equal(fristGilt("risk:medium", gruende), false, "fristGilt entscheidet vorher: keine Sperre");
+  // Nach der Aufbauphase gilt die Frist wieder, high bleibt ohnehin bei der Freigabe.
+  assert.equal(fristGilt("risk:medium", gruende, false), true);
+  assert.equal(fristGilt("risk:medium", [], false), false);
+  assert.equal(fristGilt("risk:high", gruende, false), false);
+  const gate = readFileSync(".github/workflows/pr-gate.yml", "utf8");
+  assert.match(gate, /einspruchFrist && fristGilt\(risk, einspruch\)/);
+  assert.match(gate, /riskModule\.fristGilt/);
+  assert.match(gate, /!labels\.includes\(NO_AUTOMERGE\) && !fristOffen\s*\n\s*&& \(risk !== "risk:high" \|\| approved\)/);
 });
 
 test("Frist je Risiko: low ohne, medium mit Frist, high wartet (SIN-811)", () => {

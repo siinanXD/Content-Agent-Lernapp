@@ -20,3 +20,11 @@
 ## Warum
 
 Ohne den Fix bliebe jeder PR mit altem Label dauerhaft hängen, weil kein Job seine abgelaufene Frist neu bewertet.
+
+## Nachtrag 19.10.2026, 22:41: Aufbauphase ohne Frist (SIN-855)
+
+- Sinan: während der Aufbauphase keine Einspruchsfristen für `risk:low` und `risk:medium`. Ersetzt die 30 Min aus SIN-811 und das „gespeicherte `bis` bleibt“ oben.
+- Umsetzung: Schalter `AUFBAUPHASE = true` und reine Funktion `fristGilt` in `scripts/autonomy/risk.mjs`. pr-gate lädt sie aus der Basis (main), ein PR kann seine eigene Frist also nicht abschalten. Gilt keine Frist, entfernt das Gate `einspruch:30m`/`einspruch:2h`; alte `bis`-Werte sperren nicht mehr.
+- Bleibt: `risk:high` mit `freigegeben`, `no-automerge`, Draft, Pflicht-Checks. Frist-Logik (`einspruchFrist`, `EINSPRUCH_MINUTEN`) bleibt im Code für die Rückkehr nach belegter Produktreife.
+- Alte offene PRs werden beim nächsten pr-gate-Lauf neu bewertet (neuer Commit oder main einmergen). shortcut: kein eigener Job, der alle offenen PRs anstößt; ausbauen, falls PRs ohne Commit hängen bleiben.
+
