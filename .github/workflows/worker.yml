@@ -86,7 +86,7 @@ jobs:
       # Schnellerer Start (SIN-298): Browser-Download zwischenspeichern; Systempakete installiert install-deps immer.
       - name: Playwright-Cache
         id: pw
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
