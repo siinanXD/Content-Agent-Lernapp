@@ -19,3 +19,9 @@ Die eigene Lehren-Ergänzung überschritt das 150-Zeilen-Limit: zwei Leerzeilen 
 Lokaler Gesamttest:1026/1028 grün. worker-sicherung benötigt GITHUB_REPOSITORY wie in GitHub CI; mit siinanXD/Content-Agent-Lernapp grün. Der unveränderte grow-traces-Test bleibt lokal rot (0 statt2 In-Memory-Traces); Quellen und Lockfile unverändert. CI des neuen Heads wird separat abgewartet. Der alte CI-Lauf hatte diesen Trace-Test bestanden und allein die Lehren-Länge beanstandet. Kein Test abgeschaltet.
 
 Die Gate-Meldung „3 Reparatur-Runden“ bei423 ist kein Zählerbeleg: steckbrief.mjs nimmt diesen Text bei beliebigem needs-human, dispatch --blocker übernimmt denselben pauschalen Text nach Linear. Bei423 keine repair:1..3-Labels und nur ein Implementierungscommit vor dieser ersten belegten Nacharbeit. Die Sperren bleiben gesetzt.
+
+## Zweite gezielte Nacharbeitsrunde nach unabhängigem Review
+
+Codex-Review auf e5a96df: zwei P2-Funde (discussion_r4313955096 und discussion_r4313955112). collectGithub unterscheidet nun fehlgeschlagenen Worker-Abruf von einer bekannten leeren Liste; workerStateKnown erreicht analyze und Snapshot. Unbekannt gibt weder Review-Slots noch Kick frei, behauptet keinen Hänger/Stillstand und setzt In-Progress ohne bekannte Worker nicht zurück. Bekannte wartende Reviews sind aus dem Hänger-Alarm ausgeschlossen. Regression mit alter In-Review-Aufgabe zuerst rot, ebenso unbekannter Stand; nach Fix grün. Zusätzliche Collector-Gegenprobe:100 fremde Läufe und fehlgeschlagener Worker-Abruf bleiben unbekannt.82 gezielte Tests, Typecheck und Lint ohne Fehler.
+
+CI39253826667 am vorigen Head e5a96df vollständig grün (1028 Tests, Produktionsbuild, Playwright/axe, Lighthouse). Das belegt noch nicht diese Nacharbeit. Neue CI und unabhängige Folgeprüfung des endgültigen Heads separat erforderlich. Bei weiterem Fehler keine dritte Nacharbeitsrunde, Draft und needs-human bleiben.

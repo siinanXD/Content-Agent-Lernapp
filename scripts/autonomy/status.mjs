@@ -151,6 +151,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   const workers = runs.filter((r) => r.name === "worker");
   const running = workers.filter((r) => RUNNING.includes(r.status));
+  const workerStateKnown = snap.workerStateKnown !== false;
   const failed = workers.filter((r) => r.conclusion === "failure" && since(r.created_at));
   const openPrs = prs.filter((p) => p.state === "open");
   const mergedPrs = prs.filter((p) => p.merged_at && since(p.merged_at));
@@ -162,7 +163,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const order = startOrder(issues, mayTake, { ideaSlot: false });
   const started = issues.filter((i) => i.state?.type === "started");
   // Wartende PRs (SIN-327): Issue bleibt „In Progress“, belegt aber keinen Platz; getrennt von laufenden Workern.
-  const waiting = waitingIssues(issues, prs.map((p) => ({ ...p, ci: checks[p.number]?.ci })), running.map((r) => idOf(r.display_title)).filter(Boolean));
+  const waiting = workerStateKnown ? waitingIssues(issues, prs.map((p) => ({ ...p, ci: checks[p.number]?.ci })), running.map((r) => idOf(r.display_title)).filter(Boolean)) : new Map();
   const active = started.filter((i) => !waiting.has(i.identifier));
   const todo = issues.filter((i) => i.state?.name === "Todo");
 
@@ -192,10 +193,10 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   const lastWorkerEnd = workers.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), "");
   // SIN-789: Letzter Worker laut loop_events (step=worker); die Actions-Läufe sind nur der Rückfall.
   const idleSince = [snap.lastWorkerAt ?? lastWorkerEnd,...order.map((i) => i.updatedAt)].filter(Boolean).sort().pop();
-  if (!running.length && startable && !paused && mins(idleSince, now) > IDLE_MIN) {
+  if (workerStateKnown && !running.length && startable && !paused && mins(idleSince, now) > IDLE_MIN) {
     incidents.push({ key: "idle", text: `Kein Worker läuft seit ${hm(mins(idleSince, now))}, obwohl ${order.length} startbare Todo-Issues da sind (nächstes: ${order[0].identifier}).` });
   }
-  for (const i of started) {
+  for (const i of workerStateKnown ? active : []) {
     const hasWorker = running.some((r) => idOf(r.display_title) === i.identifier);
     const hasPr = prs.some((p) => p.state === "open" && prMentions(p, i.identifier));
     if (!hasWorker && !hasPr && mins(i.updatedAt, now) > STUCK_MIN && !prs.some((p) => p.merged_at && prMentions(p, i.identifier))) {
@@ -253,7 +254,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   // --- Selbst-Diagnose (SIN-291): Ursache aus den letzten Logs, Bug-Issue ohne Duplikat ---
   const diagnosis =
-    active.length < MAX_PARALLEL && !(order.length === 0 && openPrs.length)
+    workerStateKnown && active.length < MAX_PARALLEL && !(order.length === 0 && openPrs.length)
       ? diagnoseStall({ running: running.length, paused, startable: order.length, idleMin: mins(idleSince, now), logs: snap.logs ?? [] })
       : null;
   if (diagnosis) incidents.push({ key: `stall:${diagnosis.cause}`, text: `Stillstand: ${diagnosis.label}. ${diagnosis.reason}` });
@@ -310,7 +311,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
     incidents.push({ key: `stale-gate:${p.number}`, text: `PR #${p.number}: \`merge-gate\` ist rot, obwohl freigegeben (Freigabe vor neuem Commit). Bitte Label \`freigegeben\` entfernen und neu setzen: ${p.html_url}` });
   }
   // Abgleich wie im Dispatcher (SIN-240): Merge → Done; ohne Worker und PR seit 15 Min (SIN-291) → Todo.
-  const runningWorkers = running.map((r) => idOf(r.display_title)).filter(Boolean);
+  const runningWorkers = workerStateKnown ? running.map((r) => idOf(r.display_title)).filter(Boolean) : undefined;
   const reconciled = reconcile(issues, prs.map((p) => ({ title: p.title, head: p.head, state: p.state, merged: Boolean(p.merged_at), body: p.body })), { runningWorkers, now });
   for (const a of reconciled.filter((x) => x.to === "Done" || x.to === "Offen")) actions.push({ type: "linear-done", ...a });
   for (const { issue } of reconciled.filter((a) => a.to === "Todo")) actions.push({ type: "linear-todo", issue });
@@ -331,7 +332,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
 
   // Kick: Dispatcher anstoßen, wenn nichts läuft, aber etwas startbar ist und der letzte Lauf lange her ist.
   const lastDispatch = runs.filter((r) => r.name === "dispatch").reduce((m, r) => (r.created_at > m ? r.created_at : m), "");
-  const kick = !running.length && startable && !paused && mins(lastDispatch, now) >= KICK_MIN;
+  const kick = workerStateKnown && !running.length && startable && !paused && mins(lastDispatch, now) >= KICK_MIN;
 
   // --- Text ---
   const out = [`# ${STATUS_TITLE}`, "", `Stand: ${now.toISOString()} (UTC). Dieser Text wird bei jedem Lauf neu geschrieben.`, ""];
@@ -339,7 +340,7 @@ export function analyze(snap, limitsFile = {}, prev = {}) {
   if (running.length) {
     const how = running.length > 1 ? "parallel" : "einzeln";
     for (const r of running) out.push(`- Worker ${idOf(r.display_title) ?? "?"} (${r.status === "in_progress" ? "läuft" : "wartet"}) seit ${hm(mins(r.created_at, now))}, ${how}: [Lauf](${r.html_url})`);
-  } else out.push("- Kein Worker läuft.");
+  } else out.push(workerStateKnown ? "- Kein Worker läuft." : "- Worker-Stand unbekannt; keine zusätzlichen Plätze freigegeben.");
   if (paused) out.push(`- ⏸ Pausiert bis ${pausedUntil}. Fortsetzen: Workflow \`loop-pause\` mit „fortsetzen“.`);
   out.push(`- ${backup ? `${backup.ok ? "" : "⚠️ "}${backup.line}` : "Letzte Sicherung: nicht lesbar"}`);
   if (restoreTest) out.push(`- ${restoreTest.ok ? "" : "⚠️ "}${restoreTest.line}`);
@@ -540,20 +541,20 @@ export async function collectDecisions(repo, prs, now, { call = gh, owner = "sii
   return pendingDecisions(prs, comments, { owner, now });
 }
 
-async function collectGithub(repo, now) {
+export async function collectGithub(repo, now, call = gh) {
   const since = new Date(now.getTime() - DAY_MS).toISOString().slice(0, 10);
-  const { workflow_runs: all } = await gh(`/repos/${repo}/actions/runs?per_page=100&created=>=${since}`);
+  const { workflow_runs: all } = await call(`/repos/${repo}/actions/runs?per_page=100&created=>=${since}`);
   // SIN-362: Die 100 jüngsten Läufe aller Workflows drängen Worker-Läufe heraus (17 in einer Nacht); sie getrennt holen.
   // SIN-643: Ebenso dispatch.yml, sonst meldet der Wächter „Kein Lauf gefunden“, obwohl der Zeitplan feuert.
-  const own = await Promise.all(["worker.yml", "dispatch.yml"].map((f) => gh(`/repos/${repo}/actions/workflows/${f}/runs?per_page=100&created=>=${since}`).catch(() => ({ workflow_runs: [] }))));
+  const own = await Promise.all(["worker.yml", "dispatch.yml"].map((f) => call(`/repos/${repo}/actions/workflows/${f}/runs?per_page=100&created=>=${since}`).catch(() => null)));
   const seen = new Set(all.map((r) => r.id));
   const workflow_runs = [...all];
-  for (const r of own.flatMap((o) => o.workflow_runs ?? [])) if (!seen.has(r.id)) { seen.add(r.id); workflow_runs.push(r); }
+  for (const r of own.flatMap((o) => o?.workflow_runs ?? [])) if (!seen.has(r.id)) { seen.add(r.id); workflow_runs.push(r); }
   const runs = workflow_runs.map((r) => ({
     id: r.id, name: r.name, display_title: r.display_title, status: r.status, conclusion: r.conclusion,
     created_at: r.created_at, updated_at: r.updated_at, html_url: r.html_url,
   }));
-  const list = await gh(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`);
+  const list = await call(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100`);
   const prs = [];
   const checks = {};
   for (const p of list) {
@@ -563,20 +564,20 @@ async function collectGithub(repo, now) {
     };
     if (p.state === "open") {
       pr.sha = p.head.sha;
-      pr.head_at = (await gh(`/repos/${repo}/commits/${p.head.sha}`)).commit?.committer?.date;
-      pr.mergeable_state = (await gh(`/repos/${repo}/pulls/${p.number}`)).mergeable_state;
+      pr.head_at = (await call(`/repos/${repo}/commits/${p.head.sha}`)).commit?.committer?.date;
+      pr.mergeable_state = (await call(`/repos/${repo}/pulls/${p.number}`)).mergeable_state;
       if (pr.labels.includes("einspruch:2h")) {
         // SIN-547: Ende der Einspruchsfrist aus dem Kommentar des Gates (nur gültig für den aktuellen Commit).
-        const cs = await gh(`/repos/${repo}/issues/${p.number}/comments?per_page=100`).catch(() => []);
+        const cs = await call(`/repos/${repo}/issues/${p.number}/comments?per_page=100`).catch(() => []);
         const m = cs.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/)).filter(Boolean).pop();
         if (m && m[1] === p.head.sha) pr.einspruch_bis = new Date(Number(m[2])).toISOString();
       }
-      const cr = await gh(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`);
+      const cr = await call(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`);
       checks[p.number] = { mergeGate: cr.check_runs.find((c) => c.name === "merge-gate")?.conclusion ?? null, ci: cr.check_runs.find((c) => c.name === "build")?.conclusion ?? undefined, checkRuns: cr.check_runs };
     }
     prs.push(pr);
   }
-  return { runs, prs, checks };
+  return { runs, prs, checks, workerStateKnown: Array.isArray(own[0]?.workflow_runs) };
 }
 
 const serviceOf = (url) => (/vercel/.test(url) ? "Vercel" : /supabase/.test(url) ? "Supabase" : /sentry/.test(url) ? "Sentry" : /langfuse/.test(url) ? "Langfuse" : new URL(url).hostname);
