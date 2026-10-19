@@ -27,23 +27,25 @@ export function SourceChip({ source }: { source: string }) {
         style={{ fontFamily: "var(--font-mono)" }}
       >
         Quelle
-      </span>
+      </span>{" "}
       <span className="min-w-0 break-words text-[15px] text-[var(--color-text-primary)]">
         {host ?? text}
       </span>
     </>
   );
   if (host) {
+    // SIN-841: Kein aria-label. Der zugängliche Name kommt aus dem sichtbaren Text (axe 4.14
+    // `label-content-name-mismatch`); der Tab-Hinweis steht nur für Screenreader dahinter.
     return (
       <a
         href={text}
         target="_blank"
         rel="noopener noreferrer"
         className={`${base} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]`}
-        aria-label={`Quelle ${host} (öffnet in neuem Tab)`}
         data-testid="source-chip"
       >
         {label}
+        <span className="sr-only"> (öffnet in neuem Tab)</span>
       </a>
     );
   }
