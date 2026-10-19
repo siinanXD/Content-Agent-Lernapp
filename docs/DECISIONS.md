@@ -15,6 +15,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | --- | --- | --- |
 | SIN-848 | SIN-848: loop_events.payload und Nachzug der Leitstand-Migrationen | [SIN-848-loop-events-payload-nachzug.md](decisions/SIN-848-loop-events-payload-nachzug.md) |
 | SIN-847 | SIN-847: Dispatcher-Takt per Supabase pg_cron statt GitHub-Cron | [SIN-847-takt-per-pg-cron.md](decisions/SIN-847-takt-per-pg-cron.md) |
+| SIN-842 | SIN-842: repair.yml erlaubt Dependabot als Auslöser | [SIN-842-repair-allowed-bots.md](decisions/SIN-842-repair-allowed-bots.md) |
 | SIN-841 | SIN-841: Quellen-Chip ohne aria-label, Tab-Hinweis nur für Screenreader | [SIN-841-quellen-chip-zugaenglicher-name.md](decisions/SIN-841-quellen-chip-zugaenglicher-name.md) |
 | SIN-832 | SIN-832: Reservierungsspalten für den Leitstand-Dispatcher | [SIN-832-reservierung-spalten.md](decisions/SIN-832-reservierung-spalten.md) |
 | SIN-824 | SIN-824: Abnahme belegt keinen Worker-Platz | [SIN-824-abnahme-kein-worker-slot.md](decisions/SIN-824-abnahme-kein-worker-slot.md) |

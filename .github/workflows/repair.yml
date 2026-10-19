@@ -127,6 +127,8 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          # SIN-842: Ohne das lehnt die Action Dependabot-PRs als „non-human actor“ ab. Nie `*`.
+          allowed_bots: "dependabot[bot]"
           additional_permissions: |
             actions: read
           claude_args: >-
@@ -160,10 +162,18 @@ jobs:
           OLD_SHA: ${{ github.event.workflow_run.head_sha }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           ROUND: ${{ steps.round.outputs.round }}
+          FIX_OUTCOME: ${{ steps.fix.outcome }}
+          REPAIR_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           NEW_SHA=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
           if [ "$NEW_SHA" != "$OLD_SHA" ]; then
             echo "Neuer Commit $NEW_SHA: ci startet von selbst."
+            exit 0
+          fi
+          # SIN-842: Fehlgeschlagener Claude-Schritt = kein Versuch. Nicht still neu starten, sofort melden.
+          if [ "$FIX_OUTCOME" != "success" ]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --add-label needs-human
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "**Reparatur gestoppt:** In Runde $ROUND ist der Claude-Schritt nicht gelaufen (Ergebnis: \`${FIX_OUTCOME}\`), es gab keinen Reparaturversuch. Fehlermeldung im [Lauf]($REPAIR_URL), Schritt „Claude repariert die CI“. Bitte schau drauf."
             exit 0
           fi
           echo "::warning::Runde $ROUND ohne Commit, starte ci neu."
