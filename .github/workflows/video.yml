@@ -104,7 +104,7 @@ jobs:
 
       - name: Standbilder sichern
         if: always() && env.STOP != '1'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: video-standbilder
           path: video-ergebnis/standbilder/*.png
@@ -126,7 +126,7 @@ jobs:
 
       - name: Video sichern
         if: always() && env.STOP != '1'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tutorial-video
           path: |
@@ -137,7 +137,7 @@ jobs:
 
       - name: Fehlerkontext sichern
         if: failure() && env.STOP != '1'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: video-fehlerkontext
           path: video-ergebnis/dateien/**
