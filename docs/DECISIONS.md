@@ -22,6 +22,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-843 | SIN-843: PR #411 (SIN-811) neu aufsetzen, Frist-Job für alte einspruch:2h-PRs | [SIN-843-pr-411-neu-aufsetzen.md](decisions/SIN-843-pr-411-neu-aufsetzen.md) |
 | SIN-842 | SIN-842: repair.yml erlaubt Dependabot als Auslöser | [SIN-842-repair-allowed-bots.md](decisions/SIN-842-repair-allowed-bots.md) |
 | SIN-841 | SIN-841: Quellen-Chip ohne aria-label, Tab-Hinweis nur für Screenreader | [SIN-841-quellen-chip-zugaenglicher-name.md](decisions/SIN-841-quellen-chip-zugaenglicher-name.md) |
+| SIN-840 | SIN-840: verbindliche Worker-Regeln | [SIN-840-worker-grundregel.md](decisions/SIN-840-worker-grundregel.md) |
 | SIN-832 | SIN-832: Reservierungsspalten für den Leitstand-Dispatcher | [SIN-832-reservierung-spalten.md](decisions/SIN-832-reservierung-spalten.md) |
 | SIN-824 | SIN-824: Abnahme belegt keinen Worker-Platz | [SIN-824-abnahme-kein-worker-slot.md](decisions/SIN-824-abnahme-kein-worker-slot.md) |
 | SIN-818 | SIN-818: Haken-Pause blockiert keine Startplätze | [SIN-818-haken-pause-nachruecken.md](decisions/SIN-818-haken-pause-nachruecken.md) |
