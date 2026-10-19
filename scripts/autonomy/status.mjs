@@ -569,7 +569,7 @@ export async function collectGithub(repo, now, call = gh) {
       if (pr.labels.includes("einspruch:2h")) {
         // SIN-547: Ende der Einspruchsfrist aus dem Kommentar des Gates (nur gültig für den aktuellen Commit).
         const cs = await call(`/repos/${repo}/issues/${p.number}/comments?per_page=100`).catch(() => []);
-        const m = cs.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+) -->/)).filter(Boolean).pop();
+        const m = cs.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+)(?: gruende=\w+)? -->/)).filter(Boolean).pop();
         if (m && m[1] === p.head.sha) pr.einspruch_bis = new Date(Number(m[2])).toISOString();
       }
       const cr = await call(`/repos/${repo}/commits/${p.head.sha}/check-runs?per_page=100`);
