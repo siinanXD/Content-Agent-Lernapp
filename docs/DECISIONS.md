@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-841 | SIN-841: Quellen-Chip ohne aria-label, Tab-Hinweis nur für Screenreader | [SIN-841-quellen-chip-zugaenglicher-name.md](decisions/SIN-841-quellen-chip-zugaenglicher-name.md) |
 | SIN-824 | SIN-824: Abnahme belegt keinen Worker-Platz | [SIN-824-abnahme-kein-worker-slot.md](decisions/SIN-824-abnahme-kein-worker-slot.md) |
 | SIN-818 | SIN-818: Haken-Pause blockiert keine Startplätze | [SIN-818-haken-pause-nachruecken.md](decisions/SIN-818-haken-pause-nachruecken.md) |
 | SIN-809 | SIN-809: Fabrik erzeugt im Durchlauf nur für offene Content-Punkte | [SIN-809-fabrik-nur-offene-kurse.md](decisions/SIN-809-fabrik-nur-offene-kurse.md) |
