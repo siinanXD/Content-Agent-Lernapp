@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-847 | SIN-847: Dispatcher-Takt per Supabase pg_cron statt GitHub-Cron | [SIN-847-takt-per-pg-cron.md](decisions/SIN-847-takt-per-pg-cron.md) |
 | SIN-824 | SIN-824: Abnahme belegt keinen Worker-Platz | [SIN-824-abnahme-kein-worker-slot.md](decisions/SIN-824-abnahme-kein-worker-slot.md) |
 | SIN-818 | SIN-818: Haken-Pause blockiert keine Startplätze | [SIN-818-haken-pause-nachruecken.md](decisions/SIN-818-haken-pause-nachruecken.md) |
 | SIN-809 | SIN-809: Fabrik erzeugt im Durchlauf nur für offene Content-Punkte | [SIN-809-fabrik-nur-offene-kurse.md](decisions/SIN-809-fabrik-nur-offene-kurse.md) |
