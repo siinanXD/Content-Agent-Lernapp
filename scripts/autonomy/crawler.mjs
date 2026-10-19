@@ -139,7 +139,10 @@ if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
   crawl(base).then(
     () => process.exit(0),
     (e) => {
+      // Abgestürzter Lauf zählt als Fund: der Bericht (und damit die Serie, SIN-770) entsteht trotzdem, statt still zu fehlen.
       console.error(e.message);
+      mkdirSync("testnutzer-ergebnis", { recursive: true });
+      writeFileSync("testnutzer-ergebnis/funde-crawler.json", JSON.stringify({ routen: 0, funde: [{ kategorie: "tot", route: "/", text: `Crawler abgestürzt: ${e.message.split("\n")[0]}` }] }, null, 2));
       process.exit(1);
     },
   );

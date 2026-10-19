@@ -15,6 +15,12 @@ Der Bericht des Crawlers in SIN-640 nennt „Serie ohne Fund: n von 3 Tagen in F
 - Kein neuer Speicher: der Marker liegt im vorhandenen Linear-Kommentar, ausgelesen werden die letzten 50 Kommentare von SIN-640.
 - Die Serie startet mit dem ersten Lauf nach dem Merge; „Done“ erst nach 3 Berichten in Folge mit „Ziel erreicht“ (SIN-616).
 
+## Nachtrag (zweiter PR)
+
+- Stürzt der Crawler ab, schreibt er selbst einen Fund („Crawler abgestürzt“, Kategorie `tot`) und der Schritt „Issues und Bericht“ läuft mit `if: always()`. Vorher fehlte der Bericht still, die Serie brach ohne Spur.
+- Test: jede `page.tsx` unter `src/app` steht in `e2e/routes.ts`; Ausnahmen `/admin` (Anmeldung) und `/lernpfad/[kurs]` (veröffentlichter Kurs) sind im Test begründet.
+- Annahme: GitHub-Cron kann ausfallen (SIN-807). Ein ausgefallener Tag beendet die Serie, das ist gewollt und sichtbar. Ein Anstoß durch den Dispatcher ist nicht gebaut (nicht verlangt).
+
 ## Warum
 
 Das Kriterium „drei Tage in Folge 0 Fehler“ war nirgends messbar. Ein Marker im Bericht braucht keine Abhängigkeit und keine Schemaänderung.
