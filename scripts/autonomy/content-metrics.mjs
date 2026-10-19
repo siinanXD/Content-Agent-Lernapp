@@ -193,10 +193,10 @@ export function renderWeeklyReport({ coverage, runs }) {
   ].join("\n");
 }
 
-export async function fetchAll(base, table, query, headers) {
+export async function fetchAll(base, table, query, headers, http = {}) {
   const out = [];
   for (let from = 0; ; from += 1000) {
-    const page = await fetchJson("Supabase", `${base}/rest/v1/${table}?${query}`, { headers: { ...headers, Range: `${from}-${from + 999}` } });
+    const page = await fetchJson("Supabase", `${base}/rest/v1/${table}?${query}`, { headers: { ...headers, Range: `${from}-${from + 999}` } }, http);
     out.push(...page);
     if (page.length < 1000) return out;
   }
