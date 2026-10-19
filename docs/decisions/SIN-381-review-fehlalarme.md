@@ -1,5 +1,7 @@
 # SIN-381: Review-Fehlalarme verbrauchen keine Reparatur-Runden
 
+> Teilweise abgelöst durch [SIN-844](SIN-844-widerlegung-als-kommentar.md): Die Widerlegung steht in einem Marker-Kommentar, nicht mehr in einem Leer-Commit; höchstens 2 Widerlegungen nehmen die Runde zurück.
+
 ## Links
 - [SIN-381 Linear Issue](https://linear.app/sinan-kahraman/issue/SIN-381/review-agent-fehlalarme-verbrauchen-reparatur-runden)
 - [GitHub REST: Check Runs eines Commits](https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference)

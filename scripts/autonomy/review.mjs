@@ -57,15 +57,21 @@ export function buildDiff(files, max = MAX_DIFF_CHARS) {
 
 export const WIDERLEGT_PREFIX = "Fund geprüft, keine Änderung nötig";
 
+/** SIN-844: Marker der Widerlegung als PR-Kommentar (kein Commit, kein `synchronize`). */
+export const WIDERLEGT_MARKER_RE = /<!-- fund-widerlegt sha=\S+ -->/;
+/** Höchstens so viele Widerlegungen je PR nehmen die Reparatur-Runde zurück (`review.yml` nutzt dieselbe Zahl). */
+export const MAX_WIDERLEGUNGEN = 2;
+
 /**
- * Begründungen der Reparatur (SIN-381) aus den Commit-Nachrichten des PR. Format: eine Zeile
- * „Fund geprüft, keine Änderung nötig“, danach je Fund eine Zeile `- <datei>: <Aussage> (<Begründung>)`.
+ * Begründungen der Reparatur aus Texten des PR: Kommentare mit Marker `<!-- fund-widerlegt sha=… -->` (SIN-844)
+ * oder Commit-Nachrichten mit der Zeile „Fund geprüft, keine Änderung nötig“ (SIN-381, nur Altbestand).
+ * Je Fund eine Zeile `- <datei>: <Aussage> (<Begründung>)`.
  */
 export function parseWiderlegt(messages = []) {
   const out = [];
   for (const m of messages) {
     const lines = String(m).split("\n").map((l) => l.trim());
-    if (!lines.some((l) => l.includes(WIDERLEGT_PREFIX))) continue;
+    if (!WIDERLEGT_MARKER_RE.test(String(m)) && !lines.some((l) => l.includes(WIDERLEGT_PREFIX))) continue;
     for (const l of lines) {
       const hit = /^[-*]\s+`?([^`:\s]+)`?:\s+(.+)$/.exec(l);
       if (hit) out.push({ datei: hit[1], text: hit[2] });
@@ -280,7 +286,7 @@ export async function main(argv, env = process.env, now = new Date()) {
   if (ledger.some((e) => e.sha === sha)) return output(env, { severe: /review-severe: true/.test(mine.body), skipped: "schon-geprueft" });
 
   const commits = await paged(`/repos/${repo}/pulls/${pr}/commits`, env);
-  const widerlegt = parseWiderlegt(commits.map((c) => c.commit?.message ?? ""));
+  const widerlegt = parseWiderlegt([...commits.map((c) => c.commit?.message ?? ""), ...comments.map((c) => c.body ?? "")]);
   const feste = diffChecks(files);
   let result = null;
   let funde = [...feste];
