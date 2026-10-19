@@ -46,13 +46,18 @@ export function waitReason(pr) {
 
 /**
  * Issues in „In Progress“, die keinen Platz belegen: kein Worker läuft und alle offenen PRs des Issues warten.
- * @returns {Map<string, { pr: number, reason: string }>} Kennung → Grund
+ * @returns {Map<string, { pr: number | null, reason: string }>} Kennung → Grund
  */
 export function waitingIssues(issues, prs, runningWorkers = []) {
   const out = new Map();
   for (const issue of issues) {
     if (issue.state?.type !== "started" || runningWorkers.includes(issue.identifier)) continue;
     const mine = prs.filter((p) => p.state === "open" && prMentions(p, issue.identifier));
+    // Linear zählt In Review ebenfalls als started; eine Abnahme belegt ohne Worker keinen Bauplatz.
+    if (issue.state.name === "In Review") {
+      out.set(issue.identifier, { pr: mine[0]?.number ?? null, reason: "In Review: Abnahme ausstehend, kein Worker aktiv" });
+      continue;
+    }
     if (!mine.length) continue;
     const reasons = mine.map((p) => ({ pr: p.number, reason: waitReason(p) }));
     if (reasons.every((r) => r.reason)) out.set(issue.identifier, reasons[0]);

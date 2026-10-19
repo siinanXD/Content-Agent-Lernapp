@@ -145,3 +145,15 @@ test("SIN-333: frische rote PRs, main rot → genau ein Issue, keine Dublette be
   assert.deepEqual(res.rerun, []);
   assert.equal(detectGateBreaks([fresh(1, "a"), fresh(2, "b")], [{ title: res.breaks[0].title }], { ...ctx, main: { build: "failure" } }).breaks[0].issue, null);
 });
+
+test("SIN-824: In Review ohne Worker belegt keinen Startplatz, auch ohne Produkt-PR", () => {
+  const review = inProgress("SIN-537", { state: { name: "In Review", type: "started" } });
+  const wartend = inProgress("SIN-811");
+  const issues = [review, wartend, mk("SIN-824", 1), mk("SIN-808", 2)];
+  const prs = [pr(411, "SIN-811", { labels: ["risk:high"] })];
+  const waiting = waitingIssues(issues, prs, []);
+  assert.deepEqual([...waiting.keys()], ["SIN-537", "SIN-811"]);
+  assert.equal(pickMany(issues, 2, () => true, new Set(waiting.keys())).issues.length, 2);
+  // Ein nachgewiesen laufender Worker behält seinen Platz auch bei abweichendem Linear-Status.
+  assert.equal(waitingIssues([review], [], ["SIN-537"]).has("SIN-537"), false);
+});

@@ -62,6 +62,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Issues und Bericht
+        if: always() && hashFiles('testnutzer-ergebnis/funde-crawler.json') != ''
         run: node scripts/autonomy/testnutzer.mjs melden --quelle crawler --lauf "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" $DRY
 
   personas:

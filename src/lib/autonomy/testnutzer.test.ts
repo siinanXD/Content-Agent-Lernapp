@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import { leseRouten } from "../../../scripts/autonomy/sichtpruefung.mjs";
 import { istInterneUrl } from "../../../scripts/autonomy/crawler.mjs";
 import {
   MAX_NEUE_ISSUES,
@@ -108,4 +110,20 @@ test("Bericht: Persona-Lauf kennzeichnet die KI im Text, Crawler nicht", () => {
   const p = berichtText({ quelle: "personas", funde: 0, neu: 0, doppelt: 0 });
   assert.match(p, /KI-erzeugt \(Claude\)/);
   assert.doesNotMatch(berichtText({ quelle: "crawler", funde: 0, neu: 0, doppelt: 0 }), /KI-erzeugt/);
+});
+
+test("Crawler: jede Seite unter src/app steht in e2e/routes.ts (Ausnahmen begründet)", () => {
+  // /admin braucht Anmeldung, /lernpfad/[kurs] einen veröffentlichten Kurs: beide nicht ohne Konto abgehbar.
+  const ausnahmen = new Set(["admin", "lernpfad/[kurs]"]);
+  const routen = leseRouten(readFileSync("e2e/routes.ts", "utf8"));
+  const seiten: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory() && e.name !== "api") walk(`${dir}/${e.name}`);
+      if (e.isFile() && e.name === "page.tsx") seiten.push(dir.slice("src/app".length + 1));
+    }
+  };
+  walk("src/app");
+  const fehlt = seiten.filter((v) => v && !ausnahmen.has(v)).map((v) => `/${v.replace(/\[[^\]]+\]/, "unit-03")}`).filter((r) => !routen.includes(r));
+  assert.deepEqual(fehlt, []);
 });

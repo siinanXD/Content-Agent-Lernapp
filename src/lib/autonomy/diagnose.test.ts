@@ -259,6 +259,16 @@ test("SIN-782: Fixture grüner dispatch-Lauf mit Pause-Zeile → Grund sichtbar 
   assert.equal(newStallIssue(diag, [])?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
 });
 
+test("SIN-824: Original-Log mit abgelaufener Pause ergibt das passende Stillstand-Issue", () => {
+  const text = "Kein roter Lauf: dispatch. Letzter Lauf #39063399718 success am 2026-10-17T19:39:26Z\nPausiert bis 2026-10-17T20:58:03.827Z";
+  const diag = diagnoseStall({ running: 0, paused: false, startable: 7, idleMin: 209, logs: [{ workflow: "dispatch", text, url: "https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/39063399718" }] });
+  assert.equal(diag?.cause, "ohne-start");
+  const issue = newStallIssue(diag, []);
+  assert.equal(issue?.title, "Stillstand: Läufe ohne Fehler, aber kein Worker gestartet");
+  assert.match(issue!.description, /Pausiert bis 2026-10-17T20:58:03.827Z/);
+  assert.match(issue!.description, /39063399718/);
+});
+
 test("Worker ohne PR: Kommentar mit letzter Ausgabe, num_turns und permission denials", () => {
   const raw = JSON.stringify([
     { type: "assistant", message: { content: [{ type: "text", text: "Ich mache jetzt den PR." }] } },

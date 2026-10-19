@@ -1,6 +1,7 @@
 # Review-Agent (SIN-297): Ein OpenAI-Modell (andere Modellfamilie als der Worker) liest bei jedem PR den Diff gegen
 # den Auftrag und schreibt einen Kommentar mit Schwere (scripts/autonomy/review.mjs).
-#   schwer → Job `repair`: Claude repariert im selben PR (zählt als Reparatur-Runde, Labels repair:1..3 wie in repair.yml)
+#   schwer → Job `repair`: Claude repariert im selben PR (zählt als Reparatur-Runde, Labels repair:1..3 wie in repair.yml);
+#            hält Claude alle Funde für falsch, schreibt sie einen Marker-Kommentar statt eines Commits (SIN-844)
 #   leicht → nur Hinweis im Kommentar
 # Kosten je Review stehen als Ledger im Kommentar; REVIEW_DAILY_CAP_USD (Repo-Variable, Standard 2) ist der Tagesdeckel.
 # Skripte kommen aus main, nie aus dem PR-Branch. Nur PRs aus diesem Repo (Forks haben keine Secrets).
@@ -112,10 +113,12 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          # SIN-849: Worker-PRs stammen von Bots; ohne das lehnt die Action sie als „non-human actor“ ab. Nie `*`.
+          allowed_bots: "claude[bot],github-actions[bot],dependabot[bot]"
           claude_args: >-
             --model claude-sonnet-5-5
             --max-turns 40
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(gh pr view:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(gh pr view:*),Bash(gh pr comment:*)"
           prompt: |
             Das Review (zweites Modell) hat im Pull Request #${{ github.event.pull_request.number }}
             (Branch `${{ github.event.pull_request.head.ref }}`) schwere Funde gemeldet. Runde ${{ steps.round.outputs.round }} von 3.
@@ -123,33 +126,40 @@ jobs:
             1. Lies AGENTS.md.
             2. Lies den Kommentar mit der Überschrift „Review (zweites Modell)“: `gh pr view ${{ github.event.pull_request.number }} --comments`.
             3. Behebe nur die schweren Funde, soweit sie im Diff wirklich stimmen. Leichte Funde ignorierst du.
-               Sind alle schweren Funde falsch (SIN-381): ändere nichts und mache einen leeren Commit
-               (`git commit --allow-empty`) mit der ersten Zeile `Fund geprüft, keine Änderung nötig` und danach je Fund
-               einer Zeile `- <datei>: <Aussage des Funds> (<Begründung>)`. Diese Runde zählt dann nicht, und das Review
-               meldet denselben Fund nicht erneut als schwer. Stimmt ein Teil, behebe ihn (Commit wie in Schritt 6) und
-               nenne die falschen Funde im Commit-Text hinter einer Zeile `Fund geprüft, keine Änderung nötig für:` im selben Format.
+               Sind alle schweren Funde falsch (SIN-844): ändere nichts, mache keinen Commit und schreibe einen
+               PR-Kommentar (`gh pr comment ${{ github.event.pull_request.number }} --body-file <datei>`). Erste Zeile
+               `<!-- fund-widerlegt sha=${{ github.event.pull_request.head.sha }} -->`, danach je Fund eine Zeile
+               `- <datei>: <Aussage des Funds> (<Begründung>)`. Das Review meldet den Fund dann nicht erneut als schwer.
+               Stimmt ein Teil, behebe ihn (Commit wie in Schritt 6) und nenne die falschen Funde im selben Kommentarformat.
             4. Verboten: Tests, Lint-Regeln oder Barrierefreiheits-Tests abschalten oder abschwächen, Workflows unter .github/ ändern, Secrets anfassen.
             5. Prüfe lokal (`npm ci`, dann lint, typecheck, test). Vor dem Push `git fetch origin main && git merge origin/main`, danach die Tests erneut.
             6. Ein Commit, Conventional Commit mit derselben Linear-ID wie der PR-Titel („${{ steps.round.outputs.title }}“),
                z. B. `fix(review): … (SIN-123)`. Dann auf den Branch pushen.
             7. Kannst du die Funde nicht beheben: nichts pushen, den Blocker kurz im PR beschreiben.
 
-      # SIN-381: Hat die Reparatur alle Funde begründet verworfen (leerer Commit mit fester erster Zeile), zählt die Runde nicht.
+      # SIN-844: Hat die Reparatur alle Funde per Marker-Kommentar verworfen (kein neuer Commit), zählt die Runde nicht,
+      # aber nur für die ersten 2 Widerlegungen je PR (MAX_WIDERLEGUNGEN in review.mjs). Danach zählt jede Runde.
       - name: Runde zurücknehmen, wenn nur Fehlalarme
         if: steps.round.outputs.go == 'true' && steps.fix.outcome == 'success'
         uses: actions/github-script@v7
         env:
           ROUND: ${{ steps.round.outputs.round }}
           OLD_SHA: ${{ github.event.pull_request.head.sha }}
+          MAX_WIDERLEGUNGEN: "2"
         with:
           github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
             const number = context.payload.pull_request.number;
             const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
-            if (pr.head.sha === process.env.OLD_SHA) return;
-            const { data: commit } = await github.rest.repos.getCommit({ owner, repo, ref: pr.head.sha });
-            if (!commit.commit.message.startsWith("Fund geprüft, keine Änderung nötig")) return;
+            if (pr.head.sha !== process.env.OLD_SHA) return;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: number, per_page: 100 });
+            const refuted = comments.filter((c) => /<!-- fund-widerlegt sha=\S+ -->/.test(c.body ?? ""));
+            if (!refuted.some((c) => c.body.includes(`sha=${process.env.OLD_SHA} `))) return;
+            if (refuted.length > Number(process.env.MAX_WIDERLEGUNGEN)) {
+              core.info("Mehr als 2 Widerlegungen: die Runde zählt.");
+              return;
+            }
             try { await github.rest.issues.removeLabel({ owner, repo, issue_number: number, name: `repair:${process.env.ROUND}` }); }
             catch (e) { if (e.status !== 404) throw e; }
             core.info("Nur Fehlalarme: Reparatur-Runde zählt nicht.");

@@ -18,13 +18,13 @@ flowchart TD
     CodeQL --> Gate
     Review --> Gate
   end
-  CI -- rot --> Repair["repair.yml: bis 3 Runden, ohne Commit startet ci neu"]
+  CI -- rot --> Repair["repair.yml: bis 3 Runden, ohne Commit startet ci neu, Claude-Fehler = sofort needs-human"]
   Repair --> CI
   Repair -- "nach Runde 3" --> Mensch["needs-human, Stopp"]
   Gate -- "risk:high" --> Freigabe["Label freigegeben (Sinan)"]
   Freigabe --> Merge
-  Gate -- "risk:medium + Einspruchsfrist 2 h" --> Merge
-  Gate -- "risk:medium" --> Merge["Auto-Merge (Squash)"]
+  Gate -- "risk:medium (Aufbauphase: ohne Frist)" --> Merge
+  Gate -- "risk:low" --> Merge["Auto-Merge (Squash)"]
   Merge --> Haken{"Alle Fertig-Kriterien belegt? (SIN-779)"}
   Haken -- ja --> Done["Linear: Done"]
   Haken -- nein --> Offen["Issue bleibt offen, Kommentar nennt offene Haken"]

@@ -96,7 +96,9 @@ test("Linear: GraphQL-Fehler bleiben Fehler, ohne Wiederholung", async () => {
   assert.equal(calls.length, 1);
 });
 
-test("Planer: optionale Dienste mit Fehlerseite → „nicht messbar“, kein Absturz", async () => {
+test("Planer: optionale Dienste mit Fehlerseite → „nicht messbar“, kein Absturz", async (t) => {
+  // Kein echter Transport darf die synthetischen Testadressen erreichen.
+  const network = t.mock.method(globalThis, "fetch", async () => { throw new Error("Echte Netzabfrage im Unit-Test verboten"); });
   const env = {
     SUPABASE_URL: "https://sb.test",
     SUPABASE_SERVICE_ROLE_KEY: "k",
@@ -112,6 +114,7 @@ test("Planer: optionale Dienste mit Fehlerseite → „nicht messbar“, kein Ab
   assert.match(String(m.sentry), /^nicht messbar \(Sentry: keine JSON-Antwort/);
   assert.match(String(m.posthog), /^nicht messbar \(PostHog: /);
   assert.match(String(m.sentry_kritisch), /^nicht messbar \(Sentry: keine JSON-Antwort/);
+  assert.equal(network.mock.callCount(), 0, "Alle Dienste müssen den injizierten Transport nutzen");
 });
 
 test("Planer: Linear nicht erreichbar → saubere Warnung und Ausgabe linear_ok=false", () => {

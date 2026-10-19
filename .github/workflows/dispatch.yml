@@ -9,7 +9,8 @@ name: dispatch
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    # SIN-847: krumme Minuten, GitHub-Cron ist nur Rückfallebene; den Takt gibt pg_cron (Supabase) per workflow_dispatch.
+    - cron: "13,43 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
