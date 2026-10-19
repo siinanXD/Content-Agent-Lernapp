@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-849 | SIN-849: review.yml erlaubt Bot-Auslöser | [SIN-849-review-allowed-bots.md](decisions/SIN-849-review-allowed-bots.md) |
 | SIN-848 | SIN-848: loop_events.payload und Nachzug der Leitstand-Migrationen | [SIN-848-loop-events-payload-nachzug.md](decisions/SIN-848-loop-events-payload-nachzug.md) |
 | SIN-847 | SIN-847: Dispatcher-Takt per Supabase pg_cron statt GitHub-Cron | [SIN-847-takt-per-pg-cron.md](decisions/SIN-847-takt-per-pg-cron.md) |
 | SIN-842 | SIN-842: repair.yml erlaubt Dependabot als Auslöser | [SIN-842-repair-allowed-bots.md](decisions/SIN-842-repair-allowed-bots.md) |
