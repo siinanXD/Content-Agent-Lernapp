@@ -34,6 +34,11 @@ export const REPAIR_BATCH_RESERVE_EUR = 3;
 export const REPAIR_STOP_EUR = RUN_CAP_EUR - REPAIR_BATCH_RESERVE_EUR;
 
 /** Maps, die die Fabrik immer erzeugt (SIN-431): MAF Metall und Industriekaufleute. */
+/** SIN-861: Exit der Reparatur. 3 = Deckel, 4 = weniger als 280 Einheiten (kein Fehler); alles andere ist eine Warnung, kein Abbruch. */
+export function repairAusgang(status: number | null): "ok" | "warnung" {
+  return status === 0 || status === 3 || status === 4 ? "ok" : "warnung";
+}
+
 export const SUPPORTED_MAP_IDS: readonly string[] = ["maf-metall", "indkfl"];
 
 /**

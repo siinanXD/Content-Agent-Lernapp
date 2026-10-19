@@ -59,6 +59,7 @@ import {
   RUN_CAP_EUR,
   runAllowed,
   toEvalItems,
+  repairAusgang,
   trimTargets,
   unitCostHistory,
   type RunReport,
@@ -144,9 +145,9 @@ function runRepair(dry: boolean): { ran: boolean; costEur: number; budgetStop: b
   const args = ["--import", "tsx", "scripts/ap15-regen-dropped.ts", "--stop-eur", String(REPAIR_STOP_EUR), ...(dry ? ["--dry-run"] : [])];
   const r = spawnSync(process.execPath, args, { stdio: "inherit", env: process.env });
   // 3 = Deckel der Reparatur erreicht, 4 = weniger als 280 Einheiten (kein Fehler).
-  if (r.status !== 0 && r.status !== 3 && r.status !== 4) {
-    throw new Error(`Reparatur (AP-21) endete mit Exit ${r.status}`);
-  }
+  const ausgang = repairAusgang(r.status);
+  // SIN-861: Scheitert die Reparatur, läuft die Fabrik mit Stufe b/c weiter; nur eine Warnung im Bericht.
+  if (ausgang === "warnung") console.error(`::warning::Reparatur (AP-21) endete mit Exit ${r.status}; Lauf geht weiter`);
   let costEur = 0;
   if (existsSync(REPAIR_DIR)) {
     const reports = readdirSync(REPAIR_DIR)
@@ -659,7 +660,7 @@ async function main() {
         ? {}
         : { id: `${MAP_ID}-fabrik`, title: curriculum.title, focus: "Content-Fabrik (SIN-431)" },
     );
-    await storage.setGenerated(COURSE, merged);
+    await storage.setGenerated(COURSE, merged, { changedUnitIds: [...stagedIds], lernfeld: true });
     if (liveIds.size > 0) await storage.setStatus(COURSE, "published");
   }
 

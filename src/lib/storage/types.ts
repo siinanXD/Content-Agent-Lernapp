@@ -1,5 +1,6 @@
 import type { GeneratedLernfeld } from "@/lib/generate/maf-lernfeld-seed";
 import type { QuestionEvaluationRecord } from "@/lib/quality/question-evaluations";
+import type { TeilOptionen } from "./generated-teil";
 
 export type CourseStatus =
   | "created"
@@ -91,7 +92,8 @@ export interface CourseStorage {
   setStatus(id: string, status: CourseStatus): Promise<Course | undefined>;
   setSources(id: string, sources: CourseSource[]): Promise<Course | undefined>;
   setPlan(id: string, plan: unknown): Promise<Course | undefined>;
-  setGenerated(id: string, generated: unknown): Promise<Course | undefined>;
+  /** `teil` (SIN-861): nur geänderte Einheiten schreiben statt den ganzen Kurs. */
+  setGenerated(id: string, generated: unknown, teil?: TeilOptionen): Promise<Course | undefined>;
   setEvaluation(id: string, evaluation: unknown): Promise<Course | undefined>;
   /** Append-only: one row per judged question and run (AP-19). Never overwrites. */
   appendQuestionEvaluations(records: QuestionEvaluationRecord[]): Promise<void>;
