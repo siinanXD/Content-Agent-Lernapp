@@ -1,5 +1,6 @@
 import type { GeneratedLernfeld, GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import { mitKiKennzeichnung } from "@/lib/review/content-guard";
+import { schreibeTeil } from "./generated-teil";
 import { getServiceSupabase } from "./supabase-client";
 import type {
   Course,
@@ -277,11 +278,12 @@ export const supabaseStorage: CourseStorage = {
     return loadCourse(id);
   },
 
-  async setGenerated(id, rawGenerated) {
+  async setGenerated(id, rawGenerated, teil) {
     const generated = mitKiKennzeichnung(rawGenerated);
     const sb = getServiceSupabase();
-    const existing = await loadCourse(id);
-    if (!existing) return undefined;
+    // SIN-861: Der Teilmodus liest den Kurs nicht komplett, nur die Kopfzeile.
+    const existing = teil ? undefined : await loadCourse(id);
+    if (!teil && !existing) return undefined;
     if (!isLernfeld(generated)) {
       throw new Error("generated_must_be_lernfeld");
     }
@@ -315,6 +317,25 @@ export const supabaseStorage: CourseStorage = {
         sort_order: ui * 1000 + qi,
       })),
     );
+
+    if (teil) {
+      const { data: head, error: hErr } = await sb
+        .from("courses")
+        .select("id, keyword, created_at, mock, variants")
+        .eq("id", id)
+        .maybeSingle();
+      if (hErr) throw new Error(`courses_read: ${hErr.message}`);
+      if (!head) return undefined;
+      await schreibeTeil(sb, id, unitRows, questionRows, generated, teil);
+      return {
+        id: head.id,
+        keyword: head.keyword,
+        status: "generated",
+        createdAt: head.created_at,
+        mock: head.mock,
+        variants: head.variants,
+      } as Course;
+    }
 
     if (unitRows.length) {
       const { error: uIns } = await sb.from("units").upsert(unitRows, { onConflict: "course_id,id" });

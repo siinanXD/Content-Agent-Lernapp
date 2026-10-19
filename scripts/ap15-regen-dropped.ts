@@ -353,7 +353,8 @@ async function main() {
   const liveUnits = live.map((s) => s.unit);
 
   const merged = mergePhaseLernfeld([...priorUnits, ...liveUnits]);
-  if (liveUnits.length > 0) await storage.setGenerated(COURSE, merged);
+  // SIN-861: nur die reparierten Einheiten schreiben, nicht den ganzen Kurs.
+  if (liveUnits.length > 0) await storage.setGenerated(COURSE, merged, { changedUnitIds: liveUnits.map((u) => u.id), lernfeld: true });
 
   const scores = aggregateScores(allEvals.filter((e) => liveUnits.some((u) => u.id === e.unitId)));
   const tid = await recordEvaluationTrace({
