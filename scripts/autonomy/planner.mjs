@@ -146,8 +146,8 @@ export async function collectMetrics(env = process.env, http = {}) {
     }
     // SIN-402: Nur Bewertungen für existierende Fragen zählen (wie in collectContentMetrics).
     try {
-      const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id&order=course_id,unit_id,id", h);
-      const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed&order=course_id,unit_id,question_id", h);
+      const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id&order=course_id,unit_id,id", h, http);
+      const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed&order=course_id,unit_id,question_id", h, http);
       const { bewertet } = ratedQuestions(questions, evaluations);
       const passedCount = bewertet.filter((e) => e.passed).length;
       m.fragen_bewertet = bewertet.length;

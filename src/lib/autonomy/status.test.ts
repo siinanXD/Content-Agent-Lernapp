@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { analyze, buildQuotaRows, collectUsage, fetchFailureLine, parseState, percent, renderAlert } from "../../../scripts/autonomy/status.mjs";
+import { analyze, buildQuotaRows, collectGithub, collectUsage, fetchFailureLine, parseState, percent, renderAlert } from "../../../scripts/autonomy/status.mjs";
 import { startOrder } from "../../../scripts/autonomy/linear.mjs";
 import { decideRefill, refillConfig } from "../../../scripts/autonomy/refill.mjs";
 
@@ -256,4 +256,47 @@ test("SIN-362: Loop-Status zählt gescheiterte Worker und nennt das Claude-Limit
   assert.match(r.body, /Fehlgeschlagene Worker \(Actions-Läufe\): 1/);
   assert.match(r.body, /Claude-Limit erkannt: 1 Läufe, keine Pause gesetzt/);
   assert.ok(keys(r).includes("claude-limit"));
+});
+
+
+test("SIN-824: In Review ohne Produkt-PR lässt Slots und Stillstands-Kick frei", () => {
+  const snap = fixture();
+  snap.runs = snap.runs.filter((r: { name: string }) => r.name !== "worker");
+  snap.issues = snap.issues.filter((i: { state: { type: string } }) => i.state.type !== "started");
+  snap.issues.push({ id: "review", identifier: "SIN-537", title: "Abnahme", updatedAt: "2026-10-03T00:00:00Z", state: {name: "In Review", type: "started"}, labels: {nodes: []}, inverseRelations: {nodes: []} });
+  const r = analyze(snap, limits, {});
+  assert.equal(r.queue.in_progress, 0);
+  assert.equal(r.queue.waiting, 1);
+  assert.equal(r.kick, true);
+  assert.doesNotMatch(r.body, /PR #null/);
+  assert.ok(!keys(r).includes("stuck:SIN-537"));
+});
+
+test("SIN-824: unbekannter Worker-Stand gibt Review-Slots und Kick nicht frei", () => {
+  const snap = fixture();
+  snap.runs = [];
+  snap.prs = [];
+  snap.workerStateKnown = false;
+  snap.issues = snap.issues.filter((i: { state: { type: string } }) => i.state.type !== "started");
+  snap.issues.push({ identifier: "SIN-537", state: {name: "In Review", type: "started"}, updatedAt: "2026-10-03T00:00:00Z" });
+  const r = analyze(snap, limits, {});
+  assert.equal(r.queue.in_progress, 1);
+  assert.equal(r.queue.waiting, 0);
+  assert.equal(r.kick, false);
+  assert.ok(!keys(r).includes("stuck:SIN-537"));
+  assert.match(r.body, /Worker-Stand unbekannt/);
+  assert.ok(!keys(r).some((k: string) => k.startsWith("stall:")));
+});
+
+test("SIN-824: Worker-Abruffehler bleibt unbekannt trotz100 anderer GitHub-Läufe", async () => {
+  const g = await collectGithub("o/r", new Date("2026-10-19T12:00:00Z"), async (path: string) => {
+    if (path.includes("/workflows/worker.yml/")) throw new Error("GitHub nicht erreichbar");
+    if (path.includes("/workflows/dispatch.yml/")) return { workflow_runs: [] };
+    if (path.includes("/actions/runs?")) return { workflow_runs: Array.from({length:100}, (_,id)=>({id,name:"ci"})) };
+    if (path.includes("/pulls?")) return [];
+    throw new Error(`Unerwartete Anfrage ${path}`);
+  });
+  assert.equal(g.workerStateKnown, false);
+  const snap = {...fixture(), ...g};
+  assert.equal(analyze(snap, limits, {}).kick, false);
 });
