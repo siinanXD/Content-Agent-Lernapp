@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-848 | SIN-848: loop_events.payload und Nachzug der Leitstand-Migrationen | [SIN-848-loop-events-payload-nachzug.md](decisions/SIN-848-loop-events-payload-nachzug.md) |
 | SIN-824 | SIN-824: Abnahme belegt keinen Worker-Platz | [SIN-824-abnahme-kein-worker-slot.md](decisions/SIN-824-abnahme-kein-worker-slot.md) |
 | SIN-818 | SIN-818: Haken-Pause blockiert keine Startplätze | [SIN-818-haken-pause-nachruecken.md](decisions/SIN-818-haken-pause-nachruecken.md) |
 | SIN-809 | SIN-809: Fabrik erzeugt im Durchlauf nur für offene Content-Punkte | [SIN-809-fabrik-nur-offene-kurse.md](decisions/SIN-809-fabrik-nur-offene-kurse.md) |
