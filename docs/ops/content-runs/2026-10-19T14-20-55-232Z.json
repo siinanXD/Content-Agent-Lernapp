@@ -1,0 +1,163 @@
+{
+  "runId": "2026-10-19T14-20-55-232Z",
+  "mode": "live",
+  "startedAt": "2026-10-19T14:20:55.232Z",
+  "mapId": "indkfl",
+  "moduleId": "LF3",
+  "moduleIds": [
+    "LF3",
+    "T1",
+    "LF8",
+    "LF9",
+    "DIG",
+    "EG"
+  ],
+  "nextModuleId": "EG",
+  "resumeModuleId": "EG",
+  "generated": 240,
+  "passed": 206,
+  "discarded": 34,
+  "discardedUnitIds": [
+    "T1-5-u1",
+    "T1-5-u2",
+    "T1-4-u1",
+    "LF3-7-u9",
+    "T1-5-u4",
+    "LF8-1-u12",
+    "T1-1-u1",
+    "LF8-1-u10",
+    "LF8-4-u3",
+    "LF8-4-u5",
+    "T1-4-u4",
+    "LF8-3-u5",
+    "LF8-2-u7",
+    "LF8-1-u2",
+    "T1-4-u5",
+    "T1-4-u6",
+    "LF8-1-u3",
+    "LF3-7-u5",
+    "LF3-6-u5",
+    "LF8-3-u12",
+    "LF9-5-u16",
+    "LF8-4-u9",
+    "LF9-5-u10",
+    "LF8-4-u16",
+    "LF8-4-u12",
+    "LF8-6-u4",
+    "EG-0-u7",
+    "EG-0-u1",
+    "EG-0-u2",
+    "EG-0-u6",
+    "DIG-3-u2",
+    "DIG-1-u5",
+    "DIG-1-u1",
+    "DIG-1-u2"
+  ],
+  "deferred": 62,
+  "schema": {
+    "generated": 1676,
+    "invalid": 7,
+    "repaired": 0,
+    "discarded": 7
+  },
+  "repair": {
+    "ran": true,
+    "costEur": 0.43
+  },
+  "sourceRefresh": {
+    "units": 0,
+    "replaced": 0,
+    "changeKeys": []
+  },
+  "model": "claude-haiku-5-5",
+  "costEur": 15.4,
+  "capEur": 20,
+  "stopReason": null,
+  "safetySampleUnitIds": [],
+  "batchIds": [
+    "msgbatch_018bB9dEhrnm6kvjuqFnUzpS",
+    "msgbatch_01SS4wUTJXA1RJKitzvK6Jow",
+    "msgbatch_01XaBvemV2oZYHoRPoGwi8W4",
+    "msgbatch_01DUM9W4FHCZEtRiXsvMfHQh",
+    "msgbatch_01FZEZxAuDa1ytXWPQsNcNCe"
+  ],
+  "mapPlan": [
+    {
+      "mapId": "maf-metall",
+      "ziel": 890,
+      "vorhanden": 701,
+      "geteilt": 0,
+      "neu": 52
+    },
+    {
+      "mapId": "indkfl",
+      "ziel": 1160,
+      "vorhanden": 329,
+      "geteilt": 0,
+      "neu": 763
+    },
+    {
+      "mapId": "maf-kunststoff",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-textil",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-textilveredelung",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-lebensmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-druckverarbeitung",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-packmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    }
+  ],
+  "nichtVersucht": [
+    {
+      "grund": "kostendeckel",
+      "units": 432
+    },
+    {
+      "grund": "begonnene-module",
+      "units": 91
+    },
+    {
+      "grund": "andere-map",
+      "units": 4392
+    }
+  ],
+  "batchFailures": {
+    "sent": 122,
+    "failed": 0,
+    "errors": []
+  },
+  "failReason": null,
+  "langfuseTraceId": "9e35d84b3fee27a60f48855dcf42a9ff"
+}
