@@ -113,6 +113,8 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          # SIN-849: Worker-PRs stammen von Bots; ohne das lehnt die Action sie als „non-human actor“ ab. Nie `*`.
+          allowed_bots: "claude[bot],github-actions[bot],dependabot[bot]"
           claude_args: >-
             --model claude-sonnet-5-5
             --max-turns 40
