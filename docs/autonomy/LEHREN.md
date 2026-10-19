@@ -1,9 +1,7 @@
 # Lehren (SIN-296)
-
 Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → wie es richtig geht** (`Kennung`). Höchstens 150 Zeilen, keine Dopplungen: vor dem Ergänzen suchen, ob es die Lehre schon gibt. Wird es eng, fasst der Aufräum-Agent ältere Zeilen eines Themas zu einer zusammen.
 **Pflicht nach jedem behobenen Bug** (auch im Reparatur-Lauf): eine Zeile unter dem passenden Thema ergänzen, im selben PR. Kein Bug, keine Zeile. Wiederholt sich ein Arbeitsablauf, gehört er als Anleitung nach `docs/skills/<name>/SKILL.md` (siehe `docs/skills/README.md`), nicht hierher.
 ## Workflows und github-script
-
 - `getOctokit` in `actions/github-script@v7` nutzen → ist dort nicht definiert (in #66 behoben, in #72 wieder eingebaut). Richtig: `new github.constructor({ auth: process.env.AGENT_TOKEN })`. (SIN-240)
 - Labels, Pushes, PRs oder Merges mit `github.token` auslösen → startet keine Folge-Workflows. Richtig: `AGENT_WORKFLOW_TOKEN`, auch für Checkout und `GH_TOKEN`. (SIN-240)
 - Den Gate-Hinweis-Kommentar mit dem Agenten-Token schreiben → das Gate erkennt seinen Marker nur am Autor `github-actions[bot]`. Richtig: Kommentar mit dem Standard-Token, Labels und Merge mit dem Agenten-Token. (SIN-240)
