@@ -71,9 +71,43 @@ export function buildEvent(a, env = process.env, now = Date.now()) {
     cache_read_tokens: u ? u.cacheRead : null,
     cache_write_tokens: u ? u.cacheWrite : null,
     cost_usd: u?.costUsd ?? null,
-    // SIN-548: nur Pause-Ereignisse tragen einen Grund (Spalte `grund`); sonst bleibt die Zeile wie bisher.
-    ...(a.grund ? { grund: String(a.grund).slice(0, 300) } : {}),
+    // SIN-548: Pause-Ereignisse tragen einen Grund (Spalte `grund`); SIN-881: Worker-`fehler` nie ohne.
+    ...(a.grund || (a.schritt === "worker" && a.status === "fehler")
+      ? { grund: String(a.grund || "Lauf ohne PR, Ursache nicht im Log (keine Fehlerzeile, Schritt-Ergebnis unbekannt)").slice(0, 300) }
+      : {}),
   };
+}
+
+/** Fehlerzeile aus dem execution_file (letztes `result` mit Fehler); Schlüssel und Tokens geschwärzt, höchstens 300 Zeichen. */
+export function fehlerzeile(text) {
+  let items = [];
+  try {
+    items = JSON.parse(text);
+  } catch {
+    // Fallback: JSONL (eine Nachricht je Zeile); unlesbare Zeilen werden übersprungen.
+    for (const l of text.split("\n")) {
+      try {
+        items.push(JSON.parse(l));
+      } catch {}
+    }
+  }
+  const r = [].concat(items).reverse().find((m) => m?.type === "result");
+  if (!r || (!r.is_error && r.subtype === "success")) return "";
+  const roh = [r.subtype, ...(Array.isArray(r.errors) ? r.errors : []), r.is_error ? r.result : ""].filter((x) => typeof x === "string" && x).join(": ");
+  return roh.replace(/\s+/g, " ").replace(/\b(sk-|ghp_|github_pat_|eyJ)[\w.-]{8,}|\b[A-Za-z0-9_-]{32,}\b/g, "[geschwärzt]").slice(0, 300);
+}
+
+/** Grund für Worker-`fehler`: Limit, Schritt-Ergebnisse von claude/claude2, Fehlerzeile aus dem Log, sonst „kein Diff“. */
+export function workerGrund(/** @type {{ outcomes?: string[][], limit?: string, dateien?: string[] }} */ { outcomes = [], limit = "", dateien = [] } = {}) {
+  const teile = [];
+  if (limit) teile.push("Kontingent: Claude-Limit erreicht");
+  const bad = outcomes.filter(([, o]) => o && o !== "success" && o !== "skipped");
+  if (bad.length) teile.push(bad.map(([n, o]) => `${n} ${o}`).join(", "));
+  for (const f of dateien) {
+    const z = existsSync(f) ? fehlerzeile(readFileSync(f, "utf8")) : "";
+    if (z) teile.push(z);
+  }
+  return (teile.length ? teile.join("; ") : "kein Diff: Claude endete ohne PR und ohne Fehler").slice(0, 300);
 }
 
 function headers(env, extra = {}) {
@@ -149,7 +183,7 @@ export async function main(argv, env = process.env, http = {}) {
     // Der Dispatcher übergibt mehrere Issues („SIN-1 SIN-2+SIN-3“): je Issue ein Ereignis, damit jedes einzeln zuordenbar bleibt.
     const issues = arg("--issue").split(/[\s+,]+/).filter(Boolean);
     for (const issue of issues.length ? issues : [""]) {
-      const event = buildEvent({ schritt: arg("--schritt"), status: arg("--status"), issue, pr: arg("--pr"), seit: arg("--seit"), usage, grund: arg("--grund") }, env);
+      const event = buildEvent({ schritt: arg("--schritt"), status: arg("--status"), issue, pr: arg("--pr"), seit: arg("--seit"), usage, grund: arg("--grund") || (arg("--schritt") === "worker" && arg("--status") === "fehler" ? workerGrund({ outcomes: [["claude", arg("--claude")], ["claude2", arg("--claude2")]], limit: arg("--limit"), dateien: files }) : "") }, env);
       const r = await sendEvent(event, env, http);
       console.log(r.ok ? `Leitstand: ${event.step} ${event.status}${event.issue ? ` (${event.issue})` : ""} gespeichert` : `::warning::Leitstand: Ereignis nicht gespeichert (${r.grund})`);
     }

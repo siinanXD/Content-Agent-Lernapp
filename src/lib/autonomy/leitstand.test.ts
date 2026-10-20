@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
-import { buildEvent, buildSnapshot, main, projectOf, sendEvent, sendSnapshot, sumUsage } from "../../../scripts/autonomy/leitstand.mjs";
+import { buildEvent, buildSnapshot, fehlerzeile, workerGrund, main, projectOf, sendEvent, sendSnapshot, sumUsage } from "../../../scripts/autonomy/leitstand.mjs";
 import { analyze } from "../../../scripts/autonomy/status.mjs";
 
 const ENV = {
@@ -165,4 +165,24 @@ test("Workflows: jeder Schritt schreibt Start und Ende", () => {
     assert.match(y, new RegExp(`leitstand\\.mjs ereignis --schritt ${step} --status start`), `${file}: Start`);
     assert.match(y, new RegExp(`leitstand\\.mjs ereignis --schritt ${step} --status "\\$status"`), `${file}: Ende`);
   }
+});
+
+test("Worker-fehler hat immer einen Grund (SIN-881)", () => {
+  const e = buildEvent({ schritt: "worker", status: "fehler", issue: "SIN-768" }, ENV, NOW) as { grund?: string };
+  assert.ok(e.grund && e.grund.length > 10);
+  assert.equal((buildEvent({ schritt: "worker", status: "ok" }, ENV, NOW) as { grund?: string }).grund, undefined);
+  assert.match(readFileSync(".github/workflows/worker.yml", "utf8"), /--claude "\$OUT1" --claude2 "\$OUT2" --limit/);
+});
+
+test("Worker-Grund: Limit, Outcome, Fehlerzeile ohne Schlüssel, sonst kein Diff", () => {
+  assert.match(workerGrund({ limit: "Claude-Limit bis 12:00" }), /Kontingent/);
+  assert.match(workerGrund({ outcomes: [["claude", "failure"], ["claude2", "skipped"]] }), /claude failure/);
+  assert.match(workerGrund({}), /kein Diff/);
+  const log = JSON.stringify([{ type: "result", subtype: "error_max_turns", is_error: true, result: "zu viele Runden sk-ant-abcdefghijklmnop" }]);
+  const z = fehlerzeile(log);
+  assert.match(z, /error_max_turns/);
+  assert.doesNotMatch(z, /abcdefgh/);
+  assert.equal(fehlerzeile("kein json"), "");
+  const jsonl = [{ type: "system" }, { type: "result", subtype: "error_during_execution", is_error: true }].map((m) => JSON.stringify(m)).join("\n");
+  assert.match(fehlerzeile(jsonl), /error_during_execution/);
 });

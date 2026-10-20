@@ -230,6 +230,8 @@ jobs:
           HAS_PR: ${{ steps.pr.outputs.has_pr }}
           FILE1: ${{ steps.claude.outputs.execution_file }}
           FILE2: ${{ steps.claude2.outputs.execution_file }}
+          OUT1: ${{ steps.claude.outcome }}
+          OUT2: ${{ steps.claude2.outcome }}
         run: |
           branch="claude/$(printf '%s' "$IDENTIFIER" | tr 'A-Z' 'a-z')"
           args=()
@@ -238,6 +240,14 @@ jobs:
           pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state all --json number,state,createdAt --jq "[.[] | select(.state==\"OPEN\" or .createdAt >= \"$LAUF_START\")] | .[0].number // empty" || true)
           [ -n "$pr" ] && args+=(--pr "$pr")
           status=$([ "$HAS_PR" = "true" ] && echo ok || echo fehler)
+          # SIN-881: bei `fehler` baut leitstand.mjs den Grund aus Schritt-Ergebnissen, Limit und Fehlerzeile im Log.
+          if [ "$status" = "fehler" ]; then
+            limit=""
+            for f in "$FILE1" "$FILE2"; do
+              [ -f "$f" ] && limit="$limit$(node scripts/autonomy/dispatch.mjs --limit-from-log "$f" | tail -1 | grep -E '^Claude-Limit' || true)"
+            done
+            args+=(--claude "$OUT1" --claude2 "$OUT2" --limit "$limit")
+          fi
           node scripts/autonomy/leitstand.mjs ereignis --schritt worker --status "$status" --seit "$LEITSTAND_SEIT" --issue "$IDENTIFIER" "${args[@]}"
 
       - name: Live-Kommentar fertig oder gescheitert
