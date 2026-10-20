@@ -1,0 +1,184 @@
+{
+  "runId": "2026-10-20T13-58-02-408Z",
+  "mode": "live",
+  "startedAt": "2026-10-20T13:58:02.408Z",
+  "mapId": "indkfl",
+  "moduleId": "LF12",
+  "moduleIds": [
+    "LF12",
+    "LF13",
+    "T2A",
+    "FA",
+    "WISO"
+  ],
+  "nextModuleId": null,
+  "resumeModuleId": null,
+  "generated": 193,
+  "passed": 139,
+  "discarded": 56,
+  "discardedUnitIds": [
+    "LF13-1-u6",
+    "LF13-2-u1",
+    "LF12-6-u12",
+    "LF12-7-u2",
+    "LF12-7-u3",
+    "LF12-7-u4",
+    "LF13-3-u4",
+    "LF12-1-u2",
+    "LF12-3-u1",
+    "LF13-1-u3",
+    "LF12-5-u2",
+    "LF13-2-u5",
+    "LF12-2-u14",
+    "LF12-3-u9",
+    "LF12-3-u10",
+    "LF12-5-u10",
+    "LF13-4-u2",
+    "LF13-2-u7",
+    "LF12-5-u7",
+    "LF12-5-u8",
+    "WISO-2-u4",
+    "WISO-3-u8",
+    "FA-2-u1",
+    "FA-2-u2",
+    "FA-3-u3",
+    "FA-3-u4",
+    "WISO-2-u7",
+    "WISO-2-u8",
+    "T2A-2-u3",
+    "WISO-2-u1",
+    "WISO-2-u2",
+    "WISO-3-u9",
+    "WISO-1-u5",
+    "T2A-5-u4",
+    "LF13-5-u8",
+    "WISO-2-u9",
+    "WISO-2-u10",
+    "FA-2-u5",
+    "FA-2-u6",
+    "WISO-1-u7",
+    "WISO-1-u10",
+    "T2A-3-u7",
+    "FA-2-u3",
+    "FA-2-u4",
+    "T2A-5-u1",
+    "T2A-5-u2",
+    "T2A-4-u4",
+    "T2A-3-u4",
+    "WISO-1-u4",
+    "FA-1-u3",
+    "FA-3-u6",
+    "FA-3-u2",
+    "FA-3-u8",
+    "T2A-3-u2",
+    "WISO-2-u5",
+    "WISO-2-u6"
+  ],
+  "deferred": 0,
+  "schema": {
+    "generated": 1344,
+    "invalid": 2,
+    "repaired": 0,
+    "discarded": 2
+  },
+  "repair": {
+    "ran": true,
+    "costEur": 0.47
+  },
+  "sourceRefresh": {
+    "units": 0,
+    "replaced": 0,
+    "changeKeys": []
+  },
+  "model": "claude-haiku-5-5",
+  "costEur": 11.65,
+  "capEur": 20,
+  "stopReason": null,
+  "safetySampleUnitIds": [],
+  "batchIds": [
+    "msgbatch_01GWhmAarBHT1hgY2JbZgMmJ",
+    "msgbatch_013fNsx8dqKPXfucstM7HX7p",
+    "msgbatch_016V2vyR62UnWcL3SjHbB34k"
+  ],
+  "mapPlan": [
+    {
+      "mapId": "maf-metall",
+      "ziel": 890,
+      "vorhanden": 701,
+      "geteilt": 0,
+      "neu": 52
+    },
+    {
+      "mapId": "indkfl",
+      "ziel": 1160,
+      "vorhanden": 715,
+      "geteilt": 0,
+      "neu": 270
+    },
+    {
+      "mapId": "maf-kunststoff",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-textil",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-textilveredelung",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-lebensmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-druckverarbeitung",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-packmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    }
+  ],
+  "nichtVersucht": [
+    {
+      "grund": "begonnene-module",
+      "units": 75
+    },
+    {
+      "grund": "andere-map",
+      "units": 4392
+    }
+  ],
+  "batchFailures": {
+    "sent": 99,
+    "failed": 1,
+    "errors": [
+      {
+        "customId": "maf-WISO-2-u4-5",
+        "resultType": "succeeded",
+        "error": "Antwort ohne lesbare Einheiten"
+      }
+    ]
+  },
+  "failReason": null,
+  "langfuseTraceId": "65d38cac5f05eb9c33620c13565b7874"
+}
