@@ -53,7 +53,7 @@ export const RECHNEN_ZUORDNEN_LUECKE_REGELN = `Regeln für Fragetyp rechnen, zuo
 - zuordnen: 4–6 Paare, jedes Element passt nach der Quelle zu genau EINEM Gegenstück. Linke Seite: gleichartige Begriffe (alle Werkstoffe, alle Prüfmittel). Rechte Seite: gleich lange Beschreibungen, die sich nicht überschneiden und nicht mehrere Begriffe treffen. Keine Paare, in denen ein Begriff Oberbegriff eines anderen ist. Keine Zusatzglieder, die zu keinem Paar gehören.
 - zuordnen (Niveau): Rechte Seite beschreibt Funktion, Anwendung oder Folge in einer Situation, nicht die Definition aus dem Merksatz. Namen wortgleich vom Begriff auf die Beschreibung zu übertragen reicht nicht.
 - lueckentext: Satz oder kurzer Absatz mit 1–3 Lücken, jede Lücke hat genau EIN fachlich richtiges Wort nach der Quelle (keine Synonyme möglich, sonst Hinweis in der Aufgabe). Fehlt der Fachbegriff, muss der Rest des Satzes ihn eindeutig bestimmen. Keine Lücke für Artikel, Füllwörter oder Zahlen ohne Bezug. Lücken verlangen Verständnis (Ursache, Zusammenhang, Wirkung), nicht nur Auswendiglernen eines Namens; Stufe verstehen oder anwenden.
-- Alle drei: Begründung (explanation) nennt die Quelle und warum die Lösung gilt.`;
+- Alle drei: Begründung (explanation) nennt, warum die Lösung gilt. Kein Satz "Quelle: …" im Text, die Quelle steht nur in sourceUrl.`;
 
 /**
  * SIN-475: Niveau bei auswahl. Verwerfungen nach SIN-432/433: maf-metall LF2 auswahl 17 (davon 14 Niveau),
@@ -109,7 +109,7 @@ export const TEXT_REGELN = `Regeln für jeden Text, den Lernende sehen (Einheit 
 
 export function didaktikSchemaHint(): string {
   return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
-Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter mit Quelle.
+Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter, ohne Quellensatz (Quelle nur in sourceUrl).
 Offene Aufgaben (rechnen/kurze Begründung): nur sampleSolution + sampleChecklist zur Selbstkontrolle — keine KI-Bewertung.
 Phase A: nur generierte SVG (license Generated-SVG), keine Commons-/KI-Bilder.
 explanation muss immer gesetzt sein (Fallback aus sections).
