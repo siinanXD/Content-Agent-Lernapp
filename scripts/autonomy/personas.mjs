@@ -43,6 +43,8 @@ async function beantworte(p) {
 
 async function einheitSpielen(p) {
   const zaehler = p.getByText(/^Frage \d+ von \d+/);
+  // Die Einheit lädt den ganzen Kurs nach: erste Frage bekommt mehr Zeit als ein Klick (SIN-874).
+  await zaehler.waitFor({ timeout: 4 * SCHRITT_MS });
   for (let i = 0; i < 40; i++) {
     const stand = (await zaehler.textContent()) ?? "";
     if (!(await p.getByTestId("answer-feedback").isVisible())) await beantworte(p);

@@ -149,7 +149,23 @@ function activeCourse(): string | null {
   }
 }
 
-export async function fetchPhaseAPathUnits(courseId: string | null = activeCourse()): Promise<PathUnit[]> {
+const inFlight = new Map<string, Promise<PathUnit[]>>();
+
+/**
+ * Ein Abruf je Kurs gleichzeitig (SIN-874): Der Lernpfad wärmt den Zwischenspeicher schon beim Laden, die
+ * Einheit schließt sich einem laufenden Abruf an, statt den ganzen Kurs ein zweites Mal zu laden.
+ */
+export function fetchPhaseAPathUnits(courseId: string | null = activeCourse()): Promise<PathUnit[]> {
+  const key = courseId ?? "";
+  let pending = inFlight.get(key);
+  if (!pending) {
+    pending = loadPhaseAPathUnits(courseId).finally(() => inFlight.delete(key));
+    inFlight.set(key, pending);
+  }
+  return pending;
+}
+
+async function loadPhaseAPathUnits(courseId: string | null): Promise<PathUnit[]> {
   try {
     const query = courseId ? `?kurs=${encodeURIComponent(courseId)}` : "";
     const res = await fetch(`/api/learner/phase-a${query}`, { cache: "no-store" });
