@@ -60,6 +60,22 @@ function isLernfeld(value: unknown): value is GeneratedLernfeld {
   return typeof v.id === "string" && Array.isArray(v.units);
 }
 
+const PAGE = 1000; // PostgREST liefert höchstens 1.000 Zeilen je Abfrage.
+
+/** Lädt alle Zeilen in 1.000er-Blöcken; `build` muss je Aufruf eine frische Abfrage mit stabiler Sortierung liefern. */
+async function loadAll<T>(
+  build: () => { range: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }> },
+  what: string,
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await build().range(from, from + PAGE - 1);
+    if (error) throw new Error(`${what}_read: ${error.message}`);
+    all.push(...((data ?? []) as T[]));
+    if ((data?.length ?? 0) < PAGE) return all;
+  }
+}
+
 async function loadCourse(id: string): Promise<Course | undefined> {
   const sb = getServiceSupabase();
   const { data: row, error } = await sb
@@ -71,7 +87,7 @@ async function loadCourse(id: string): Promise<Course | undefined> {
   if (!row) return undefined;
 
   const courseRow = row as CourseRow;
-  const [{ data: sources }, { data: planRow }, { data: units }, { data: questions }, { data: evaluation }] =
+  const [{ data: sources }, { data: planRow }, unitRows, questionRows, { data: evaluation }] =
     await Promise.all([
       sb
         .from("sources")
@@ -79,20 +95,26 @@ async function loadCourse(id: string): Promise<Course | undefined> {
         .eq("course_id", id)
         .order("created_at", { ascending: true }),
       sb.from("plans").select("payload").eq("course_id", id).maybeSingle(),
-      sb
-        .from("units")
-        .select(
-          "id, title, minutes, explanation, source_url, source_fetched_at, sort_order",
-        )
-        .eq("course_id", id)
-        .order("sort_order", { ascending: true }),
-      sb
-        .from("questions")
-        .select(
-          "id, unit_id, type, prompt, choices, correct, explanation, source_url, sort_order",
-        )
-        .eq("course_id", id)
-        .order("sort_order", { ascending: true }),
+      loadAll<UnitRow>(
+        () =>
+          sb
+            .from("units")
+            .select("id, title, minutes, explanation, source_url, source_fetched_at, sort_order")
+            .eq("course_id", id)
+            .order("sort_order", { ascending: true })
+            .order("id", { ascending: true }),
+        "units",
+      ),
+      loadAll<QuestionRow>(
+        () =>
+          sb
+            .from("questions")
+            .select("id, unit_id, type, prompt, choices, correct, explanation, source_url, sort_order")
+            .eq("course_id", id)
+            .order("sort_order", { ascending: true })
+            .order("id", { ascending: true }),
+        "questions",
+      ),
       sb.from("evaluations").select("payload").eq("course_id", id).maybeSingle(),
     ]);
 
@@ -120,20 +142,23 @@ async function loadCourse(id: string): Promise<Course | undefined> {
     course.plan = planRow.payload;
   }
 
-  const unitRows = (units ?? []) as UnitRow[];
-  const questionRows = (questions ?? []) as QuestionRow[];
   // Prefer full AP-15 payload (includes moduleId/blockId/Didaktik fields).
   if (isLernfeld(courseRow.lernfeld) && courseRow.lernfeld.units?.length) {
     course.generated = courseRow.lernfeld;
-  } else if (courseRow.lernfeld && unitRows.length) {
+  } else if (unitRows.length) {
     const byUnit = new Map<string, QuestionRow[]>();
     for (const q of questionRows) {
       const list = byUnit.get(q.unit_id) ?? [];
       list.push(q);
       byUnit.set(q.unit_id, list);
     }
-    const meta = courseRow.lernfeld as { id: string; title: string; focus: string };
-    course.generated = {
+    // lernfeld = null (z. B. Industriemechaniker, SIN-882): Kopfdaten aus Stichwort bzw. Plan.
+    const meta = courseRow.lernfeld ?? {
+      id: courseRow.id,
+      title: courseRow.keyword,
+      focus: (course.plan as { focus?: string } | undefined)?.focus ?? courseRow.keyword,
+    };
+    course.generated = mitKiKennzeichnung({
       id: meta.id,
       title: meta.title,
       focus: meta.focus,
@@ -159,7 +184,7 @@ async function loadCourse(id: string): Promise<Course | undefined> {
           })),
         }),
       ),
-    };
+    });
   }
 
   if (evaluation?.payload !== undefined) {

@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-882 | SIN-882 — Kurse ohne `lernfeld` ladbar, Fragen seitenweise | [SIN-882-loadcourse-fallback.md](decisions/SIN-882-loadcourse-fallback.md) |
 | SIN-881 | SIN-881: Worker-`fehler` trägt immer einen Grund | [SIN-881-worker-fehler-grund.md](decisions/SIN-881-worker-fehler-grund.md) |
 | SIN-879 | SIN-879: /beruf lädt nicht (Timeout) | [SIN-879-beruf-kurse-laden.md](decisions/SIN-879-beruf-kurse-laden.md) |
 | SIN-875 | SIN-875: Schnell-Prüfung `check:fast` vor dem Push | [SIN-875-check-fast.md](decisions/SIN-875-check-fast.md) |
