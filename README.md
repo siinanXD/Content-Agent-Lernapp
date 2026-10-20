@@ -52,6 +52,7 @@ Beispielmodus ohne Konto (SIN-408): `/lernpfad?demo=1` schaltet für die Browser
 Design source: [Figma](https://www.figma.com/design/0SWGDO2ioBD3MyXiAnrbRz) · tokens in `docs/design/`. Phase-A SVGs: `npm run content:mermaid`.
 
 ```bash
+npm run check:fast        # Lint, Typecheck, Unit-Tests ohne Keys (vor jedem Push)
 npm test
 npm run content:mermaid
 npm run test:a11y

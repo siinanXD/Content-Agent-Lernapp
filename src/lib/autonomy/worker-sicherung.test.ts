@@ -20,6 +20,8 @@ test("SIN-587: --no-pr scheitert an Linear → kein Wurf, Grund im Log; 3 Fehll�
   // Ohne Linear-Schlüssel scheitert findByIdentifier; ohne Supabase-Secrets bleibt das Ereignis eine Warnung.
   for (const k of ["LINEAR_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]) delete process.env[k];
   process.env.GITHUB_OUTPUT = out;
+  // Projektname setzen: sonst hängt der Test an GITHUB_REPOSITORY, das es nur in GitHub Actions gibt (SIN-875).
+  process.env.LEITSTAND_PROJEKT = "content-agent-lernapp";
   const lines: string[] = [];
   const orig = console.log;
   console.log = (...a: unknown[]) => void lines.push(a.join(" "));

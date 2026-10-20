@@ -93,7 +93,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 ```bash
 npm ci                      # Pakete
 npm run dev                 # lokal, Port 43123
-npm run typecheck && npm run lint && npm test   # vor jedem Push
+npm run check:fast   # vor jedem Push: Lint, Typecheck, Tests ohne Keys (SIN-875)
 npm run build               # Produktionsbuild
 npm run decisions:index     # Entscheidungs-Index neu erzeugen (committen)
 npm run changelog           # nie von Hand: CHANGELOG.md ist erzeugt
@@ -110,7 +110,7 @@ npm run autonomy:dispatch:dry   # Dispatcher mit Fixture, ohne Linear
 
 - Branch `claude/<kurzname>`; ein Linear-Issue = ein PR; Reparaturen im selben PR (höchstens 3 Runden).
 - PR-Titel: Conventional Commit mit Kennung, z. B. `feat(lernpfad): Fortschrittsbalken (SIN-123)`. Body beginnt mit `Part of SIN-123`, danach `## Was ändert sich`, `## Ausprobieren`, `## Nach dem Merge`.
-- Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, Typecheck, Lint, Tests.
+- Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci`, `npm run check:fast`.
 - Texte deutsch, kurz, konkret. Keine Emojis, keine Platzhalter, keine erfundenen Zahlen.
 - Ändern sich Funktion, Einrichtung, Befehle oder Umgebungsvariablen: `README.md` im selben PR.
 - Nie anfassen: Zugangsdaten, Abrechnung, Datenbank-Löschungen. Mechanik (Index, Labels, Changelog, Konflikte in erzeugten Dateien) machen Skripte, kein Claude-Lauf.
