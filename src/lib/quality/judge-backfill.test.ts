@@ -1,7 +1,7 @@
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { fixtureJudge, type EvalItem } from "./evaluate-agent";
-import { ordneBewertungenZu, planBackfill, questionContentHash, runJudgeBackfill, type JudgeFn } from "./judge-backfill";
+import { ordneBewertungenZu, planBackfill, questionContentHash, runJudgeBackfill, waehleKurse, type JudgeFn } from "./judge-backfill";
 import { frageId } from "./question-evaluations";
 import { clearMockProgress, listMockJudgeRuns, mockStorage } from "@/lib/storage/mock-adapter";
 
@@ -25,6 +25,24 @@ function countingJudge(tokensPerQuestion = 1000) {
   };
   return { judge, calls };
 }
+
+describe("Bewertungslauf mit Eingabe kurs (SIN-894)", () => {
+  afterEach(() => clearMockProgress());
+  it("bewertet nur den gewählten Kurs, Zählung aus question_evaluations", async () => {
+    const kurse = [
+      { id: "00000000-0000-4000-8000-000000000894", keyword: "Industriemechaniker" },
+      { id: "00000000-0000-4000-8000-000000000895", keyword: "Industriekaufmann" },
+    ];
+    assert.equal(waehleKurse(kurse, "").length, 2);
+    const gewaehlt = waehleKurse(kurse, " industriemechaniker ");
+    assert.deepEqual(gewaehlt.map((c) => c.keyword), ["Industriemechaniker"]);
+    assert.equal(waehleKurse(kurse, "Unbekannt").length, 0);
+    const { judge } = countingJudge();
+    for (const c of gewaehlt) await runJudgeBackfill({ storage: mockStorage, courseId: c.id, items: [1, 2].map((n) => item(n)), judge });
+    assert.equal((await mockStorage.listQuestionEvaluations(kurse[0]!.id)).length, 2);
+    assert.equal((await mockStorage.listQuestionEvaluations(kurse[1]!.id)).length, 0);
+  });
+});
 
 describe("Bewertungslauf bestehender Fragen (SIN-260)", () => {
   afterEach(() => clearMockProgress());

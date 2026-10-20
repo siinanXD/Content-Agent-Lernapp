@@ -17,6 +17,7 @@ import {
   planBackfill,
   runJudgeBackfill,
   unitsToEvalItems,
+  waehleKurse,
 } from "../src/lib/quality/judge-backfill";
 import { recordEvaluationTrace } from "../src/lib/quality/langfuse-client";
 import { recordRunCost } from "../src/lib/quality/run-ledger";
@@ -37,7 +38,12 @@ async function main() {
 
   const curriculum = loadMafCurriculum();
   const yearOf = (id: string | undefined) => curriculum.modules.find((m) => m.id === id)?.year;
-  const courses = (await storage.listCourses()).filter((c) => !c.mock);
+  const kurs = process.env.KURS?.trim();
+  const courses = waehleKurse((await storage.listCourses()).filter((c) => !c.mock), kurs);
+  if (kurs && courses.length === 0) {
+    console.error(`STOP: Kurs „${kurs}“ nicht gefunden`);
+    process.exit(2);
+  }
   const baseRunId = `backfill-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   const summary: Array<Record<string, unknown>> = [];
   let spentEur = 0;

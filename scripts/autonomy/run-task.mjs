@@ -12,6 +12,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSyn
 import { pathToFileURL } from "node:url";
 import { RUN_CAP_EUR } from "./duplicates.mjs";
 import { fetchJson } from "./http.mjs";
+import { buildEvent, sendEvent } from "./leitstand.mjs";
 import { LEDGER_LIMIT, weekCost } from "./week-cost.mjs";
 
 export const RESULT_DIR = "docs/quality/runs";
@@ -34,6 +35,7 @@ export const TASKS = {
   "judge-backfill": {
     label: "Bewertung aller veröffentlichten Fragen (Richter-Modell, Batch)",
     paid: true,
+    euroDeckel: true, // SIN-894: Tagesdeckel zählt Euro aus judge_runs, nicht Läufe
     secrets: LIVE,
     env: { COURSE_STORAGE: "supabase" },
     steps: [["npm", ["run", "quality:judge-backfill"]]],
@@ -122,7 +124,7 @@ const quickFail = (r) =>
  * @param {{ display_title?: string, created_at?: string, run_started_at?: string, updated_at?: string, conclusion?: string | null, id?: number }[]} runs
  */
 export function dailyLimitReached(task, runs, now = new Date(), /** @type {number | null} */ selfId = null) {
-  if (!isPaid(task)) return false;
+  if (!isPaid(task) || TASKS[task].euroDeckel) return false;
   const today = now.toISOString().slice(0, 10);
   const mine = runs.filter(
     (r) =>
@@ -134,6 +136,49 @@ export function dailyLimitReached(task, runs, now = new Date(), /** @type {numbe
   );
   const quick = mine.filter(quickFail).length;
   return mine.length > quick || quick >= MAX_QUICK_FAILS;
+}
+
+/** SIN-894: Standard-Tagesdeckel in Euro für Aufgaben mit `euroDeckel`; änderbar über die Repo-Variable TAGESDECKEL_EUR. */
+export const DAY_CAP_EUR = 40;
+export const dayCapEur = (/** @type {Record<string, string | undefined>} */ env = process.env) => {
+  const n = Number(String(env.TAGESDECKEL_EUR ?? "").replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : DAY_CAP_EUR;
+};
+
+/**
+ * Tagesdeckel in Euro (UTC-Tag) aus `judge_runs.cost_eur` (SIN-894). Läufe ohne Kosten (schnelle Fehlschläge) zählen 0 €.
+ * Summe ≥ Deckel → gestoppt, mit Grund für `loop_events`.
+ * @param {{ cost_eur?: unknown, created_at?: string }[]} rows
+ */
+export function dailyEuroReached(rows, now = new Date(), capEur = DAY_CAP_EUR) {
+  const today = now.toISOString().slice(0, 10);
+  const sumEur = Math.round(rows.filter((r) => String(r.created_at ?? "").startsWith(today)).reduce((a, r) => a + Number(r.cost_eur ?? 0), 0) * 100) / 100;
+  const reached = sumEur >= capEur;
+  return { reached, sumEur, capEur, grund: reached ? `Tagesdeckel: heute schon ${sumEur.toFixed(2)} € von ${capEur} € verbraucht (judge_runs)` : "" };
+}
+
+async function judgeRunsToday(env, now, fetchImpl = fetch) {
+  const since = `${now.toISOString().slice(0, 10)}T00:00:00Z`;
+  const url = `${env.SUPABASE_URL}/rest/v1/judge_runs?select=cost_eur,created_at&created_at=gte.${since}&limit=1000`;
+  return fetchJson("Supabase", url, { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` } }, { fetchImpl });
+}
+
+/**
+ * Gesamtprüfung vor einem kostenpflichtigen Lauf: Läufe-Zähler (alte Aufgaben) oder Euro-Summe (`euroDeckel`).
+ * Bei Stopp steht der Grund in `loop_events` (Schritt `tagesdeckel`). Ohne Supabase-Zugang bei `euroDeckel`: kein Stopp (Hinweis im Grund).
+ * @returns {Promise<{ stop: boolean, grund: string }>}
+ */
+export async function checkDailyCap(task, { env = process.env, fetchImpl = fetch, now = new Date(), selfId = null, send = sendEvent } = {}) {
+  if (!isPaid(task)) return { stop: false, grund: "" };
+  let grund = "";
+  if (TASKS[task].euroDeckel) {
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { stop: false, grund: "Supabase-Zugang fehlt: Euro-Deckel nicht geprüft" };
+    grund = dailyEuroReached(await judgeRunsToday(env, now, fetchImpl), now, dayCapEur(env)).grund;
+  } else if (dailyLimitReached(task, await ghRuns(env.GITHUB_REPOSITORY, env.AGENT_WORKFLOW_TOKEN || env.GH_TOKEN || env.GITHUB_TOKEN, fetchImpl), now, selfId)) {
+    grund = "Tagesdeckel: heute schon gelaufen (höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag)";
+  }
+  if (grund) await send(buildEvent({ schritt: "tagesdeckel", status: "uebersprungen", grund: `${task}: ${grund}` }, env, now.getTime()), env, { fetchImpl });
+  return { stop: Boolean(grund), grund };
 }
 
 async function ghRuns(repo, token, fetchImpl = fetch) {
@@ -151,7 +196,8 @@ export async function dispatchRun(task, /** @type {{ env?: Record<string, string
   const token = env.AGENT_WORKFLOW_TOKEN || env.GITHUB_TOKEN;
   const repo = env.GITHUB_REPOSITORY;
   if (!token || !repo) return { started: false, grund: "kein Token oder Repository" };
-  if (dailyLimitReached(task, await ghRuns(repo, token, fetchImpl), now)) return { started: false, grund: "heute schon gelaufen (höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag)" };
+  const cap = await checkDailyCap(task, { env: { ...env, GITHUB_REPOSITORY: repo, AGENT_WORKFLOW_TOKEN: token }, fetchImpl, now });
+  if (cap.stop) return { started: false, grund: cap.grund };
   const res = await fetchImpl(`https://api.github.com/repos/${repo}/actions/workflows/${RUN_WORKFLOW}/dispatches`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
@@ -456,6 +502,19 @@ async function main(argv) {
     console.log(line);
     if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${line}\n\n`);
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `changed=${r.changed}\n`);
+    return;
+  }
+  // SIN-894: Tagesdeckel-Prüfung des Workflows (Exit 1 = Stopp, Grund steht in loop_events und als Anmerkung).
+  const deckel = argv.indexOf("--tagesdeckel");
+  if (deckel >= 0) {
+    const task = argv[deckel + 1];
+    if (!TASKS[task]) throw new Error(`Unbekannte Aufgabe: ${task}`);
+    const r = await checkDailyCap(task, { selfId: Number(process.env.GITHUB_RUN_ID) || null });
+    console.log(r.grund || "Tagesdeckel: frei");
+    if (r.stop) {
+      console.log(`::error::${r.grund}`);
+      process.exitCode = 1;
+    }
     return;
   }
   // SIN-653: content-grow hängt den Kostenbericht (nur lesend) an die Lauf-Zusammenfassung; Fehler bricht den Lauf nie ab.

@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-894 | SIN-894: Tagesdeckel für run-task zählt Euro, Lauf je Kurs | [SIN-894-tagesdeckel-euro-je-kurs.md](decisions/SIN-894-tagesdeckel-euro-je-kurs.md) |
 | SIN-885 | SIN-885: „Quelle: KMK …“ aus den Lerntexten des Industriemechaniker-Kurses entfernen | [SIN-885-quelle-kmk-entfernen.md](decisions/SIN-885-quelle-kmk-entfernen.md) |
 | SIN-882 | SIN-882 — Kurse ohne `lernfeld` ladbar, Fragen seitenweise | [SIN-882-loadcourse-fallback.md](decisions/SIN-882-loadcourse-fallback.md) |
 | SIN-881 | SIN-881: Worker-`fehler` trägt immer einen Grund | [SIN-881-worker-fehler-grund.md](decisions/SIN-881-worker-fehler-grund.md) |

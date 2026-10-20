@@ -19,6 +19,12 @@ import {
 
 /** SIN-260: Lauf stoppt vor dem harten Deckel von 20 € (AGENTS.md), wie ap15-regen-dropped. */
 export const BACKFILL_STOP_EUR = 19;
+
+/** SIN-894: Optionaler Kurs-Filter (Eingabe `kurs`, Vergleich ohne Groß-/Kleinschreibung auf `keyword`). Leer = alle Kurse. */
+export const waehleKurse = <C extends { keyword: string }>(courses: C[], kurs?: string): C[] => {
+  const want = kurs?.trim().toLowerCase();
+  return want ? courses.filter((c) => c.keyword.trim().toLowerCase() === want) : courses;
+};
 export const BACKFILL_CHUNK = 10;
 /** SIN-386: Versuche je Chunk; Abbruch nach so vielen Chunks in Folge ohne Ergebnis (Ausfall statt Einzelfehler). */
 export const BACKFILL_ATTEMPTS = 3;
