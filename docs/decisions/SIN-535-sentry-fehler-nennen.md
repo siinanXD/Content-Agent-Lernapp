@@ -11,7 +11,7 @@
 
 ## Annahmen
 
-- Die Sentry-Issue-Liste liefert `title`, `count` und `permalink` (API-Doku: List a Project's Issues).
+- Die Sentry-Issue-Liste liefert `title`, `count` und `permalink`. Quelle: https://docs.sentry.io/api/events/list-a-projects-issues/ (Abrufdatum 20.10.2026). Fehlt ein Feld, lässt die Ausgabe es weg (Code prüft auf `null`/leer).
 - SIN-498 deckt denselben Fehler ab, hat aber nur dokumentiert. Dieser PR liefert die Angabe, mit der der Planer ihn gezielt anlegen kann.
 
 ## Warum
