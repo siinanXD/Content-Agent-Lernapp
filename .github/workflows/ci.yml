@@ -32,14 +32,8 @@ jobs:
       - name: Entscheidungs-Index aktuell
         run: node scripts/decisions-index.mjs --check || { echo "::error::docs/DECISIONS.md ist veraltet. Lokal 'npm run decisions:index' ausführen und die Datei im selben PR committen."; exit 1; }
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Unit tests
-        run: npm test
+      - name: Lint, Typecheck, Unit-Tests ohne Keys (check:fast, SIN-875)
+        run: npm run check:fast
 
       - name: Production build
         run: npm run build
