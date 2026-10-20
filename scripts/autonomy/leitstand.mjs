@@ -88,8 +88,8 @@ export async function sendEvent(event, env = process.env, http = {}) {
   if (missing.length) return { ok: false, grund: `Secret fehlt: ${missing.join(", ")}` };
   try {
     // `return=representation`: PostgREST antwortet sonst mit leerem Body, und fetchJson verlangt JSON (Wiederholungen ohne Grund).
-    await fetchJson("Supabase", `${env.SUPABASE_URL}/rest/v1/loop_events`, { method: "POST", headers: headers(env, { Prefer: "return=representation" }), body: JSON.stringify(event) }, http);
-    return { ok: true };
+    const rows = await fetchJson("Supabase", `${env.SUPABASE_URL}/rest/v1/loop_events`, { method: "POST", headers: headers(env, { Prefer: "return=representation" }), body: JSON.stringify(event) }, http);
+    return { ok: true, id: Array.isArray(rows) ? rows[0]?.id : undefined };
   } catch (e) {
     return { ok: false, grund: e.message };
   }

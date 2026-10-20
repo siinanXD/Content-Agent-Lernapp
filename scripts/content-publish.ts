@@ -11,6 +11,7 @@ import { writeFileSync } from "node:fs";
 import { pruefeKursFuerVeroeffentlichung, type Mangel } from "@/lib/review/veroeffentlichen";
 import { supabaseStorage } from "@/lib/storage/supabase-store";
 import type { Course, CourseStorage } from "@/lib/storage/types";
+import { buildEvent, sendEvent } from "./autonomy/leitstand.mjs";
 
 export type PublishErgebnis = { kurs?: Course; mangel: Mangel[]; veroeffentlicht: boolean; fehler?: string };
 
@@ -39,6 +40,14 @@ export function bericht(e: PublishErgebnis, dryRun: boolean): string {
   return [`${kopf}: ${modus}`, `Mängel: ${e.mangel.length}`, ...zeilen].join("\n");
 }
 
+/** Kurzgrund für loop_events (SIN-882): Anzahl je Prüfung, höchstens 300 Zeichen. */
+export function grund(e: PublishErgebnis): string {
+  if (e.fehler) return e.fehler.slice(0, 300);
+  const je = new Map<string, number>();
+  for (const m of e.mangel) je.set(m.pruefung, (je.get(m.pruefung) ?? 0) + 1);
+  return `${e.kurs?.keyword ?? "?"}: ${e.mangel.length} Mängel (${[...je].map(([p, n]) => `${p} ${n}`).join(", ")})`.slice(0, 300);
+}
+
 async function main() {
   const argv = process.argv.slice(2);
   const keyword = argv.includes("--keyword") ? argv[argv.indexOf("--keyword") + 1] : "";
@@ -48,7 +57,11 @@ async function main() {
   const text = bericht(e, dryRun);
   console.log(text);
   writeFileSync("content-publish-bericht.md", `${text}\n`);
-  if (e.fehler || e.mangel.length > 0) process.exit(1);
+  if (e.fehler || e.mangel.length > 0) {
+    const r = await sendEvent(buildEvent({ schritt: "publish", status: "fehler", grund: grund(e) }), process.env);
+    console.log(r.ok ? `loop_events: Zeile ${r.id ?? "?"} gespeichert` : `loop_events nicht gespeichert: ${r.grund}`);
+    process.exit(1);
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
