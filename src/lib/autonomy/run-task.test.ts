@@ -11,8 +11,11 @@ import {
   TASKS,
   applyResult,
   backupFresh,
+  checkDailyCap,
   costResult,
+  dailyEuroReached,
   dailyLimitReached,
+  dayCapEur,
   dispatchRun,
   isAdditive,
   missingSecrets,
@@ -57,12 +60,53 @@ test("fehlende Secrets: Blocker, nichts ausgeführt, keine Namen mit Werten", as
 
 test("Tagesdeckel: ein kostenpflichtiger Lauf je Aufgabe und Tag", () => {
   const run = (title: string, created: string, conclusion: string | null = "success", id = 1) => ({ id, display_title: title, created_at: created, conclusion });
-  assert.equal(dailyLimitReached("judge-backfill", [run("Lauf judge-backfill", "2026-10-06T06:00:00Z")], now), true);
-  assert.equal(dailyLimitReached("judge-backfill", [run("Lauf judge-backfill", "2026-10-05T23:00:00Z")], now), false);
-  assert.equal(dailyLimitReached("judge-backfill", [run("Lauf cost-report", "2026-10-06T06:00:00Z")], now), false);
-  assert.equal(dailyLimitReached("judge-backfill", [run("Lauf judge-backfill", "2026-10-06T06:00:00Z", "cancelled")], now), false);
-  assert.equal(dailyLimitReached("judge-backfill", [run("Lauf judge-backfill", "2026-10-06T06:00:00Z", null, 7)], now, 7), false);
+  const t = "ab-haiku-sonnet";
+  assert.equal(dailyLimitReached(t, [run(`Lauf ${t}`, "2026-10-06T06:00:00Z")], now), true);
+  assert.equal(dailyLimitReached(t, [run(`Lauf ${t}`, "2026-10-05T23:00:00Z")], now), false);
+  assert.equal(dailyLimitReached(t, [run("Lauf cost-report", "2026-10-06T06:00:00Z")], now), false);
+  assert.equal(dailyLimitReached(t, [run(`Lauf ${t}`, "2026-10-06T06:00:00Z", "cancelled")], now), false);
+  assert.equal(dailyLimitReached(t, [run(`Lauf ${t}`, "2026-10-06T06:00:00Z", null, 7)], now, 7), false);
   assert.equal(dailyLimitReached("lighthouse", [run("Lauf lighthouse", "2026-10-06T06:00:00Z")], now), false);
+  // SIN-894: judge-backfill zählt Euro (dailyEuroReached), nicht Läufe.
+  assert.equal(dailyLimitReached("judge-backfill", [run("Lauf judge-backfill", "2026-10-06T06:00:00Z")], now), false);
+});
+
+test("SIN-894: Euro-Tagesdeckel: 2. Lauf unter dem Deckel startet, ab dem Deckel Stopp mit Grund in loop_events", async () => {
+  const row = (eur: number, at = "2026-10-06T06:00:00Z") => ({ cost_eur: eur, created_at: at });
+  assert.equal(dayCapEur({}), 40);
+  assert.equal(dayCapEur({ TAGESDECKEL_EUR: "25,5" }), 25.5);
+  assert.equal(dayCapEur({ TAGESDECKEL_EUR: "abc" }), 40);
+  assert.equal(dailyEuroReached([row(0.86)], now).reached, false);
+  assert.equal(dailyEuroReached([row(19), row(20.99), row(30, "2026-10-05T23:00:00Z")], now).reached, false); // gestern zählt nicht
+  const voll = dailyEuroReached([row(19), row(21)], now);
+  assert.equal(voll.reached, true);
+  assert.match(voll.grund, /40\.00 € von 40 €/);
+
+  const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "svc", GITHUB_REPOSITORY: "o/r" } as unknown as NodeJS.ProcessEnv;
+  const mk = (rows: unknown[], posts: { body: string }[]) => async (url: string, init?: RequestInit) => {
+    if (init?.method === "POST") {
+      posts.push({ body: String(init.body) });
+      return new Response("[{}]", { status: 201 });
+    }
+    assert.match(url, /\/rest\/v1\/judge_runs\?/);
+    return new Response(JSON.stringify(rows), { status: 200 });
+  };
+  const frei: { body: string }[] = [];
+  const zweiter = await checkDailyCap("judge-backfill", { env, now, fetchImpl: mk([row(0.86)], frei) as unknown as typeof fetch });
+  assert.equal(zweiter.stop, false);
+  assert.equal(frei.length, 0);
+  const posts: { body: string }[] = [];
+  const stop = await checkDailyCap("judge-backfill", { env, now, fetchImpl: mk([row(25), row(15)], posts) as unknown as typeof fetch });
+  assert.equal(stop.stop, true);
+  const ev = JSON.parse(posts[0]!.body);
+  assert.equal(ev.step, "tagesdeckel");
+  assert.match(ev.grund, /judge-backfill: Tagesdeckel: heute schon 40\.00 € von 40 €/);
+  // Über die Repo-Variable anhebbar.
+  assert.equal((await checkDailyCap("judge-backfill", { env: { ...env, TAGESDECKEL_EUR: "50" }, now, fetchImpl: mk([row(40)], []) as unknown as typeof fetch })).stop, false);
+  // Planer-Start respektiert den Euro-Deckel.
+  const d = await dispatchRun("judge-backfill", { env: { ...env, AGENT_WORKFLOW_TOKEN: "t" }, now, fetchImpl: mk([row(41)], []) as unknown as typeof fetch });
+  assert.equal(d.started, false);
+  assert.match(String(d.grund), /Tagesdeckel/);
 });
 
 test("SIN-444: schnelle Fehlschläge (API lehnt ab) sperren den Tag nicht, ab dem dritten schon", () => {
@@ -98,9 +142,9 @@ test("dispatchRun startet nur ohne Treffer am Tag und über das Agenten-Token", 
   const post = calls.find((c) => c.init?.method === "POST");
   assert.match(post!.url, /workflows\/run-task\.yml\/dispatches$/);
   assert.deepEqual(JSON.parse(String(post!.init!.body)), { ref: "main", inputs: { task: "judge-backfill" } });
-  const again = await dispatchRun("judge-backfill", {
+  const again = await dispatchRun("ab-haiku-sonnet", {
     env,
-    fetchImpl: mk([{ id: 9, display_title: "Lauf judge-backfill", created_at: "2026-10-06T01:00:00Z", conclusion: "success" }]) as unknown as typeof fetch,
+    fetchImpl: mk([{ id: 9, display_title: "Lauf ab-haiku-sonnet", created_at: "2026-10-06T01:00:00Z", conclusion: "success" }]) as unknown as typeof fetch,
     now,
   });
   assert.equal(again.started, false);

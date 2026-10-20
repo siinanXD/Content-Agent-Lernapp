@@ -1,7 +1,7 @@
 # Lauf-Aufgaben mit Secrets (SIN-302): Messläufe wirklich ausführen, die der Worker nur bauen kann (er läuft ohne API-Secrets).
 # Nur aus einer festen Liste (Eingabe `task`, siehe TASKS in scripts/autonomy/run-task.mjs), nie ein freier Befehl.
 # Start: von Hand (Actions → run-task) oder durch den Planer (scripts/autonomy/planner.mjs, Agenten-Token).
-# Kosten: höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag (Schritt „Tagesdeckel“); die Skripte brechen bei 20 € je Lauf ab.
+# Kosten: Schritt „Tagesdeckel“: judge-backfill höchstens 40 € je Tag (judge_runs), übrige bezahlte Aufgaben 1 Lauf je Tag; die Skripte brechen bei 20 € je Lauf ab.
 # Ergebnis: Rohdaten in docs/quality/runs/, Eintrag in docs/product-readiness.json, beides per PR (Risiko setzt pr-gate).
 # `migrate`: nur additive Migrationen, vorher frische Sicherung (backup.yml, SIN-293); nicht additive bleiben liegen.
 # Secrets nur in den Schritten, die sie brauchen: ANTHROPIC_API_KEY, OPENAI_API_KEY, LANGFUSE_*, SUPABASE_*.
@@ -26,6 +26,11 @@ on:
           - offline-check
           - safety-sample
           - migrate
+      kurs:
+        description: "Nur für judge-backfill: nur diesen Kurs bewerten (z. B. Industriemechaniker); leer = alle"
+        type: string
+        required: false
+        default: ""
       dry_run:
         description: "Nur anzeigen, was laufen würde (kostet nichts)"
         type: boolean
@@ -52,21 +57,16 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - name: Tagesdeckel (höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag)
+      # judge-backfill: Euro je Tag aus judge_runs (Standard 40 €, Repo-Variable TAGESDECKEL_EUR); übrige bezahlte Aufgaben: 1 Lauf je Tag.
+      - name: Tagesdeckel
         if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TAGESDECKEL_EUR: ${{ vars.TAGESDECKEL_EUR }}
           TASK: ${{ inputs.task }}
-        run: |
-          node --input-type=module -e '
-            import { dailyLimitReached } from "./scripts/autonomy/run-task.mjs";
-            const r = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/run-task.yml/runs?per_page=50`, { headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: "application/vnd.github+json" } });
-            if (!r.ok) throw new Error(`GitHub HTTP ${r.status}`);
-            const runs = (await r.json()).workflow_runs;
-            if (dailyLimitReached(process.env.TASK, runs, new Date(), Number(process.env.GITHUB_RUN_ID))) {
-              console.log("::error::Tagesdeckel: diese Aufgabe ist heute schon gelaufen (höchstens 1 kostenpflichtiger Lauf je Aufgabe und Tag).");
-              process.exit(1);
-            }'
+        run: node scripts/autonomy/run-task.mjs --tagesdeckel "$TASK"
       - run: npm ci --no-audit --no-fund
       - name: Sicherung vor Migration (SIN-293)
         id: backup
@@ -97,6 +97,7 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           BACKUP_AT: ${{ steps.backup.outputs.at }}
           TASK: ${{ inputs.task }}
+          KURS: ${{ inputs.kurs }}
           DRY: ${{ inputs.dry_run }}
         run: |
           if [ "$DRY" = "true" ]; then node scripts/autonomy/run-task.mjs --task "$TASK" --dry-run
