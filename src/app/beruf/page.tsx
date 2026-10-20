@@ -32,7 +32,7 @@ export default function BerufPage() {
 
   // SIN-777: weitere veröffentlichte Kurse (ohne den Standardkurs, den die MAF-Kachel schon öffnet).
   useEffect(() => {
-    fetch("/api/kurse")
+    fetch("/api/kurse", { signal: AbortSignal.timeout(10_000) })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { standardId?: string; courses: PathCourse[] } | null) =>
         setKurse((d?.courses ?? []).filter((c) => c.id !== d?.standardId)),

@@ -206,12 +206,8 @@ export const supabaseStorage: CourseStorage = {
       .select("id")
       .order("created_at", { ascending: false });
     if (error) throw new Error(`courses_list: ${error.message}`);
-    const courses: Course[] = [];
-    for (const row of data ?? []) {
-      const c = await loadCourse(row.id as string);
-      if (c) courses.push(c);
-    }
-    return courses;
+    const loaded = await Promise.all((data ?? []).map((row) => loadCourse(row.id as string)));
+    return loaded.filter((c): c is Course => c !== undefined);
   },
 
   async setStatus(id, status) {
