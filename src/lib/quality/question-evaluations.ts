@@ -27,8 +27,12 @@ export type QuestionEvaluationRecord = {
  * Gespeichert und verglichen wird immer `q.id`; Altzeilen mit Einheiten-Präfix werden beim Lesen mitgenommen.
  */
 export function frageId(unitId: string, questionId: string): string {
+  // SIN-899: Manche Kurse haben das Präfix schon in `questions.id` (LF5-4-u8-q1), der Richter setzt es noch einmal davor.
+  // Darum wiederholt entfernen, damit beide Seiten auf dieselbe Form kommen.
   const prefix = `${unitId}-`;
-  return questionId.startsWith(prefix) && questionId.length > prefix.length ? questionId.slice(prefix.length) : questionId;
+  let id = questionId;
+  while (id.startsWith(prefix) && id.length > prefix.length) id = id.slice(prefix.length);
+  return id;
 }
 
 /** Schlüssel (Einheit, Frage) für die Zuordnung Bewertung ↔ Frage. */
