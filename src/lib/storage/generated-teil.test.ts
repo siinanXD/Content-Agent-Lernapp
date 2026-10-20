@@ -54,8 +54,15 @@ describe("schreibeTeil (SIN-861)", () => {
 
   it("schreibt die jsonb nur mit lernfeld: true", async () => {
     const { sb, calls } = fakeDb([]);
-    await schreibeTeil(sb, "kurs", [{ id: "u1" }], [], { units: [] }, { changedUnitIds: ["u1"], lernfeld: true });
+    await schreibeTeil(sb, "kurs", [{ id: "u1" }], [], { id: "lf", title: "T", units: [{ id: "u1" }] }, { changedUnitIds: ["u1"], lernfeld: true });
     assert.equal("lernfeld" in (calls.find((c) => c.op === "update")!.arg as object), true);
+  });
+
+  it("schreibt mit lernfeld: true nur Kopfdaten, keine units in die jsonb", async () => {
+    const { sb, calls } = fakeDb([]);
+    await schreibeTeil(sb, "kurs", [{ id: "u1" }], [], { id: "lf", title: "T", units: [{ id: "u1" }] }, { changedUnitIds: ["u1"], lernfeld: true });
+    const lf = (calls.find((c) => c.op === "update")!.arg as { lernfeld: Record<string, unknown> }).lernfeld;
+    assert.deepEqual(lf, { id: "lf", title: "T", units: [] });
   });
 });
 
