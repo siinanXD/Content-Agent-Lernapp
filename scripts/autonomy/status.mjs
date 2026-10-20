@@ -15,6 +15,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { claudeMayTake, isPaused, parsePausedUntil } from "./budget.mjs";
 import { fetchJson } from "./http.mjs";
+import { AUFBAUPHASE } from "./risk.mjs";
 import { collectBackup, collectRestoreTest } from "./backup.mjs";
 import { collectMigrations, migrationBugPlan, migrationIncident, sinanTaskForMigrations } from "./migrationen.mjs";
 import { LIVE_CHECK_PREFIX, collectLiveCheck } from "./live-check.mjs";
@@ -566,7 +567,7 @@ export async function collectGithub(repo, now, call = gh) {
       pr.sha = p.head.sha;
       pr.head_at = (await call(`/repos/${repo}/commits/${p.head.sha}`)).commit?.committer?.date;
       pr.mergeable_state = (await call(`/repos/${repo}/pulls/${p.number}`)).mergeable_state;
-      if (pr.labels.some((l) => l === "einspruch:30m" || l === "einspruch:2h")) {
+      if (!AUFBAUPHASE && pr.labels.some((l) => l === "einspruch:30m" || l === "einspruch:2h")) {
         // SIN-547: Ende der Einspruchsfrist aus dem Kommentar des Gates (nur gültig für den aktuellen Commit).
         const cs = await call(`/repos/${repo}/issues/${p.number}/comments?per_page=100`).catch(() => []);
         const m = cs.map((c) => c.body?.match(/<!-- pr-gate-einspruch sha=(\w+) bis=(\d+)(?: gruende=\w+)? -->/)).filter(Boolean).pop();
