@@ -1,0 +1,9 @@
+{
+  "task": "judge-backfill",
+  "label": "Bewertung aller veröffentlichten Fragen (Richter-Modell, Batch)",
+  "datum": "2026-10-20",
+  "lauf": "https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/39460947381",
+  "ok": null,
+  "ergebnis": "Bewertung aller veröffentlichten Fragen (Richter-Modell, Batch): bestanden",
+  "durchgelaufen": true
+}
