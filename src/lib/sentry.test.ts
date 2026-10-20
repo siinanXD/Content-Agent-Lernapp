@@ -39,6 +39,26 @@ test("Sentry: HTTP-Fehler - beide Abfragen liefern konkrete Fehlermeldung", asyn
   assert.match(String(m.sentry_kritisch), /^nicht messbar \(Sentry: HTTP 401\)/);
 });
 
+test("Sentry: nennt Titel, Häufigkeit und Link je Fehler (höchstens 3), ohne Personendaten", async () => {
+  const issue = (n: number, title: string) => ({
+    title,
+    count: String(n * 10),
+    permalink: `https://de.sentry.io/organizations/org/issues/${n}/?query=a@b.de#x`,
+  });
+  const items = [
+    issue(1, "TypeError: x is undefined"),
+    issue(2, "Fehler für max@example.de von 10.0.0.1"),
+    issue(3, "Dritter"),
+    issue(4, "Vierter"),
+  ];
+  const m = await collectSentryMetrics(env as never, (async () => res(items)) as never);
+  const s = String(m.sentry);
+  assert.match(s, /^4 ungelöste Fehler \(7 Tage\): „TypeError: x is undefined“ \(10×, https:\/\/de\.sentry\.io\/organizations\/org\/issues\/1\/\)/);
+  assert.match(s, /„Dritter“/);
+  assert.ok(!s.includes("Vierter"));
+  assert.ok(!/max@example|10\.0\.0\.1|a@b\.de|\?query/.test(s));
+});
+
 test("Sentry: Personendaten werden entfernt", () => {
   const e = scrubEvent({
     user: { email: "a@b.de", ip_address: "1.2.3.4" },
