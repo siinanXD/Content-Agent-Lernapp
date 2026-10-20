@@ -7,7 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type TeilOptionen = {
   /** Nur diese Einheiten (und ihre Fragen) schreiben und auf verwaiste Fragen prüfen. */
   changedUnitIds: readonly string[];
-  /** Volle `courses.lernfeld`-jsonb schreiben. Zwischenstände lassen sie weg, der Lauf schreibt sie am Ende. */
+  /** `courses.lernfeld`-Kopfdaten (ohne `units`) schreiben. Zwischenstände lassen sie weg, der Lauf schreibt sie am Ende. */
   lernfeld: boolean;
 };
 
@@ -72,7 +72,8 @@ export async function schreibeTeil(
     .from("courses")
     .update({
       status: "generated",
-      ...(opts.lernfeld ? { lernfeld: generated } : {}),
+      // Nur Kopfdaten: Einheiten stehen in units/questions, loadCourse baut sie seitenweise daraus (3,2 MB jsonb lief ins statement_timeout).
+      ...(opts.lernfeld ? { lernfeld: { ...(generated as object), units: [] } } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", courseId);
