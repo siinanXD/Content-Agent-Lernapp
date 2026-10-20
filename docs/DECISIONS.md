@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-879 | SIN-879: /beruf lädt nicht (Timeout) | [SIN-879-beruf-kurse-laden.md](decisions/SIN-879-beruf-kurse-laden.md) |
 | SIN-875 | SIN-875: Schnell-Prüfung `check:fast` vor dem Push | [SIN-875-check-fast.md](decisions/SIN-875-check-fast.md) |
 | SIN-874 | SIN-874: Einheit lädt den Kurs nur einmal | [SIN-874-einheit-ladeweg.md](decisions/SIN-874-einheit-ladeweg.md) |
 | SIN-861 | SIN-861: setGenerated schreibt nur geänderte Einheiten | [SIN-861-setgenerated-teilweise.md](decisions/SIN-861-setgenerated-teilweise.md) |
