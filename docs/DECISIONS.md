@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-874 | SIN-874: Einheit lädt den Kurs nur einmal | [SIN-874-einheit-ladeweg.md](decisions/SIN-874-einheit-ladeweg.md) |
 | SIN-861 | SIN-861: setGenerated schreibt nur geänderte Einheiten | [SIN-861-setgenerated-teilweise.md](decisions/SIN-861-setgenerated-teilweise.md) |
 | SIN-852 | SIN-852: Einspruchsfrist an den Frist-Gründen, nicht am Head | [SIN-852-frist-an-gruenden.md](decisions/SIN-852-frist-an-gruenden.md) |
 | SIN-850 | SIN-850: Migration 20261026010000_sin832 fehlt in Supabase (25/26) | [SIN-850-migration-sin832-fehlt.md](decisions/SIN-850-migration-sin832-fehlt.md) |
