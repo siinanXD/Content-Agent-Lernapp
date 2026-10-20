@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-879 | SIN-879: /beruf lädt nicht (Timeout) | [SIN-879-beruf-kurse-laden.md](decisions/SIN-879-beruf-kurse-laden.md) |
 | SIN-875 | SIN-875: Schnell-Prüfung `check:fast` vor dem Push | [SIN-875-check-fast.md](decisions/SIN-875-check-fast.md) |
 | SIN-874 | SIN-874: Einheit lädt den Kurs nur einmal | [SIN-874-einheit-ladeweg.md](decisions/SIN-874-einheit-ladeweg.md) |
+| SIN-862 | SIN-862: Reparatur findet Richter-Bewertungen wieder, Obergrenze je Einheit | [SIN-862-reparatur-fragen-id-obergrenze.md](decisions/SIN-862-reparatur-fragen-id-obergrenze.md) |
 | SIN-861 | SIN-861: setGenerated schreibt nur geänderte Einheiten | [SIN-861-setgenerated-teilweise.md](decisions/SIN-861-setgenerated-teilweise.md) |
 | SIN-852 | SIN-852: Einspruchsfrist an den Frist-Gründen, nicht am Head | [SIN-852-frist-an-gruenden.md](decisions/SIN-852-frist-an-gruenden.md) |
 | SIN-850 | SIN-850: Migration 20261026010000_sin832 fehlt in Supabase (25/26) | [SIN-850-migration-sin832-fehlt.md](decisions/SIN-850-migration-sin832-fehlt.md) |

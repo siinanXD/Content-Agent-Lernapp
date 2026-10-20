@@ -32,6 +32,8 @@ import {
   MIN_PASSED_QUESTIONS,
   planFromEvals,
   planQuestionRepair,
+  MAX_REPAIR_ROUNDS_PER_UNIT,
+  repairRoundsDone,
   type RepairPlan,
 } from "../src/lib/generate/repair-questions";
 import { loadMafCurriculum, modulesForPhase } from "../src/lib/content/curriculum";
@@ -196,10 +198,17 @@ async function main() {
   const stored = new Map(priorUnits.map((u) => [u.id, u]));
   const targetIds = loadDroppedIds();
   // Gespeicherte Einheit mit < 5 bestandenen Fragen: gezielt reparieren. Sonst: Bootstrap.
-  const latest = latestPerQuestion(await storage.listQuestionEvaluations(COURSE));
+  const allEvaluations = await storage.listQuestionEvaluations(COURSE);
+  const latest = latestPerQuestion(allEvaluations);
   const states = new Map<string, UnitState>();
   const bootstrapIds: string[] = [];
+  const capped: string[] = [];
   for (const id of targetIds) {
+    // SIN-862: Einheit, die schon so oft repariert wurde, ohne zu bestehen, nicht erneut bezahlen.
+    if (repairRoundsDone(id, allEvaluations) >= MAX_REPAIR_ROUNDS_PER_UNIT) {
+      capped.push(id);
+      continue;
+    }
     const unit = stored.get(id);
     const plan = unit ? planQuestionRepair(unit, latest) : undefined;
     if (unit && plan && !plan.alreadyPublishable) {
@@ -217,6 +226,7 @@ async function main() {
       targets: targetIds.length,
       repairFromStored: states.size,
       bootstrapFullRegen: bootstrapIds.length,
+      cappedAfterMaxRounds: capped.length,
       stopEur: STOP_EUR,
     }),
   );

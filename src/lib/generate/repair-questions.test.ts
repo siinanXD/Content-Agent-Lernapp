@@ -7,6 +7,7 @@ import {
   MIN_PASSED_QUESTIONS,
   parseRepairQuestions,
   planQuestionRepair,
+  repairRoundsDone,
 } from "./repair-questions";
 import type { GeneratedQuestion, GeneratedUnit } from "./maf-lernfeld-seed";
 import type { QuestionEval } from "@/lib/quality/schemas";
@@ -77,6 +78,40 @@ describe("AP-21 planQuestionRepair", () => {
     const u = unit(8);
     const plan = planQuestionRepair(u, [ev(u, "q1", true), ...u.questions.slice(1).map((x) => ev(u, x.id, false))]);
     assert.equal(plan.kept.length + plan.replacements, 8);
+  });
+});
+
+describe("SIN-862 Fragen-Id und Obergrenze", () => {
+  it("findet Bewertungen ohne Einheiten-Präfix (SIN-808), mit Richter-Grund", () => {
+    const u = unit(6);
+    const plain = (id: string, passed: boolean, reason?: string) => ({ questionId: id, unitId: u.id, passed, reason });
+    const plan = planQuestionRepair(u, [
+      ...["q1", "q2", "q3", "q4", "q5"].map((id) => plain(id, true)),
+      plain("q6", false, "Niveau zu niedrig"),
+    ]);
+    assert.equal(plan.kept.length, 5);
+    assert.equal(plan.alreadyPublishable, true);
+    assert.equal(plan.failed[0]!.reason, "Niveau zu niedrig");
+  });
+
+  it("applyRepair erkennt Richter-Ergebnis ohne Präfix", () => {
+    const u = unit(5);
+    const plan = planQuestionRepair(u, [ev(u, "q1", true)]);
+    const nq = annotateRepairQuestions(u, [q("x")], 1);
+    const out = applyRepair(u, plan, nq, [{ ...qeval(u, "r1-1", true), questionId: "r1-1" }]);
+    assert.equal(out.unit.questions.length, 2);
+  });
+
+  it("zählt Reparatur-Runden je Einheit über Läufe", () => {
+    const rows = [
+      { unitId: "A", runId: "L1-repair1" },
+      { unitId: "A", runId: "L1-repair1" },
+      { unitId: "A", runId: "L1-repair2" },
+      { unitId: "A", runId: "L1-bootstrap" },
+      { unitId: "B", runId: "L1-repair1" },
+    ];
+    assert.equal(repairRoundsDone("A", rows), 2);
+    assert.equal(repairRoundsDone("C", rows), 0);
   });
 });
 

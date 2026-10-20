@@ -3,7 +3,7 @@
  * Reine Funktionen (kein Netz): Plan, Prompt, Parser, Merge. Batch-Aufruf in batch-generate.ts.
  */
 import type { GeneratedQuestion, GeneratedUnit } from "./maf-lernfeld-seed";
-import type { QuestionEvaluationRecord } from "@/lib/quality/question-evaluations";
+import { frageId, type QuestionEvaluationRecord } from "@/lib/quality/question-evaluations";
 import type { QuestionEval } from "@/lib/quality/schemas";
 
 /** PRODUCT.md: 5–8 Fragen je Einheit. Eine Einheit geht live, wenn mindestens so viele bestanden haben. */
@@ -13,6 +13,17 @@ export const MAX_QUESTIONS = 8;
 /** Id, unter der der Richter eine Frage führt (siehe flattenUnits in den ap15-Skripten). */
 export function evalQuestionId(unitId: string, questionId: string): string {
   return `${unitId}-${questionId}`;
+}
+
+/**
+ * SIN-862: Obergrenze je Einheit über alle Läufe. Jede Reparatur-Runde schreibt Bewertungen mit Lauf-Kennung `…-repair<n>`;
+ * 4 Runden = 2 Fabrik-Läufe à 2 Runden. Danach bleibt die Einheit verworfen, bis ein Mensch sie freigibt (kein Dauerlauf).
+ */
+export const MAX_REPAIR_ROUNDS_PER_UNIT = 4;
+
+/** Anzahl Reparatur-Runden, die für die Einheit schon bewertet wurden (verschiedene `…-repair<n>`-Läufe). */
+export function repairRoundsDone(unitId: string, evaluations: Array<Pick<QuestionEvaluationRecord, "unitId" | "runId">>): number {
+  return new Set(evaluations.filter((e) => e.unitId === unitId && /-repair\d+$/.test(e.runId)).map((e) => e.runId)).size;
 }
 
 export type FailedQuestion = { question: GeneratedQuestion; reason: string };
@@ -37,13 +48,14 @@ export function planQuestionRepair(
   unit: GeneratedUnit,
   latest: Array<Pick<QuestionEvaluationRecord, "questionId" | "unitId" | "passed" | "reason">>,
 ): RepairPlan {
+  // SIN-862: seit SIN-808 speichert die Datenbank `q.id` ohne Einheiten-Präfix, Altzeilen mit Präfix: beide Formen auf `q.id` abbilden.
   const byQuestion = new Map(
-    latest.filter((e) => e.unitId === unit.id).map((e) => [e.questionId, e]),
+    latest.filter((e) => e.unitId === unit.id).map((e) => [frageId(unit.id, e.questionId), e]),
   );
   const kept: GeneratedQuestion[] = [];
   const failed: FailedQuestion[] = [];
   for (const q of unit.questions) {
-    const ev = byQuestion.get(evalQuestionId(unit.id, q.id));
+    const ev = byQuestion.get(q.id);
     if (ev?.passed) kept.push(q);
     else failed.push({ question: q, reason: ev?.reason?.trim() || (ev ? "ohne Begründung" : "nicht bewertet") });
   }
@@ -144,11 +156,11 @@ export function applyRepair(
   newQuestions: GeneratedQuestion[],
   newEvals: QuestionEval[],
 ): RepairOutcome {
-  const result = new Map(newEvals.map((e) => [e.questionId, e]));
+  const result = new Map(newEvals.map((e) => [frageId(unit.id, e.questionId), e]));
   const passedNew: GeneratedQuestion[] = [];
   const stillFailed: FailedQuestion[] = [];
   for (const q of newQuestions) {
-    const ev = result.get(evalQuestionId(unit.id, q.id));
+    const ev = result.get(q.id);
     if (ev?.passed) passedNew.push(q);
     else stillFailed.push({ question: q, reason: ev?.reasons.join("; ") || "nicht bewertet" });
   }

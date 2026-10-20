@@ -20,6 +20,7 @@
     "quality:judge-backfill": "node --import tsx scripts/sin260-judge-backfill.ts",
     "quality:regression": "node --import tsx scripts/goldset-regression.ts",
     "quality:quote": "node scripts/autonomy/quality-quote.mjs",
+    "quality:repair": "node scripts/autonomy/repair-gruende.mjs",
     "quality:smoke": "node --import tsx scripts/ap06-smoke.ts",
     "ap15:phase-a": "node --import tsx scripts/ap15-phase-a.ts",
     "quality:prompt-vergleich": "node --import tsx scripts/sin432-prompt-vergleich.ts",
