@@ -8,7 +8,7 @@ import {
   estimateUsd,
   type ClaudeUsage,
 } from "./cost-guard";
-import { frageId, latestPerQuestion, toQuestionEvaluationRecords } from "./question-evaluations";
+import { frageId, frageSchluessel, latestPerQuestion, toQuestionEvaluationRecords } from "./question-evaluations";
 import { clearMockProgress, mockStorage } from "@/lib/storage/mock-adapter";
 
 const EVAL_ITEMS = [
@@ -56,6 +56,11 @@ describe("question evaluations (AP-19)", () => {
     assert.equal(frageId("u1", "q1"), "q1");
     assert.equal(frageId("u1", "u2-q1"), "u2-q1");
     assert.equal(frageId("u1", "u1-"), "u1-");
+  });
+
+  it("SIN-899: Frage mit Präfix in questions.id und doppelt präfixierte Bewertung ergeben denselben Schlüssel", () => {
+    assert.equal(frageSchluessel("LF5-4-u8", "LF5-4-u8-q1"), frageSchluessel("LF5-4-u8", "LF5-4-u8-LF5-4-u8-q1"));
+    assert.equal(frageSchluessel("LF1-1-u1", "q1"), frageSchluessel("LF1-1-u1", "LF1-1-u1-q1"));
   });
 
   it("latestPerQuestion returns the newest row per question", async () => {
