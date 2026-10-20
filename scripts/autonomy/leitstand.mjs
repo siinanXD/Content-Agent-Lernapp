@@ -80,11 +80,16 @@ export function buildEvent(a, env = process.env, now = Date.now()) {
 
 /** Fehlerzeile aus dem execution_file (letztes `result` mit Fehler); Schlüssel und Tokens geschwärzt, höchstens 300 Zeichen. */
 export function fehlerzeile(text) {
-  let items;
+  let items = [];
   try {
     items = JSON.parse(text);
   } catch {
-    return "";
+    // Fallback: JSONL (eine Nachricht je Zeile); unlesbare Zeilen werden übersprungen.
+    for (const l of text.split("\n")) {
+      try {
+        items.push(JSON.parse(l));
+      } catch {}
+    }
   }
   const r = [].concat(items).reverse().find((m) => m?.type === "result");
   if (!r || (!r.is_error && r.subtype === "success")) return "";

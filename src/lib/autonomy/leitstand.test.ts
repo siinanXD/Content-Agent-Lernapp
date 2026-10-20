@@ -183,4 +183,6 @@ test("Worker-Grund: Limit, Outcome, Fehlerzeile ohne Schlüssel, sonst kein Diff
   assert.match(z, /error_max_turns/);
   assert.doesNotMatch(z, /abcdefgh/);
   assert.equal(fehlerzeile("kein json"), "");
+  const jsonl = [{ type: "system" }, { type: "result", subtype: "error_during_execution", is_error: true }].map((m) => JSON.stringify(m)).join("\n");
+  assert.match(fehlerzeile(jsonl), /error_during_execution/);
 });
