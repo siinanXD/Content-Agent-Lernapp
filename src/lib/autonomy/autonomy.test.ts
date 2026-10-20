@@ -179,6 +179,9 @@ test("Aufbauphase: low und medium ohne Frist, auch bei altem bis in der Zukunft 
   const gate = readFileSync(".github/workflows/pr-gate.yml", "utf8");
   assert.match(gate, /einspruchFrist && fristGilt\(risk, einspruch\)/);
   assert.match(gate, /riskModule\.fristGilt/);
+  // Alte PRs mit Frist-Label werden in der Aufbauphase sofort neu bewertet, und das Gate lädt den aktuellen Basis-Kopf.
+  assert.match(gate, /!AUFBAUPHASE && \(!m \|\| m\[1\] !== pr\.head\.sha \|\| Date\.now\(\) < Number\(m\[2\]\)\)/);
+  assert.match(gate, /ref: \$\{\{ github\.event\.pull_request\.base\.ref \}\}/);
   assert.match(gate, /!labels\.includes\(NO_AUTOMERGE\) && !fristOffen\s*\n\s*&& \(risk !== "risk:high" \|\| approved\)/);
 });
 
