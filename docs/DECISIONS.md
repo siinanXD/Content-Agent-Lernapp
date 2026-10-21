@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-933 | SIN-933: Keine Worker-Endlosschleife bei gemergtem PR | [SIN-933-worker-endlosschleife.md](decisions/SIN-933-worker-endlosschleife.md) |
 | SIN-914 | SIN-914 Agent-Testnutzer: Crawler und PR-Crawler prüfen eingeloggt | [SIN-914-agent-testnutzer-eingeloggt.md](decisions/SIN-914-agent-testnutzer-eingeloggt.md) |
 | SIN-906 | SIN-906 PR-Crawler: nur geänderte Seiten auf der Vorschau | [SIN-906-pr-crawler.md](decisions/SIN-906-pr-crawler.md) |
 | SIN-901 | SIN-901: Content-Fabrik hört auf, wenn nichts mehr zu erzeugen ist | [SIN-901-fabrik-endet.md](decisions/SIN-901-fabrik-endet.md) |

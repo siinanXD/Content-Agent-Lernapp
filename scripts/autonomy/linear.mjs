@@ -328,6 +328,8 @@ export async function applyDone(action, { dry = false, call = linear } = {}) {
   return false;
 }
 
+const NACH_AKTIVIERUNG = /\[nach Aktivierung\]/i;
+
 /**
  * Abgleich vor der Auswahl (SIN-237): Issues in „In Progress“ mit gemergtem PR → Done, nur geschlossene
  * PRs ohne offenen → Todo. Ohne PR bleibt das Issue (der Worker läuft evtl. noch). PRs: { title, head, state, merged, body }.
@@ -336,12 +338,18 @@ export async function applyDone(action, { dry = false, call = linear } = {}) {
 export function reconcile(issues, prs, /** @type {{ runningWorkers?: string[], now?: Date }} */ { runningWorkers, now = new Date() } = {}) {
   const actions = [];
   for (const issue of issues) {
-    if (issue.state?.name !== "In Progress") continue;
+    const todo = issue.state?.name === "Todo";
+    if (issue.state?.name !== "In Progress" && !todo) continue;
     const mine = prs.filter((p) => prMentions(p, issue.identifier));
     if (mine.some((p) => p.merged)) {
       const { offen, description } = pruefeHaken(issue.description, mine.filter((p) => p.merged).map((p) => p.body));
-      actions.push({ issue, to: offen.length ? "Offen" : "Done", offen, description });
+      // SIN-933: nur „[nach Aktivierung]“-Haken offen → In Review (wartet auf den Live-Beleg, nie zurück auf Todo).
+      const wartet = offen.length > 0 && offen.every((t) => NACH_AKTIVIERUNG.test(t));
+      // Todo mit echten offenen Haken: kein Abgleich, der Start läuft über die Haken-Sperre (SIN-795).
+      if (todo && offen.length && !wartet) continue;
+      actions.push({ issue, to: wartet ? "In Review" : offen.length ? "Offen" : "Done", offen, description });
     }
+    else if (todo) continue;
     else if (mine.length && !mine.some((p) => p.state === "open")) actions.push({ issue, to: "Todo" });
     // SIN-240/SIN-291: weder PR noch laufender Worker seit STUCK_MIN (Geister-Issue) → zurück auf Todo (nur, wenn die Läufe bekannt sind).
     else if (!mine.length && runningWorkers && !runningWorkers.includes(issue.identifier) && stuckMinutes(issue, now) > STUCK_MIN) {
@@ -477,7 +485,7 @@ export async function comment(issueId, body, call = linear) {
 
 /** Kommentare eines Issues (höchstens 50), für die Zählung der Läufe ohne PR (SIN-362). */
 export async function fetchComments(issueId, call = linear) {
-  const data = await call(`query($id: String!) { issue(id: $id) { comments(first: 50) { nodes { id body createdAt } } } }`, { id: issueId });
+  const data = await call(`query($id: String!) { issue(id: $id) { comments(first: 250) { nodes { id body createdAt } } } }`, { id: issueId });
   return data.issue?.comments?.nodes ?? [];
 }
 

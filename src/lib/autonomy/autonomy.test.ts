@@ -528,9 +528,9 @@ test("Abgleich: gemergter PR → Done, ohne Merge geschlossen → Todo, sonst un
     { title: "feat: c (SIN-9)", head: "b", state: "open", merged: false },
     { title: "fix: d (SIN-9)", head: "c", state: "closed", merged: false }, // offener PR hält das Issue
     { title: "feat: e (SIN-100)", head: "claude/sin-100", state: "closed", merged: true }, // nicht SIN-10
-    { title: "feat: f (SIN-12)", head: "d", state: "closed", merged: true }, // Todo bleibt unberührt
+    { title: "feat: f (SIN-12)", head: "d", state: "closed", merged: true }, // Todo mit gemergtem PR → Done (SIN-933)
   ];
-  assert.deepEqual(reconcile(issues, prs).map((a) => `${a.issue.identifier}:${a.to}`), ["SIN-7:Done", "SIN-8:Todo"]);
+  assert.deepEqual(reconcile(issues, prs).map((a) => `${a.issue.identifier}:${a.to}`), ["SIN-7:Done", "SIN-8:Todo", "SIN-12:Done"]);
   assert.equal(prMentions({ title: "", head: "claude/sin-237" }, "SIN-237"), true);
   assert.equal(prMentions({ title: "x (SIN-2370)", head: "" }, "SIN-237"), false);
 });

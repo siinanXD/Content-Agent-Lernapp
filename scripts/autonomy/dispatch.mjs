@@ -84,13 +84,15 @@ async function syncWithPrs(issues, prs, dry, runningWorkers) {
   for (const action of actions) {
     const { issue, to } = action;
     console.log(`${dry ? "[dry-run] " : ""}Abgleich: ${issue.identifier} → ${to === "Offen" ? `bleibt offen (${action.offen.length} Haken ohne Beleg)` : to}`);
-    if (to === "Done" || to === "Offen") await applyDone(action, { dry });
-    else if (!dry) await setState(issue, to);
+    if (to === "Done" || to === "Offen" || to === "In Review") {
+      await applyDone(action, { dry });
+      if (to === "In Review" && !dry) await setState(issue, to);
+    } else if (!dry) await setState(issue, to);
   }
   const target = new Map(actions.map((a) => [a.issue.identifier, a.to]));
   // „Offen“ (SIN-779): fertig gemergt, wartet auf Belege; belegt keinen Platz und wird nicht neu gestartet.
   return issues
-    .filter((i) => !["Done", "Offen"].includes(target.get(i.identifier)))
+    .filter((i) => !["Done", "Offen", "In Review"].includes(target.get(i.identifier)))
     .map((i) => (target.get(i.identifier) === "Todo" ? { ...i, state: { ...i.state, name: "Todo", type: "unstarted" } } : i));
 }
 
@@ -112,6 +114,14 @@ function output(name, value) {
 /** Worker-Lauf ohne PR (SIN-291): Issue zurück auf Todo, Kommentar mit Grund, zu große Aufträge zerlegen. */
 async function noPrRun(identifier, file, dry) {
   const issue = await findByIdentifier(identifier);
+  // SIN-933: Hat ein gemergter PR das Issue schon erledigt, geht es auf Done oder In Review, nie zurück auf Todo.
+  const [fertig] = reconcile([{ ...issue, state: { ...issue.state, name: "In Progress" } }], await fetchAllPrs().catch(() => []));
+  if (fertig && fertig.to !== "Offen") {
+    if (dry) return console.log(`[dry-run] ${issue.identifier} → ${fertig.to} (PR gemergt)`);
+    await applyDone(fertig);
+    if (fertig.to === "In Review") await setState(issue, "In Review");
+    return console.log(`${issue.identifier} → ${fertig.to} (PR gemergt, kein Todo)`);
+  }
   const raw = file && existsSync(file) ? readFileSync(file, "utf8") : "";
   const summary = summarizeExecution(raw);
   // Claude-Limit (auch Sofortabbruch ohne Text, SIN-362): kein Fehlversuch des Issues.
