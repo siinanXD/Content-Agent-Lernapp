@@ -206,7 +206,7 @@ export function buildSteckbrief(input) {
     need = "✅ **Nichts.** Mergt automatisch, sobald die Checks grün sind.";
   }
 
-  const change = sec.change ? short(sec.change) : short(body.replace(/^\s*Part of SIN-\d+\s*/im, "")).slice(0, 2);
+  const change = sec.change ? short(sec.change) : [];
   const riskLine = high
     ? `**high**: ${reasons.slice(0, 3).map((r) => r.text).join("; ")}`
     : "low/medium: keine High-Gründe";
@@ -243,10 +243,10 @@ export function buildSteckbrief(input) {
         : "Nichts sichtbar."
     }`,
     `**Nach dem Merge:** ${sec.after ? short(sec.after, 2).join(" ") : migration ? "Die Migration läuft." : "Nichts Besonderes."}`,
-    ...(sec.cost ? [`**Kosten/Folgen:** ${short(sec.cost, 3).join(" ")}`] : []),
+
     ...(sec.skills ? ["**Neue Skills:**", ...short(sec.skills, 3).map((l) => `- ${l}`)] : []),
     ...(sec.protocol ? ["**Laufprotokoll:**", ...short(sec.protocol, 2).map((l) => `- ${l}`)] : []),
-    ...(sec.usage ? ["**Verbrauch:**", ...short(sec.usage, 4).map((l) => `- ${l}`)] : []),
+
     ...(diagrammHinweis(files).length ? [`**Diagramme:** Hinweis, kein Blocker: ${diagrammHinweis(files).join(", ")} nicht angepasst. Der Worker aktualisiert sie im selben PR.`] : []),
     `**Rückgängig:** ${sec.revert ? short(sec.revert, 2).join(" ") : migration ? "Nicht trivial: Migration, Revert-PR genügt nicht allein." : "Revert-PR genügt."}`,
     ...(high && reasons.length ? ["", "<details><summary>Gründe für risk:high</summary>", "", ...reasons.slice(0, 15).map((r) => `- ${r.text}`), "", "</details>"] : []),

@@ -21,7 +21,8 @@ import { stripComments } from "./sanitize.mjs";
 import { collectBackup } from "./backup.mjs";
 import { collectLiveCheck } from "./live-check.mjs";
 import { isoWeek } from "./trend-radar.mjs";
-import { renderWeekUsage, weekUsage } from "./sparen.mjs";
+import { renderWeekUsage } from "./sparen.mjs";
+import { privateWeekUsage } from "./private-usage.mjs";
 import { sinanLine, sortSinan, syncSinan } from "./sinan.mjs";
 import { describeExpiry, expiringSoon, parseTokens } from "./tokens.mjs";
 import { assessReadiness, collectMetrics } from "./planner.mjs";
@@ -178,11 +179,12 @@ export function buildDigest(snap) {
   lines.push("", "**Braucht dich**", ...(shown.length ? shown : ["Nichts zu tun."]));
 
   const c = snap.content;
+  const privateDetails = snap.privateDetails === true;
   const kpi = c
-    ? `Content: ${c.einheitenNeuWoche ?? 0} neue Einheiten, Bestehensquote ${c.bestehensquote == null ? "nicht verfügbar" : `${c.bestehensquote} %`}, Kosten Fabrik ${Number(c.kostenWocheEur ?? 0).toFixed(2)} € (je 7 Tage)`
+    ? `Content: ${c.einheitenNeuWoche ?? 0} neue Einheiten, Bestehensquote ${c.bestehensquote == null ? "nicht verfügbar" : `${c.bestehensquote} %`}${privateDetails ? `, Kosten Fabrik ${Number(c.kostenWocheEur ?? 0).toFixed(2)} € (je 7 Tage)` : ""}`
     : "Content: nicht verfügbar";
   const high = (snap.quotas ?? []).filter((q) => q.pct != null && q.pct > QUOTA_MIN_PCT);
-  lines.push("", "**Kennzahlen**", `- ${kpi}`, `- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"} · Review-Funde (schwer, 7 Tage): ${snap.reviewStats ? `${snap.reviewStats.gesamt} gesamt / ${snap.reviewStats.widerlegt} widerlegt` : "nicht verfügbar"}`, ...renderWeekUsage(snap.usageWeek ?? null));
+  lines.push("", "**Kennzahlen**", `- ${kpi}`, ...(privateDetails ? [`- Kontingente über ${QUOTA_MIN_PCT} %: ${high.length ? high.map((q) => `${q.name} ${q.pct} %`).join(", ") : "keine"} · Review-Funde (schwer, 7 Tage): ${snap.reviewStats ? `${snap.reviewStats.gesamt} gesamt / ${snap.reviewStats.widerlegt} widerlegt` : "nicht verfügbar"}`, ...renderWeekUsage(snap.usageWeek ?? null)] : ["- Verbrauch und Kontingente: Details privat in Linear."]));
 
   // SIN-376: Diagramme geändert, FigJam in der nächsten Claude-Sitzung nachziehen.
   if (snap.diagramme?.length) lines.push("", `**Diagramme geändert:** ${snap.diagramme.join(", ")} (FigJam nachziehen)`);
@@ -232,7 +234,9 @@ async function collect(repo, slot, now, since, env, dry = false) {
   const mergedPrs = prs.filter((p) => p.merged_at && (!since || p.merged_at > since)).map((p) => ({ title: p.title, merged_at: p.merged_at }));
   // SIN-320: Verbrauch der letzten 7 Tage aus den Merkern in gemergten PRs (Wochensumme, teuerste 3, Tokens je PR).
   const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
-  const usageWeek = weekUsage(prs.filter((p) => p.merged_at && p.merged_at > weekAgo).map((p) => ({ title: p.title, body: p.body })));
+  let usageWeek = null;
+  try { usageWeek = await privateWeekUsage(prs.filter(p => p.merged_at && p.merged_at > weekAgo),repo); }
+  catch { console.log("::warning::Private Verbrauchssumme nicht vollständig verfügbar."); }
   const openPrs = prs.filter((p) => p.state === "open").map((p) => ({ number: p.number, title: p.title, labels: p.labels.map((l) => l.name) }));
   let issues = [];
   try {
@@ -338,13 +342,14 @@ export async function main(argv, env = process.env) {
   }
   const deployStuck = parseState(found[0].body).deployStuck ?? null;
   const deployAlarm = parseState(found[0].body).deployAlarm ?? [];
-  const { text } = buildDigest({ ...(await collect(repo, slot, now, last?.at ?? null, env, dry)), deployStuck, deployAlarm, force });
+  const snapshot = { ...(await collect(repo, slot, now, last?.at ?? null, env, dry)), deployStuck, deployAlarm, force };
+  const { text } = buildDigest(snapshot);
   console.log(text);
   if (dry) return text;
   // Erst der Kommentar (trägt den Merker), dann Telegram: ein Fehler dort wiederholt das Update nicht.
   await gh(`/repos/${repo}/issues/${found[0].number}/comments`, { method: "POST", body: { body: text } });
   try {
-    await sendTelegram(text, env);
+    await sendTelegram(buildDigest({...snapshot,privateDetails:true}).text, env);
   } catch (e) {
     console.log(`::warning::${e.message}`);
   }

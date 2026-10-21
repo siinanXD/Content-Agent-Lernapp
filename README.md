@@ -15,6 +15,8 @@ Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen 
 
 ## Docs
 
+- Verbrauch von Bau-/Reparaturläufen wird privat in Linear gespeichert; öffentliche PR-Steckbriefe und Tages-Updates zeigen diese Beträge nicht. Der Wochenleser liest private Kommentare mit Seitenabruf und dedupliziert Laufkennungen; historische PR-Marker bleiben vorübergehend lesbar.
+
 - [`docs/PRODUCT.md`](docs/PRODUCT.md) — Konzept und Bauplan AP-00–AP-12
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
