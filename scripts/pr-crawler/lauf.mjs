@@ -15,7 +15,7 @@ import { pathToFileURL } from "node:url";
 import { slug } from "../autonomy/sichtpruefung.mjs";
 import { VIEWPORTS, klickeKnoepfe, pruefeSeite } from "../autonomy/crawler.mjs";
 import { beantworte } from "../autonomy/personas.mjs";
-import { stateFuer } from "../agent-testnutzer/sitzung.mjs";
+import { loginRolle, stateFuer } from "../agent-testnutzer/sitzung.mjs";
 
 export const MAX_VIDEO_MB = 10;
 export const ROT = (f) => f.kategorie !== "lcp";
@@ -88,8 +88,13 @@ export async function pruefe(base, routen, ordner = "pr-crawler-ergebnis") {
         const context = await holeKontext(stateFuer(route));
         const { funde: f, page } = await pruefeSeite(context, base, route, vp, ordner);
         funde.push(...f);
+        // Sitzung gesetzt, Seite aber auf /anmelden gelandet: kein Beleg, sondern ein Fund (sonst zeigt das Bild die Anmeldung).
+        const eingeloggt = stateFuer(route) ? loginRolle(route) : null;
+        if (eingeloggt && new URL(page.url()).pathname.startsWith("/anmelden")) {
+          funde.push({ kategorie: "login", route, viewport: vp.name, text: `Sitzung (${eingeloggt}) greift nicht, Weiterleitung auf /anmelden` });
+        }
         const bild = `${slug(route)}-${vp.name}.png`;
-        if (await page.screenshot({ path: `${ordner}/${bild}`, fullPage: true }).then(() => true, () => false)) bilder.push({ route, viewport: vp.name, bild });
+        if (await page.screenshot({ path: `${ordner}/${bild}`, fullPage: true }).then(() => true, () => false)) bilder.push({ route, viewport: vp.name, bild, ...(eingeloggt ? { eingeloggt } : {}) });
         const frage = vp.mobil ? await ersteFrage(page, route) : null;
         if (frage) funde.push(frage);
         await page.close();
