@@ -1,0 +1,8 @@
+# Abnahme-Proben (SIN-840, SIN-914): je Eintrag ein Beleg, den der Prüfer ohne Rückfrage abgleichen kann.
+# art: datei = Die Datei muss existieren und den Text `enthaelt` tragen. Prüfung: src/lib/agent-testnutzer/sitzung.test.ts
+proben:
+  - id: SIN-914-sitzungs-helfer
+    issue: SIN-914
+    art: datei
+    pfad: scripts/agent-testnutzer/sitzung.mjs
+    enthaelt: generateLink

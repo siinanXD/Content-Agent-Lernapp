@@ -14,6 +14,7 @@ import { chromium } from "@playwright/test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { leseRouten, slug } from "./sichtpruefung.mjs";
 import { GRENZE_LCP_MS } from "./testnutzer.mjs";
+import { stateFuer } from "../agent-testnutzer/sitzung.mjs";
 
 export const VIEWPORTS = [
   { name: "handy", width: 390, height: 844, mobil: true },
@@ -98,6 +99,38 @@ export async function klickeKnoepfe(context, base, route) {
   return funde;
 }
 
+/** SIN-914: zweiter Durchgang mit den Sitzungen der Testkonten (AGENT_STORAGE_STATE*), nur Routen hinter dem Login. */
+async function crawlEingeloggt(browser, base, routen, ordner) {
+  const funde = [];
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const nachState = new Map();
+  for (const route of routen) {
+    const state = stateFuer(route);
+    if (state) nachState.set(state, [...(nachState.get(state) ?? []), route]);
+  }
+  for (const [state, liste] of nachState) {
+    for (const vp of VIEWPORTS) {
+      const context = await browser.newContext({
+        storageState: state,
+        viewport: { width: vp.width, height: vp.height },
+        isMobile: vp.mobil,
+        hasTouch: vp.mobil,
+        extraHTTPHeaders: bypass ? { "x-vercel-protection-bypass": bypass, "x-vercel-set-bypass-cookie": "true" } : undefined,
+      });
+      await context.route("**/api/**", (r) => (r.request().method() === "GET" ? r.continue() : r.fulfill({ status: 201, json: { ok: true } })));
+      for (const route of liste) {
+        const { funde: f, page } = await pruefeSeite(context, base, route, vp, ordner);
+        funde.push(...f.map((x) => ({ ...x, text: `[eingeloggt] ${x.text}` })));
+        // Die Sitzung greift nur, wenn die Seite nicht zu /anmelden zurückführt.
+        if (new URL(page.url()).pathname.startsWith("/anmelden")) funde.push({ kategorie: "tot", route, viewport: vp.name, text: "[eingeloggt] Sitzung wird nicht erkannt, Seite führt zu /anmelden" });
+        await page.close();
+      }
+      await context.close();
+    }
+  }
+  return funde;
+}
+
 export async function crawl(base, ordner = "testnutzer-ergebnis") {
   mkdirSync(ordner, { recursive: true });
   const routen = leseRouten(readFileSync("e2e/routes.ts", "utf8"));
@@ -122,6 +155,7 @@ export async function crawl(base, ordner = "testnutzer-ergebnis") {
       }
       await context.close();
     }
+    funde.push(...(await crawlEingeloggt(browser, base, routen, ordner)));
   } finally {
     await browser.close();
   }

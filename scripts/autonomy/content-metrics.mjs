@@ -5,6 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fetchJson } from "./http.mjs";
+import { ohneTestdaten } from "../agent-testnutzer/sitzung.mjs";
 
 export const MAPS_DIR = "docs/content";
 export const RUNS_DIR = "docs/ops/content-runs";
@@ -298,7 +299,8 @@ export async function collectContentMetrics(env = process.env, { maps = loadMaps
     const questions = await fetchAll(env.SUPABASE_URL, "questions", "select=course_id,unit_id,id,type&order=course_id,unit_id,id", h);
     const evaluations = await fetchAll(env.SUPABASE_URL, "question_quality_latest", "select=course_id,unit_id,question_id,passed,quellentreue,eindeutigkeit,niveau,sprache,created_at&order=course_id,unit_id,question_id", h);
     const { gesamt: fragenGesamt, bewertet: evaluationsWithExisting } = ratedQuestions(questions, evaluations);
-    const progressRows = await fetchAll(env.SUPABASE_URL, "learning_progress", "select=anonymous_id,course_id,unit_id,correct", h);
+    // SIN-914: Testkonten der Agenten zählen nicht mit.
+    const progressRows = ohneTestdaten(await fetchAll(env.SUPABASE_URL, "learning_progress", "select=anonymous_id,course_id,unit_id,correct", h));
     const progress = {};
     for (const [mapId, courseId] of Object.entries(courseOfMap)) progress[mapId] = weakestUnits(progressRows, courseId);
     return {
