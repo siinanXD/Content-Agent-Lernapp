@@ -28,7 +28,7 @@ export async function repairPlanWithSourceExcerpts(
       const sourceExcerpt = enriched[i]?.sourceExcerpt;
       return {
         ...failed,
-        ...(sourceExcerpt ? { sourceExcerpt: sourceExcerpt.slice(0, 1200) } : {}),
+        ...(sourceExcerpt ? { sourceExcerpt } : {}),
       };
     }),
   };
