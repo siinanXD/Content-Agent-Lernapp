@@ -40,6 +40,21 @@ export function deriveFabrikStatus(rows, now = Date.now()) {
   return { status: "läuft", detail: `letzter Lauf am ${lastDate} (vor ${ageDays} Tagen)`, overdueDays: 0 };
 }
 
+/**
+ * SIN-901: Fabrik-Kosten heute (UTC) und in 7 Tagen, Einheiten je € (nur Läufe mit Kosten).
+ * @param {{ created_at: string, cost_eur: number, units_generated: number }[]} rows Läufe der letzten 7 Tage
+ */
+export function kostenZeile(rows, now = Date.now()) {
+  const eur = (rs) => rs.reduce((s, r) => s + Number(r.cost_eur || 0), 0);
+  const heute = new Date(now).toISOString().slice(0, 10);
+  const woche = rows.filter((r) => Date.parse(r.created_at) > now - 7 * DAY && Number(r.cost_eur) > 0);
+  const einheiten = woche.reduce((s, r) => s + Number(r.units_generated || 0), 0);
+  const gesamt = eur(woche);
+  const je = gesamt > 0 ? `${(einheiten / gesamt).toFixed(1)} Einheiten je €` : "keine Kosten";
+  const leer = woche.filter((r) => Number(r.cost_eur) > 0 && !Number(r.units_generated)).length;
+  return `heute ${eur(woche.filter((r) => r.created_at.slice(0, 10) === heute)).toFixed(2)} €, 7 Tage ${gesamt.toFixed(2)} € (${einheiten} Einheiten, ${je}); bezahlte Läufe ohne Einheiten: ${leer}`;
+}
+
 function apply(out, { status, detail, overdueDays }) {
   out.content_fabrik = detail;
   out.content_fabrik_status = status;
@@ -75,4 +90,17 @@ export async function collectFabrikMetrics(env = process.env, http = {}) {
     }
   }
   return out;
+}
+
+/** SIN-901: Kennzahl `content_fabrik_kosten` aus `content_factory_runs`. Best effort: ohne Zugang oder bei Fehler „nicht verfügbar“. */
+export async function collectFabrikKosten(env = process.env, http = {}) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { content_fabrik_kosten: NA };
+  const headers = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
+  const seit = new Date(Date.now() - 7 * DAY).toISOString();
+  try {
+    const rows = await fetchJson("Supabase", `${env.SUPABASE_URL}/rest/v1/content_factory_runs?select=created_at,cost_eur,units_generated&created_at=gte.${seit}&limit=1000`, { headers }, http);
+    return { content_fabrik_kosten: Array.isArray(rows) ? kostenZeile(rows) : NA };
+  } catch {
+    return { content_fabrik_kosten: NA };
+  }
 }

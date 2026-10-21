@@ -36,6 +36,8 @@ import {
   buildQueue,
   chooseRunMap,
   contentPunkteOffen,
+  erzeugteIds,
+  leerlaufGrund,
   offeneContentMaps,
   COST_MARGIN,
   judgeReserveEur,
@@ -242,6 +244,8 @@ async function main() {
   }
   // SIN-628: Entwürfe und nur geprüfte Einheiten zählen nicht als veröffentlicht.
   const publishedByMap = new Map([...unitsByMap].map(([m, us]) => [m, new Set(nurVeroeffentlicht(us).map((u) => u.id))]));
+  // SIN-901: Offen heißt „nicht erzeugt“. Ein Entwurf wartet aufs Veröffentlichen (SIN-887) und wird nicht neu erzeugt.
+  const erzeugtByMap = new Map([...unitsByMap].map(([m, us]) => [m, erzeugteIds(us)]));
 
   const history = loadHistory();
   // SIN-469: mehrere Läufe pro Woche, aber höchstens einer je Tag und unter dem Wochendeckel (nur echte Läufe).
@@ -279,9 +283,22 @@ async function main() {
   const resumeModuleId = lastLive[0]?.resumeModuleId ?? null;
   // Nur Maps mit Kurs kommen in Frage.
   const usable = queueAll.filter((q) => unitsByMap.has(q.mapId));
-  const chosen = chooseRunMap(usable, publishedByMap, discardedByMap, lastMapId, resumeModuleId, nurMaps);
-  if (nurMaps && !chosen) {
-    console.log(`Fabrik übersprungen: Fertig-Liste offen, aber in ${nurMaps.join(", ") || "keiner Map"} gibt es nichts zu erzeugen`);
+  const chosen = chooseRunMap(usable, erzeugtByMap, discardedByMap, lastMapId, resumeModuleId, nurMaps);
+  // SIN-901: Vor jedem bezahlten Schritt (Reparatur, Quellenauszug, Batch): nichts offen → Lauf endet mit 0 €, ohne API-Aufruf.
+  const sourceReportPath = argValue("source-report");
+  const sourceReport = sourceReportPath && existsSync(sourceReportPath)
+    ? (JSON.parse(readFileSync(sourceReportPath, "utf8")) as Parameters<typeof affectedUnitIds>[0])
+    : null;
+  const leer = leerlaufGrund(chosen, (sourceReport?.diff?.changed?.length ?? 0) > 0);
+  if (leer) {
+    console.log(`Fabrik übersprungen: ${leer}${nurMaps ? ` (Fertig-Liste offen; Maps: ${nurMaps.join(", ") || "keine"}; Veröffentlichen ist eine eigene Aufgabe)` : ""}`);
+    if (!dry) {
+      try {
+        await recordFactoryRun({ ...toAbortedRunRecord(RUN_ID, COURSE, STARTED_AT, leer), stopReason: leer, queueOpen: false });
+      } catch (e) {
+        console.error("::warning::Fabrik-Status nicht geschrieben:", e instanceof Error ? e.message : e);
+      }
+    }
     process.exit(0);
   }
   if (chosen) MAP_ID = chosen;
@@ -290,6 +307,7 @@ async function main() {
   CURRICULUM = curricula.find((c) => c.id === MAP_ID);
   const priorUnits = unitsByMap.get(MAP_ID) ?? [];
   const published = publishedByMap.get(MAP_ID) ?? new Set<string>();
+  const erzeugt = erzeugtByMap.get(MAP_ID) ?? new Set<string>();
   const discarded = discardedByMap.get(MAP_ID) ?? new Set<string>();
   const handledChanges = new Set(history.flatMap((r) => r.sourceRefresh.changeKeys));
   // SIN-434: ohne Reparaturkosten; die zieht die Planung getrennt als `spent` ab.
@@ -297,14 +315,10 @@ async function main() {
   const perUnit = planEurPerUnit(unitCostHistory(history));
 
   const queue = usable.filter((q) => q.mapId === MAP_ID);
-  const sourceReportPath = argValue("source-report");
-  const sourceReport = sourceReportPath && existsSync(sourceReportPath)
-    ? (JSON.parse(readFileSync(sourceReportPath, "utf8")) as Parameters<typeof affectedUnitIds>[0])
-    : null;
   const affected = affectedUnitIds(sourceReport, MAP_ID, priorUnits, handledChanges);
-  const next = nextOpenItem(queue, published, discarded, resumeModuleId);
+  const next = nextOpenItem(queue, erzeugt, discarded, resumeModuleId);
   // SIN-406: statt eines Moduls so viele, wie der Deckel bezahlbar macht (Obergrenze vor der Reparatur).
-  const plan = nextOpenItems(queue, published, discarded, resumeModuleId, affordableUnits(0, perUnit));
+  const plan = nextOpenItems(queue, erzeugt, discarded, resumeModuleId, affordableUnits(0, perUnit));
   const planPending = new Set(plan.flatMap((x) => x.pending));
   const planTargets = () => plan.flatMap((x) => moduleChunks(x.item.module));
   /** Erstes Modul des Plans, in dem nach dem Abschneiden noch Einheiten offen sind (Fortsetzung). */
@@ -670,7 +684,7 @@ async function main() {
   if (overBudget(report.costEur) && !report.stopReason) report.stopReason = "Deckel erreicht";
 
   // Nach dem Lauf: wie geht es weiter?
-  const publishedAfter = new Set([...published, ...liveIds]);
+  const publishedAfter = new Set([...erzeugt, ...stagedIds]);
   const discardedAfter = new Set([...discarded, ...report.discardedUnitIds]);
   const after = nextOpenItem(queue, publishedAfter, discardedAfter, report.deferred > 0 ? deferredResume : null);
   report.nextModuleId = after?.item.module.id ?? null;
@@ -683,7 +697,7 @@ async function main() {
     .filter((q) => q.mapId !== MAP_ID)
     .reduce(
       (n, q) =>
-        n + pendingSlots(q.module, publishedByMap.get(q.mapId) ?? none, discardedByMap.get(q.mapId) ?? none).length,
+        n + pendingSlots(q.module, erzeugtByMap.get(q.mapId) ?? none, discardedByMap.get(q.mapId) ?? none).length,
       0,
     );
   report.nichtVersucht = nichtVersucht(

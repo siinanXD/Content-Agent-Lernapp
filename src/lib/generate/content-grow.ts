@@ -201,6 +201,23 @@ export function offeneContentMaps(fertigMd: string): string[] {
   return offen ? ["indkfl"] : [];
 }
 
+/** SIN-901: Grund im Statusprotokoll, wenn kein Modul mehr offen ist; der Anstoß (fabrik-anstoss.mjs) erkennt daran das Ende. */
+export const FERTIG_STOP = "fertig: alle Einheiten erzeugt";
+
+/**
+ * SIN-901: Vor jedem bezahlten Schritt. Keine Map mit offenen Einheiten (nicht erzeugt, nicht endgültig
+ * verworfen) und keine Quellenänderung → der Lauf endet ohne API-Aufruf. Offen heißt „nicht erzeugt“:
+ * ein Entwurf wartet aufs Veröffentlichen, das ist eine eigene Aufgabe (SIN-887) und kein Grund zu erzeugen.
+ */
+export function leerlaufGrund(gewaehlteMap: string | null, quellenAenderung: boolean): string | null {
+  return gewaehlteMap === null && !quellenAenderung ? FERTIG_STOP : null;
+}
+
+/** SIN-901: Einheiten-IDs je Map, die schon erzeugt sind (Entwurf, geprüft oder veröffentlicht). */
+export function erzeugteIds(units: ReadonlyArray<{ id: string }>): Set<string> {
+  return new Set(units.map((u) => u.id));
+}
+
 /**
  * SIN-469: Darf die Fabrik jetzt laufen? Zählt Live-Läufe mit Kosten oder Ergebnis (ein Lauf, der
  * nach Sekunden an der API-Sperre endete, hinterlässt keinen Bericht und zählt nicht).

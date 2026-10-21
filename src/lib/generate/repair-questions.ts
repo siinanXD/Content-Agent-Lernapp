@@ -10,6 +10,19 @@ import type { QuestionEval } from "@/lib/quality/schemas";
 export const MIN_PASSED_QUESTIONS = 5;
 export const MAX_QUESTIONS = 8;
 
+/** SIN-901: Nach so vielen Reparatur-Runden gilt eine Einheit als endgültig verworfen und wird nie wieder angefasst. */
+export const MAX_REPAIR_RUNDEN = 2;
+
+/** SIN-901: Reparatur-Runden einer Einheit, gezählt an den Richter-Läufen `<lauf>-repair<n>` (append-only, überlebt jeden Lauf). */
+export function repairRunden(evals: ReadonlyArray<Pick<QuestionEvaluationRecord, "unitId" | "runId">>, unitId: string): number {
+  return new Set(evals.filter((e) => e.unitId === unitId && /-repair\d+$/.test(e.runId)).map((e) => e.runId)).size;
+}
+
+/** SIN-901: Nur Einheiten mit Ziel: noch keine {@link MAX_REPAIR_RUNDEN} Runden hinter sich. */
+export function repairZiele(evals: ReadonlyArray<Pick<QuestionEvaluationRecord, "unitId" | "runId">>, unitIds: readonly string[]): string[] {
+  return unitIds.filter((id) => repairRunden(evals, id) < MAX_REPAIR_RUNDEN);
+}
+
 /** Id, unter der der Richter eine Frage führt (siehe flattenUnits in den ap15-Skripten). */
 export function evalQuestionId(unitId: string, questionId: string): string {
   return `${unitId}-${questionId}`;
