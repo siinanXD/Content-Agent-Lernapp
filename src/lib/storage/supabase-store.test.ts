@@ -48,4 +48,17 @@ describe("loadCourse (SIN-882)", () => {
     assert.equal(generated.units.reduce((n, u) => n + u.questions.length, 0), 2500);
     assert.ok(generated.aiDisclosure?.text.trim());
   });
+
+  it("listQuestionEvaluations lädt 2.500 Bewertungen seitenweise (SIN-899)", async () => {
+    const evaluations = Array.from({ length: 2500 }, (_, i) => ({
+      id: `e${i}`, question_id: `LF5-4-u8-LF5-4-u8-q${i}`, unit_id: "LF5-4-u8", course_id: COURSE, run_id: "r1",
+      judge_model: "m", prompt_version: "v1", quellentreue: 1, eindeutigkeit: 1, niveau: 3, sprache: 3,
+      sicherheit_flag: false, passed: true, reason: null, langfuse_trace_id: null, content_hash: null,
+      created_at: `2026-10-20T17:43:${String(i % 60).padStart(2, "0")}Z`,
+    }));
+    stubFetch({ question_evaluations: evaluations }, {});
+    const rows = await supabaseStorage.listQuestionEvaluations(COURSE);
+    assert.equal(rows.length, 2500);
+    assert.equal(new Set(rows.map((r) => r.id)).size, 2500);
+  });
 });
