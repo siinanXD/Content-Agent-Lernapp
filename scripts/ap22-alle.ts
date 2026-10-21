@@ -26,6 +26,7 @@ import {
 } from "../src/lib/generate/batch-generate";
 import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
+import { repairPlanWithSourceExcerpts } from "../src/lib/generate/repair-source-excerpt";
 import {
   MIN_PASSED_QUESTIONS,
   annotateRepairQuestions,
