@@ -35,6 +35,9 @@ export const hinterLogin = (route) => route !== "/ausbilder/zugang" && LOGIN_ROU
 export const stateFuer = (route, env = process.env) =>
   hinterLogin(route) ? (route.startsWith("/ausbilder") ? env.AGENT_STORAGE_STATE_AUSBILDER : env.AGENT_STORAGE_STATE) || undefined : undefined;
 
+/** Rolle des Testkontos, das eine Route hinter dem Login prüft (für den Beleg im PR-Kommentar). */
+export const loginRolle = (route) => (route.startsWith("/ausbilder") ? "Ausbilder" : "Lernende");
+
 /** supabase-js speichert die Sitzung im Browser unter `sb-<Projekt>-auth-token`. */
 export const storageKey = (supabaseUrl) => `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`;
 
