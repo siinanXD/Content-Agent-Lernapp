@@ -26,7 +26,7 @@ const onboarding = [
 ];
 
 /** Beantwortet die offene Frage, egal welcher Typ (wie live/live.spec.ts). */
-async function beantworte(p) {
+export async function beantworte(p) {
   const selects = p.locator("select");
   for (let i = 0; i < (await selects.count()); i++) await selects.nth(i).selectOption({ index: 1 });
   const optionen = p.locator("button[aria-pressed]");
