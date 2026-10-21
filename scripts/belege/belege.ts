@@ -40,8 +40,10 @@ async function messe(probe: NonNullable<ReturnType<typeof leseProbe>>): Promise<
   return { wert: run?.conclusion ?? "kein Run", link: run?.html_url ?? "" };
 }
 
+type LinearIssue = { id: string; description: string; state: { type: string }; labels?: { nodes?: { name: string }[] } };
+
 async function main(): Promise<void> {
-  const issues = await fetchProjectIssues();
+  const issues = (await fetchProjectIssues()) as LinearIssue[];
   const candidates = issues.filter((issue) => {
     const labels = (issue.labels?.nodes ?? []).map((label) => label.name.toLowerCase());
     return issue.state.type !== "backlog"
@@ -98,7 +100,7 @@ async function main(): Promise<void> {
         d: updated,
       });
     }
-    if (!comments.some((item) => item.body === body)) await comment(issue.id, body);
+    if (!comments.some((item: { body: string }) => item.body === body)) await comment(issue.id, body);
     if (fertig) await setState(issue, "Done");
   }
 }
