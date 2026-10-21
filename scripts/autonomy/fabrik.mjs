@@ -47,7 +47,7 @@ export function deriveFabrikStatus(rows, now = Date.now()) {
 export function kostenZeile(rows, now = Date.now()) {
   const eur = (rs) => rs.reduce((s, r) => s + Number(r.cost_eur || 0), 0);
   const heute = new Date(now).toISOString().slice(0, 10);
-  const woche = rows.filter((r) => Date.parse(r.created_at) > now - 7 * DAY);
+  const woche = rows.filter((r) => Date.parse(r.created_at) > now - 7 * DAY && Number(r.cost_eur) > 0);
   const einheiten = woche.reduce((s, r) => s + Number(r.units_generated || 0), 0);
   const gesamt = eur(woche);
   const je = gesamt > 0 ? `${(einheiten / gesamt).toFixed(1)} Einheiten je €` : "keine Kosten";
