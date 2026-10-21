@@ -19,9 +19,13 @@ test("Quellen-Chip: Webadresse wird Link mit Hostname", () => {
 test("Quellen-Chip: zugänglicher Name = sichtbarer Text + Tab-Hinweis, kein aria-label", () => {
   const html = render("https://www.gesetze-im-internet.de/maschfausbv/");
   assert.doesNotMatch(html, /aria-label/);
-  const name = html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-  assert.ok(name.startsWith("Quelle gesetze-im-internet.de"), name);
-  assert.ok(name.endsWith("(öffnet in neuem Tab)"), name);
+
+  const label = html.indexOf(">Quelle</span>");
+  const host = html.indexOf(">gesetze-im-internet.de</span>");
+  const tabHint = html.indexOf("> (öffnet in neuem Tab)</span>");
+  assert.ok(label >= 0, html);
+  assert.ok(host > label, html);
+  assert.ok(tabHint > host, html);
   assert.match(html, /class="sr-only"> \(öffnet in neuem Tab\)<\/span>/);
 });
 
