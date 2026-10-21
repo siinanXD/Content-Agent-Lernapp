@@ -33,7 +33,7 @@ export function istInterneUrl(href, base) {
   }
 }
 
-async function pruefeSeite(context, base, route, vp, ordner) {
+export async function pruefeSeite(context, base, route, vp, ordner) {
   const funde = [];
   const meld = (kategorie, text, bild) => funde.push({ kategorie, route, viewport: vp.name, text, ...(bild ? { bild } : {}) });
   const page = await context.newPage();
@@ -76,7 +76,7 @@ async function pruefeSeite(context, base, route, vp, ordner) {
   return { funde, page };
 }
 
-async function klickeKnoepfe(context, base, route) {
+export async function klickeKnoepfe(context, base, route) {
   const funde = [];
   const page = await context.newPage();
   const fehler = [];

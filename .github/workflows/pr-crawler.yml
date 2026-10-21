@@ -1,0 +1,164 @@
+# PR-Crawler (SIN-906): prüft nur die Seiten, die ein PR ändert, auf der Vercel-Vorschau und belegt sie im PR mit Bild (je Route,
+# Handy und Desktop) und, bei 2+ Seiten, mit einem Video (WebM). Der nächtliche Vollcrawl (testnutzer.yml) bleibt als Netz.
+# Ablauf: deployment_status der Vorschau → PR finden → geänderte Dateien → Routen (scripts/pr-crawler/routen.mjs) → Playwright
+# gegen die Vorschau → Artefakt + Kommentar `<!-- pr-crawler -->` (wird aktualisiert). Rot im Fund = roter Lauf, Grund in loop_events (Schritt pr-crawler).
+# Sicherheit: Skripte kommen aus main, der PR-Stand wird nur gelesen (nie ausgeführt); PRs aus Forks werden übersprungen,
+# weil der Bypass-Schlüssel der Vorschau sonst an fremden Code ginge. Bilder liegen auf dem Zweig pr-crawler/pr-<Nr> (nur Bilder), damit sie im Kommentar erscheinen.
+name: pr-crawler
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR-Nummer"
+        type: string
+        required: true
+      url:
+        description: "Adresse der Vorschau"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pr-crawler-${{ github.event.deployment.sha || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  crawl:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' && !startsWith(github.event.deployment.environment, 'Production'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      LAUF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: PR zur Vorschau finden
+        id: pr
+        env:
+          EREIGNIS: ${{ github.event_name }}
+          DEPLOY_SHA: ${{ github.event.deployment.sha }}
+          EINGABE_PR: ${{ inputs.pr }}
+          EINGABE_URL: ${{ inputs.url }}
+          VORSCHAU: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+        run: |
+          if [ "$EREIGNIS" = workflow_dispatch ]; then
+            pr="$EINGABE_PR"; url="$EINGABE_URL"
+          else
+            pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEPLOY_SHA/pulls" -q '[.[] | select(.state == "open")][0].number // empty')
+            url="$VORSCHAU"
+          fi
+          if [ -z "$pr" ]; then echo "Kein offener PR zu dieser Vorschau."; echo "weiter=nein" >> "$GITHUB_OUTPUT"; exit 0; fi
+          kopf=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" -q '.head.sha + " " + .head.repo.full_name')
+          sha="${kopf% *}"
+          if [ "${kopf#* }" != "$GITHUB_REPOSITORY" ]; then
+            echo "PR aus einem Fork: übersprungen."; echo "weiter=nein" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$EREIGNIS" != workflow_dispatch ] && [ "$sha" != "$DEPLOY_SHA" ]; then
+            echo "Vorschau gehört zu einem älteren Stand, der neuere Deploy löst den Lauf aus."; echo "weiter=nein" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          { echo "weiter=ja"; echo "pr=$pr"; echo "sha=$sha"; echo "url=$url"; } >> "$GITHUB_OUTPUT"
+      - name: Geänderte Dateien
+        if: steps.pr.outputs.weiter == 'ja'
+        run: gh api "repos/$GITHUB_REPOSITORY/pulls/${{ steps.pr.outputs.pr }}/files" --paginate -q '.[].filename' > dateien.txt
+      - uses: actions/checkout@v4
+        if: steps.pr.outputs.weiter == 'ja'
+        with:
+          ref: ${{ steps.pr.outputs.sha }}
+          path: pr-quelle
+          persist-credentials: false
+      - name: Betroffene Seiten
+        id: routen
+        if: steps.pr.outputs.weiter == 'ja'
+        run: |
+          node scripts/pr-crawler/routen.mjs --dateien dateien.txt --quelle pr-quelle > routen.json
+          cat routen.json
+          {
+            echo "routen=$(jq -r '.routen | join(" ")' routen.json)"
+            echo "mehr=$(jq -r '.mehr' routen.json)"
+            echo "grund=$(jq -r '.grund' routen.json)"
+          } >> "$GITHUB_OUTPUT"
+      - name: Pakete, Chromium
+        if: steps.routen.outputs.routen != ''
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Seiten auf der Vorschau prüfen
+        id: lauf
+        if: steps.routen.outputs.routen != ''
+        env:
+          LIVE_URL: ${{ steps.pr.outputs.url }}
+          ROUTEN: ${{ steps.routen.outputs.routen }}
+        run: node scripts/pr-crawler/lauf.mjs $ROUTEN
+      - uses: actions/upload-artifact@v7
+        id: artefakt
+        if: always() && steps.routen.outputs.routen != ''
+        with:
+          name: pr-crawler
+          path: |
+            pr-crawler-ergebnis/*.png
+            pr-crawler-ergebnis/*.webm
+            pr-crawler-ergebnis/ergebnis.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Bilder für den Kommentar ablegen
+        id: bilder
+        if: always() && steps.routen.outputs.routen != ''
+        env:
+          PR: ${{ steps.pr.outputs.pr }}
+        run: |
+          # shortcut: ein Zweig je PR bleibt liegen, bis er von Hand oder vom Aufräum-Agenten gelöscht wird.
+          ls pr-crawler-ergebnis/*.png > /dev/null 2>&1 || exit 0
+          d=$(mktemp -d)
+          cp pr-crawler-ergebnis/*.png "$d"
+          git -C "$d" init -q -b belege
+          git -C "$d" -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot]@users.noreply.github.com add .
+          git -C "$d" -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -qm "PR-Crawler: Bilder für PR $PR"
+          if git -C "$d" push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "belege:refs/heads/pr-crawler/pr-$PR"; then
+            echo "basis=https://raw.githubusercontent.com/$GITHUB_REPOSITORY/pr-crawler/pr-$PR" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Bilder konnten nicht abgelegt werden, der Kommentar verweist auf das Artefakt."
+          fi
+      - name: Kommentar im PR
+        if: always() && steps.pr.outputs.weiter == 'ja'
+        env:
+          PR: ${{ steps.pr.outputs.pr }}
+          SHA: ${{ steps.pr.outputs.sha }}
+          URL: ${{ steps.pr.outputs.url }}
+          SKIP: ${{ steps.routen.outputs.grund }}
+          MEHR: ${{ steps.routen.outputs.mehr }}
+          ARTEFAKT: ${{ steps.artefakt.outputs.artifact-url }}
+          BASIS: ${{ steps.bilder.outputs.basis }}
+        run: node scripts/pr-crawler/kommentar.mjs --pr "$PR" --sha "$SHA" --url "$URL" --lauf "$LAUF" --skip "$SKIP" --mehr "${MEHR:-0}" --artefakt "$ARTEFAKT" --bilder-basis "$BASIS"
+      - name: Leitstand
+        if: always() && steps.pr.outputs.weiter == 'ja'
+        env:
+          PR: ${{ steps.pr.outputs.pr }}
+          SKIP: ${{ steps.routen.outputs.grund }}
+          ERGEBNIS: ${{ steps.lauf.outcome }}
+        run: |
+          if [ -n "$SKIP" ]; then status=uebersprungen; grund="$SKIP"
+          elif [ "$ERGEBNIS" = success ]; then status=ok; grund=""
+          else status=fehler; grund=$(jq -r '.grund // empty' pr-crawler-ergebnis/ergebnis.json 2>/dev/null || true); grund="${grund:-Lauf ohne Ergebnisdatei, siehe Lauf-Log}"; fi
+          node scripts/autonomy/leitstand.mjs ereignis --schritt pr-crawler --status "$status" --pr "$PR" --grund "$grund"
+      - name: Rot bei Fund
+        if: always() && steps.lauf.outcome == 'failure'
+        run: |
+          echo "::error::PR-Crawler: $(jq -r '.grund // "Fund auf der Vorschau"' pr-crawler-ergebnis/ergebnis.json 2>/dev/null)"
+          exit 1
