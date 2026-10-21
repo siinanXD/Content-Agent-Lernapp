@@ -136,6 +136,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Worker lief 244-mal rot im 7-Minuten-Takt, weil die Log-Erkennung kein Limit fand und `until` leer blieb → Pause zusätzlich unabhängig vom Log: derselbe Auftrag 3-mal in 60 Min ohne PR (`dispatch.mjs --repeat-fail`) setzt `AGENT_PAUSED_UNTIL`, ohne Dispatcher-Anstoß. Die Sicherung hing an `steps.limit.outcome == 'success'`; scheiterte „Fehler auswerten“, startete dieselbe Aufgabe alle 3 Minuten neu → Sicherungsschritte mit `if: always() && steps.pr.outputs.has_pr != 'true'`, Auswertung mit `continue-on-error`, Fehlergrund als `loop_events`-Ereignis. (SIN-548, SIN-587)
 
 ## Datenbank-Rechte
+- Tabellenrechte nach Migrationen auf allen aktuellen public-Tabellen prüfen; eine feste Sechserliste übersieht spätere Tabellen. DML/RLS beim Rechte-Entzug vergleichen und Rollback testen. (SIN-438)
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)
 - Worker durften laut `--allowedTools` keine Doku lesen (kein WebFetch/MCP), Preise blieben `null` → Context7 (`mcp__context7__*`, `--mcp-config`) und `WebFetch` sind in `claude.yml` und `worker.yml` erlaubt; erst Context7, dann offizielle Doku, Quelle im PR nennen. (SIN-537)

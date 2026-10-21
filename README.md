@@ -15,6 +15,8 @@ Lern-App, die aus einem Schlagwort (Pilot: Maschinen- und Anlagenführer) einen 
 
 ## Docs
 
+- [`docs/ops/SIN-438-grants.md`](docs/ops/SIN-438-grants.md) — Tabellenrechte prüfen, transaktionaler Migrationstest und Rückkehrverfahren.
+
 - [`docs/PRODUCT.md`](docs/PRODUCT.md) — Konzept und Bauplan AP-00–AP-12
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architekturentscheidungen mit Links
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Runtime- und API-Überblick
