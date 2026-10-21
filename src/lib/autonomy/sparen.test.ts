@@ -122,7 +122,7 @@ test("PR-Text: Verbrauch anhängen, je Lauf nur einmal, Merker lesbar", () => {
   assert.equal(marks[0].in, 1200);
 });
 
-test("Steckbrief zeigt den Verbrauch", () => {
+test("Öffentlicher Steckbrief hält den Verbrauch privat", () => {
   const u = usageFromExecution(execution);
   const body = appendUsage("Part of SIN-5\n\n## Was ändert sich\n- Etwas.\n", u, { label: "Worker", model: "m", run: "1" });
   const r = buildSteckbrief({
@@ -133,7 +133,7 @@ test("Steckbrief zeigt den Verbrauch", () => {
     approved: false,
     checks: { build: "ok", tests: "ok", a11y: "ok", prTitle: "ok" },
   });
-  assert.match(r.body, /\*\*Verbrauch:\*\*\n- Worker \(m\): 12 Runden/);
+  assert.doesNotMatch(r.body, /Verbrauch|API-Gegenwert|0,46/);
   assert.ok(!r.body.includes("<!-- usage"));
   const without = buildSteckbrief({ title: "feat(app): Etwas (SIN-5)", body: "Part of SIN-5", risk: "risk:medium", reasons: [], approved: false });
   assert.ok(!without.body.includes("Verbrauch"));
@@ -162,8 +162,8 @@ test("Wochensumme: Summe, Tokens je PR, teuerste 3", () => {
 
 test("Tages-Update zeigt Wochenverbrauch", () => {
   const w = weekUsage([{ title: "feat(a): A (SIN-1)", body: appendUsage("x", usageFromExecution(execution), { label: "Worker", model: "m", run: "1" }) }]);
-  const { text } = buildDigest({ now: "2026-10-12T08:00:00Z", slot: "morgen", usageWeek: w });
+  const { text } = buildDigest({ now: "2026-10-12T08:00:00Z", slot: "morgen", privateDetails: true, usageWeek: w });
   assert.match(text, /Verbrauch \(7 Tage\): 7\.900 Tokens/);
   assert.match(text, /Teuerste 3: SIN-1/);
-  assert.match(buildDigest({ now: "2026-10-12T08:00:00Z", slot: "morgen" }).text, /noch keine Messwerte/);
+  assert.match(buildDigest({ now: "2026-10-12T08:00:00Z", slot: "morgen" }).text, /Details privat in Linear/);
 });
