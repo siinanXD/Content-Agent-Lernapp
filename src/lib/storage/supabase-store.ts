@@ -452,13 +452,18 @@ export const supabaseStorage: CourseStorage = {
 
   async listQuestionEvaluations(courseId: string) {
     const sb = getServiceSupabase();
-    const { data, error } = await sb
-      .from("question_evaluations")
-      .select("*")
-      .eq("course_id", courseId)
-      .order("created_at", { ascending: true });
-    if (error) throw new Error(`question_evaluations_list: ${error.message}`);
-    return (data ?? []).map(
+    // SIN-899: PostgREST kappt bei 1.000 Zeilen; `id` als zweiter Sortierschlüssel hält die Blöcke stabil.
+    const rows = await loadAll<Record<string, unknown>>(
+      () =>
+        sb
+          .from("question_evaluations")
+          .select("*")
+          .eq("course_id", courseId)
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true }),
+      "question_evaluations_list",
+    );
+    return rows.map(
       (row): QuestionEvaluationRecord => ({
         id: row.id as string,
         questionId: row.question_id as string,
