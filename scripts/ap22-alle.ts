@@ -256,7 +256,8 @@ async function main() {
       const repaired = new Map<string, GeneratedUnit["questions"]>();
       const repairedUnits: GeneratedUnit[] = [];
       await pool(plans, async ({ unit, plan }) => {
-        const r = await generate(cand, buildRepairPrompt(unit, plan), "questions");
+        const planWithSources = await repairPlanWithSourceExcerpts(unit, plan);
+        const r = await generate(cand, buildRepairPrompt(unit, planWithSources), "questions");
         cost.repair += r.usd;
         const qs = parseRepairQuestions(r.text);
         if (qs) {
