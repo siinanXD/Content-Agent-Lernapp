@@ -14,7 +14,7 @@ export async function repairPlanWithSourceExcerpts(
 ): Promise<RepairPlan> {
   if (plan.failed.length === 0) return plan;
 
-  const sourceItems = plan.failed.map(({ question }) => ({
+  const sourceItems: Array<{ sourceUrl: string; prompt: string; correct: string | string[]; explanation: string; sourceExcerpt?: string }> = plan.failed.map(({ question }) => ({
     sourceUrl: question.sourceUrl || unit.sourceUrl,
     prompt: question.prompt,
     correct: question.correct,
