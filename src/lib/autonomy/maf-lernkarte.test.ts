@@ -7,7 +7,9 @@ const map = JSON.parse(readFileSync("docs/content/maf-metall.json", "utf8"));
 const text = lernkarte(map);
 
 test("jede Berufsbildposition hat eine Zeile mit Modul", () => {
-  for (const b of map.aoBerufsbild) assert.match(text, new RegExp(`\\| ${b.id} \\| ${b.title.replace(/[()]/g, "\\$&")} \\|`));
+  for (const b of map.aoBerufsbild) {
+    assert.ok(text.includes(`| ${b.id} | ${b.title} |`), `Zeile fehlt: ${b.id} ${b.title}`);
+  }
   assert.ok(!text.includes("**keins**"));
 });
 

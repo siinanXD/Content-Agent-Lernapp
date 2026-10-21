@@ -7,15 +7,20 @@
 export const escTableCell = (s) => String(s).replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 
 /**
- * Entfernt HTML-Kommentare so, dass kein `<!--` übrig bleibt. Ein einzelner Durchlauf reicht nicht:
- * aus `<!<!-- x -->-- >` entstünde nach dem Entfernen wieder `<!-- >`. Wiederholt bis zur Stabilität.
+ * Entfernt HTML-Kommentare vollständig. Start und Ende werden per Index gesucht, damit weder ein
+ * einzelner Ersetzungsdurchlauf noch ein neu zusammengesetzter Mehrzeichen-Öffner übrig bleibt.
+ * Ein unvollständiger Öffner wird nur selbst entfernt; der folgende Text bleibt erhalten.
  */
 export function stripComments(text) {
   let s = String(text);
-  let prev;
-  do {
-    prev = s;
-    s = s.replace(/<!--[\s\S]*?-->/g, "").replace(/<!--/g, "");
-  } while (s !== prev);
-  return s;
+  for (;;) {
+    const start = s.indexOf("<!--");
+    if (start === -1) return s;
+
+    const end = s.indexOf("-->", start + 4);
+    s =
+      end === -1
+        ? s.slice(0, start) + s.slice(start + 4)
+        : s.slice(0, start) + s.slice(end + 3);
+  }
 }
