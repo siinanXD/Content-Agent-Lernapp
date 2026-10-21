@@ -2,7 +2,8 @@
 # Crawler (job `crawler`, ohne KI, nachts): alle Routen auf Handy und Desktop, Funde werden Korrektur-Issues (Label frontend/content,
 # Dubletten-Prüfung, höchstens 5 neue je Lauf), Bericht als Kommentar in SIN-640.
 # Personas (job `personas`, montags, Claude Haiku bewertet Bilder, Deckel 0,50 USD): drei feste Wege, gleiche Meldung.
-# Nur lesend: schreibende Anfragen an /api sind abgefangen, keine Konten, keine echten Nutzerdaten. Skripte: scripts/autonomy/{crawler,personas,testnutzer}.mjs
+# Nur lesend: schreibende Anfragen an /api sind abgefangen, keine echten Nutzerdaten. Eingeloggt (SIN-914): zwei Testkonten
+# (Lernende, Ausbilder; Adressen als Repo-Variablen AGENT_LERNEND_EMAIL/AGENT_AUSBILDER_EMAIL), Sitzung über Magic-Link-Hash, kein Passwort. Skripte: scripts/autonomy/{crawler,personas,testnutzer}.mjs
 # Secrets: LINEAR_API_KEY; Personas zusätzlich ANTHROPIC_API_KEY (ohne: übersprungen, Hinweis im Lauf).
 name: testnutzer
 
@@ -52,6 +53,15 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
+      - name: Sitzungen der Testkonten (SIN-914)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AGENT_LERNEND_EMAIL: ${{ vars.AGENT_LERNEND_EMAIL }}
+          AGENT_AUSBILDER_EMAIL: ${{ vars.AGENT_AUSBILDER_EMAIL }}
+          AGENT_ORGANISATION_ID: ${{ vars.AGENT_ORGANISATION_ID }}
+        # Sitzung nur im Job ($RUNNER_TEMP), nie im Artefakt. Fehlen Variablen oder Secrets, läuft der Crawler wie bisher ohne Login.
+        run: node scripts/agent-testnutzer/sitzung.mjs --out "$RUNNER_TEMP/agent"
       - name: Alle Seiten abgehen
         run: node scripts/autonomy/crawler.mjs
       - uses: actions/upload-artifact@v7

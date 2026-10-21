@@ -81,6 +81,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | KI-Sichtprüfung gegen Figma, nur Hinweis (SIN-523) | `.github/workflows/sichtpruefung.yml`, `scripts/autonomy/sichtpruefung.mjs`, `figma.mjs --bild`, Test `src/lib/autonomy/sichtpruefung.test.ts` | |
 | Testnutzer-Agent (SIN-640): Crawler nachts (ohne KI), 3 Personas montags (Haiku bewertet), Funde → Issues mit Dubletten-Prüfung | `.github/workflows/testnutzer.yml`, `scripts/autonomy/{crawler,personas,testnutzer}.mjs`, Test `src/lib/autonomy/testnutzer.test.ts` | `LIVE_URL=<url> node scripts/autonomy/crawler.mjs` |
 | PR-Crawler (SIN-906): nur geänderte Seiten auf der Vorschau, Bild/Video im PR | `.github/workflows/pr-crawler.yml`, `scripts/pr-crawler/{routen,lauf,kommentar}.mjs`, Test `src/lib/pr-crawler/pr-crawler.test.ts` | |
+| Agent-Testnutzer eingeloggt (SIN-914): Testkonten, Sitzung ohne Passwort, Filter `ohneTestdaten` | `scripts/agent-testnutzer/sitzung.mjs`, Test `src/lib/agent-testnutzer/sitzung.test.ts`, Smoke `e2e/agent-eingeloggt.spec.ts`, Proben `docs/abnahme.yml` | |
 | Leistungsbudget | `performance-budget.json` (Grenzen nie anheben) | `npm run perf:budget` |
 
 ## Design

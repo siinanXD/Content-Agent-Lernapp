@@ -6,6 +6,7 @@
  *
  *   LIVE_URL=https://<vorschau> node scripts/pr-crawler/lauf.mjs "/lernpfad" "/profil"   → pr-crawler-ergebnis/
  *
+ * Routen hinter dem Login (SIN-914) laufen mit der Sitzung des Testkontos, wenn AGENT_STORAGE_STATE(_AUSBILDER) gesetzt ist.
  * Nur lesend: schreibende Anfragen an /api sind abgefangen. LCP ist nur Hinweis (kalte Vorschau streut), alles andere färbt rot.
  */
 import { chromium } from "@playwright/test";
@@ -14,6 +15,7 @@ import { pathToFileURL } from "node:url";
 import { slug } from "../autonomy/sichtpruefung.mjs";
 import { VIEWPORTS, klickeKnoepfe, pruefeSeite } from "../autonomy/crawler.mjs";
 import { beantworte } from "../autonomy/personas.mjs";
+import { stateFuer } from "../agent-testnutzer/sitzung.mjs";
 
 export const MAX_VIDEO_MB = 10;
 export const ROT = (f) => f.kategorie !== "lcp";
@@ -47,7 +49,8 @@ const nurLesen = (context) => context.route("**/api/**", (r) => (r.request().met
 /** Ein Durchgang über alle Seiten in einem Browserfenster, aufgenommen als Video. */
 async function ablaufVideo(browser, base, routen, ordner) {
   const vp = VIEWPORTS[0];
-  const context = await kontext(browser, vp, { recordVideo: { dir: `${ordner}/video-roh`, size: { width: vp.width, height: vp.height } } });
+  const state = routen.map((r) => stateFuer(r)).find(Boolean);
+  const context = await kontext(browser, vp, { ...(state ? { storageState: state } : {}), recordVideo: { dir: `${ordner}/video-roh`, size: { width: vp.width, height: vp.height } } });
   await nurLesen(context);
   const page = await context.newPage();
   for (const route of routen) {
@@ -72,9 +75,17 @@ export async function pruefe(base, routen, ordner = "pr-crawler-ergebnis") {
   const browser = await chromium.launch();
   try {
     for (const vp of VIEWPORTS) {
-      const context = await kontext(browser, vp);
-      await nurLesen(context);
+      const kontexte = new Map(); // storageState-Pfad (oder "") → Kontext; Sitzung nur für Routen hinter dem Login
+      const holeKontext = async (state) => {
+        if (!kontexte.has(state ?? "")) {
+          const c = await kontext(browser, vp, state ? { storageState: state } : {});
+          await nurLesen(c);
+          kontexte.set(state ?? "", c);
+        }
+        return kontexte.get(state ?? "");
+      };
       for (const route of routen) {
+        const context = await holeKontext(stateFuer(route));
         const { funde: f, page } = await pruefeSeite(context, base, route, vp, ordner);
         funde.push(...f);
         const bild = `${slug(route)}-${vp.name}.png`;
@@ -84,7 +95,7 @@ export async function pruefe(base, routen, ordner = "pr-crawler-ergebnis") {
         await page.close();
         if (vp.mobil) funde.push(...(await klickeKnoepfe(context, base, route)));
       }
-      await context.close();
+      for (const c of kontexte.values()) await c.close();
     }
     const video = routen.length >= 2 ? await ablaufVideo(browser, base, routen, ordner) : null;
     const rot = funde.filter(ROT);
