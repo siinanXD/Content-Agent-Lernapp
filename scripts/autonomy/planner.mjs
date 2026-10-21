@@ -25,7 +25,7 @@ import { LANES, classifyNew, commentOnIssue, countIssues, fetchBacklogIdeas, fet
 import { linearQuota, renderLinearQuota } from "./diagnose.mjs";
 import { readLimits, runLimitCheck } from "./limits.mjs";
 import { collectPostHogMetrics } from "./posthog.mjs";
-import { collectFabrikMetrics } from "./fabrik.mjs";
+import { collectFabrikKosten, collectFabrikMetrics } from "./fabrik.mjs";
 import { describeTableError, isSchemaCache, queueSinanTask } from "./table-error.mjs";
 import { createSinanIssues, fetchSinanIssues } from "./sinan.mjs";
 import { collectMigrations } from "./migrationen.mjs";
@@ -182,7 +182,7 @@ export async function collectMetrics(env = process.env, http = {}) {
   // SIN-451: Migrationsstand über die Management-API (SQL), nicht über PostgREST: kein Schema-Cache-Fehler.
   m.migrationen = (await collectMigrations(env).catch(() => null))?.line.replace(/^Migrationen: /, "") ?? "nicht verfügbar";
   Object.assign(m, await collectSentryMetrics(env, http.fetchImpl, http));
-  Object.assign(m, await collectFabrikMetrics(env, http));
+  Object.assign(m, await collectFabrikMetrics(env, http), await collectFabrikKosten(env, http));
   Object.assign(m, await collectPostHogMetrics(env, http.fetchImpl, http));
   m.figma_abgleich = await figmaTokenMetric(env, http.fetchImpl);
   return m;

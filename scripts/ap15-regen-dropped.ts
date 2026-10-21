@@ -32,6 +32,9 @@ import {
   MIN_PASSED_QUESTIONS,
   planFromEvals,
   planQuestionRepair,
+  MAX_REPAIR_RUNDEN,
+  repairRunden,
+  repairZiele,
   type RepairPlan,
 } from "../src/lib/generate/repair-questions";
 import { loadMafCurriculum, modulesForPhase } from "../src/lib/content/curriculum";
@@ -194,9 +197,13 @@ async function main() {
 
   const priorUnits = (course.generated as { units?: GeneratedUnit[] } | undefined)?.units ?? [];
   const stored = new Map(priorUnits.map((u) => [u.id, u]));
-  const targetIds = loadDroppedIds();
+  // SIN-901: Nur Einheiten mit Ziel; nach MAX_REPAIR_RUNDEN Runden gilt eine Einheit als endgültig verworfen.
+  const evaluations = await storage.listQuestionEvaluations(COURSE);
+  const allTargetIds = loadDroppedIds();
+  const targetIds = repairZiele(evaluations, allTargetIds);
+  console.log(`repair-ziele ${targetIds.length}/${allTargetIds.length} (endgültig verworfen: ${allTargetIds.length - targetIds.length})`);
   // Gespeicherte Einheit mit < 5 bestandenen Fragen: gezielt reparieren. Sonst: Bootstrap.
-  const latest = latestPerQuestion(await storage.listQuestionEvaluations(COURSE));
+  const latest = latestPerQuestion(evaluations);
   const states = new Map<string, UnitState>();
   const bootstrapIds: string[] = [];
   for (const id of targetIds) {
@@ -298,7 +305,10 @@ async function main() {
   // Stufe 2: nur durchgefallene Fragen ersetzen (max. 2 Runden).
   for (let round = 1; round <= MAX_REPAIR_ROUNDS && process.exitCode !== 3; round++) {
     const open = [...states.values()].filter(
-      (s) => s.plan.replacements > 0 && !s.plan.alreadyPublishable,
+      (s) =>
+        s.plan.replacements > 0 &&
+        !s.plan.alreadyPublishable &&
+        repairRunden(evaluations, s.unit.id) + (round - 1) < MAX_REPAIR_RUNDEN,
     );
     if (open.length === 0) break;
     if (budgetStop(ledger, `pre-repair-${round}`)) {
