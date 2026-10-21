@@ -19,6 +19,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-899 | SIN-899 — Richter-Bewertungen seitenweise laden | [SIN-899-bewertungen-seitenweise.md](decisions/SIN-899-bewertungen-seitenweise.md) |
 | SIN-899 | SIN-899: frageId entfernt das Einheiten-Präfix wiederholt | [SIN-899-frageid-doppeltes-praefix.md](decisions/SIN-899-frageid-doppeltes-praefix.md) |
 | SIN-894 | SIN-894: Tagesdeckel für run-task zählt Euro, Lauf je Kurs | [SIN-894-tagesdeckel-euro-je-kurs.md](decisions/SIN-894-tagesdeckel-euro-je-kurs.md) |
+| SIN-892 | SIN-892: Pausen-Kommentar nur einmal | [SIN-892-pausen-kommentar-einmal.md](decisions/SIN-892-pausen-kommentar-einmal.md) |
 | SIN-885 | SIN-885: „Quelle: KMK …“ aus den Lerntexten des Industriemechaniker-Kurses entfernen | [SIN-885-quelle-kmk-entfernen.md](decisions/SIN-885-quelle-kmk-entfernen.md) |
 | SIN-882 | SIN-882 — Kurse ohne `lernfeld` ladbar, Fragen seitenweise | [SIN-882-loadcourse-fallback.md](decisions/SIN-882-loadcourse-fallback.md) |
 | SIN-881 | SIN-881: Worker-`fehler` trägt immer einen Grund | [SIN-881-worker-fehler-grund.md](decisions/SIN-881-worker-fehler-grund.md) |

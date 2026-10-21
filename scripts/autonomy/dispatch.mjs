@@ -23,7 +23,7 @@ import { MAX_NO_PR, needsHumanComment, noPrComment, noPrStreak, splitIssue, summ
 import { parsePhase, phaseAllowsIssue } from "./phase.mjs";
 import { bundle, bundleEntry, bundlePrompt, maxTurnsFor, modelFor, runSize, sizeOf } from "./sparen.mjs";
 import { collectPrStates, waitingIssues } from "./warten.mjs";
-import { MAX_HAKEN_STARTS, MAX_PARALLEL, MAX_REPAIR_ROUNDS, hakenStartKommentar, hakenStreak, addLabel, applyDone, pruefeHaken, buildPrompt, comment, createLinearIssues, fetchBacklogIdeas, fetchComments, fetchProjectIssues, fetchRecentIdeaStarts, ideaSlotFree, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
+import { MAX_HAKEN_STARTS, MAX_PARALLEL, MAX_REPAIR_ROUNDS, findeHakenPause, hakenPauseKommentar, hakenStartKommentar, hakenStreak, updateComment, addLabel, applyDone, pruefeHaken, buildPrompt, comment, createLinearIssues, fetchBacklogIdeas, fetchComments, fetchProjectIssues, fetchRecentIdeaStarts, ideaSlotFree, laneOf, linear, pickMany, reconcile, setState, startOrder } from "./linear.mjs";
 
 /** Offene PRs (Titel, Branch), damit Claude kein Issue übernimmt, an dem schon jemand arbeitet. */
 async function fetchOpenPrs() {
@@ -150,7 +150,7 @@ async function noPrRun(identifier, file, dry) {
  * Läuft über die ganze Schlange und hört bei `want` Treffern auf: angehaltene Issues blockieren keinen Platz (SIN-818).
  * @returns {Promise<{ go: any[], skipped: string[] }>}
  */
-export async function withoutStalledHaken(queue, want, dry, lese = fetchComments) {
+export async function withoutStalledHaken(queue, want, dry, lese = fetchComments, io = { comment, updateComment, addLabel }) {
   const go = [];
   const skipped = [];
   for (const issue of queue) {
@@ -161,13 +161,22 @@ export async function withoutStalledHaken(queue, want, dry, lese = fetchComments
       continue;
     }
     try {
-      const streak = hakenStreak(await lese(issue.id), offen);
+      const comments = await lese(issue.id);
+      const streak = hakenStreak(comments, offen);
       if (streak >= MAX_HAKEN_STARTS) {
         const grund = `${issue.identifier}: ${offen.length} Haken seit ${streak} Starts unverändert, Pause (SIN-795)`;
         console.log(`${dry ? "[dry-run] " : ""}${grund}`);
         if (!dry) {
-          await comment(issue.id, `${grund}\nOffen:\n${offen.map((t) => `- ${t}`).join("\n")}\nLabel \`needs-human\`; nach der Klärung entfernen.`);
-          await addLabel(issue, "needs-human").catch((e) => console.log(`::warning::Label needs-human nicht gesetzt: ${e.message}`));
+          let labelGesetzt = true;
+          await io.addLabel(issue, "needs-human").catch((e) => {
+            labelGesetzt = false;
+            console.log(`::warning::Label needs-human nicht gesetzt: ${e.message}`);
+          });
+          // SIN-892: gleicher Stand → bestehenden Pausen-Kommentar bearbeiten, nicht neu schreiben.
+          const text = hakenPauseKommentar(issue.identifier, offen, streak, labelGesetzt);
+          const alt = findeHakenPause(comments, offen);
+          if (alt) await io.updateComment(alt.id, text);
+          else await io.comment(issue.id, text);
           await leitstandEreignis(["ereignis", "--schritt", "worker_pause", "--status", "uebersprungen", "--issue", issue.identifier, "--grund", grund]);
         }
         skipped.push(issue.identifier);
