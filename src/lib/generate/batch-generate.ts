@@ -16,6 +16,7 @@ import { modulesToGenerate } from "@/lib/content/shared-modules";
 import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
 import { REPAIR_API_SCHEMA, structuredParams, UNITS_API_SCHEMA } from "./api-schema";
 import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
+import { repairPlanWithSourceExcerpts } from "./repair-source-excerpt";
 import type { GeneratedLernfeld, GeneratedQuestion, GeneratedUnit } from "./maf-lernfeld-seed";
 import {
   annotateRepairQuestions,
@@ -356,17 +357,22 @@ export async function submitQuestionRepairBatch(opts: {
   /** Default: GENERATOR_MODEL (Config). */
   model?: string;
 }): Promise<BatchSubmitResult> {
-  const requests = opts.items
-    .filter((i) => i.plan.replacements > 0)
-    .map(({ unit, plan }) => ({
-      custom_id: `repair-${unit.id}`,
-      params: {
-        model: opts.model ?? GENERATOR_MODEL,
-        max_tokens: MAX_OUTPUT_TOKENS,
-        ...structuredParams(REPAIR_API_SCHEMA),
-        messages: [{ role: "user", content: buildRepairPrompt(unit, plan) }],
-      },
-    }));
+  const requests = await Promise.all(
+    opts.items
+      .filter((i) => i.plan.replacements > 0)
+      .map(async ({ unit, plan }) => {
+        const planWithSources = await repairPlanWithSourceExcerpts(unit, plan);
+        return {
+          custom_id: `repair-${unit.id}`,
+          params: {
+            model: opts.model ?? GENERATOR_MODEL,
+            max_tokens: MAX_OUTPUT_TOKENS,
+            ...structuredParams(REPAIR_API_SCHEMA),
+            messages: [{ role: "user", content: buildRepairPrompt(unit, planWithSources) }],
+          },
+        };
+      }),
+  );
   if (requests.length === 0) throw new Error("No repair targets");
   const res = await anthropicFetch("/v1/messages/batches", {
     method: "POST",
