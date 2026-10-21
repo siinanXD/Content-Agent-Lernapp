@@ -24,9 +24,12 @@ export async function repairPlanWithSourceExcerpts(
 
   return {
     ...plan,
-    failed: plan.failed.map((failed, i) => ({
-      ...failed,
-      ...(enriched[i]?.sourceExcerpt ? { sourceExcerpt: enriched[i].sourceExcerpt.slice(0, 1200) } : {}),
-    })),
+    failed: plan.failed.map((failed, i) => {
+      const sourceExcerpt = enriched[i]?.sourceExcerpt;
+      return {
+        ...failed,
+        ...(sourceExcerpt ? { sourceExcerpt: sourceExcerpt.slice(0, 1200) } : {}),
+      };
+    }),
   };
 }
