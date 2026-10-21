@@ -58,6 +58,34 @@ test("Schlange [angehalten, angehalten, frei, frei] mit 2 Plätzen: die beiden f
   assert.deepEqual(skipped, ["SIN-1", "SIN-2"]);
 });
 
+test("Zweiter Lauf mit gleichem Stand: 0 neue Kommentare, 1 bearbeiteter (SIN-892)", async () => {
+  const offen = ["B offen"];
+  const iss = { identifier: "SIN-9", id: "i9", description: "- [ ] B offen" };
+  const comments: { id: string; body: string; createdAt: string }[] = Array.from({ length: MAX_HAKEN_STARTS }, (_, i) => ({ id: `s${i}`, body: hakenStartKommentar(offen), createdAt: `2026-10-16T1${i}:00:00Z` }));
+  const neu: string[] = [];
+  const bearbeitet: string[] = [];
+  let labelOk = true;
+  const io = {
+    comment: async (_: string, body: string) => void (neu.push(body), comments.push({ id: `p${neu.length}`, body, createdAt: "2026-10-16T20:00:00Z" })),
+    updateComment: async (id: string, body: string) => void bearbeitet.push(`${id}|${body}`),
+    addLabel: async () => {
+      if (!labelOk) throw new Error("fehlt");
+    },
+  };
+  const lauf = () => withoutStalledHaken([iss], 1, false, async () => comments, io);
+  await lauf();
+  assert.equal(neu.length, 1);
+  assert.match(neu[0], /needs-human`; nach der Klärung/);
+  await lauf();
+  assert.equal(neu.length, 1);
+  assert.equal(bearbeitet.length, 1);
+  assert.ok(bearbeitet[0].startsWith("p1|"));
+  labelOk = false;
+  await lauf();
+  assert.match(bearbeitet[1], /konnte nicht gesetzt werden/);
+  assert.doesNotMatch(bearbeitet[1], /nach der Klärung entfernen/);
+});
+
 test("Worker zählt nur offene oder neue PRs als Ergebnis, nicht alte gemergte vom selben Branch", () => {
   const w = readFileSync(".github/workflows/worker.yml", "utf8");
   assert.doesNotMatch(w, /--state all --json (number|url) --jq/);

@@ -278,6 +278,19 @@ export const hakenHash = (offen) => offen.map((t) => t.trim().toLowerCase()).sor
 
 export const hakenStartKommentar = (offen) => `Haken-Start ${hakenHash(offen)}: ${offen.length} offen`;
 
+/** Pausen-Kommentar (SIN-892): ein Kommentar je Haken-Stand, wird bei Wiederholung bearbeitet statt neu geschrieben. */
+export const hakenPauseKommentar = (id, offen, streak, labelGesetzt, jetzt = new Date()) =>
+  `Haken-Pause ${hakenHash(offen)}: ${id}: ${offen.length} Haken seit ${streak} Starts unverändert, Pause (SIN-795)\nOffen:\n${offen.map((t) => `- ${t}`).join("\n")}\n` +
+  (labelGesetzt ? "Label `needs-human`; nach der Klärung entfernen." : "Label `needs-human` konnte nicht gesetzt werden.") +
+  `\nStand: ${jetzt.toISOString().slice(0, 16)}Z`;
+
+/** Vorhandener Pausen-Kommentar zum gleichen Haken-Stand (mit id), sonst undefined. */
+export const findeHakenPause = (comments, offen) => comments.find((c) => c.id && String(c.body ?? "").startsWith(`Haken-Pause ${hakenHash(offen)}:`));
+
+export async function updateComment(id, body, call = linear) {
+  await call(`mutation($id: String!, $b: String!) { commentUpdate(id: $id, input: { body: $b }) { success } }`, { id, b: body });
+}
+
 /** Starts in Folge mit demselben Haken-Stand (neueste zuerst gezählt, bis ein anderer Stand kommt). */
 export function hakenStreak(comments, offen) {
   const hash = hakenHash(offen);
@@ -464,7 +477,7 @@ export async function comment(issueId, body, call = linear) {
 
 /** Kommentare eines Issues (höchstens 50), für die Zählung der Läufe ohne PR (SIN-362). */
 export async function fetchComments(issueId, call = linear) {
-  const data = await call(`query($id: String!) { issue(id: $id) { comments(first: 50) { nodes { body createdAt } } } }`, { id: issueId });
+  const data = await call(`query($id: String!) { issue(id: $id) { comments(first: 50) { nodes { id body createdAt } } } }`, { id: issueId });
   return data.issue?.comments?.nodes ?? [];
 }
 
