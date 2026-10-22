@@ -23,3 +23,7 @@
 ## Warum
 
 Der Crawler sah nur Seiten ohne Login; Fehler in Lernpfad, Profil, Prüfung und Ausbilder-Bereich fielen erst bei echten Nutzern auf. Magic-Link-Hash und Service-Role-Key vorhanden: keine Kosten, keine neue Abhängigkeit.
+
+## Nachtrag: Beleg im PR-Kommentar
+
+Der PR-Crawler prüft nach jeder Seite hinter dem Login, ob die Sitzung griff: landet sie auf `/anmelden`, ist das ein roter Fund (Kategorie `login`) statt eines Bilds der Anmeldung. Gegriffene Sitzungen stehen im Kommentar als „Eingeloggt geprüft als Testkonto …“ über den Bildern der Route.

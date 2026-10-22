@@ -2,7 +2,31 @@
 
 ## Umfang
 
-Read-only-Auswertung aus der produktiven Tabelle `question_evaluations`. Kurs-ID `e22073de-7020-4380-9002-c70d46c25e25` entspricht `Maschinen- und Anlagenführer`. Prompt-Version: `2026-10-v2`, Richter: `gpt-5.4-mini`. Zeitraum: letzte 24 Stunden. Es wurden nur Bewertungen aus `-repair1` und `-repair2` betrachtet. Kein neuer kostenpflichtiger Lauf wurde gestartet.
+Read-only-Auswertung aus der produktiven Tabelle `question_evaluations`. Kurs-ID `e22073de-7020-4380-9002-c70d46c25e25` entspricht `Maschinen- und Anlagenführer`. Prompt-Version: `2026-10-v2`, Richter: `gpt-5.4-mini`. Zeitraum: 20.10.2026 22:30 bis 21.10.2026 22:30 UTC. Es wurden nur Bewertungen aus `-repair1` und `-repair2` betrachtet. Kein neuer kostenpflichtiger Lauf wurde gestartet.
+
+## Reproduzierbare Abfrage
+
+Die folgende ausschließlich lesende Abfrage wurde am 22.10.2026 erneut ausgeführt und bestätigt sämtliche Zählwerte der Tabelle. Das feste Zeitfenster verhindert, dass eine spätere Ausführung unbemerkt andere Daten misst.
+
+```sql
+with rows as (
+  select substring(run_id from '-repair([12])') as round,
+         passed, reason, sicherheit_flag
+  from public.question_evaluations
+  where course_id = 'e22073de-7020-4380-9002-c70d46c25e25'
+    and created_at >= timestamptz '2026-10-20 22:30:00+00'
+    and created_at < timestamptz '2026-10-21 22:30:00+00'
+    and run_id ~ '-repair[12]'
+)
+select round, count(*) as evaluations,
+       count(*) filter (where passed) as passed,
+       count(*) filter (where not passed) as failed,
+       count(*) filter (where not passed and reason like '%source_fidelity_fail%') as source_fidelity_failed,
+       count(*) filter (where sicherheit_flag) as safety_flags
+from rows group by round order by round;
+```
+
+Der zusätzliche aktuelle 24-Stunden-Abruf am 22.10.2026 lieferte keine Reparaturbewertungen. Er belegt deshalb keine neue Bestehensquote des noch nicht aktivierten Prompt-Fixes.
 
 ## Ergebnis
 

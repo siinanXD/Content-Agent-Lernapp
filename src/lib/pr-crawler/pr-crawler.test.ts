@@ -100,6 +100,24 @@ test("Kommentar: Marker, Bild je Route; Video nur mit Datei", () => {
   assert.match(t, /abcdef1/);
 });
 
+test("Kommentar: Seite hinter dem Login zeigt Bild und die Rolle des Testkontos", () => {
+  const ergebnis = {
+    routen: ["/lernpfad", "/"],
+    bilder: [
+      { route: "/lernpfad", viewport: "handy", bild: "lernpfad-handy.png", eingeloggt: "Lernende" },
+      { route: "/", viewport: "handy", bild: "start-handy.png" },
+    ],
+    funde: [],
+    video: null,
+    rot: 0,
+    grund: "",
+  };
+  const t = baueKommentar({ ergebnis, bilderBasis: "https://raw/x" });
+  assert.match(t, /Eingeloggt geprüft als Testkonto „Lernende“/);
+  assert.equal(t.match(/Eingeloggt geprüft/g)?.length, 1);
+  assert.match(t, /<img src="https:\/\/raw\/x\/lernpfad-handy\.png"/);
+});
+
 test("Kommentar: Übersprungen nennt den Grund", () => {
   const t = baueKommentar({ skip: "Keine Frontend-Änderung (nur Doku)." });
   assert.ok(t.startsWith(MARKER));

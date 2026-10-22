@@ -32,6 +32,8 @@ export function baueKommentar({ ergebnis = null, skip = "", mehr = 0, url = "", 
   for (const route of ergebnis.routen) {
     zeilen.push(`### \`${route}\``);
     const bilder = (ergebnis.bilder ?? []).filter((b) => b.route === route);
+    const rolle = bilder.find((b) => b.eingeloggt)?.eingeloggt;
+    if (rolle) zeilen.push(`Eingeloggt geprüft als Testkonto „${rolle}“ (Sitzung greift, keine Weiterleitung auf /anmelden).`);
     if (bilderBasis && bilder.length) zeilen.push(bilder.map((b) => `<img src="${bilderBasis}/${b.bild}" alt="${route} (${b.viewport})" width="${b.viewport === "handy" ? 200 : 420}">`).join(" "));
     else if (bilder.length) zeilen.push(`Bilder (${bilder.map((b) => b.viewport).join(", ")}) im Artefakt.`);
     for (const f of rot.filter((x) => x.route === route)) zeilen.push(`- ${f.kategorie} (${f.viewport ?? "-"}): ${f.text}`);
