@@ -8,11 +8,18 @@ import {
   PRUEFHINWEIS_MUSTER,
   bereinigeLernfeld,
   entfernePruefhinweise,
+  geaenderteEinheiten,
 } from "./pruefhinweise";
 
 const quelle = { title: "AO", url: "https://www.gesetze-im-internet.de/maschf_ausbv/", fetchedAt: "2026-10-02T00:00:00.000Z" };
 
 describe("Prüfhinweise und Elektro-Hinweis (SIN-620)", () => {
+  it("geänderte Einheiten: Einheiten plus Einheiten geänderter Fragen, ohne Doppel (SIN-885)", () => {
+    const bericht = { einheiten: ["LF1-u1"], fragen: ["LF1-u1/q1", "LF2-u3/q2", "LF2-u3/q5"], elektro: ["LF1-u1"], manuell: ["Antwort LF9-u1/q1"] };
+    assert.deepEqual(geaenderteEinheiten(bericht), ["LF1-u1", "LF2-u3"]);
+    assert.deepEqual(geaenderteEinheiten({ einheiten: [], fragen: [], elektro: [], manuell: ["x"] }), []);
+  });
+
   it("entfernt nur den Hinweissatz", () => {
     const text = "Das Ventil sperrt den Fluss. Die Zahlenwerte sind Fachwerte und bei der Stichprobe gegenzuprüfen. Dann öffnet es.";
     assert.equal(entfernePruefhinweise(text), "Das Ventil sperrt den Fluss. Dann öffnet es.");
