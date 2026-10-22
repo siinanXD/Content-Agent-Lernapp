@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { MARKER, baueKommentar } from "../../../scripts/pr-crawler/kommentar.mjs";
 import { MAX_ROUTEN, betroffeneRouten, importe, loese } from "../../../scripts/pr-crawler/routen.mjs";
@@ -122,4 +123,12 @@ test("Kommentar: Übersprungen nennt den Grund", () => {
   const t = baueKommentar({ skip: "Keine Frontend-Änderung (nur Doku)." });
   assert.ok(t.startsWith(MARKER));
   assert.match(t, /Übersprungen: Keine Frontend-Änderung/);
+});
+
+test("SIN-914: UI-PR löst den Crawler selbst aus und baut die Vorschau per CLI (keine Git-Deploys in der Lern-App)", () => {
+  const yml = readFileSync(".github/workflows/pr-crawler.yml", "utf8");
+  assert.match(yml, /pull_request:\n\s+types: \[opened, synchronize, reopened, ready_for_review\]\n\s+paths: \["src\/app\/\*\*"/);
+  assert.match(yml, /name: Vorschau bauen \(Vercel-CLI\)[\s\S]*?if: steps\.routen\.outputs\.routen != '' && github\.event_name == 'pull_request'/);
+  assert.match(yml, /head\.repo\.full_name == github\.repository/);
+  assert.equal(JSON.parse(readFileSync("vercel.json", "utf8")).git.deploymentEnabled, false);
 });
