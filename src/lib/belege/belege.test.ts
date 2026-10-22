@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { bewerte, leseHaken, leseProbe, nurBelege, setzeHaken } from "./belege";
+import { bewerte, fehlendeVariablen, hatOffenenPr, leseHaken, leseProbe, nurBelege, setzeHaken } from "./belege";
 
 describe("Belege-Prüfer Lern-App (SIN-846)", () => {
   it("erkennt nur offene Belege-Haken und übergibt keine Bau-Aufgabe", () => {
@@ -38,5 +38,21 @@ describe("Belege-Prüfer Lern-App (SIN-846)", () => {
   it("setzt ausschließlich exakt belegte offene Haken", () => {
     const description = "- [ ] Zählung [probe:zaehlung:courses:9]\n- [ ] Code ändern";
     assert.equal(setzeHaken(description, ["Zählung [probe:zaehlung:courses:9]"]), "- [x] Zählung [probe:zaehlung:courses:9]\n- [ ] Code ändern");
+  });
+
+  it("lässt Issues mit offenem PR beim PR (Titel, Text oder Branch, nicht SIN-70 für SIN-7)", () => {
+    const prs = [
+      { title: "feat(x): Dings (SIN-70)", body: null, head: "claude/sin-70-dings" },
+      { title: "fix: ohne ID", body: "Part of SIN-8", head: "claude/ohne" },
+    ];
+    assert.equal(hatOffenenPr("SIN-7", prs), false);
+    assert.equal(hatOffenenPr("SIN-70", prs), true);
+    assert.equal(hatOffenenPr("SIN-8", prs), true);
+    assert.equal(hatOffenenPr("SIN-9", []), false);
+  });
+
+  it("meldet fehlende Pflicht-Variablen vor dem Lauf", () => {
+    assert.deepEqual(fehlendeVariablen({ LINEAR_API_KEY: "a", GH_TOKEN: "b", SUPABASE_PRUEFER_URL: "c" }), []);
+    assert.deepEqual(fehlendeVariablen({ LINEAR_API_KEY: "a", GH_TOKEN: " " }), ["GH_TOKEN", "SUPABASE_PRUEFER_URL"]);
   });
 });

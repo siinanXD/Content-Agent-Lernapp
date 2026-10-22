@@ -4,7 +4,7 @@
  */
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { bewerte, leseHaken, leseProbe, nurBelege, setzeHaken } from "../../src/lib/belege/belege";
+import { bewerte, fehlendeVariablen, hatOffenenPr, leseHaken, leseProbe, nurBelege, setzeHaken, type OffenerPr } from "../../src/lib/belege/belege";
 import { comment, fetchComments, fetchProjectIssues, linear, setState } from "../autonomy/linear.mjs";
 
 const env = process.env;
@@ -42,10 +42,29 @@ async function messe(probe: NonNullable<ReturnType<typeof leseProbe>>): Promise<
 
 type LinearIssue = { id: string; identifier: string; description: string; state: { type: string }; labels?: { nodes?: { name: string }[] } };
 
+/** Offene PRs (Titel, Text, Branch): ein Issue mit offenem PR bleibt beim PR, der Prüfer setzt es nie auf Done. */
+async function offenePrs(): Promise<OffenerPr[]> {
+  const res = await fetch(`https://api.github.com/repos/${repo}/pulls?state=open&per_page=100`, {
+    headers: { Authorization: `Bearer ${env.GH_TOKEN}`, Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) throw new Error(`GitHub-PRs nicht lesbar: ${res.status}`);
+  const prs = (await res.json()) as { title?: string; body?: string | null; head?: { ref?: string } }[];
+  return prs.map((pr) => ({ title: pr.title, body: pr.body, head: pr.head?.ref }));
+}
+
 async function main(): Promise<void> {
-  const issues = (await fetchProjectIssues()) as LinearIssue[];
+  // Vorab prüfen, sonst wirkt „0 Kandidaten“ bei fehlenden Zugangsdaten grün.
+  const fehlt = fehlendeVariablen(env);
+  if (fehlt.length) throw new Error(`Variable(n) fehlen: ${fehlt.join(", ")}`);
+  await leseprobe();
+
+  const [issues, prs] = await Promise.all([fetchProjectIssues() as Promise<LinearIssue[]>, offenePrs()]);
   const candidates = issues.filter((issue) => {
     const labels = (issue.labels?.nodes ?? []).map((label) => label.name.toLowerCase());
+    if (hatOffenenPr(issue.identifier, prs)) {
+      console.log(`${issue.identifier}: offener PR, bleibt beim PR`);
+      return false;
+    }
     return issue.state.type !== "backlog"
       && labels.includes("claude")
       && !labels.includes("needs-human")
@@ -54,7 +73,6 @@ async function main(): Promise<void> {
   console.log(`${candidates.length} Issue(s) mit ausschließlich offenen Belege-Haken`);
   if (!candidates.length) return;
 
-  await leseprobe();
   for (const issue of candidates) {
     const description = issue.description ?? "";
     const belegt: string[] = [];

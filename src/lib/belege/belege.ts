@@ -39,6 +39,24 @@ export function bewerte(probe: Probe, messwert: number | string): { belegt: bool
   return { belegt: messwert === "success", beleg: `Run ${probe.workflow}: ${messwert}` };
 }
 
+export type OffenerPr = { title?: string | null; body?: string | null; head?: string | null };
+
+/**
+ * Nennt ein offener PR die Issue-ID (Titel, Text oder Branch)? Dann bleibt das Issue beim PR:
+ * der Prüfer darf es nicht auf Done setzen, bevor der PR gemergt ist (Leitstand-Regel, SIN-846).
+ * `SIN-7` trifft nicht `SIN-70`; Branches sind klein geschrieben (`claude/sin-7-…`).
+ */
+export function hatOffenenPr(identifier: string, prs: OffenerPr[]): boolean {
+  const id = identifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(^|[^a-z0-9])${id}($|[^0-9])`, "i");
+  return prs.some((pr) => [pr.title, pr.body, pr.head].some((feld) => re.test(feld ?? "")));
+}
+
+/** Pflicht-Variablen vor dem ersten Lauf; fehlt eine, darf „0 Kandidaten“ nicht grün wirken. */
+export function fehlendeVariablen(env: Record<string, string | undefined>, pflicht = ["LINEAR_API_KEY", "GH_TOKEN", "SUPABASE_PRUEFER_URL"]): string[] {
+  return pflicht.filter((name) => !env[name]?.trim());
+}
+
 export function setzeHaken(beschreibung: string, belegte: string[]): string {
   const ziel = new Set(belegte.map(normalisiere));
   return beschreibung.split("\n").map((zeile) => {
