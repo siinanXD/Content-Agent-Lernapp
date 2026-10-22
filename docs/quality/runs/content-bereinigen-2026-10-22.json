@@ -1,0 +1,9 @@
+{
+  "task": "content-bereinigen",
+  "label": "Interne Prüfhinweise aus Lerntexten entfernen (nach Sicherung)",
+  "datum": "2026-10-22",
+  "lauf": "https://github.com/siinanXD/Content-Agent-Lernapp/actions/runs/39800128926",
+  "ok": null,
+  "ergebnis": "Interne Prüfhinweise aus Lerntexten entfernen (nach Sicherung): bestanden",
+  "durchgelaufen": true
+}
