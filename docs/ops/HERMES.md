@@ -26,7 +26,7 @@ Cloud-Agent egress blocks `gesetze-im-internet.de` and `kmk.org`. Run the live c
 1. `npm run content:check-sources` — sources from `loadAllCurricula()` (`docs/content/*.json`, not `docs/research/maf-sources.json`). Lock: `docs/content/sources.lock.json` (`standLabel`, ETag/Last-Modified, content hash, `checkedAt`). Also scans Aktualitätendienst + BIBB Neuordnungen via `watchKeywords`.
 2. JSON report fields: `summary.changed` / `summary.unreachable` / `summary.ok`, full `diff`, `affected` (modules/blocks from `sourceIds`), `feedHits`.
 3. Exit codes: **0** ok · **2** change or feed hit · **3** lock incomplete (source missing).
-4. On exit 2: `npm run hermes:weekly -- report.json` (optional `--write-status`):
+4. On exit 2: alerts come from `applyWeeklyAlerts` in `src/lib/hermes/weekly-check.ts` (the CLI wrapper `hermes-weekly.mjs` was removed in SIN-959, no caller):
    - Telegram Kurzbericht (skipped if `TELEGRAM_*` absent)
    - Linear issue per map: title **`Quelle geändert: <mapId>`** (skipped if `LINEAR_API_KEY` / `LINEAR_TEAM_ID` absent)
    - Map JSON `status` → **`Prüfung nötig`** when `--write-status`
@@ -52,7 +52,6 @@ npm run hermes:dry-run                    # Maps + Lock, no network (seed list u
 npm run content:check-sources:offline     # Lock coverage vs maps, no network
 npm test                                  # source-watch + weekly-check fixtures
 npm run content:check-sources             # Live (Railway/CI only)
-npm run hermes:weekly -- report.json      # Alerts from a report (secrets optional)
 ```
 
 `--update` on the check script rewrites the lock after a confirmed human review.
