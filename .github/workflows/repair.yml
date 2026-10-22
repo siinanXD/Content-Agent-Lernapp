@@ -182,13 +182,15 @@ jobs:
             gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "**Reparatur gestoppt:** Runde $ROUND hat nichts gepusht und ci ließ sich nicht neu starten. Bitte schau drauf."
           fi
 
-      # Messen (SIN-320): Verbrauch der Reparatur-Runde in den PR-Steckbrief (Skripte aus _main, oben ausgecheckt).
+      # Private Verbrauchsmessung; ausschließlich Skripte aus _main erhalten den Linear-Zugang.
       - name: Verbrauch melden
         if: always() && steps.round.outputs.go == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
           EXECUTION_FILE: ${{ steps.fix.outputs.execution_file }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          USAGE_ISSUES: ${{ steps.round.outputs.title }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
           ROUND: ${{ steps.round.outputs.round }}
         run: node _main/scripts/autonomy/verbrauch.mjs --file "$EXECUTION_FILE" --branch "$BRANCH" --label "Reparatur, Runde $ROUND" --model claude-sonnet-5-5 --part "repair$ROUND"

@@ -26,6 +26,7 @@ import {
 } from "../src/lib/generate/batch-generate";
 import { generatorSystemText } from "../src/lib/generate/didaktik-prompts";
 import type { GeneratedUnit } from "../src/lib/generate/maf-lernfeld-seed";
+import { repairPlanWithSourceExcerpts } from "../src/lib/generate/repair-source-excerpt";
 import {
   MIN_PASSED_QUESTIONS,
   annotateRepairQuestions,
@@ -256,7 +257,8 @@ async function main() {
       const repaired = new Map<string, GeneratedUnit["questions"]>();
       const repairedUnits: GeneratedUnit[] = [];
       await pool(plans, async ({ unit, plan }) => {
-        const r = await generate(cand, buildRepairPrompt(unit, plan), "questions");
+        const planWithSources = await repairPlanWithSourceExcerpts(unit, plan);
+        const r = await generate(cand, buildRepairPrompt(unit, planWithSources), "questions");
         cost.repair += r.usd;
         const qs = parseRepairQuestions(r.text);
         if (qs) {

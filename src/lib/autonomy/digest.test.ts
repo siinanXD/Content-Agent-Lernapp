@@ -6,7 +6,7 @@ import { berlinDay, buildDigest, decisionLine, groupOf, lastDigest, markOf, need
 const fixture = () => JSON.parse(readFileSync("docs/autonomy/fixture-digest.json", "utf8"));
 
 test("Digest morgen: Spuren, Entscheidung, Plan, Braucht dich, Kennzahlen, Phase", () => {
-  const { text } = buildDigest({ ...fixture(), slot: "morgen" });
+  const { text } = buildDigest({ ...fixture(), slot: "morgen", privateDetails: true });
   assert.match(text, /^@siinanXD \*\*Update 10:00\*\*/);
   assert.match(text, /- Frontend: Lernpfad: Tagesziel als Ring \(SIN-201\)/);
   assert.match(text, /- Infrastruktur: Autonomie: Free-Tier-Wächter im Planer \(SIN-225\)/);
@@ -38,7 +38,7 @@ test("Digest: nicht lesbare Kennzahlen heißen „nicht verfügbar“", () => {
 });
 
 test("Digest: Merker mit Tag und Slot verhindert Doppelmeldung, letzter Merker ist der Beginn", () => {
-  const first = buildDigest({ ...fixture(), slot: "morgen" });
+  const first = buildDigest({ ...fixture(), slot: "morgen", privateDetails: true });
   const day = berlinDay(new Date(fixture().now));
   assert.equal(day, "2026-10-05");
   const now = new Date(fixture().now);
@@ -110,5 +110,5 @@ test("Digest SIN-267: Doppel-Lauf 10:00 + 10:05 sendet nur einmal", () => {
 test("Tages-Update nennt geänderte Diagramme (SIN-376)", () => {
   const mit = buildDigest({ ...fixture(), slot: "morgen", diagramme: ["docs/diagramme/pipeline.mmd"] }).text;
   assert.match(mit, /\*\*Diagramme geändert:\*\* docs\/diagramme\/pipeline\.mmd/);
-  assert.ok(!buildDigest({ ...fixture(), slot: "morgen" }).text.includes("Diagramme geändert"));
+  assert.ok(!buildDigest({ ...fixture(), slot: "morgen", privateDetails: true }).text.includes("Diagramme geändert"));
 });

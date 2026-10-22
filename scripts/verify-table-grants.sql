@@ -10,6 +10,16 @@ declare
   p text;
   problems text[] := '{}';
 begin
+  -- Alle aktuellen public-Tabellen prüfen, einschließlich später hinzugefügter.
+  for t in select c.relname from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p') loop
+    foreach r in array array['anon', 'authenticated'] loop
+      foreach p in array array['TRUNCATE', 'TRIGGER', 'REFERENCES'] loop
+        if has_table_privilege(r, format('public.%I', t), p) then
+          problems := problems || format('%s hat %s auf %s', r, p, t);
+        end if;
+      end loop;
+    end loop;
+  end loop;
   foreach t in array array['trainer_groups', 'group_members', 'group_invitations', 'leitstand_nutzer', 'loop_events', 'loop_snapshot'] loop
     foreach r in array array['anon', 'authenticated'] loop
       foreach p in array array['TRUNCATE', 'TRIGGER', 'REFERENCES'] loop
