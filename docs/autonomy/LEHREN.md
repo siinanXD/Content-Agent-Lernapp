@@ -8,7 +8,6 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - `permissions`, neue Secrets, `allowedTools`/`allowed_bots` oder fremde Actions nebenbei erweitern → macht den PR `risk:high` und wartet auf Sinan. Richtig: nur ändern, wenn das Issue es verlangt, sonst bestehende Rechte nutzen. (SIN-252)
 - `pr-gate.yml`, `scripts/autonomy/risk.mjs` oder Branch-Protection im Zuge eines anderen Issues anfassen → `risk:high`. Richtig: eigenes Issue. (SIN-223)
 ## Bot-Starts und Rechte
-
 - Einen Worker oder Dispatcher mit `github.token` starten → der Folge-Lauf startet nicht oder ohne Rechte. Richtig: `gh workflow run` mit `AGENT_WORKFLOW_TOKEN`. (SIN-240)
 - Auf die Zeitpläne (`schedule`) von GitHub verlassen → sie sind unzuverlässig (19.10.: 6 statt 48 Dispatcher-Läufe am Tag). Richtig: Selbst-Anstoß am Ende des Workers (`gh workflow run dispatch.yml`) und externer Takt per Supabase `pg_cron` → `workflow_dispatch` (Migration `sin847`, Token nur im Vault); GitHub-Cron nur auf krummen Minuten als Rückfallebene; Tests, die den Cron festschreiben (`dispatch-anstoss.test.ts`), im selben PR mitziehen, sonst bleibt `build` rot und die Reparatur macht nur Leer-Commits. (SIN-234, SIN-847)
 - Frei gewordenen Platz erst beim 30-Min-Zeitplan füllen → bis 45 Min Leerlauf. Richtig: nach Merge (`post-merge`) und nach Worker ohne PR `dispatch.yml` anstoßen; die Gruppe `dispatch` verhindert Doppelstarts. (SIN-334)
@@ -136,6 +135,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 
 ## Datenbank-Rechte
 - Tabellenrechte nach Migrationen auf allen aktuellen public-Tabellen prüfen; eine feste Sechserliste übersieht spätere Tabellen. DML/RLS beim Rechte-Entzug vergleichen und Rollback testen. (SIN-438)
+- Verbrauch nie in öffentliche PRs/Logs spiegeln: strukturierte Marker privat in Linear, öffentliche Digest-/Steckbriefausgaben neutral, Wiederholungen nach Laufkennung deduplizieren. (SIN-911)
 
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)
 - Worker durften laut `--allowedTools` keine Doku lesen (kein WebFetch/MCP), Preise blieben `null` → Context7 (`mcp__context7__*`, `--mcp-config`) und `WebFetch` sind in `claude.yml` und `worker.yml` erlaubt; erst Context7, dann offizielle Doku, Quelle im PR nennen. (SIN-537)

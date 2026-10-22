@@ -134,9 +134,9 @@ export const USAGE_HEAD = "## Verbrauch";
 const MARK_RE = /<!-- usage: (\{.*?\}) -->/g;
 
 /** Maschinenlesbarer Merker (für Wochensumme); `run` macht ihn je Lauf eindeutig. */
-export function usageMark(u, { label, model, run, issues = [] }) {
+export function usageMark(u, { label, model, run, issues = [], repository, branch, at }) {
   const slim = u ? { in: u.input, out: u.output, cr: u.cacheRead, cw: u.cacheWrite, turns: u.turns, ms: u.durationMs, usd: u.costUsd } : {};
-  return `<!-- usage: ${JSON.stringify({ label, model, run: run ?? null, issues, ...slim })} -->`;
+  return `<!-- usage: ${JSON.stringify({ label, model, run: run ?? null, issues, ...(repository ? {repository} : {}), ...(branch ? {branch, at} : {}), ...slim })} -->`;
 }
 
 /** Hängt eine Verbrauchszeile (mit Merker) an den PR-Text; derselbe Lauf (`run`) wird nie doppelt eingetragen. */
