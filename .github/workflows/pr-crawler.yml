@@ -2,11 +2,17 @@
 # Handy und Desktop) und, bei 2+ Seiten, mit einem Video (WebM). Der nächtliche Vollcrawl (testnutzer.yml) bleibt als Netz.
 # Ablauf: deployment_status der Vorschau → PR finden → geänderte Dateien → Routen (scripts/pr-crawler/routen.mjs) → Playwright
 # gegen die Vorschau → Artefakt + Kommentar `<!-- pr-crawler -->` (wird aktualisiert). Rot im Fund = roter Lauf, Grund in loop_events (Schritt pr-crawler).
+# Auslöser (SIN-906/SIN-914): Die Lern-App baut keine Vorschau über die Git-Anbindung (`git.deploymentEnabled: false`, SIN-309,
+# Hobby-Limit 100 Deploys/Tag). Darum baut dieser Lauf bei PRs mit UI-Dateien selbst eine Vorschau per Vercel-CLI – nur wenn
+# eine Seite betroffen ist, also höchstens ein Deploy je Push eines UI-PRs.
 # Sicherheit: Skripte kommen aus main, der PR-Stand wird nur gelesen (nie ausgeführt); PRs aus Forks werden übersprungen,
 # weil der Bypass-Schlüssel der Vorschau sonst an fremden Code ginge. Bilder liegen auf dem Zweig pr-crawler/pr-<Nr> (nur Bilder), damit sie im Kommentar erscheinen.
 name: pr-crawler
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths: ["src/app/**", "src/components/**", "public/**", "**/*.css"]
   deployment_status:
   workflow_dispatch:
     inputs:
@@ -24,13 +30,14 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: pr-crawler-${{ github.event.deployment.sha || inputs.pr }}
+  group: pr-crawler-${{ github.event.pull_request.number || github.event.deployment.sha || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   crawl:
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event.deployment_status.state == 'success' && !startsWith(github.event.deployment.environment, 'Production'))
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -38,6 +45,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GITHUB_REPOSITORY: ${{ github.repository }}
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_TEAM_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       LAUF: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -56,10 +66,13 @@ jobs:
           DEPLOY_SHA: ${{ github.event.deployment.sha }}
           EINGABE_PR: ${{ inputs.pr }}
           EINGABE_URL: ${{ inputs.url }}
+          PR_NUMMER: ${{ github.event.pull_request.number }}
           VORSCHAU: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
         run: |
           if [ "$EREIGNIS" = workflow_dispatch ]; then
             pr="$EINGABE_PR"; url="$EINGABE_URL"
+          elif [ "$EREIGNIS" = pull_request ]; then
+            pr="$PR_NUMMER"; url=""
           else
             pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEPLOY_SHA/pulls" -q '[.[] | select(.state == "open")][0].number // empty')
             url="$VORSCHAU"
@@ -70,7 +83,7 @@ jobs:
           if [ "${kopf#* }" != "$GITHUB_REPOSITORY" ]; then
             echo "PR aus einem Fork: übersprungen."; echo "weiter=nein" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if [ "$EREIGNIS" != workflow_dispatch ] && [ "$sha" != "$DEPLOY_SHA" ]; then
+          if [ "$EREIGNIS" = deployment_status ] && [ "$sha" != "$DEPLOY_SHA" ]; then
             echo "Vorschau gehört zu einem älteren Stand, der neuere Deploy löst den Lauf aus."; echo "weiter=nein" >> "$GITHUB_OUTPUT"; exit 0
           fi
           { echo "weiter=ja"; echo "pr=$pr"; echo "sha=$sha"; echo "url=$url"; } >> "$GITHUB_OUTPUT"
@@ -94,6 +107,26 @@ jobs:
             echo "mehr=$(jq -r '.mehr' routen.json)"
             echo "grund=$(jq -r '.grund' routen.json)"
           } >> "$GITHUB_OUTPUT"
+      - name: Vorschau bauen (Vercel-CLI)
+        id: vorschau
+        if: steps.routen.outputs.routen != '' && github.event_name == 'pull_request'
+        env:
+          SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "::error::VERCEL_TOKEN oder VERCEL_PROJECT_ID fehlt, keine Vorschau."; exit 1
+          fi
+          # Ohne VERCEL_ORG_ID (persönliches Konto) wie in production-deploy.yml aus dem Token lesen.
+          if [ -z "${VERCEL_ORG_ID:-}" ]; then
+            VERCEL_ORG_ID=$(curl -s -m 20 -H "Authorization: Bearer ${VERCEL_TOKEN}" https://api.vercel.com/v2/user | jq -r '.user.id // empty')
+            [ -n "$VERCEL_ORG_ID" ] || { echo "::error::Vercel-Konto nicht lesbar (Token prüfen)."; exit 1; }
+            export VERCEL_ORG_ID
+          fi
+          # Gebaut wird auf Vercel; der PR-Stand wird nur hochgeladen, nie im Lauf ausgeführt.
+          url=$(cd pr-quelle && npx --yes vercel@latest deploy --yes --token "$VERCEL_TOKEN" --meta "githubCommitSha=${SHA}" | tail -1)
+          echo "Vorschau: ${url}"
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
       - name: Pakete, Chromium
         if: steps.routen.outputs.routen != ''
         run: |
@@ -102,7 +135,7 @@ jobs:
       - name: Sitzungen der Testkonten (SIN-914)
         if: steps.routen.outputs.routen != ''
         env:
-          LIVE_URL: ${{ steps.pr.outputs.url }}
+          LIVE_URL: ${{ steps.vorschau.outputs.url || steps.pr.outputs.url }}
           AGENT_LERNEND_EMAIL: ${{ vars.AGENT_LERNEND_EMAIL }}
           AGENT_AUSBILDER_EMAIL: ${{ vars.AGENT_AUSBILDER_EMAIL }}
           AGENT_ORGANISATION_ID: ${{ vars.AGENT_ORGANISATION_ID }}
@@ -112,7 +145,7 @@ jobs:
         id: lauf
         if: steps.routen.outputs.routen != ''
         env:
-          LIVE_URL: ${{ steps.pr.outputs.url }}
+          LIVE_URL: ${{ steps.vorschau.outputs.url || steps.pr.outputs.url }}
           ROUTEN: ${{ steps.routen.outputs.routen }}
         run: node scripts/pr-crawler/lauf.mjs $ROUTEN
       - uses: actions/upload-artifact@v7
@@ -149,7 +182,7 @@ jobs:
         env:
           PR: ${{ steps.pr.outputs.pr }}
           SHA: ${{ steps.pr.outputs.sha }}
-          URL: ${{ steps.pr.outputs.url }}
+          URL: ${{ steps.vorschau.outputs.url || steps.pr.outputs.url }}
           SKIP: ${{ steps.routen.outputs.grund }}
           MEHR: ${{ steps.routen.outputs.mehr }}
           ARTEFAKT: ${{ steps.artefakt.outputs.artifact-url }}
