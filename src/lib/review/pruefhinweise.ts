@@ -50,6 +50,9 @@ const ABSCHNITTE = ["einstieg", "kern", "beispiel", "merksatz"] as const;
  * Der Elektro-Hinweis kommt einmal je Einheit an `explanation` (fehlt sie: an den letzten Abschnitt), wenn Erklärung oder Abschnitte der Einheit
  * elektrische Eingriffe nennen und weder sie noch die Fragen eine Zuständigkeit nennen (Fragen lösen nichts aus).
  */
+/** Einheiten, die neu geschrieben werden müssen: geänderte Einheiten und Einheiten geänderter Fragen (SIN-885, für `setGenerated` mit Teil). */
+export const geaenderteEinheiten = (b: BereinigungsBericht): string[] => [...new Set([...b.einheiten, ...b.fragen.map((f) => f.split("/")[0])])];
+
 export function bereinigeLernfeld<T>(generated: T): { generated: T; bericht: BereinigungsBericht } {
   const bericht: BereinigungsBericht = { einheiten: [], fragen: [], elektro: [], manuell: [] };
   const lf = structuredClone(generated) as { units?: Einheit[] };
