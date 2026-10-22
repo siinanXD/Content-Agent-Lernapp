@@ -20,6 +20,15 @@ describe("Prüfhinweise und Elektro-Hinweis (SIN-620)", () => {
     assert.deepEqual(geaenderteEinheiten({ einheiten: [], fragen: [], elektro: [], manuell: ["x"] }), []);
   });
 
+  it("Fachsprache „Stichprobe“ und „Abgleich mit dem Werkzeugplan“ ist kein Prüfhinweis (SIN-885)", () => {
+    for (const t of [
+      "Variable Prüfung mit Messwertaufzeichnung je Stichprobe",
+      "Maschine stillsetzen und Stichprobenteile entnehmen",
+      "Das Werkzeug wird ohne Abgleich mit dem Werkzeugplan eingesetzt.",
+    ]) assert.doesNotMatch(t, PRUEFHINWEIS_MUSTER);
+    for (const t of ["Bei der Stichprobe gegenzuprüfen.", "Abgleich mit Stichprobe.", "Quelle: KMK-Rahmenlehrplan.", "Eine menschliche Stichprobe prüft das."]) assert.match(t, PRUEFHINWEIS_MUSTER);
+  });
+
   it("entfernt nur den Hinweissatz", () => {
     const text = "Das Ventil sperrt den Fluss. Die Zahlenwerte sind Fachwerte und bei der Stichprobe gegenzuprüfen. Dann öffnet es.";
     assert.equal(entfernePruefhinweise(text), "Das Ventil sperrt den Fluss. Dann öffnet es.");
@@ -35,7 +44,7 @@ describe("Prüfhinweise und Elektro-Hinweis (SIN-620)", () => {
           explanation: "Magnetventil tauschen: erst spannungsfrei schalten, dann verdrahten. Abgleich mit Stichprobe.",
           questions: [
             { id: "q1", prompt: "Was zuerst?", explanation: "Spannungsfrei. Quelle: KMK-Rahmenlehrplan.", choices: ["a", "b"] },
-            { id: "q2", prompt: "Wer sagt es?", explanation: "Stichprobe!", choices: ["Stichprobe"] },
+            { id: "q2", prompt: "Wer sagt es?", explanation: "Bei der Stichprobe gegenzuprüfen!", choices: ["Abgleich mit der Stichprobe"] },
           ],
         },
       ],

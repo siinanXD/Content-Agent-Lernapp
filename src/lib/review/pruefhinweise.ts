@@ -5,7 +5,8 @@
  * Bereinigungsskript (scripts/sin620-bereinigen.ts) nutzen dieselben Muster.
  */
 
-export const PRUEFHINWEIS_MUSTER = /stichprobe|gegenzuprüfen|abgleich mit|Quelle: KMK/i;
+// SIN-885: nur interne Prüf-Formulierungen. „Stichprobe“ und „Abgleich mit dem …“ sind Fachsprache (Prüftechnik, QS) und kamen 34× als echter Lerntext vor.
+export const PRUEFHINWEIS_MUSTER = /gegenzuprüfen|abgleich mit (?:der |einer )?stichprobe|bei der stichprobe|menschliche[nr]? stichprobe|stichprobe vor (?:dem )?(?:publish|veröffentlich)|Quelle: KMK/i;
 
 export const ELEKTRO_MUSTER = /spannungsfrei|verdrahte|anklemm/i;
 export const ELEKTRO_VORHANDEN = /Elektrofachkr(?:aft|äfte)|elektrotechnisch unterwiesen/i;
