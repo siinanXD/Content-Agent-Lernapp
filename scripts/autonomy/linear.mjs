@@ -491,7 +491,8 @@ export async function fetchComments(issueId, call = linear) {
 
 /** Label am Issue ergänzen (SIN-362: `needs-human`). Das Label muss im Team existieren. */
 export async function addLabel(issue, name, call = linear) {
-  const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { team: { id: { eq: $t } }, name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: issue.team.id, n: name });
+  // Workspace-Labels (ohne Team, z. B. needs-human) zählen mit; sonst blieben pausierte Issues unmarkiert liegen (SIN-818).
+  const found = await call(`query($t: ID!, $n: String!) { issueLabels(filter: { or: [{ team: { id: { eq: $t } } }, { team: { null: true } }], name: { eqIgnoreCase: $n } }) { nodes { id } } }`, { t: issue.team.id, n: name });
   const labelId = found.issueLabels.nodes[0]?.id;
   if (!labelId) throw new Error(`Label „${name}“ im Team nicht gefunden`);
   await call(`mutation($id: String!, $l: String!) { issueAddLabel(id: $id, labelId: $l) { success } }`, { id: issue.id, l: labelId });
