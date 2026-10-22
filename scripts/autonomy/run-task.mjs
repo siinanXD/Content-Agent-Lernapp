@@ -85,6 +85,16 @@ export const TASKS = {
     secrets: need("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"),
     steps: [],
   },
+  // SIN-885: interne Prüfhinweise („Quelle: KMK …“) aus Lerntexten entfernen. Nur Text, versioniert, keine Löschung.
+  // Trockenlauf zeigt den Bericht; Schreiben nur mit Sicherung der letzten MAX_BACKUP_AGE_H Stunden (wie migrate).
+  "content-bereinigen": {
+    label: "Interne Prüfhinweise aus Lerntexten entfernen (nach Sicherung)",
+    secrets: need("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"),
+    env: { COURSE_STORAGE: "supabase" },
+    sicherung: true,
+    steps: [["npm", ["run", "content:bereinigen", "--", "--apply"]]],
+    dryStep: ["npm", ["run", "content:bereinigen"]],
+  },
   // SIN-404: Stichprobe gegen die Live-App (SIN-272/SIN-278). Liest nur die öffentliche Route /api/learner/phase-a, kein Secret nötig.
   "safety-sample": {
     label: "Sicherheits-Stichprobe MAF Metall gegen die Live-App (Quelle und Abrufdatum)",
@@ -446,6 +456,10 @@ export async function runTask(task, /** @type {{ env?: Record<string, string | u
   const base = { task, label: def.label, datum, lauf: env.GITHUB_RUN_ID ? `${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` : "lokal" };
   const miss = missingSecrets(task, env);
   if (miss.length && !dry) return { ...base, ok: null, ergebnis: `Blocker: Secret fehlt (${miss.join(", ")}). Nichts ausgeführt.`, blocker: true };
+
+  if (def.sicherung && !dry && !backupFresh(env.BACKUP_AT, now)) {
+    return { ...base, ok: null, durchgelaufen: false, ergebnis: `Abbruch: keine Sicherung der letzten ${MAX_BACKUP_AGE_H} h (BACKUP_AT leer oder zu alt). Nichts geschrieben.` };
+  }
 
   let result;
   if (task === "cost-report") result = await costReport(env);

@@ -43,7 +43,7 @@ test("ab-alle-modelle: bezahlt, beide Schlüssel nötig, Probelauf kostenlos (SI
 });
 
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {
-  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "ab-alle-modelle", "goldset-indkfl", "cost-report", "lighthouse", "offline-check", "migrate", "safety-sample"]);
+  assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "ab-alle-modelle", "goldset-indkfl", "cost-report", "lighthouse", "offline-check", "migrate", "content-bereinigen", "safety-sample"]);
   await assert.rejects(() => runTask("rm -rf /", { env: {}, now }), /Unbekannte Aufgabe/);
   const yml = readFileSync(".github/workflows/run-task.yml", "utf8");
   for (const id of TASK_IDS) assert.match(yml, new RegExp(`- ${id}\\n`));
@@ -300,4 +300,17 @@ test("SIN-440: lastErrorLine nimmt die letzte Fehlerzeile und maskiert Schlüsse
   // SIN-445: JSON-Bruchstück als Treffer → die folgenden Zeilen mit der Meldung gehören dazu.
   const json = ["Kandidat gpt-6-luna", "OpenAI 400 (gpt-6-luna): {", '  "error": {', '    "message": "Unsupported parameter: max_tokens",', '    "param": "max_tokens"', "  }", "}"].join("\n");
   assert.match(lastErrorLine(json), /"error": \{ "message": "Unsupported parameter: max_tokens"/);
+});
+
+test("SIN-885: content-bereinigen schreibt nur nach frischer Sicherung, Trockenlauf ohne --apply", async () => {
+  assert.deepEqual(TASKS["content-bereinigen"].dryStep, ["npm", ["run", "content:bereinigen"]]);
+  assert.deepEqual(TASKS["content-bereinigen"].steps, [["npm", ["run", "content:bereinigen", "--", "--apply"]]]);
+  const env = { SUPABASE_URL: "u", SUPABASE_SERVICE_ROLE_KEY: "k" };
+  const ohne = await runTask("content-bereinigen", { env, now });
+  assert.equal(ohne.durchgelaufen, false);
+  assert.match(ohne.ergebnis, /keine Sicherung/);
+  const alt = await runTask("content-bereinigen", { env: { ...env, BACKUP_AT: new Date(now.getTime() - 40 * 3600_000).toISOString() }, now });
+  assert.match(alt.ergebnis, /keine Sicherung/);
+  const yml = readFileSync(".github/workflows/run-task.yml", "utf8");
+  assert.match(yml, /inputs\.task == 'content-bereinigen'\) && !inputs\.dry_run/);
 });

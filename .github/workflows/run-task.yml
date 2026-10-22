@@ -26,6 +26,7 @@ on:
           - offline-check
           - safety-sample
           - migrate
+          - content-bereinigen
       kurs:
         description: "Nur für judge-backfill: nur diesen Kurs bewerten (z. B. Industriemechaniker); leer = alle"
         type: string
@@ -70,7 +71,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Sicherung vor Migration (SIN-293)
         id: backup
-        if: ${{ inputs.task == 'migrate' && !inputs.dry_run }}
+        if: ${{ (inputs.task == 'migrate' || inputs.task == 'content-bereinigen') && !inputs.dry_run }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
