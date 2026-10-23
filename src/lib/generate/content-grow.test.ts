@@ -484,6 +484,16 @@ test("SIN-434: Lauf-Bericht nennt verworfen und nicht versucht mit Grund", () =>
   assert.match(text, /Nicht versucht: 5 wegen Kostendeckel; 2 wegen Zeitlimit/);
 });
 
+test("SIN-1040: Stopp-Grund mit Budget/EUR erscheint nicht im PR-Text", () => {
+  const r = {
+    runId: "x", mode: "live", mapId: "maf-metall", moduleId: "ZP", nextModuleId: null, generated: 1, passed: 1,
+    discarded: 0, discardedUnitIds: [], deferred: 0, repair: { ran: false, costEur: 0 },
+    sourceRefresh: { units: 0, replaced: 0, changeKeys: [] }, costEur: 1, capEur: 20, model: "m",
+    stopReason: "Budget 20 EUR erreicht", nichtVersucht: [],
+  } as unknown as RunReport;
+  assert.doesNotMatch(prSummary(r), /Budget|EUR/);
+});
+
 test("SIN-1030: PR-Text ohne Kosten, Linear-Text behält sie", () => {
   const r = {
     runId: "x", mode: "live", mapId: "maf-metall", moduleId: "ZP", nextModuleId: null, generated: 20, passed: 16,
