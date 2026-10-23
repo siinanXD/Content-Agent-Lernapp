@@ -501,7 +501,7 @@ jobs:
             if (!mod) { core.info("beleg-gate.mjs fehlt in der Basis: keine Prüfung."); return; }
             const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: context.payload.pull_request.number });
             const comments = (await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number, per_page: 100 }))
-              .map((c) => ({ user: c.user?.login, body: c.body }));
+              .map((c) => ({ user: c.user?.login, owner: c.author_association === "OWNER", body: c.body }));
             const r = mod.belegGate({ branch: pr.head.ref, headSha: pr.head.sha, comments });
             core.info(r.grund);
             if (r.noetig && !r.ok) core.setOutput("fehlt", r.grund);

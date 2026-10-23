@@ -4,7 +4,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 ## Workflows und github-script
 - `getOctokit` in `actions/github-script@v7` nutzen → ist dort nicht definiert (in #66 behoben, in #72 wieder eingebaut). Richtig: `new github.constructor({ auth: process.env.AGENT_TOKEN })`. (SIN-240)
 - Labels, Pushes, PRs oder Merges mit `github.token` auslösen → startet keine Folge-Workflows. Richtig: `AGENT_WORKFLOW_TOKEN`, auch für Checkout und `GH_TOKEN`. (SIN-240)
-- Den Gate-Hinweis-Kommentar mit dem Agenten-Token schreiben → das Gate erkennt seinen Marker nur am Autor `github-actions[bot]`. Richtig: Kommentar mit dem Standard-Token, Labels und Merge mit dem Agenten-Token. (SIN-240)
+- Den Gate-Hinweis-Kommentar mit dem Agenten-Token schreiben → das Gate erkennt seinen Marker nur am Autor `github-actions[bot]`. Richtig: Kommentar mit dem Standard-Token, Labels und Merge mit dem Agenten-Token. (SIN-240) Ebenso: Gate-Beleg in einem anderen Format gesucht als der Prüfer schreibt (`pruefer-beleg` vom Bot statt `pruefer-stand` vom Repo-Owner) → kein Claude-PR konnte mergen; Leser und Schreiber an einem echten Kommentar testen, Autor über `author_association`. (SIN-1001)
 - `permissions`, neue Secrets, `allowedTools`/`allowed_bots` oder fremde Actions nebenbei erweitern → macht den PR `risk:high` und wartet auf Sinan. Richtig: nur ändern, wenn das Issue es verlangt, sonst bestehende Rechte nutzen. (SIN-252)
 - `pr-gate.yml`, `scripts/autonomy/risk.mjs` oder Branch-Protection im Zuge eines anderen Issues anfassen → `risk:high`. Richtig: eigenes Issue. (SIN-223)
 ## Bot-Starts und Rechte
