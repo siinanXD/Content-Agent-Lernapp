@@ -29,3 +29,16 @@ test("pruefer-anstoss.yml sendet nur den Anstoß: kein checkout von head.sha", (
 test("merge-gate in pr-gate.yml verlangt den Beleg", () => {
   assert.ok(readFileSync(".github/workflows/pr-gate.yml", "utf8").includes("beleg-gate.mjs"));
 });
+
+const leitstand = (sha: string, urteil = "bestanden", owner = true) => ({
+  user: "siinanXD",
+  owner,
+  body: `<!-- pruefer-zweites-modell -->\n### Prüfer (zweites Modell): ${urteil}\nKeine Funde.\n<!-- pruefer-stand:${sha}:${"c".repeat(16)} -->`,
+});
+
+test("Test: Bestandener Leitstand-Prüfer-Kommentar (pruefer-stand, Repo-Owner) für den Head lässt durch.", () => {
+  assert.equal(belegGate({ branch: "claude/x", headSha: HEAD, comments: [leitstand(HEAD)] }).ok, true);
+  assert.equal(belegGate({ branch: "claude/x", headSha: HEAD, comments: [leitstand(HEAD, "nicht bestanden")] }).ok, false);
+  assert.equal(belegGate({ branch: "claude/x", headSha: HEAD, comments: [leitstand("b".repeat(40))] }).ok, false);
+  assert.equal(belegGate({ branch: "claude/x", headSha: HEAD, comments: [leitstand(HEAD, "bestanden", false)] }).ok, false);
+});
