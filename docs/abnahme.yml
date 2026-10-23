@@ -26,6 +26,11 @@ proben:
     art: datei
     pfad: .github/workflows/pruefer-anstoss.yml
     enthaelt: event_type=pruefer-anstoss
+  - id: SIN-1040-pr-text-filter-eur-budget
+    issue: SIN-1040
+    art: datei
+    pfad: src/lib/generate/content-grow.ts
+    enthaelt: EUR|Kosten|Deckel|Budget
   - id: SIN-1030-pr-text-ohne-kosten
     issue: SIN-1030
     art: datei

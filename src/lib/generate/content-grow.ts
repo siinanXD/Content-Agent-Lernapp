@@ -731,7 +731,7 @@ const NICHT_VERSUCHT_TEXT: Record<NichtVersuchtGrund, string> = {
 };
 
 /** Zeilen von linearSummary mit Geld, Deckel oder Preisbezug (SIN-1030: nicht in den öffentlichen PR-Text). */
-const KOSTEN_ZEILE = /€|Kosten|Deckel/i;
+const KOSTEN_ZEILE = /€|EUR|Kosten|Deckel|Budget/i;
 
 /** SIN-1030: PR-Text der Content-Läufe ohne Kosten; die volle Fassung (linearSummary) geht nur an Linear. */
 export function prSummary(r: RunReport): string {
