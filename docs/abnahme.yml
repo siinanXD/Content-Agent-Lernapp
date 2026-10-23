@@ -46,3 +46,8 @@ proben:
     art: datei
     pfad: src/lib/quality/evaluate-agent.ts
     enthaelt: richter_antwort_ungueltig
+  - id: SIN-1048-langfuse-kalendermonat
+    issue: SIN-1048
+    art: datei
+    pfad: scripts/autonomy/status.mjs
+    enthaelt: "/api/public/v2/scores?fromTimestamp="
