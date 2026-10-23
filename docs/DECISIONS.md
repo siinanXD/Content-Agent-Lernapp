@@ -104,6 +104,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-584 | SIN-584: Stillstand `ohne-start` nennt den dispatch-Grund | [SIN-584-ohne-start-dispatch-zuerst.md](decisions/SIN-584-ohne-start-dispatch-zuerst.md) |
 | SIN-569 | SIN-569: Kosten je Kurslauf unter 20 €: Befund, kein neuer Code | [SIN-569-kosten-deckel-befund.md](decisions/SIN-569-kosten-deckel-befund.md) |
 | SIN-566 | SIN-566 — Serie, Tagesziel und Wiederholungs-Erinnerung: Blocker Design | [SIN-566-erinnerung-blocker.md](decisions/SIN-566-erinnerung-blocker.md) |
+| SIN-564 | SIN-564: Generator-Regeln für reihenfolge und rechnen, weniger Verwerfungen in M0 und PA | [SIN-564-reihenfolge-rechnen-regeln.md](decisions/SIN-564-reihenfolge-rechnen-regeln.md) |
 | SIN-563 | SIN-563: Kosten pro Kurslauf unter dem Deckel belegen | [SIN-563-kosten-deckel-beleg.md](decisions/SIN-563-kosten-deckel-beleg.md) |
 | SIN-558 | SIN-558 — Kosten je bestandener Einheit ausweisen und senken | [SIN-558-kosten-je-bestandener-einheit.md](decisions/SIN-558-kosten-je-bestandener-einheit.md) |
 | SIN-557 | SIN-557: Live-Check UI-04 wartet auf Hydration | [SIN-557-live-ui04-hydration.md](decisions/SIN-557-live-ui04-hydration.md) |

@@ -9,6 +9,9 @@
  *
  * SIN-475: `--niveau` vergleicht stattdessen PROMPT_NIVEAU_REGELN=aus (Stand SIN-432/433) mit den Niveau-Regeln
  * für auswahl, nur LF1 und LF2, und meldet zusätzlich die auswahl-Quote je Modul (Ausgabe: docs/ops/sin475-runs/).
+ *
+ * SIN-564: `--reihenfolge` vergleicht PROMPT_REIHENFOLGE_REGELN=aus (Stand SIN-475) mit den Regeln für reihenfolge und
+ * rechnen, nur M0 und PA, 12 Einheiten je Modul (Ausgabe: docs/ops/sin564-runs/).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -26,10 +29,11 @@ import { addOpenAIUsage, claudeBatchUsd, emptyLedger } from "../src/lib/quality/
 import { JUDGE_MODEL, liveJudgeWithUsage, type EvalItem } from "../src/lib/quality/evaluate-agent";
 
 const NIVEAU = process.argv.includes("--niveau");
-const OUT_DIR = join(process.cwd(), "docs", "ops", NIVEAU ? "sin475-runs" : "sin432-runs");
+const FOLGE = process.argv.includes("--reihenfolge");
+const OUT_DIR = join(process.cwd(), "docs", "ops", FOLGE ? "sin564-runs" : NIVEAU ? "sin475-runs" : "sin432-runs");
 const KEYWORD = "Maschinen- und Anlagenführer";
-const MODULES = NIVEAU ? ["LF1", "LF2"] : ["LF1", "LF2", "M0", "PA"];
-const UNITS_PER_MODULE = NIVEAU ? 12 : 6;
+const MODULES = FOLGE ? ["M0", "PA"] : NIVEAU ? ["LF1", "LF2"] : ["LF1", "LF2", "M0", "PA"];
+const UNITS_PER_MODULE = FOLGE || NIVEAU ? 12 : 6;
 const BUDGET_USD = 3.2;
 const TYPES = ["auswahl", "reihenfolge", "rechnen", "zuordnen", "lueckentext"] as const;
 
@@ -54,7 +58,10 @@ function targets(): BatchChunkTarget[] {
 async function lauf(label: "vorher" | "nachher", key: string) {
   delete process.env.PROMPT_AUSWAHL_REGELN;
   delete process.env.PROMPT_NIVEAU_REGELN;
-  if (label === "vorher") process.env[NIVEAU ? "PROMPT_NIVEAU_REGELN" : "PROMPT_AUSWAHL_REGELN"] = "aus";
+  delete process.env.PROMPT_REIHENFOLGE_REGELN;
+  if (label === "vorher") {
+    process.env[FOLGE ? "PROMPT_REIHENFOLGE_REGELN" : NIVEAU ? "PROMPT_NIVEAU_REGELN" : "PROMPT_AUSWAHL_REGELN"] = "aus";
+  }
   const system = [{ type: "text" as const, text: generatorSystemText(), cache_control: { type: "ephemeral" as const } }];
   const sub = await submitChunkTargets({ keyword: KEYWORD, targets: targets(), model: GENERATOR_MODEL, system });
   await pollBatchUntilDone(sub.batchId, { intervalMs: 20_000 });

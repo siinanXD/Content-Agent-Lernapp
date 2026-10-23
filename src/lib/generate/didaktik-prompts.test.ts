@@ -109,6 +109,17 @@ describe("didaktik prompts (AP-18e)", () => {
     }
   });
 
+  it("SIN-564: reihenfolge/rechnen-Regeln stehen im Prompt und entfallen bei PROMPT_REIHENFOLGE_REGELN=aus", () => {
+    assert.match(generatorSystemText(), /Schärfere Regeln für reihenfolge und rechnen/);
+    process.env.PROMPT_REIHENFOLGE_REGELN = "aus";
+    try {
+      assert.doesNotMatch(generatorSystemText(), /Schärfere Regeln für reihenfolge/);
+      assert.match(generatorSystemText(), /Niveau bei auswahl/);
+    } finally {
+      delete process.env.PROMPT_REIHENFOLGE_REGELN;
+    }
+  });
+
   it("SIN-432: PROMPT_AUSWAHL_REGELN=aus liefert den alten Prompt", () => {
     process.env.PROMPT_AUSWAHL_REGELN = "aus";
     try {

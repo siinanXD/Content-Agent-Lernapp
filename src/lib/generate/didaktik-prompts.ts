@@ -68,6 +68,15 @@ export const AUSWAHL_NIVEAU_REGELN = `Niveau bei auswahl (Zwischenprüfung Jahr 
 - Die Distraktoren sind in der Situation plausible Entscheidungen, die nach der Quelle an einer genannten Angabe scheitern. Eine zu leichte Frage (zwei Antworten offensichtlich absurd) wird verworfen.
 - Der Quellenbezug bleibt Pflicht: Was die Frage voraussetzt, steht in der zitierten Quelle; Werte, Maße und Verfahren nicht erfinden.`;
 
+/**
+ * SIN-564: Schärfere Regeln für reihenfolge und rechnen (Verwerfungen in M0 und PA, Ursachen aus SIN-432/433:
+ * vertauschbare Schritte, Schritte ohne Quelle, Rechenaufgaben ohne Situation oder mit nur einem Schritt).
+ * Ergänzt AUSWAHL_REGELN und RECHNEN_ZUORDNEN_LUECKE_REGELN, ersetzt sie nicht.
+ */
+export const REIHENFOLGE_RECHNEN_REGELN = `Schärfere Regeln für reihenfolge und rechnen (der Richter verwirft sonst):
+- reihenfolge: Nur Abläufe, bei denen die Quelle die Folge ausdrücklich nennt (Arbeitsschritte, Inbetriebnahme, Prüfung, Sicherungsmaßnahmen). Jeder Schritt steht so in der Quelle; keine Schritte ergänzen oder zusammenfassen. Jeder Schritt hängt fachlich vom vorigen ab (Ergebnis oder Zustand des vorigen wird gebraucht), sonst weglassen. Prompt nennt Anlass und Ziel des Ablaufs ("Bringen Sie die Schritte beim ... in die richtige Reihenfolge"). Keine Auflistung von Eigenschaften, Werkzeugen, Gefahren oder Kategorien als "Reihenfolge". steps stehen in richtiger Folge; correct bleibt diese Folge, keine Nummern, keine Wiederholung eines Schritts.
+- rechnen: Nur Aufgaben, deren Formel und Größen in der zitierten Quelle stehen. Alle Werte, die zur Lösung nötig sind, stehen in der Aufgabe, keine Annahmen oder Tabellenwerte von außen. Mindestens zwei Rechenschritte oder eine Umstellung; Zwischenergebnisse und Rundung stehen in sampleSolution. correct enthält genau ein Ergebnis mit Einheit, keine Bereiche. Rechne die Aufgabe vor der Ausgabe selbst nach; stimmt das Ergebnis nicht, ändere die Zahlen.`;
+
 /** Modulspezifische Schwerpunkte für das Niveau (nur Frageform, keine neuen Fakten; Fakten kommen aus der Quelle). */
 const MODUL_NIVEAU_HINWEISE: Record<string, string> = {
   LF1: "Niveau-Hinweis LF1 (handgeführte Werkzeuge): Situation am Werkstück (Zeichnung lesen, Werkstoff und Halbzeug wählen, von Hand trennen, umformen oder prüfen) mit einer konkreten Angabe (Werkstoff, Maß, Werkzeug). Gefragt wird, welches Vorgehen, Werkzeug oder Prüfmittel nach der Quelle passt oder warum etwas misslingt, nie die bloße Benennung eines Werkzeugs, Werkstoffs oder Zeichnungselements.",
@@ -89,7 +98,8 @@ export function modulNiveauHinweis(moduleId: string): string {
 function auswahlRegelnBlock(): string {
   if (process.env.PROMPT_AUSWAHL_REGELN === "aus") return "";
   const niveau = niveauRegelnAus() ? "" : `${AUSWAHL_NIVEAU_REGELN}\n`;
-  return `\n${AUSWAHL_REGELN}\n${niveau}${RECHNEN_ZUORDNEN_LUECKE_REGELN}`;
+  const folge = process.env.PROMPT_REIHENFOLGE_REGELN === "aus" ? "" : `\n${REIHENFOLGE_RECHNEN_REGELN}`;
+  return `\n${AUSWAHL_REGELN}\n${niveau}${RECHNEN_ZUORDNEN_LUECKE_REGELN}${folge}`;
 }
 
 /** SIN-473: feste Form je Fragetyp (Quelle: question-schema.ts). Ungültige Fragen werden einmal repariert, dann verworfen. */
