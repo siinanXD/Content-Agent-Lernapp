@@ -11,6 +11,11 @@ proben:
     art: datei
     pfad: .github/workflows/pruefer-anstoss.yml
     enthaelt: repos/siinanXD/Leitstand/dispatches
+  - id: SIN-1008-planungsbild-im-pr-kommentar
+    issue: SIN-1008
+    art: datei
+    pfad: scripts/pr-crawler/soll.mjs
+    enthaelt: attachments
   - id: SIN-608-leerzustand-lernweg
     issue: SIN-608
     art: datei

@@ -3,7 +3,7 @@
  * PR-Crawler, Schritt 3 (SIN-906): der Beleg als PR-Kommentar mit Marker `<!-- pr-crawler -->`, bei neuem Lauf aktualisiert.
  *
  *   node scripts/pr-crawler/kommentar.mjs --pr 123 --sha abc --url <vorschau> --lauf <run-url> [--ergebnis DIR] [--artefakt URL]
- *        [--bilder-basis URL] [--skip "Grund"] [--mehr N]
+ *        [--bilder-basis URL] [--skip "Grund"] [--mehr N] [--soll '{"bild":URL,"frame":ID}'] (Planungsbild, soll.mjs; SIN-1008)
  *
  * Braucht GH_TOKEN, GITHUB_REPOSITORY. Vorschaubilder stehen unter `--bilder-basis` (raw-Adresse); fehlt sie, gibt es nur den Artefakt-Link.
  */
@@ -15,9 +15,9 @@ export const MARKER = "<!-- pr-crawler -->";
 
 /**
  * Kommentartext: Übersprungen mit Grund, oder je Route Bilder, Funde und Video.
- * @param {{ ergebnis?: any, skip?: string, mehr?: number, url?: string, lauf?: string, artefakt?: string, bilderBasis?: string, sha?: string }} a
+ * @param {{ ergebnis?: any, skip?: string, mehr?: number, url?: string, lauf?: string, artefakt?: string, bilderBasis?: string, sha?: string, soll?: { bild?: string, frame?: string } }} a
  */
-export function baueKommentar({ ergebnis = null, skip = "", mehr = 0, url = "", lauf = "", artefakt = "", bilderBasis = "", sha = "" }) {
+export function baueKommentar({ ergebnis = null, skip = "", mehr = 0, url = "", lauf = "", artefakt = "", bilderBasis = "", sha = "", soll = {} }) {
   const kopf = [MARKER, "## PR-Crawler"];
   const fuss = `<sub>${url ? `Vorschau ${url}` : "Vorschau"}${sha ? `, Stand ${sha.slice(0, 7)}` : ""}${lauf ? `, [Lauf](${lauf})` : ""}. Nur die geänderten Seiten; der nächtliche Vollcrawl bleibt.</sub>`;
   if (skip || !ergebnis) return [...kopf, "", `Übersprungen: ${skip || "kein Ergebnis."}`, "", fuss].join("\n");
@@ -29,12 +29,17 @@ export function baueKommentar({ ergebnis = null, skip = "", mehr = 0, url = "", 
     ergebnis.rot ? `**Rot:** ${ergebnis.rot} Fund(e) auf ${ergebnis.routen.length} Seite(n).` : `**Grün:** ${ergebnis.routen.length} Seite(n) geprüft, nichts gefunden.`,
     "",
   ];
+  // Soll (Figma-Planung des Issues) steht in der ersten Route neben dem Ist; ohne Planungsbild fehlt die Zeile ganz.
+  let sollOffen = Boolean(soll.bild);
   for (const route of ergebnis.routen) {
     zeilen.push(`### \`${route}\``);
     const bilder = (ergebnis.bilder ?? []).filter((b) => b.route === route);
     const rolle = bilder.find((b) => b.eingeloggt)?.eingeloggt;
     if (rolle) zeilen.push(`Eingeloggt geprüft als Testkonto „${rolle}“ (Sitzung greift, keine Weiterleitung auf /anmelden).`);
-    if (bilderBasis && bilder.length) zeilen.push(bilder.map((b) => `<img src="${bilderBasis}/${b.bild}" alt="${route} (${b.viewport})" width="${b.viewport === "handy" ? 200 : 420}">`).join(" "));
+    const sollBild = sollOffen ? `<img src="${soll.bild}" alt="Soll: Planungsbild" width="200">` : "";
+    if (sollOffen) zeilen.push(`Soll (Figma-Planung${soll.frame ? `, Frame ${soll.frame}` : ""}) links, Ist (Vorschau) rechts: [Planungsbild](${soll.bild})`);
+    sollOffen = false;
+    if (bilderBasis && bilder.length) zeilen.push([sollBild, ...bilder.map((b) => `<img src="${bilderBasis}/${b.bild}" alt="${route} (${b.viewport})" width="${b.viewport === "handy" ? 200 : 420}">`)].filter(Boolean).join(" "));
     else if (bilder.length) zeilen.push(`Bilder (${bilder.map((b) => b.viewport).join(", ")}) im Artefakt.`);
     for (const f of rot.filter((x) => x.route === route)) zeilen.push(`- ${f.kategorie} (${f.viewport ?? "-"}): ${f.text}`);
     zeilen.push("");
@@ -75,7 +80,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   } catch {
     /* kein Ergebnis: Kommentar sagt es */
   }
-  const text = baueKommentar({ ergebnis, skip: arg("--skip"), mehr: Number(arg("--mehr", "0")), url: arg("--url"), lauf: arg("--lauf"), artefakt: arg("--artefakt"), bilderBasis: arg("--bilder-basis"), sha: arg("--sha") });
+  let soll = {};
+  try {
+    soll = JSON.parse(arg("--soll") || "{}");
+  } catch {
+    /* kein Planungsbild: kein Platzhalter */
+  }
+  const text = baueKommentar({ soll, ergebnis, skip: arg("--skip"), mehr: Number(arg("--mehr", "0")), url: arg("--url"), lauf: arg("--lauf"), artefakt: arg("--artefakt"), bilderBasis: arg("--bilder-basis"), sha: arg("--sha") });
   schreibe(arg("--pr"), text).then(
     (r) => console.log(`PR-Crawler: Kommentar ${r}`),
     (e) => (console.log(`::warning::PR-Crawler: Kommentar nicht geschrieben (${e.message})`), process.exit(0)),

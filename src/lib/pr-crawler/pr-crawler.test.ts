@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { MARKER, baueKommentar } from "../../../scripts/pr-crawler/kommentar.mjs";
+import { issueKennung, sollAusIssue } from "../../../scripts/pr-crawler/soll.mjs";
 import { MAX_ROUTEN, betroffeneRouten, importe, loese } from "../../../scripts/pr-crawler/routen.mjs";
 
 const routen = ["/", "/lernpfad", "/profil", "/einheit/unit-03", "/impressum"];
@@ -117,6 +118,39 @@ test("Kommentar: Seite hinter dem Login zeigt Bild und die Rolle des Testkontos"
   assert.match(t, /Eingeloggt geprüft als Testkonto „Lernende“/);
   assert.equal(t.match(/Eingeloggt geprüft/g)?.length, 1);
   assert.match(t, /<img src="https:\/\/raw\/x\/lernpfad-handy\.png"/);
+});
+
+const istErgebnis = {
+  routen: ["/lernpfad"],
+  bilder: [{ route: "/lernpfad", viewport: "handy", bild: "lernpfad-handy.png" }],
+  funde: [],
+  video: null,
+  rot: 0,
+  grund: "",
+};
+
+test("SIN-1008: Kommentar enthält Soll- und Ist-Bild, wenn beide vorhanden sind", () => {
+  const t = baueKommentar({ ergebnis: istErgebnis, bilderBasis: "https://raw/x", soll: { bild: "https://uploads.linear.app/a/soll.png", frame: "12:34" } });
+  assert.match(t, /<img src="https:\/\/uploads\.linear\.app\/a\/soll\.png" alt="Soll/);
+  assert.match(t, /<img src="https:\/\/raw\/x\/lernpfad-handy\.png"/);
+  assert.match(t, /Frame 12:34/);
+  assert.equal(t.match(/alt="Soll/g)?.length, 1);
+});
+
+test("SIN-1008: ohne Planungsbild kein Soll und kein Platzhalter", () => {
+  for (const soll of [undefined, {}]) {
+    const t = baueKommentar({ ergebnis: istErgebnis, bilderBasis: "https://raw/x", soll });
+    assert.doesNotMatch(t, /Soll|Planungsbild/);
+  }
+});
+
+test("SIN-1008: Planungsbild aus Anhang oder Beschreibung, Frame-ID, Kennung aus PR-Titel", () => {
+  assert.deepEqual(sollAusIssue({ attachments: { nodes: [{ url: "https://www.figma.com/file/x" }, { url: "https://uploads.linear.app/a/b.png", title: "Frame 5:6" }] } }), { bild: "https://uploads.linear.app/a/b.png", frame: "5:6" });
+  assert.deepEqual(sollAusIssue({ description: "Frame-ID: 7-8\n![Soll](https://x.test/plan.png)" }), { bild: "https://x.test/plan.png", frame: "7:8" });
+  assert.deepEqual(sollAusIssue({ description: "nur Text", attachments: { nodes: [] } }), {});
+  assert.equal(issueKennung("feat(x): Y (SIN-12)", ""), "SIN-12");
+  assert.equal(issueKennung("ohne", "Part of SIN-99"), "SIN-99");
+  assert.equal(issueKennung("ohne", ""), null);
 });
 
 test("Kommentar: Übersprungen nennt den Grund", () => {
