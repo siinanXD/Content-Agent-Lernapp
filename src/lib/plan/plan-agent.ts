@@ -1,5 +1,6 @@
 import { anthropicHeaders } from "@/lib/anthropic/headers";
 import { loadMafCurriculum } from "@/lib/content/curriculum";
+import { outputConfig } from "@/lib/generate/api-schema";
 import {
   mafSeedPlanVariants,
   planMeetsAcceptance,
@@ -14,6 +15,35 @@ export type PlanAgentResult = {
 };
 
 const GENERATOR_MODEL = "claude-sonnet-5-5";
+
+const str = { type: "string" } as const;
+const num = { type: "number" } as const;
+const planUnit = {
+  type: "object",
+  properties: { id: str, title: str, minutes: num, sourceKind: str, moduleId: str, blockId: str, niveau: str },
+  required: ["id", "title", "minutes", "sourceKind", "moduleId", "blockId", "niveau"],
+  additionalProperties: false,
+};
+const planDay = {
+  type: "object",
+  properties: { day: num, targetMinutes: num, units: { type: "array", items: planUnit } },
+  required: ["day", "targetMinutes", "units"],
+  additionalProperties: false,
+};
+const planVariant = {
+  type: "object",
+  properties: { name: str, durationDays: num, hoursPerDay: num, days: { type: "array", items: planDay } },
+  required: ["name", "durationDays", "hoursPerDay", "days"],
+  additionalProperties: false,
+};
+
+/** Antwortschema des Plan-Agenten (SIN-1036): `{ variants: [...] }`. */
+export const PLAN_API_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  properties: { variants: { type: "array", items: planVariant } },
+  required: ["variants"],
+  additionalProperties: false,
+};
 
 /**
  * Build day plans for 2 learning variants (5–10 min units, ~2–3 h/day).
@@ -81,10 +111,10 @@ ${moduleOutline}
 Genau 2 Varianten: (1) Prüfungsvorbereitung 2 Monate / ~40 Tage / 2.5 h/Tag, (2) Weiterbildung 3 Monate / ~60 Tage / 2 h/Tag.
 Einheiten 5–10 Minuten. Keine Personendaten, keine IHK-Originalprüfungen.
 Jede Einheit MUSS moduleId, blockId, sourceKind (ausbildungsordnung|rahmenlehrplan|pruefung|berufsinformation|empfehlung) und niveau tragen.
-Schema: [{"name":string,"durationDays":number,"hoursPerDay":number,"days":[{"day":number,"targetMinutes":number,"units":[{"id":string,"title":string,"minutes":number,"sourceKind":string,"moduleId":string,"blockId":string,"niveau":string}]}]}]
-Antworte nur mit dem JSON-Array.`,
+Antwortformat ist per Schema festgelegt.`,
         },
       ],
+      output_config: outputConfig(PLAN_API_SCHEMA),
     }),
   });
 
@@ -107,11 +137,10 @@ Antworte nur mit dem JSON-Array.`,
   return { variants, mode: "live", modelId: GENERATOR_MODEL };
 }
 
-function parseVariantsJson(text: string): PlanVariant[] {
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) return [];
+/** Antwort laut `PLAN_API_SCHEMA` (`{ variants }`); kein Regex, Verstoß = leere Liste und Warnung beim Aufrufer. */
+export function parseVariantsJson(text: string): PlanVariant[] {
   try {
-    const arr = JSON.parse(match[0]) as PlanVariant[];
+    const arr = (JSON.parse(text) as { variants?: PlanVariant[] }).variants;
     if (!Array.isArray(arr)) return [];
     return arr.filter((v) => v?.name && Array.isArray(v.days));
   } catch {

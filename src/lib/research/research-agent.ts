@@ -1,4 +1,5 @@
 import { anthropicHeaders } from "@/lib/anthropic/headers";
+import { outputConfig } from "@/lib/generate/api-schema";
 import {
   mafSeedSources,
   seedCoversAcceptance,
@@ -85,7 +86,7 @@ async function runLiveResearch(
 2) Rahmenlehrplan (KMK PDF),
 3) Prüfungsanforderungen als Struktur aus der Verordnung (§ Zwischen-/Abschlussprüfung) — KEINE IHK-Originalprüfungsaufgaben und keine Personendaten.
 
-Nutze web_search und web_fetch. Antworte am Ende als JSON-Array von Objekten {title,url,kind} mit kind in ausbildungsordnung|rahmenlehrplan|pruefung|berufsinformation|other. Mindestens je eine Quelle für ausbildungsordnung, rahmenlehrplan und pruefung.`,
+Nutze web_search und web_fetch. Am Ende nennst du die Quellen mit title, url und kind (ausbildungsordnung|rahmenlehrplan|pruefung|berufsinformation|other). Mindestens je eine Quelle für ausbildungsordnung, rahmenlehrplan und pruefung.`,
     },
   ];
 
@@ -148,6 +149,35 @@ Nutze web_search und web_fetch. Antworte am Ende als JSON-Array von Objekten {ti
     });
   }
 
+  // SIN-1036: web_fetch mit citations verträgt kein output_config; darum ein letzter Aufruf ohne Tools
+  // formt die gefundenen Quellen ins Schema (`SOURCES_API_SCHEMA`).
+  messages.push({
+    role: "user",
+    content: "Gib jetzt die gefundenen amtlichen Quellen im vorgegebenen JSON-Format aus.",
+  });
+  const finalRes = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: anthropicHeaders({ apiKey: key }),
+    body: JSON.stringify({
+      model: GENERATOR_MODEL,
+      max_tokens: 4096,
+      messages: messages
+        .map((m) => ({ role: m.role, content: flattenText(m.content) }))
+        .filter((m) => m.content),
+      output_config: outputConfig(SOURCES_API_SCHEMA),
+    }),
+  });
+  if (!finalRes.ok) {
+    return {
+      sources: [],
+      mode: "live",
+      modelId: GENERATOR_MODEL,
+      warning: `Claude API ${finalRes.status}: ${(await finalRes.text()).slice(0, 200)}`,
+    };
+  }
+  const finalData = (await finalRes.json()) as { content?: AnthropicContentBlock[] };
+  lastText = flattenText(finalData.content ?? []);
+
   const sources = parseSourcesJson(lastText);
   if (sources.length === 0) {
     return {
@@ -171,15 +201,48 @@ function mergeWithSeedIfNeeded(sources: ResearchSource[], keyword: string): Rese
   return [...sources, ...extras];
 }
 
-function parseSourcesJson(text: string): ResearchSource[] {
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) return [];
+/** Nur Text-Blöcke, ohne Tool-Blöcke (die letzte Anfrage läuft ohne Tools). */
+function flattenText(content: string | AnthropicContentBlock[]): string {
+  if (typeof content === "string") return content;
+  return content
+    .filter((b): b is { type: "text"; text: string } => b.type === "text" && typeof b.text === "string")
+    .map((b) => b.text)
+    .join("\n");
+}
+
+const str = { type: "string" } as const;
+
+/** Antwortschema des Research-Agenten (SIN-1036): `{ sources: [{title,url,kind}] }`. */
+export const SOURCES_API_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    sources: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: str,
+          url: str,
+          kind: { enum: ["ausbildungsordnung", "rahmenlehrplan", "pruefung", "berufsinformation", "other"] },
+        },
+        required: ["title", "url", "kind"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["sources"],
+  additionalProperties: false,
+};
+
+/** Antwort laut `SOURCES_API_SCHEMA`; kein Regex, Verstoß = leere Liste (der Aufrufer meldet die Warnung). */
+export function parseSourcesJson(text: string): ResearchSource[] {
   try {
-    const arr = JSON.parse(match[0]) as Array<{
-      title?: string;
-      url?: string;
-      kind?: ResearchSource["kind"];
-    }>;
+    const arr = (
+      JSON.parse(text) as {
+        sources?: Array<{ title?: string; url?: string; kind?: ResearchSource["kind"] }>;
+      }
+    ).sources;
+    if (!Array.isArray(arr)) return [];
     const now = new Date().toISOString();
     return arr
       .filter((x) => x.title && x.url?.startsWith("http"))

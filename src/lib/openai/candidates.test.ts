@@ -17,14 +17,14 @@ describe("OpenAI-Anfrage (SIN-437)", () => {
     assert.deepEqual(OPENAI_CANDIDATES.map((c) => c.id), ["gpt-6-luna", "gpt-6.1-sol", "chat-latest"]);
   });
 
-  it("Body mit Schema: json_schema, nicht strikt, System und Nutzer getrennt", () => {
+  it("Body mit Schema: json_schema, strict, System und Nutzer getrennt", () => {
     const body = buildOpenAIBody({ model: "gpt-6-luna", system: "S", user: "U", schema: { name: "units", schema: UNITS_JSON_SCHEMA } }) as {
       response_format: { type: string; json_schema: { name: string; strict: boolean } };
       messages: Array<{ role: string; content: string }>;
       max_completion_tokens: number;
     };
     assert.equal(body.response_format.type, "json_schema");
-    assert.equal(body.response_format.json_schema.strict, false);
+    assert.equal(body.response_format.json_schema.strict, true);
     assert.deepEqual(body.messages.map((m) => m.role), ["system", "user"]);
     assert.ok(body.max_completion_tokens > 0);
     assert.equal((buildOpenAIBody({ model: "m", system: "", user: "", schema: null }) as { response_format: { type: string } }).response_format.type, "json_object");
@@ -59,14 +59,35 @@ describe("OpenAI-Anfrage (SIN-437)", () => {
     );
   });
 
-  it("400 mit Schema: einmal mit JSON-Modus wiederholen", async () => {
-    const formats: string[] = [];
-    const r = await openaiGenerate("k", { model: "chat-latest", system: "", user: "", schema: { name: "units", schema: UNITS_JSON_SCHEMA } }, async (_u, init) => {
-      formats.push(JSON.parse(String(init?.body)).response_format.type);
-      return formats.length === 1 ? new Response("schema abgelehnt", { status: 400 }) : ok("{}");
-    });
-    assert.deepEqual(formats, ["json_schema", "json_object"]);
-    assert.equal(r.text, "{}");
+  it("400 mit Schema (SIN-1036): Fehler, keine Wiederholung ohne Schema", async () => {
+    let calls = 0;
+    await assert.rejects(
+      () =>
+        openaiGenerate("k", { model: "chat-latest", system: "", user: "", schema: { name: "units", schema: UNITS_JSON_SCHEMA } }, async () => {
+          calls += 1;
+          return new Response("schema abgelehnt", { status: 400 });
+        }),
+      /OpenAI 400/,
+    );
+    assert.equal(calls, 1);
+  });
+
+  it("strict-Schema: alle Felder required, additionalProperties false; Nullwerte fallen aus der Antwort", async () => {
+    const strictOk = (n: unknown): void => {
+      if (Array.isArray(n)) return n.forEach(strictOk);
+      if (typeof n !== "object" || n === null) return;
+      const o = n as { properties?: object; required?: string[]; additionalProperties?: boolean };
+      if (o.properties) {
+        assert.equal(o.additionalProperties, false);
+        assert.deepEqual([...(o.required ?? [])].sort(), Object.keys(o.properties).sort());
+      }
+      Object.values(n).forEach(strictOk);
+    };
+    strictOk(UNITS_JSON_SCHEMA);
+    const r = await openaiGenerate("k", { model: "m", system: "", user: "", schema: { name: "units", schema: UNITS_JSON_SCHEMA } }, async () =>
+      ok('{"units":[{"id":"a","image":null}]}'),
+    );
+    assert.equal(r.text, '{"units":[{"id":"a"}]}');
   });
 
   it("400 ohne Schema: Fehler, keine Wiederholung", async () => {
