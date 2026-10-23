@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { judgeUserContent, type EvalItem } from "./evaluate-agent";
 import { countReasons, createSourceTextLoader, decodeBody, detectCharset, excerptFor, htmlToText, queryTerms, withSourceExcerpts } from "./source-excerpt";
@@ -45,7 +48,7 @@ test("SIN-456: Lader holt jede URL einmal, PDF und Fehler ergeben null", async (
     return new Response(P14, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
   }) as unknown as typeof fetch;
   const logs: string[] = [];
-  const load = createSourceTextLoader(fake, (m) => logs.push(m));
+  const load = createSourceTextLoader(fake, { log: (m) => logs.push(m), cacheDir: null });
   const a = await load("https://www.gesetze-im-internet.de/indkflausbv/__14.html");
   await load("https://www.gesetze-im-internet.de/indkflausbv/__14.html");
   assert.match(a.text!, /25 Prozent/);
@@ -65,7 +68,7 @@ test("SIN-586: Lader sendet User-Agent und wiederholt bei 503 einmal", async () 
     if (calls === 1) return new Response("", { status: 503 });
     return new Response(P14, { status: 200, headers: { "content-type": "text/html" } });
   }) as unknown as typeof fetch;
-  const r = await createSourceTextLoader(fake, () => undefined)("https://www.gesetze-im-internet.de/x.html");
+  const r = await createSourceTextLoader(fake, { log: () => undefined, cacheDir: null, sleep: async () => undefined })("https://www.gesetze-im-internet.de/x.html");
   assert.match(r.text!, /25 Prozent/);
   assert.deepEqual(agents, ["content-agent-lernapp source-monitor", "content-agent-lernapp source-monitor"]);
   calls = 0;
@@ -73,8 +76,8 @@ test("SIN-586: Lader sendet User-Agent und wiederholt bei 503 einmal", async () 
     calls += 1;
     return new Response("", { status: 503 });
   }) as unknown as typeof fetch;
-  assert.deepEqual(await createSourceTextLoader(down, () => undefined)("https://x.de/a"), { text: null, reason: "HTTP 503" });
-  assert.equal(calls, 2);
+  assert.deepEqual(await createSourceTextLoader(down, { log: () => undefined, cacheDir: null, sleep: async () => undefined })("https://x.de/a"), { text: null, reason: "HTTP 503" });
+  assert.equal(calls, 3);
   assert.equal(countReasons(["HTTP 403", "PDF", "HTTP 403"]), "2 × HTTP 403, 1 × PDF");
 });
 
@@ -87,4 +90,38 @@ test("SIN-456: Auszug geht an den Richter, abschaltbar über JUDGE_QUELLENAUSZUG
   assert.doesNotMatch(judgeUserContent([item]), /sourceExcerpt/);
   const [off] = await withSourceExcerpts([item], load, { JUDGE_QUELLENAUSZUG: "0" });
   assert.equal(off!.sourceExcerpt, undefined);
+});
+
+test("SIN-863: erster Abruf scheitert (Connect-Timeout), zweiter klappt", async () => {
+  let calls = 0;
+  const fake = (async () => {
+    calls += 1;
+    if (calls === 1) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
+    return new Response(P14, { status: 200, headers: { "content-type": "text/html" } });
+  }) as unknown as typeof fetch;
+  const r = await createSourceTextLoader(fake, { log: () => undefined, cacheDir: null, sleep: async () => undefined })("https://www.gesetze-im-internet.de/x.html");
+  assert.match(r.text!, /25 Prozent/);
+  assert.equal(r.stale, undefined);
+  assert.equal(calls, 2);
+});
+
+test("SIN-863: alle Abrufe scheitern → Zwischenspeicher mit altem Abrufdatum, im Bericht markiert", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "quellen-"));
+  const url = "https://www.gesetze-im-internet.de/indkflausbv/__14.html";
+  const ok = (async () => new Response(P14, { status: 200, headers: { "content-type": "text/html" } })) as unknown as typeof fetch;
+  const opts = { log: () => undefined, cacheDir: dir, sleep: async () => undefined };
+  await createSourceTextLoader(ok, { ...opts, now: () => new Date("2026-10-01T10:00:00Z") })(url);
+  const down = (async () => {
+    throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
+  }) as unknown as typeof fetch;
+  const load = createSourceTextLoader(down, opts);
+  const r = await load(url);
+  assert.match(r.text!, /25 Prozent/);
+  assert.equal(r.stale, "2026-10-01");
+  const stale: string[] = [];
+  const item: EvalItem = { id: "ik-x01", unitId: "ik-vo", prompt: "Mit wie viel Prozent geht Teil 1 ein?", correct: "25 Prozent", explanation: "§ 14", sourceUrl: url };
+  const [withEx] = await withSourceExcerpts([item], load, {}, undefined, (d) => stale.push(d));
+  assert.match(withEx!.sourceExcerpt!, /25 Prozent/);
+  assert.deepEqual(stale, ["2026-10-01"]);
+  assert.deepEqual(await createSourceTextLoader(down, { ...opts, cacheDir: join(dir, "leer") })("https://x.de/a"), { text: null, reason: "Netzfehler UND_ERR_CONNECT_TIMEOUT" });
 });
