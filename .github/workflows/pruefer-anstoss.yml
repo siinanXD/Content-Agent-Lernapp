@@ -30,5 +30,5 @@ jobs:
             echo "::error::Secret AGENT_WORKFLOW_TOKEN fehlt: Anstoß an den Leitstand nicht möglich."
             exit 1
           fi
-          gh api repos/siinanXD/Leitstand/dispatches -f event_type=pruefer \
+          gh api repos/siinanXD/Leitstand/dispatches -f event_type=pruefer-anstoss \
             -f "client_payload[repo]=$REPO" -F "client_payload[pr]=$PR_NUMBER"
