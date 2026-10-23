@@ -542,7 +542,8 @@ async function main(argv) {
     }
     console.log(line);
     const ziel = argv[zeile + 1];
-    if (ziel && !ziel.startsWith("--")) appendFileSync(ziel, `${line}\n`);
+    // SIN-1030: Kosten nie in die PR-Fassung, sondern in die -intern-Datei (Linear).
+    if (ziel && !ziel.startsWith("--")) appendFileSync(ziel.replace(/\.md$/, "-intern.md"), `${line}\n`);
     return;
   }
   const task = argv[argv.indexOf("--task") + 1];

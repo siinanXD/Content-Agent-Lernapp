@@ -5,10 +5,13 @@
  * Env: LINEAR_API_KEY, optional CONTENT_RUN_ISSUE (Standard SIN-220).
  * Fehlt der Key, wird nur gewarnt: der Bericht im PR ist die Quelle, Linear ist Komfort.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { comment, linear } from "./autonomy/linear.mjs";
 
-const file = process.argv[2] ?? "content-run-summary.md";
+const arg = process.argv[2] ?? "content-run-summary.md";
+// SIN-1030: der Linear-Kommentar nimmt die Fassung mit Kosten, der PR-Text bleibt ohne.
+const intern = arg.replace(/\.md$/, "-intern.md");
+const file = existsSync(intern) ? intern : arg;
 if (!process.env.LINEAR_API_KEY) {
   console.warn("::warning::LINEAR_API_KEY fehlt — kein Linear-Kommentar");
   process.exit(0);
