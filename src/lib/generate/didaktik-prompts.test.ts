@@ -120,6 +120,17 @@ describe("didaktik prompts (AP-18e)", () => {
     }
   });
 
+  it("SIN-597: reihenfolge verlangt die Quellstelle der Folge und entfällt mit PROMPT_REIHENFOLGE_REGELN=aus", () => {
+    assert.match(generatorSystemText(), /reihenfolge \(Eindeutigkeit, SIN-597\)/);
+    assert.match(generatorSystemText(), /Stelle im Quellauszug, an der die Folge steht/);
+    process.env.PROMPT_REIHENFOLGE_REGELN = "aus";
+    try {
+      assert.doesNotMatch(generatorSystemText(), /SIN-597/);
+    } finally {
+      delete process.env.PROMPT_REIHENFOLGE_REGELN;
+    }
+  });
+
   it("SIN-582: rechnen verlangt Zahlen aus der Quelle und entfällt mit PROMPT_REIHENFOLGE_REGELN=aus", () => {
     assert.match(generatorSystemText(), /Zahlen aus der Quelle, SIN-582/);
     assert.match(generatorSystemText(), /nie aus dem Gedächtnis ergänzen/);
