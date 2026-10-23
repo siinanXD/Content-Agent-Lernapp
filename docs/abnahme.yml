@@ -46,3 +46,8 @@ proben:
     art: datei
     pfad: src/lib/quality/evaluate-agent.ts
     enthaelt: richter_antwort_ungueltig
+  - id: SIN-1043-vercel-ignorecommand
+    issue: SIN-1043
+    art: datei
+    pfad: vercel.json
+    enthaelt: scripts/vercel-ignore.mjs

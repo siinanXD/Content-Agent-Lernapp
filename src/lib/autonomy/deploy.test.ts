@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { attemptState, behindAlarm, changedFilesSince, decideDeploy, deployIntervalH, isAppCodePath, lastProductionDeployAt, planDeploy, renderDeploy, triggerDeploy } from "../../../scripts/autonomy/deploy.mjs";
+import { ueberspringen } from "../../../scripts/vercel-ignore.mjs";
 
-const now = new Date("2026-10-06T12:00:00Z");
+const now =new Date("2026-10-06T12:00:00Z");
 
 test("Deploy: nur App-Code zählt, Doku/CI/Tests/Autonomie nicht", () => {
   for (const p of ["docs/PRODUCT.md", "README.md", ".github/workflows/status.yml", "e2e/smoke.spec.ts", "scripts/autonomy/deploy.mjs", "src/lib/a.test.ts", "playwright.config.ts"]) {
@@ -107,10 +108,11 @@ test("Deploy: Production > 3 h hinter main ist ein roter Alarm (SIN-332)", async
   assert.match(renderDeploy(plan), /🔴 Production liegt seit .* \(5 h\) hinter main/);
 });
 
-test("vercel.json: keine Git-Deploys, kein Ignore-Skript, das Hook-Deploys abbrechen könnte (SIN-309)", () => {
+test("vercel.json: keine Git-Deploys; ignoreCommand bricht main-Hook-Deploys nie ab (SIN-309, SIN-1043)", () => {
   const cfg = JSON.parse(readFileSync("vercel.json", "utf8"));
   assert.equal(cfg.git?.deploymentEnabled, false);
-  assert.equal(cfg.ignoreCommand, undefined);
+  assert.equal(cfg.ignoreCommand, "node scripts/vercel-ignore.mjs");
+  assert.equal(ueberspringen("main", ["docs/a.md"]), false);
   assert.equal(existsSync("scripts/vercel-ignore.sh"), false);
 });
 
