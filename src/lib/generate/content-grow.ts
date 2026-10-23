@@ -648,6 +648,37 @@ export function pickSafetySample<T extends { id: string; safetyFlag?: boolean }>
   return sample;
 }
 
+/** SIN-558: Kostenposten eines Laufs. `reparatur` = AP-21-Stufe a; `schemaReparatur` = Fragen neu nach Schema-Prüfung. */
+export type StepCosts = { erzeugen: number; quellenNeu: number; schemaReparatur: number; richter: number; reparatur: number };
+
+const STEP_TEXT: Record<keyof StepCosts, string> = {
+  erzeugen: "Erzeugen",
+  quellenNeu: "Quellen-Neuerzeugung",
+  schemaReparatur: "Schema-Reparatur",
+  richter: "Richter",
+  reparatur: "Reparatur (AP-21)",
+};
+
+/** SIN-558: Euro je bestandener Einheit; null, wenn keine bestand. */
+export function eurPerPassed(costEur: number, passed: number): number | null {
+  return passed > 0 ? Math.round((costEur / passed) * 1000) / 1000 : null;
+}
+
+/** SIN-558: Anteil je Schritt in ganzen Prozent der Summe; 0 bei 0 € Gesamtkosten. */
+export function stepShares(c: StepCosts): Record<keyof StepCosts, number> {
+  const sum = Object.values(c).reduce((n, x) => n + x, 0);
+  const keys = Object.keys(c) as Array<keyof StepCosts>;
+  return Object.fromEntries(keys.map((k) => [k, sum > 0 ? Math.round((c[k] / sum) * 100) : 0])) as Record<keyof StepCosts, number>;
+}
+
+/**
+ * SIN-558: Nur Einheiten mit genug Fragen können den Richter bestehen (`minFragen`, AP-21).
+ * Die übrigen vorab auszusortieren spart Richter-Kosten ohne Qualitätsverlust: sie würden ohnehin verworfen.
+ */
+export function judgeable<T extends { questions: unknown[] }>(units: T[], minFragen: number): T[] {
+  return units.filter((u) => u.questions.length >= minFragen);
+}
+
 export type RunReport = {
   runId: string;
   mode: "live" | "dry-run";
@@ -671,6 +702,8 @@ export type RunReport = {
   /** SIN-473: Fragen erzeugt, ungültig (Schema), repariert, verworfen. */
   schema?: SchemaStats;
   repair: { ran: boolean; costEur: number };
+  /** SIN-558: Kosten je Schritt in EUR; Summe = costEur. */
+  schritte?: StepCosts;
   sourceRefresh: { units: number; replaced: number; changeKeys: string[] };
   model: string;
   costEur: number;
@@ -700,6 +733,7 @@ const NICHT_VERSUCHT_TEXT: Record<NichtVersuchtGrund, string> = {
 /** Kommentar fürs Linear-Projekt: erzeugt, bestanden, verworfen, Kosten, nächstes Modul. */
 export function linearSummary(r: RunReport): string {
   const next = r.nextModuleId ?? "keins (Queue leer oder nicht unterstützt)";
+  const perPassed = eurPerPassed(r.costEur, r.passed);
   return [
     `**Content-Lauf ${r.runId}** (${r.mode})`,
     `- Modul: ${r.mapId ?? "–"} / ${r.moduleIds?.length ? r.moduleIds.join(", ") : (r.moduleId ?? "–")}`,
@@ -710,6 +744,7 @@ export function linearSummary(r: RunReport): string {
     `- Vergleich Structured Outputs (SIN-489, SIN-653): Schema erfüllt ${r.schema && r.schema.generated > 0 ? `${Math.round(((r.schema.generated - r.schema.invalid) / r.schema.generated) * 100)} %` : "nicht erfasst"} der Fragen, Verwerfungsquote ${r.generated > 0 ? `${Math.round((r.discarded / r.generated) * 100)} %` : "nicht erfasst"}, Reparatur ${r.costEur > 0 ? `${Math.round((r.repair.costEur / r.costEur) * 100)} %` : "–"} der Laufkosten (vorher am 08.10.: Reparatur 67 %)`,
     `- Reparatur (AP-21): ${r.repair.ran ? `€${r.repair.costEur.toFixed(2)}` : "nicht gelaufen"}; Quellen-Neuerzeugung: ${r.sourceRefresh.replaced}/${r.sourceRefresh.units}`,
     `- Kosten: €${r.costEur.toFixed(2)} von €${r.capEur} (Modell ${r.model})`,
+    `- Kosten je bestandener Einheit (SIN-558): ${perPassed === null ? "keine bestanden" : `€${perPassed.toFixed(3)}`}; ${r.schritte ? `Anteil je Schritt: ${Object.entries(stepShares(r.schritte)).map(([k, v]) => `${STEP_TEXT[k as keyof StepCosts]} ${v} %`).join(", ")}` : "Schritte nicht erfasst"}`,
     `- Stopp: ${r.stopReason ?? "kein"}`,
     ...(r.failReason ? [`- **Rot (SIN-497): ${r.failReason}**`] : []),
     ...(r.batchFailures?.errors.length

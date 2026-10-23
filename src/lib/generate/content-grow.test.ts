@@ -24,6 +24,9 @@ import {
   PART_MAX_UNITS,
   splitTargets,
   linearSummary,
+  eurPerPassed,
+  stepShares,
+  judgeable,
   planEurPerUnit,
   REPAIR_BATCH_RESERVE_EUR,
   REPAIR_STOP_EUR,
@@ -545,4 +548,24 @@ test("SIN-479: Lauf-Bericht nennt je Map Ziel, vorhanden, geteilt, neu", () => {
     mapPlan: [{ mapId: "maf-textil", ziel: 5, vorhanden: 1, geteilt: 2, neu: 1 }],
   } as unknown as RunReport;
   assert.match(linearSummary(r), /maf-textil: 5 \/ 1 \/ 2 \/ 1/);
+});
+
+test("SIN-558: Kosten je bestandener Einheit und Anteil je Schritt stehen im Bericht", () => {
+  assert.equal(eurPerPassed(2.43, 20), 0.122);
+  assert.equal(eurPerPassed(1, 0), null);
+  const schritte = { erzeugen: 1, quellenNeu: 0, schemaReparatur: 0.25, richter: 0.5, reparatur: 0.25 };
+  assert.deepEqual(stepShares(schritte), { erzeugen: 50, quellenNeu: 0, schemaReparatur: 13, richter: 25, reparatur: 13 });
+  const r = {
+    runId: "x", mode: "live", mapId: "m", moduleId: "ZP", nextModuleId: null, generated: 20, passed: 10,
+    discarded: 10, discardedUnitIds: [], deferred: 0, repair: { ran: true, costEur: 0.25 }, schritte,
+    sourceRefresh: { units: 0, replaced: 0, changeKeys: [] }, costEur: 2, capEur: 20, model: "m", stopReason: null,
+  } as unknown as RunReport;
+  assert.match(linearSummary(r), /Kosten je bestandener Einheit \(SIN-558\): €0\.200; Anteil je Schritt: Erzeugen 50 %.*Richter 25 %/);
+  assert.match(linearSummary({ ...r, passed: 0, schritte: undefined }), /keine bestanden; Schritte nicht erfasst/);
+});
+
+test("SIN-558: Einheiten unter der Mindestzahl Fragen gehen nicht zum bezahlten Richter", () => {
+  const u = (n: number) => ({ questions: Array.from({ length: n }) });
+  assert.deepEqual(judgeable([u(4), u(5), u(8)], 5).map((x) => x.questions.length), [5, 8]);
+  assert.deepEqual(judgeable([u(0)], 5), []);
 });
