@@ -11,6 +11,11 @@ proben:
     art: datei
     pfad: .github/workflows/pruefer-anstoss.yml
     enthaelt: repos/siinanXD/Leitstand/dispatches
+  - id: SIN-608-leerzustand-lernweg
+    issue: SIN-608
+    art: datei
+    pfad: scripts/autonomy/posthog.mjs
+    enthaelt: "keine Lernweg-Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung"
   - id: SIN-1010-beleg-warten
     issue: SIN-1010
     art: datei
