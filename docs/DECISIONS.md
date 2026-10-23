@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1048 | SIN-1048 · Langfuse über Gratis-Limit: Messung auf Kalendermonat, Sampling für Massenläufe | [SIN-1048-langfuse-verbrauch.md](decisions/SIN-1048-langfuse-verbrauch.md) |
 | SIN-1036 | SIN-1036: Strukturiertes JSON in der Content-Pipeline | [SIN-1036-structured-json.md](decisions/SIN-1036-structured-json.md) |
 | SIN-1010 | SIN-1010: Fehlender Prüfer-Beleg ist kein Gate-Bruch | [SIN-1010-beleg-warten-kein-gate-bruch.md](decisions/SIN-1010-beleg-warten-kein-gate-bruch.md) |
 | SIN-1008 | SIN-1008 PR-Crawler zeigt das Planungsbild neben dem Vorschaubild | [SIN-1008-planungsbild-im-pr-kommentar.md](decisions/SIN-1008-planungsbild-im-pr-kommentar.md) |
