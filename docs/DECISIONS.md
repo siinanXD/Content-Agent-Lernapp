@@ -110,6 +110,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-548 | SIN-548: Worker wartet bei leerem Kontingent | [SIN-548-worker-wartet.md](decisions/SIN-548-worker-wartet.md) |
 | SIN-547 | SIN-547: Freigaben halbieren, Einspruchsfrist statt Handfreigabe | [SIN-547-freigaben-halbieren.md](decisions/SIN-547-freigaben-halbieren.md) |
 | SIN-539 | SIN-539: Live-Prüfung rot, Meldekette ab 2× rot | [SIN-539-live-check-meldekette.md](decisions/SIN-539-live-check-meldekette.md) |
+| SIN-538 | SIN-538: API-Tests mit Newman | [SIN-538-api-tests-newman.md](decisions/SIN-538-api-tests-newman.md) |
 | SIN-537 | SIN-537: Worker lesen aktuelle Doku (Context7 + WebFetch) | [SIN-537-context7-doku.md](decisions/SIN-537-context7-doku.md) |
 | SIN-535 | SIN-535: Sentry-Kennzahl nennt Titel, Häufigkeit und Link | [SIN-535-sentry-fehler-nennen.md](decisions/SIN-535-sentry-fehler-nennen.md) |
 | SIN-534 | SIN-534 — Kennzahl kosten_woche mit Warnung | [SIN-534-kosten-woche.md](decisions/SIN-534-kosten-woche.md) |

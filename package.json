@@ -30,6 +30,7 @@
     "ap15:phase-a:dry": "node --import tsx scripts/ap15-phase-a.ts --dry-run",
     "test:a11y": "playwright test",
     "test:lighthouse": "node scripts/lighthouse-gate.mjs --base http://127.0.0.1:43123",
+    "api:test": "node scripts/api-test.mjs",
     "perf:budget": "node scripts/performance-budget.mjs",
     "live:api": "node scripts/autonomy/live-check.mjs api",
     "live:browser": "playwright test --config playwright.live.config.ts",
@@ -95,6 +96,7 @@
     "eslint-config-next": "16.4.2",
     "lighthouse": "^13.5.0",
     "mermaid": "^12.2.0",
+    "newman": "^6.2.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

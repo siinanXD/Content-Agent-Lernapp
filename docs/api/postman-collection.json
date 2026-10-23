@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Content-Agent-Lernapp Pipeline",
-    "description": "Generated from docs/api/openapi.yaml — mock pipeline routes. Plan units and generate payloads carry curriculum moduleId/blockId (AP-14 / maf-metall.json + Didaktik prompts).",
+    "description": "Generated from docs/api/openapi.yaml — mock pipeline routes. Plan units and generate payloads carry curriculum moduleId/blockId (AP-14 / maf-metall.json + Didaktik prompts). Läuft mit `npm run api:test` (Newman, SIN-538).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -10,13 +10,33 @@
   ],
   "item": [
     {
+      "name": "Health",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+    },
+    {
       "name": "Create course",
       "event": [
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);",
               "const j = pm.response.json();",
+              "pm.test('id und keyword', () => { pm.expect(j.id).to.be.a('string').and.not.empty; pm.expect(j.keyword).to.eql('Maschinen- und Anlagenführer'); });",
               "pm.collectionVariables.set('courseId', j.id);"
             ]
           }
@@ -34,6 +54,19 @@
     },
     {
       "name": "Research",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);",
+              "pm.test('courseId zurück', () => pm.expect(pm.response.json().courseId).to.eql(pm.collectionVariables.get('courseId')));"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/courses/{{courseId}}/research"
@@ -41,6 +74,19 @@
     },
     {
       "name": "Plan",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);",
+              "pm.test('courseId zurück', () => pm.expect(pm.response.json().courseId).to.eql(pm.collectionVariables.get('courseId')));"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/courses/{{courseId}}/plan"
@@ -48,6 +94,19 @@
     },
     {
       "name": "Generate",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);",
+              "pm.test('courseId zurück', () => pm.expect(pm.response.json().courseId).to.eql(pm.collectionVariables.get('courseId')));"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/courses/{{courseId}}/generate"
@@ -55,6 +114,19 @@
     },
     {
       "name": "Evaluate",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);",
+              "pm.test('courseId zurück', () => pm.expect(pm.response.json().courseId).to.eql(pm.collectionVariables.get('courseId')));"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/courses/{{courseId}}/evaluate"
@@ -62,6 +134,19 @@
     },
     {
       "name": "Publish",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Veröffentlichen darf an der Qualitäts-Schwelle ablehnen (4xx), aber nie mit 5xx abstürzen.",
+              "pm.test('kein Serverfehler', () => pm.expect(pm.response.code).to.be.below(500));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/courses/{{courseId}}/publish"
@@ -69,9 +154,61 @@
     },
     {
       "name": "Refresh (weekly)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('JSON-Antwort', () => pm.response.to.be.json);"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/courses/{{courseId}}/refresh"
+      }
+    },
+    {
+      "name": "Create course without keyword (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400', () => pm.response.to.have.status(400));",
+              "pm.test('Fehlercode keyword_required', () => pm.expect(pm.response.json().error).to.eql('keyword_required'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{}" },
+        "url": "{{baseUrl}}/courses"
+      }
+    },
+    {
+      "name": "Research unknown course (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));",
+              "pm.test('Fehlercode course_not_found', () => pm.expect(pm.response.json().error).to.eql('course_not_found'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/courses/gibt-es-nicht/research"
       }
     }
   ]
