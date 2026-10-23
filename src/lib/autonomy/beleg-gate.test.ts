@@ -26,6 +26,11 @@ test("pruefer-anstoss.yml sendet nur den Anstoß: kein checkout von head.sha", (
   assert.ok(!/pull_request_target/.test(yml));
 });
 
+test("Test: pruefer-anstoss.yml sendet genau das Ereignis, auf das der Leitstand-Prüfer hört (pruefer-anstoss)", () => {
+  const yml = readFileSync(".github/workflows/pruefer-anstoss.yml", "utf8");
+  assert.match(yml, /event_type=pruefer-anstoss\b/);
+});
+
 test("merge-gate in pr-gate.yml verlangt den Beleg", () => {
   assert.ok(readFileSync(".github/workflows/pr-gate.yml", "utf8").includes("beleg-gate.mjs"));
 });
