@@ -84,6 +84,7 @@ flowchart TD
   Schlange --> Dispatcher["Dispatcher (dispatch.yml): dringend, dann v1, höchstens 1 Idee pro Woche; sofort nach Merge, höchstens 2 parallel"]
   Dispatcher --> Worker["Worker (worker.yml, Claude; bei offenen Haken nur daran, derselbe Haken-Stand höchstens 2-mal, sonst needs-human, SIN-795)"]
   Worker --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
+  PR --> Anstoss["pruefer-anstoss.yml: Anstoß an den Leitstand-Prüfer; merge-gate verlangt Beleg für den Head (SIN-1001)"]
   subgraph Prüfung
     PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Layout-Test, Lighthouse, Leistungsbudget"]
     PR -- "Frontend geändert" --> Sicht["KI-Sichtprüfung gegen Figma: Kommentar, kein Gate (sichtpruefung.yml, SIN-523)"]

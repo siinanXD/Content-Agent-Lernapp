@@ -1,0 +1,34 @@
+# Prüfer-Anstoß (SIN-1001, Weg A 4b/8): meldet dem Leitstand-Prüfer (siinanXD/Leitstand, pruefer.yml), dass ein
+# claude/- oder codex/-PR zu prüfen ist. Nur der Anstoß: keine Logik, kein Checkout, nie PR-Code.
+name: pruefer-anstoss
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: pruefer-anstoss-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  anstoss:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft &&
+      (startsWith(github.event.pull_request.head.ref, 'claude/') || startsWith(github.event.pull_request.head.ref, 'codex/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Leitstand-Prüfer anstoßen
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret AGENT_WORKFLOW_TOKEN fehlt: Anstoß an den Leitstand nicht möglich."
+            exit 1
+          fi
+          gh api repos/siinanXD/Leitstand/dispatches -f event_type=pruefer \
+            -f "client_payload[repo]=$REPO" -F "client_payload[pr]=$PR_NUMBER"

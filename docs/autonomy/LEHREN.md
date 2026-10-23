@@ -22,7 +22,7 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 - Selbst mergen oder `gh pr merge` aufrufen → Auto-Merge macht das, sobald `build`, `pr-title` und `merge-gate` grün sind. (SIN-207)
 - Vor dem Push `origin/main` nicht einmergen → Konflikte in erzeugten Dateien, rote Checks. Richtig: `git fetch origin main && git merge origin/main`, dann `npm ci`, Typecheck, Lint, Tests. (SIN-240)
 - `package-lock.json` nicht mitcommitten → `npm ci` in CI scheitert. Richtig: Lock-Datei immer im selben PR. (SIN-236)
-- Einen neuen PR-Titel ohne Kennung oder in Prosa schreiben → `pr-title` ist rot. Richtig: `feat(bereich): Klartext (SIN-123)`. (SIN-248)
+- Einen neuen PR-Titel ohne Kennung oder in Prosa schreiben → `pr-title` ist rot. Richtig: `feat(bereich): Klartext (SIN-123)`. (SIN-248) Ebenso: `docs/diagramme/pipeline.mmd` ergänzt, den Mermaid-Block in `README.md` nicht → Test „Diagramme (SIN-376)“ rot; beide im selben PR identisch ändern. (SIN-1001)
 
 ## Tages-Update und Planer
 
