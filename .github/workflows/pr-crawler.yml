@@ -177,9 +177,21 @@ jobs:
           else
             echo "::warning::Bilder konnten nicht abgelegt werden, der Kommentar verweist auf das Artefakt."
           fi
+      - name: Planungsbild des Issues (SIN-1008)
+        id: soll
+        if: always() && steps.routen.outputs.routen != ''
+        env:
+          PR: ${{ steps.pr.outputs.pr }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        # Weich: ohne Schlüssel, Issue oder Bild bleibt `{}` und der Kommentar zeigt kein Soll.
+        run: |
+          titel=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" -q .title || true)
+          body=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" -q '.body // ""' || true)
+          echo "json=$(node scripts/pr-crawler/soll.mjs --titel "$titel" --body "$body" 2>/dev/null | tail -1 | grep '^{' || echo '{}')" >> "$GITHUB_OUTPUT"
       - name: Kommentar im PR
         if: always() && steps.pr.outputs.weiter == 'ja'
         env:
+          SOLL: ${{ steps.soll.outputs.json }}
           PR: ${{ steps.pr.outputs.pr }}
           SHA: ${{ steps.pr.outputs.sha }}
           URL: ${{ steps.vorschau.outputs.url || steps.pr.outputs.url }}
@@ -187,7 +199,7 @@ jobs:
           MEHR: ${{ steps.routen.outputs.mehr }}
           ARTEFAKT: ${{ steps.artefakt.outputs.artifact-url }}
           BASIS: ${{ steps.bilder.outputs.basis }}
-        run: node scripts/pr-crawler/kommentar.mjs --pr "$PR" --sha "$SHA" --url "$URL" --lauf "$LAUF" --skip "$SKIP" --mehr "${MEHR:-0}" --artefakt "$ARTEFAKT" --bilder-basis "$BASIS"
+        run: node scripts/pr-crawler/kommentar.mjs --pr "$PR" --sha "$SHA" --url "$URL" --lauf "$LAUF" --skip "$SKIP" --mehr "${MEHR:-0}" --artefakt "$ARTEFAKT" --bilder-basis "$BASIS" --soll "$SOLL"
       - name: Leitstand
         if: always() && steps.pr.outputs.weiter == 'ja'
         env:

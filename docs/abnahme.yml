@@ -11,11 +11,21 @@ proben:
     art: datei
     pfad: .github/workflows/pruefer-anstoss.yml
     enthaelt: repos/siinanXD/Leitstand/dispatches
+  - id: SIN-1008-planungsbild-im-pr-kommentar
+    issue: SIN-1008
+    art: datei
+    pfad: scripts/pr-crawler/soll.mjs
+    enthaelt: attachments
   - id: SIN-608-leerzustand-lernweg
     issue: SIN-608
     art: datei
     pfad: scripts/autonomy/posthog.mjs
     enthaelt: "keine Lernweg-Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung"
+  - id: SIN-1001-anstoss-ereignis
+    issue: SIN-1001
+    art: datei
+    pfad: .github/workflows/pruefer-anstoss.yml
+    enthaelt: event_type=pruefer-anstoss
   - id: SIN-1010-beleg-warten
     issue: SIN-1010
     art: datei

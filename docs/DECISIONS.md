@@ -14,6 +14,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | Issue | Titel | Datei |
 | --- | --- | --- |
 | SIN-1010 | SIN-1010: Fehlender Prüfer-Beleg ist kein Gate-Bruch | [SIN-1010-beleg-warten-kein-gate-bruch.md](decisions/SIN-1010-beleg-warten-kein-gate-bruch.md) |
+| SIN-1008 | SIN-1008 PR-Crawler zeigt das Planungsbild neben dem Vorschaubild | [SIN-1008-planungsbild-im-pr-kommentar.md](decisions/SIN-1008-planungsbild-im-pr-kommentar.md) |
 | SIN-1001 | SIN-1001: Prüfer-Anstoß und Beleg-Gate (Weg A 4b/8) | [SIN-1001-pruefer-anstoss-beleg-gate.md](decisions/SIN-1001-pruefer-anstoss-beleg-gate.md) |
 | SIN-959 | SIN-959 — Aufräumen: Einmal-Skripte entfernen | [SIN-959-aufraeumen-einmal-skripte.md](decisions/SIN-959-aufraeumen-einmal-skripte.md) |
 | SIN-933 | SIN-933: Keine Worker-Endlosschleife bei gemergtem PR | [SIN-933-worker-endlosschleife.md](decisions/SIN-933-worker-endlosschleife.md) |

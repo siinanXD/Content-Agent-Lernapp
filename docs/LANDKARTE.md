@@ -80,7 +80,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Layout-Prüfer, Gate in `build` (SIN-523): Überlappung, Scrollen, Abschneiden, Ziele ≥ 44 px; Ausnahme `data-layout-ok` | `e2e/layout.spec.ts`, `e2e/layout-pruefer.ts` | `npx playwright test e2e/layout.spec.ts` |
 | KI-Sichtprüfung gegen Figma, nur Hinweis (SIN-523) | `.github/workflows/sichtpruefung.yml`, `scripts/autonomy/sichtpruefung.mjs`, `figma.mjs --bild`, Test `src/lib/autonomy/sichtpruefung.test.ts` | |
 | Testnutzer-Agent (SIN-640): Crawler nachts (ohne KI), 3 Personas montags (Haiku bewertet), Funde → Issues mit Dubletten-Prüfung | `.github/workflows/testnutzer.yml`, `scripts/autonomy/{crawler,personas,testnutzer}.mjs`, Test `src/lib/autonomy/testnutzer.test.ts` | `LIVE_URL=<url> node scripts/autonomy/crawler.mjs` |
-| PR-Crawler (SIN-906): nur geänderte Seiten auf der Vorschau, Bild/Video im PR | `.github/workflows/pr-crawler.yml`, `scripts/pr-crawler/{routen,lauf,kommentar}.mjs`, Test `src/lib/pr-crawler/pr-crawler.test.ts` | |
+| PR-Crawler (SIN-906): nur geänderte Seiten auf der Vorschau, Bild/Video im PR | `.github/workflows/pr-crawler.yml`, `scripts/pr-crawler/{routen,lauf,kommentar,soll}.mjs` (`soll`: Planungsbild aus Linear, SIN-1008), Test `src/lib/pr-crawler/pr-crawler.test.ts` | |
 | Agent-Testnutzer eingeloggt (SIN-914): Testkonten, Sitzung ohne Passwort, Filter `ohneTestdaten` | `scripts/agent-testnutzer/sitzung.mjs`, Test `src/lib/agent-testnutzer/sitzung.test.ts`, Smoke `e2e/agent-eingeloggt.spec.ts`, Proben `docs/abnahme.yml` | |
 | API-Tests (Newman) | `docs/api/postman-collection.json`, `scripts/api-test.mjs` | `npm run api:test -- --serve` |
 | Leistungsbudget | `performance-budget.json` (Grenzen nie anheben) | `npm run perf:budget` |
