@@ -43,6 +43,7 @@ import {
   judgeReserveEur,
   judgeable,
   linearSummary,
+  prSummary,
   type StepCosts,
   measuredPerUnit,
   partGate,
@@ -386,7 +387,9 @@ async function main() {
       }
     }
     writeFileSync(join(OUT_DIR, reportFileName(report)), JSON.stringify(report, null, 2) + "\n");
-    writeFileSync(join(ROOT, "content-run-summary.md"), linearSummary(report) + "\n");
+    // SIN-1030: PR-Text (content-run-summary.md) ohne Kosten, Linear-Kommentar (-intern) mit Kosten.
+    writeFileSync(join(ROOT, "content-run-summary.md"), prSummary(report) + "\n");
+    writeFileSync(join(ROOT, "content-run-summary-intern.md"), linearSummary(report) + "\n");
     console.log(linearSummary(report));
     process.exit(code);
   };

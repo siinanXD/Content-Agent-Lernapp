@@ -730,6 +730,19 @@ const NICHT_VERSUCHT_TEXT: Record<NichtVersuchtGrund, string> = {
   "andere-map": "anderer Map in diesem Lauf",
 };
 
+/** Zeilen von linearSummary mit Geld, Deckel oder Preisbezug (SIN-1030: nicht in den öffentlichen PR-Text). */
+const KOSTEN_ZEILE = /€|Kosten|Deckel/i;
+
+/** SIN-1030: PR-Text der Content-Läufe ohne Kosten; die volle Fassung (linearSummary) geht nur an Linear. */
+export function prSummary(r: RunReport): string {
+  const stopReason = r.stopReason && KOSTEN_ZEILE.test(r.stopReason) ? "Lauflimit erreicht" : r.stopReason;
+  return linearSummary({ ...r, stopReason })
+    .split("\n")
+    .map((l) => l.replace("Kostendeckel", "Lauflimit"))
+    .filter((l) => !KOSTEN_ZEILE.test(l))
+    .join("\n");
+}
+
 /** Kommentar fürs Linear-Projekt: erzeugt, bestanden, verworfen, Kosten, nächstes Modul. */
 export function linearSummary(r: RunReport): string {
   const next = r.nextModuleId ?? "keins (Queue leer oder nicht unterstützt)";

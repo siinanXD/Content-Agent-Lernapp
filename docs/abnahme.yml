@@ -26,6 +26,11 @@ proben:
     art: datei
     pfad: .github/workflows/pruefer-anstoss.yml
     enthaelt: event_type=pruefer-anstoss
+  - id: SIN-1030-pr-text-ohne-kosten
+    issue: SIN-1030
+    art: datei
+    pfad: scripts/content-grow.ts
+    enthaelt: prSummary(
   - id: SIN-1010-beleg-warten
     issue: SIN-1010
     art: datei

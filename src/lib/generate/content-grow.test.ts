@@ -24,6 +24,7 @@ import {
   PART_MAX_UNITS,
   splitTargets,
   linearSummary,
+  prSummary,
   eurPerPassed,
   stepShares,
   judgeable,
@@ -481,6 +482,18 @@ test("SIN-434: Lauf-Bericht nennt verworfen und nicht versucht mit Grund", () =>
   const text = linearSummary(r);
   assert.match(text, /Verworfen .*: 4 \(ZP-2-u1\)/);
   assert.match(text, /Nicht versucht: 5 wegen Kostendeckel; 2 wegen Zeitlimit/);
+});
+
+test("SIN-1030: PR-Text ohne Kosten, Linear-Text behält sie", () => {
+  const r = {
+    runId: "x", mode: "live", mapId: "maf-metall", moduleId: "ZP", nextModuleId: null, generated: 20, passed: 16,
+    discarded: 4, discardedUnitIds: [], deferred: 0, repair: { ran: true, costEur: 1.62 },
+    sourceRefresh: { units: 0, replaced: 0, changeKeys: [] }, costEur: 2.43, capEur: 20, model: "m",
+    stopReason: "Deckel in der Reparatur erreicht", nichtVersucht: [{ grund: "kostendeckel", units: 5 }],
+  } as unknown as RunReport;
+  assert.doesNotMatch(prSummary(r), /€|EUR|Kosten|Deckel/i);
+  assert.match(prSummary(r), /5 wegen Lauflimit/);
+  assert.match(linearSummary(r), /Kosten: €2\.43 von €20/);
 });
 
 // SIN-479: die 6 weiteren MAF-Schwerpunkte
