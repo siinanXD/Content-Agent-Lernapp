@@ -63,14 +63,14 @@ test("PostHog: keine Lernweg-Daten, aber andere Ereignisse - keine Nutzung", asy
 
 test("PostHog: gar keine Ereignisse - Key fehlt oder keine Einwilligung", async () => {
   const m = await collectPostHogMetrics(env as never, router({ "group by event": [], "select count()": [[0]] }) as never);
-  assert.match(String(m.posthog), /^keine Ereignisse in 7 Tagen \(Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build oder keine Einwilligung/);
+  assert.match(String(m.posthog), /^keine Lernweg-Ereignisse in 7 Tagen \(Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build oder keine Einwilligung/);
 });
 
 test("PostHog: Zusatzabfrage schlaegt fehl - allgemeiner Grund, kein Absturz", async () => {
   let n = 0;
   const fetchMock = async () => (n++ === 0 ? ok({ results: [] }) : ok({}, 500));
   const m = await collectPostHogMetrics(env as never, fetchMock as never, { delays: [] } as never);
-  assert.match(String(m.posthog), /^keine Ereignisse in 7 Tagen \(Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung oder keine Nutzung\)/);
+  assert.match(String(m.posthog), /^keine Lernweg-Ereignisse in 7 Tagen \(Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung oder keine Nutzung\)/);
 });
 
 test("PostHog: HTTP-Fehler - nicht messbar mit Statuscode", async () => {

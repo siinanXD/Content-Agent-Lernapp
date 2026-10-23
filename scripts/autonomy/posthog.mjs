@@ -41,9 +41,9 @@ export function leerGrund(anyEvents) {
     return "keine Lernweg-Ereignisse in 7 Tagen, aber andere Ereignisse da (Ursache: keine Nutzung des Lernwegs)";
   }
   if (anyEvents === 0) {
-    return "keine Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build oder keine Einwilligung erteilt; beides sendet nichts)";
+    return "keine Lernweg-Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build oder keine Einwilligung erteilt; beides sendet nichts)";
   }
-  return "keine Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung oder keine Nutzung)";
+  return "keine Lernweg-Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung oder keine Nutzung)";
 }
 
 /**
