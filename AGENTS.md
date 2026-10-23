@@ -104,6 +104,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Ein Linear-Issue darf nur auf „Done“, wenn die Funktion läuft (Workflow aktiv, Migration angewendet, Secret gesetzt), nicht nur, wenn Code oder eine Vorlage gemergt ist.
 - Bleibt etwas für Sinan, entsteht ein `sinan`-Issue (siehe oben) und der PR verlinkt es. Das Original bleibt bis dahin „In Review“.
 - Fehlende Secrets bündelt der Worker in ein einziges `sinan`-Issue (bis SIN-611 sie aus Infisical holt).
+- Kein Done ohne grüne Abnahme-Probe (SIN-626): Jedes Issue bekommt beim Bauen mindestens eine Probe in `docs/abnahme.yml` des Leitstands (HTTP, lesende Abfrage, Datei-Check) mit erwartetem Ergebnis. Erst wenn sie im stündlichen Lauf grün ist, geht das Linear-Issue auf „Done“.
 
 ## Technik (siehe DECISIONS.md)
 
