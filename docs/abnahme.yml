@@ -26,3 +26,8 @@ proben:
     art: datei
     pfad: .github/workflows/pruefer-anstoss.yml
     enthaelt: event_type=pruefer-anstoss
+  - id: SIN-1010-beleg-warten
+    issue: SIN-1010
+    art: datei
+    pfad: scripts/autonomy/warten.mjs
+    enthaelt: Kein Prüfer-Beleg für den Head

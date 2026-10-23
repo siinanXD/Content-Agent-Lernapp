@@ -82,6 +82,15 @@ test("SIN-806: merge-gate rot während der Einspruchsfrist → kein Gate-Bruch",
   assert.equal(detectGateBreaks([frist(403, "a"), frist(406, "b")]).breaks.length, 0);
 });
 
+test("SIN-1010: merge-gate rot, weil der Prüfer-Beleg fehlt → kein Gate-Bruch", () => {
+  const beleg = (number: number, sha: string) => ({
+    number,
+    sha,
+    failures: [{ check: "merge-gate", step: "Ergebnis des Gates melden", lines: "Kein Prüfer-Beleg für den Head 92bd3e3. Der Leitstand-Prüfer muss den aktuellen Head belegen (SIN-1001); der Merge ist bis dahin gesperrt." }],
+  });
+  assert.equal(detectGateBreaks([beleg(560, "a"), beleg(563, "b")]).breaks.length, 0);
+});
+
 test("SIN-439: Fehlerzeile ist die erste spezifische Anmerkung, nicht „exit code 1“", () => {
   const notes = [
     { annotation_level: "failure", message: "Process completed with exit code 1." },
