@@ -102,6 +102,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-587 | SIN-587: Worker-Sicherung hängt nicht mehr an „Fehler auswerten“ | [SIN-587-worker-sicherung-unabhaengig.md](decisions/SIN-587-worker-sicherung-unabhaengig.md) |
 | SIN-586 | SIN-586: Quellenauszug zeigt den Grund, wenn er fehlt | [SIN-586-auszug-quelle.md](decisions/SIN-586-auszug-quelle.md) |
 | SIN-584 | SIN-584: Stillstand `ohne-start` nennt den dispatch-Grund | [SIN-584-ohne-start-dispatch-zuerst.md](decisions/SIN-584-ohne-start-dispatch-zuerst.md) |
+| SIN-582 | SIN-582: rechnen-Aufgaben nur mit Zahlen aus der amtlichen Quelle (maf-metall/PA) | [SIN-582-rechnen-zahlen-aus-quelle.md](decisions/SIN-582-rechnen-zahlen-aus-quelle.md) |
 | SIN-569 | SIN-569: Kosten je Kurslauf unter 20 €: Befund, kein neuer Code | [SIN-569-kosten-deckel-befund.md](decisions/SIN-569-kosten-deckel-befund.md) |
 | SIN-566 | SIN-566 — Serie, Tagesziel und Wiederholungs-Erinnerung: Blocker Design | [SIN-566-erinnerung-blocker.md](decisions/SIN-566-erinnerung-blocker.md) |
 | SIN-564 | SIN-564: Generator-Regeln für reihenfolge und rechnen, weniger Verwerfungen in M0 und PA | [SIN-564-reihenfolge-rechnen-regeln.md](decisions/SIN-564-reihenfolge-rechnen-regeln.md) |
