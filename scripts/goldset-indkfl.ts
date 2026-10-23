@@ -53,10 +53,11 @@ async function main() {
   });
   // SIN-456: Auszüge vorab laden, um im Bericht zu zeigen, wie viele Fragen einen Quelltext hatten (Cache je URL).
   const misses: string[] = [];
-  const enriched = await withSourceExcerpts(items, undefined, process.env, (r) => misses.push(r));
+  const stale: string[] = [];
+  const enriched = await withSourceExcerpts(items, undefined, process.env, (r) => misses.push(r), (d) => stale.push(d));
   const nichtPdf = misses.filter((r) => r !== "PDF");
   const ohne = nichtPdf.length ? `${nichtPdf.length} nicht geladen: ${countReasons(nichtPdf)}` : "alle HTML-Quellen geladen";
-  const auszug = `${enriched.filter((i) => i.sourceExcerpt).length} von ${enriched.length} Fragen mit Quellenauszug (${ohne}; ${misses.length - nichtPdf.length} PDF bewusst ohne)`;
+  const auszug = `${enriched.filter((i) => i.sourceExcerpt).length} von ${enriched.length} Fragen mit Quellenauszug (${ohne}; ${misses.length - nichtPdf.length} PDF bewusst ohne${stale.length ? `; ${stale.length} aus Zwischenspeicher, ältester Abruf ${[...stale].sort()[0]}` : ""})`;
   console.log(`Quellenauszug: ${auszug}`);
   const judged = await liveJudgeWithUsage(key, enriched);
   const costUsd = addOpenAIUsage(emptyLedger(), judged.usage.prompt_tokens, judged.usage.completion_tokens).usdEstimate;

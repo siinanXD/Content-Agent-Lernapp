@@ -1,3 +1,7 @@
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
 /**
  * SIN-456: Quellenauszug für den Richter. Der Richter sah bisher nur die URL der Quelle und konnte falsche Zahlen
  * („Teil 1 zählt 40 %“ statt 25 %) nicht erkennen. Vor dem Bewerten wird der Text der zitierten HTML-Quelle geholt,
@@ -87,7 +91,7 @@ export function excerptFor(text: string, query: string, max = EXCERPT_MAX_CHARS)
 }
 
 /** Text der Quelle oder der Grund, warum es keinen gibt (`PDF` = bewusst ohne Auszug). */
-export type SourceResult = { text: string; reason?: undefined } | { text: null; reason: string };
+export type SourceResult = { text: string; reason?: undefined; stale?: string } | { text: null; reason: string; stale?: undefined };
 export type SourceTextLoader = (url: string) => Promise<SourceResult>;
 
 // Wie scripts/content-check-sources.mjs: ohne User-Agent sperren Behörden-Server Rechenzentrums-Abrufe.
@@ -113,8 +117,26 @@ async function fetchOnce(fetchImpl: typeof fetch, url: string): Promise<SourceRe
   }
 }
 
-/** Lädt den Text einer Quelle einmal je Lauf (Cache je URL), bei Netzfehler/5xx/429 ein zweiter Versuch. Jeder Fehlgrund wird einmal geloggt. */
-export function createSourceTextLoader(fetchImpl: typeof fetch = fetch, log: (msg: string) => void = console.warn): SourceTextLoader {
+const FETCH_ATTEMPTS = 3;
+const RETRY_WAIT_MS = 2_000;
+// SIN-863: Zwischenspeicher je URL; bei Totalausfall der Quelle (CI-Connect-Timeout) gilt der letzte erfolgreiche Abruf.
+const DEFAULT_CACHE_DIR = ".cache/quellenauszug";
+
+export type LoaderOptions = {
+  log?: (msg: string) => void;
+  /** Ordner des Zwischenspeichers; `null` = aus. */
+  cacheDir?: string | null;
+  sleep?: (ms: number) => Promise<void>;
+  now?: () => Date;
+};
+
+function cacheFile(dir: string, url: string): string {
+  return join(dir, `${createHash("sha256").update(url).digest("hex").slice(0, 32)}.json`);
+}
+
+/** Lädt den Text einer Quelle einmal je Lauf (Cache je URL), bei Netzfehler/5xx/429 bis zu 3 Versuche mit Wartezeit. Scheitern alle, gilt der Zwischenspeicher (`stale` = Abrufdatum). Jeder Fehlgrund wird einmal geloggt. */
+export function createSourceTextLoader(fetchImpl: typeof fetch = fetch, opts: LoaderOptions = {}): SourceTextLoader {
+  const { log = console.warn, cacheDir = DEFAULT_CACHE_DIR, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = () => new Date() } = opts;
   const cache = new Map<string, Promise<SourceResult>>();
   return (url: string) => {
     if (!cache.has(url)) {
@@ -124,12 +146,34 @@ export function createSourceTextLoader(fetchImpl: typeof fetch = fetch, log: (ms
           if (!/^https:\/\//i.test(url)) return { text: null, reason: "keine https-URL" };
           if (/\.pdf($|[?#])/i.test(url)) return { text: null, reason: "PDF" };
           let r = await fetchOnce(fetchImpl, url);
-          if (r.text === null && r.retry) r = await fetchOnce(fetchImpl, url);
-          if (r.text === null) {
-            log(`Quellenauszug ${url}: ${r.reason}`);
-            return { text: null, reason: r.reason };
+          for (let i = 1; r.text === null && r.retry && i < FETCH_ATTEMPTS; i++) {
+            await sleep(RETRY_WAIT_MS * i);
+            r = await fetchOnce(fetchImpl, url);
           }
-          return { text: r.text };
+          if (r.text !== null) {
+            if (cacheDir) {
+              try {
+                mkdirSync(cacheDir, { recursive: true });
+                writeFileSync(cacheFile(cacheDir, url), JSON.stringify({ url, abgerufen: now().toISOString().slice(0, 10), text: r.text }));
+              } catch {
+                // Zwischenspeicher ist nur ein Netz; Schreibfehler stoppen den Lauf nicht.
+              }
+            }
+            return { text: r.text };
+          }
+          log(`Quellenauszug ${url}: ${r.reason}`);
+          if (cacheDir) {
+            try {
+              const hit = JSON.parse(readFileSync(cacheFile(cacheDir, url), "utf8")) as { abgerufen?: string; text?: string };
+              if (hit.text && hit.abgerufen) {
+                log(`Quellenauszug ${url}: Zwischenspeicher vom ${hit.abgerufen} genutzt`);
+                return { text: hit.text, stale: hit.abgerufen };
+              }
+            } catch {
+              // kein Zwischenspeicher vorhanden
+            }
+          }
+          return { text: null, reason: r.reason };
         })(),
       );
     }
@@ -154,17 +198,19 @@ export async function withSourceExcerpts<T extends WithSource>(
   load?: SourceTextLoader,
   env: Record<string, string | undefined> = process.env,
   onMiss: (reason: string) => void = () => undefined,
+  onStale: (abgerufen: string) => void = () => undefined,
 ): Promise<T[]> {
   if (env.JUDGE_QUELLENAUSZUG === "0") return items;
   const loader = load ?? (defaultLoader ??= createSourceTextLoader());
   return Promise.all(
     items.map(async (item) => {
       if (item.sourceExcerpt) return item;
-      const { text, reason } = await loader(item.sourceUrl);
+      const { text, reason, stale } = await loader(item.sourceUrl);
       if (!text) {
         onMiss(reason ?? "leerer Text");
         return item;
       }
+      if (stale) onStale(stale);
       const query = [item.prompt, Array.isArray(item.correct) ? item.correct.join(" ") : item.correct, item.explanation].join(" ");
       const sourceExcerpt = excerptFor(text, query);
       return sourceExcerpt ? { ...item, sourceExcerpt } : item;
