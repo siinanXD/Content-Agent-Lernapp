@@ -16,3 +16,8 @@ proben:
     art: datei
     pfad: scripts/autonomy/posthog.mjs
     enthaelt: "keine Lernweg-Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung"
+  - id: SIN-1001-anstoss-ereignis
+    issue: SIN-1001
+    art: datei
+    pfad: .github/workflows/pruefer-anstoss.yml
+    enthaelt: event_type=pruefer-anstoss
