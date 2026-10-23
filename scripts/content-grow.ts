@@ -41,7 +41,9 @@ import {
   offeneContentMaps,
   COST_MARGIN,
   judgeReserveEur,
+  judgeable,
   linearSummary,
+  type StepCosts,
   measuredPerUnit,
   partGate,
   splitTargets,
@@ -418,6 +420,12 @@ async function main() {
   const curriculum = CURRICULUM!;
   let ledger: CostLedger = emptyLedger();
   const spentTotal = () => spent + refreshLedger(ledger).eurEstimate;
+  // SIN-558: Kosten je Schritt als Differenz der Gesamtsumme vor und nach dem Schritt.
+  const schritte: StepCosts = { erzeugen: 0, quellenNeu: 0, schemaReparatur: 0, richter: 0, reparatur: spent };
+  report.schritte = schritte;
+  const buche = (schritt: keyof StepCosts, vorher: number) => {
+    schritte[schritt] += spentTotal() - vorher;
+  };
   const allEvals: QuestionEval[] = [];
   const live: GeneratedUnit[] = [];
 
@@ -435,7 +443,11 @@ async function main() {
   });
   let lastJudgeTraceId: string | undefined;
 
-  async function judge(units: GeneratedUnit[], label: string): Promise<QuestionEval[]> {
+  async function judge(all: GeneratedUnit[], label: string): Promise<QuestionEval[]> {
+    // SIN-558: Einheiten unter MIN_PASSED_QUESTIONS können nicht bestehen; kein bezahlter Richter-Aufruf für sie.
+    const units = judgeable(all, MIN_PASSED_QUESTIONS);
+    if (units.length === 0) return [];
+    const vorher = spentTotal();
     // SIN-478: Der Richter läuft nach dem Batch; ohne Prüfung hier überschritt der Lauf 12.10. den Deckel.
     assertWithinRunCap(spentTotal() + judgeReserveEur(units.length), RUN_CAP_EUR);
     const judged = await liveJudgeWithUsage(
@@ -443,6 +455,7 @@ async function main() {
       toEvalItems(units.map((unit) => ({ unit, questions: unit.questions })), curriculum),
     );
     ledger = addOpenAIUsage(ledger, judged.usage.prompt_tokens, judged.usage.completion_tokens);
+    buche("richter", vorher);
     allEvals.push(...judged.questions);
     // SIN-383: ein Trace je Einheit; die Trace-ID gehört zu den Zeilen der jeweiligen Einheit.
     const traceIds = await tracer.einheiten(units, judged.questions);
@@ -468,11 +481,13 @@ async function main() {
   async function schemaGate(units: GeneratedUnit[]): Promise<GeneratedUnit[]> {
     const repair: RepairFn = async (items) => {
       assertWithinRunCap(spentTotal(), RUN_CAP_EUR);
+      const vorher = spentTotal();
       const sub = await submitQuestionRepairBatch({ items });
       report.batchIds.push(sub.batchId);
       await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
       const got = await collectRepairQuestions(sub.batchId, new Map(items.map((i) => [i.unit.id, i.unit])));
       ledger = addClaudeLedger(ledger, got.ledger);
+      buche("schemaReparatur", vorher);
       return got.questions;
     };
     // SIN-621: Quelle muss zum Beruf des Kurses passen; fremde Einheiten werden nicht gespeichert.
@@ -558,11 +573,13 @@ async function main() {
       const u = priorUnits.find((x) => x.id === id)!;
       return { moduleId: u.moduleId ?? id.split("-")[0]!, blockId: u.blockId ?? id.replace(/-u\d+$/, ""), unitId: id, titleHint: u.title };
     });
+    const vorherRefresh = spentTotal();
     const sub = await submitRegenBatch({ keyword: KEYWORD, curriculum, unitSpecs: specs });
     report.batchIds.push(sub.batchId);
     await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
     const got = await collectBatchUnits(sub.batchId, curriculum);
     ledger = addClaudeLedger(ledger, got.ledger);
+    buche("quellenNeu", vorherRefresh);
     tracer.batchFertig(got.units, got.ledger, "reparatur");
     if (got.units.length > 0) {
       got.units = await schemaGate(got.units);
@@ -620,6 +637,7 @@ async function main() {
         await pollBatchUntilDone(sub.batchId, { intervalMs: 30_000 });
         const got = await collectBatchUnits(sub.batchId, curriculum);
         ledger = addClaudeLedger(ledger, got.ledger);
+        buche("erzeugen", before);
         batchSent += part.length;
         batchUnitsGot += got.units.length;
         batchFailedCount += got.failedCustomIds.length;
