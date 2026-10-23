@@ -41,3 +41,8 @@ proben:
     art: datei
     pfad: scripts/autonomy/warten.mjs
     enthaelt: Kein Prüfer-Beleg für den Head
+  - id: SIN-1036-richter-ohne-stilles-leer
+    issue: SIN-1036
+    art: datei
+    pfad: src/lib/quality/evaluate-agent.ts
+    enthaelt: richter_antwort_ungueltig

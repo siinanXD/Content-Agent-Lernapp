@@ -73,6 +73,21 @@ describe("Richter: festes Antwortschema (SIN-490)", () => {
     assert.ok(q!.reasons.includes("niveau_below_4"));
   });
 
+  it("SIN-1036: Schema-Verstoß oder kaputtes JSON = Einheit nicht bestanden mit Grund, nie {}", () => {
+    const bad = [
+      "kein json",
+      "Hier: " + JSON.stringify({ items: [] }),
+      "{}",
+      JSON.stringify({ items: [{ id: "g01", sourceFidelity: 2, uniqueness: 1, niveau: 4, language: 4, safetyFlag: false }] }),
+      JSON.stringify({ items: [{ id: "andere", sourceFidelity: 1, uniqueness: 1, niveau: 4, language: 4, safetyFlag: false }] }),
+    ];
+    for (const text of bad) {
+      const [q] = judgeQuestionsFromText(text, [ITEM]);
+      assert.equal(q!.passed, false, text);
+      assert.match(q!.reasons[0] ?? "", /^richter_antwort_ungueltig: .+/, text);
+    }
+  });
+
   it("Anfrage nutzt json_schema mit strict: true und dem Schema", () => {
     const body = buildJudgeRequestBody([ITEM]) as {
       model: string;

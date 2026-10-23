@@ -28,7 +28,6 @@ Injizierte Secret-Namen:
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | gesetzt | Prefix `sk-ant`; `GET /v1/models` → 200; Batches-List → 200 |
 | `ANTHROPIC_WORKSPACE_ID` | gesetzt | Prefix `wrkspc_`; Header `anthropic-workspace-id` ([Docs](https://platform.claude.com/docs/en/manage-claude/authentication)) |
-| `STRUCTURED_OUTPUTS` | optional | `1` schaltet `output_config.format` in Batch-Anfragen ein; Standard aus (SIN-497) |
 | `OPENAI_API_KEY` | gesetzt | Prefix `sk-`; `GET /v1/models` → 200 |
 | `LANGFUSE_PUBLIC_KEY` | gesetzt | Prefix `pk-lf`; Projekt `Content AGent` auf EU-Host → 200 |
 | `LANGFUSE_SECRET_KEY` | gesetzt | Prefix `sk-lf` |

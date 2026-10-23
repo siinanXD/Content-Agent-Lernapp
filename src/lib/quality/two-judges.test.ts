@@ -54,14 +54,15 @@ describe("Claude-Richter und Bericht (SIN-437)", () => {
 
   it("liest dieselbe JSON-Antwort wie der OpenAI-Richter und zählt Token", async () => {
     const text = '{"items":[{"id":"i1","sourceFidelity":1,"uniqueness":1,"niveau":4,"language":5,"safetyFlag":false,"reasons":["ok"]}]}';
-    let sent: { model?: string; system?: string } = {};
+    let sent: { model?: string; system?: string; output_config?: { format: { type: string } } } = {};
     const r = await claudeJudgeChunk([item], "claude-haiku-5-5", async (path, init) => {
       assert.equal(path, "/v1/messages");
       sent = JSON.parse(String(init.body));
-      return new Response(JSON.stringify({ content: [{ type: "text", text: `Hier: ${text}` }], usage: { input_tokens: 10, output_tokens: 5 } }));
+      return new Response(JSON.stringify({ content: [{ type: "text", text }], usage: { input_tokens: 10, output_tokens: 5 } }));
     });
     assert.equal(sent.model, "claude-haiku-5-5");
     assert.match(sent.system ?? "", /Richter für Lernfragen/);
+    assert.equal(sent.output_config?.format.type, "json_schema");
     assert.equal(r.questions[0]!.passed, true);
     assert.deepEqual(r.usage, { prompt_tokens: 10, completion_tokens: 5 });
   });

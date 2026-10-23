@@ -310,7 +310,7 @@ export async function liveJudgeChunkWithUsage(
     choices?: Array<{ message?: { content?: string } }>;
     usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
-  const text = data.choices?.[0]?.message?.content ?? "{}";
+  const text = data.choices?.[0]?.message?.content ?? "";
   const questions = judgeQuestionsFromText(text, items);
   return {
     questions,
@@ -340,37 +340,66 @@ export function judgeUserContent(items: EvalItem[]): string {
   );
 }
 
-/** Antwort-JSON eines Richters → Bewertung je Frage (fehlende Id: Heuristik wie bisher). */
-export function judgeQuestionsFromText(text: string, items: EvalItem[]): QuestionEval[] {
-  let parsed: {
-    items?: Array<{
-      id: string;
-      sourceFidelity: 0 | 1;
-      uniqueness: 0 | 1;
-      niveau: number;
-      language: number;
-      safetyFlag: boolean;
-      reasons?: string[];
-    }>;
-  } = {};
-  try {
-    parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
-  } catch {
-    parsed = {};
+type JudgeItem = {
+  id: string;
+  sourceFidelity: 0 | 1;
+  uniqueness: 0 | 1;
+  niveau: number;
+  language: number;
+  safetyFlag: boolean;
+  reasons?: string[];
+};
+
+/** Grund, warum die Antwort das Richter-Schema verletzt; null = gültig (SIN-1036). */
+function judgeSchemaViolation(parsed: unknown): string | null {
+  const items = (parsed as { items?: unknown } | null)?.items;
+  if (!Array.isArray(items)) return "Feld items fehlt oder ist kein Array";
+  for (const [i, raw] of items.entries()) {
+    const j = raw as Partial<JudgeItem> | null;
+    if (typeof j?.id !== "string") return `items[${i}].id fehlt`;
+    if (j.sourceFidelity !== 0 && j.sourceFidelity !== 1) return `items[${i}].sourceFidelity nicht 0 oder 1`;
+    if (j.uniqueness !== 0 && j.uniqueness !== 1) return `items[${i}].uniqueness nicht 0 oder 1`;
+    if (!Number.isFinite(j.niveau)) return `items[${i}].niveau keine Zahl`;
+    if (!Number.isFinite(j.language)) return `items[${i}].language keine Zahl`;
+    if (typeof j.safetyFlag !== "boolean") return `items[${i}].safetyFlag kein Boolean`;
   }
-  const byId = new Map((parsed.items ?? []).map((i) => [i.id, i]));
+  return null;
+}
+
+const judgeFailure = (item: EvalItem, reason: string): QuestionEval => ({
+  questionId: item.id,
+  unitId: item.unitId,
+  scores: { sourceFidelity: 0, uniqueness: 0, niveau: 1, language: 1, safetyFlag: false },
+  passed: false,
+  reasons: [`richter_antwort_ungueltig: ${reason}`],
+});
+
+/**
+ * Antwort-JSON eines Richters → Bewertung je Frage. SIN-1036: kein stilles `{}`, keine Heuristik:
+ * Parse-Fehler, Schema-Verstoß oder fehlende Id machen die Einheit „nicht bestanden“ mit Grund in `reasons`.
+ */
+export function judgeQuestionsFromText(text: string, items: EvalItem[]): QuestionEval[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    const why = `kein gültiges JSON (${e instanceof Error ? e.message.slice(0, 80) : "Parse-Fehler"})`;
+    return items.map((item) => judgeFailure(item, why));
+  }
+  const violation = judgeSchemaViolation(parsed);
+  if (violation) return items.map((item) => judgeFailure(item, violation));
+  const byId = new Map((parsed as { items: JudgeItem[] }).items.map((i) => [i.id, i]));
   return items.map((item) => {
     const j = byId.get(item.id);
-    const scores: QualityScores = j
-      ? {
-          sourceFidelity: j.sourceFidelity === 1 ? 1 : 0,
-          uniqueness: j.uniqueness === 1 ? 1 : 0,
-          niveau: clampScore(j.niveau),
-          language: clampScore(j.language),
-          safetyFlag: Boolean(j.safetyFlag),
-        }
-      : heuristicScores(item);
-    return toQuestionEval(item, scores, j?.reasons ?? []);
+    if (!j) return judgeFailure(item, "Id fehlt in der Antwort");
+    const scores: QualityScores = {
+      sourceFidelity: j.sourceFidelity,
+      uniqueness: j.uniqueness,
+      niveau: clampScore(j.niveau),
+      language: clampScore(j.language),
+      safetyFlag: j.safetyFlag,
+    };
+    return toQuestionEval(item, scores, j.reasons ?? []);
   });
 }
 

@@ -4,8 +4,10 @@
  */
 import { anthropicFetch } from "@/lib/anthropic/client";
 import { compactApiError } from "@/lib/api-error";
+import { outputConfig } from "@/lib/generate/api-schema";
 import { withSourceExcerpts } from "./source-excerpt";
 import {
+  JUDGE_JSON_SCHEMA,
   JUDGE_SYSTEM_PROMPT,
   judgeChunked,
   judgeQuestionsFromText,
@@ -29,6 +31,7 @@ export async function claudeJudgeChunk(
     body: JSON.stringify({
       model,
       max_tokens: 8000,
+      output_config: outputConfig(JUDGE_JSON_SCHEMA as unknown as Record<string, unknown>),
       system: JUDGE_SYSTEM_PROMPT,
       messages: [{ role: "user", content: judgeUserContent(items) }],
     }),

@@ -9,35 +9,16 @@ describe("SIN-489 Structured Outputs", () => {
   const c = loadMafCurriculum();
   const { targets } = phaseAChunks("A", c);
   const build = () => chunkBatchRequests({ keyword: "t", curriculum: c, targets: targets.slice(0, 2) });
-  const withEnv = (value: string | undefined, f: () => void) => {
-    const old = process.env.STRUCTURED_OUTPUTS;
-    if (value === undefined) delete process.env.STRUCTURED_OUTPUTS;
-    else process.env.STRUCTURED_OUTPUTS = value;
-    try {
-      f();
-    } finally {
-      if (old === undefined) delete process.env.STRUCTURED_OUTPUTS;
-      else process.env.STRUCTURED_OUTPUTS = old;
+
+  it("SIN-1036: jede Anfrage enthält immer output_config.format mit json_schema (ohne Schalter)", () => {
+    const reqs = build();
+    assert.equal(reqs.length, 2);
+    for (const r of reqs) {
+      const f = (r.params as { output_config: { format: { type: string; schema: unknown } } }).output_config.format;
+      assert.equal(f.type, "json_schema");
+      assert.equal((f.schema as { additionalProperties: boolean }).additionalProperties, false);
+      assert.ok(!("output_format" in r.params));
     }
-  };
-
-  it("Standard (SIN-497): ohne Schalter kein output_config", () => {
-    withEnv(undefined, () => {
-      for (const r of build()) assert.ok(!("output_config" in r.params));
-    });
-  });
-
-  it("STRUCTURED_OUTPUTS=1: Anfrage enthält output_config.format mit json_schema", () => {
-    withEnv("1", () => {
-      const reqs = build();
-      assert.equal(reqs.length, 2);
-      for (const r of reqs) {
-        const f = (r.params as { output_config: { format: { type: string; schema: unknown } } }).output_config.format;
-        assert.equal(f.type, "json_schema");
-        assert.equal((f.schema as { additionalProperties: boolean }).additionalProperties, false);
-        assert.ok(!("output_format" in r.params));
-      }
-    });
   });
 });
 
