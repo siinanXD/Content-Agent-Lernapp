@@ -120,6 +120,17 @@ describe("didaktik prompts (AP-18e)", () => {
     }
   });
 
+  it("SIN-582: rechnen verlangt Zahlen aus der Quelle und entfällt mit PROMPT_REIHENFOLGE_REGELN=aus", () => {
+    assert.match(generatorSystemText(), /Zahlen aus der Quelle, SIN-582/);
+    assert.match(generatorSystemText(), /nie aus dem Gedächtnis ergänzen/);
+    process.env.PROMPT_REIHENFOLGE_REGELN = "aus";
+    try {
+      assert.doesNotMatch(generatorSystemText(), /SIN-582/);
+    } finally {
+      delete process.env.PROMPT_REIHENFOLGE_REGELN;
+    }
+  });
+
   it("SIN-432: PROMPT_AUSWAHL_REGELN=aus liefert den alten Prompt", () => {
     process.env.PROMPT_AUSWAHL_REGELN = "aus";
     try {

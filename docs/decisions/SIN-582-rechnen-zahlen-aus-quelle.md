@@ -1,0 +1,7 @@
+# SIN-582: rechnen-Aufgaben nur mit Zahlen aus der amtlichen Quelle (maf-metall/PA)
+
+- **Links:** Linear [SIN-582](https://linear.app/sinan-kahraman/issue/SIN-582), Vorarbeit [SIN-433](SIN-433-rechnen-zuordnen-lueckentext.md), [SIN-564](SIN-564-reihenfolge-rechnen-regeln.md). Eine fertige Lösung gibt es nicht (Prompt-Text des eigenen Generators).
+- **Entscheidung:** `REIHENFOLGE_RECHNEN_REGELN` in `src/lib/generate/didaktik-prompts.ts` bekommt eine Zusatzregel für rechnen. Formel, Konstanten, Grenzwerte, Toleranzen und Tabellenwerte müssen wörtlich im Quellauszug stehen und unverändert übernommen werden. Frei gewählt werden nur die Eingangswerte der Situation. Fehlt im Auszug eine Formel mit Zahlen, erzeugt der Generator auswahl statt rechnen. sampleSolution nennt den Quellwert. Der Schalter `PROMPT_REIHENFOLGE_REGELN=aus` nimmt die Regel mit zurück.
+- **Messung:** Noch **kein Messwert** (`ANTHROPIC_API_KEY` und `OPENAI_API_KEY` fehlen in diesem Lauf). Belegt ist nur der Unit-Test (Regel im Prompt, per Schalter abschaltbar). Das Kriterium „weniger Niveau-Verwerfungen“ bleibt offen. Nachholen: `npm run quality:prompt-vergleich -- --reihenfolge` und die Quote für rechnen vorher/nachher hier eintragen.
+- **Annahmen:** Richter, Schwellen und Modell bleiben unverändert. Der gecachte Präfix wächst um rund 120 Token. Sinkt die Quote nicht, wird die Regel zurückgenommen.
+- **Warum:** Rechenaufgaben, die Formeln oder Werte nutzen, die der Quellauszug nicht enthält, verlieren beim Richter Quellenbezug und Niveau.
