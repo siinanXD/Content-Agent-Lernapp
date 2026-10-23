@@ -6,3 +6,8 @@ proben:
     art: datei
     pfad: scripts/agent-testnutzer/sitzung.mjs
     enthaelt: generateLink
+  - id: SIN-1001-pruefer-anstoss
+    issue: SIN-1001
+    art: datei
+    pfad: .github/workflows/pruefer-anstoss.yml
+    enthaelt: repos/siinanXD/Leitstand/dispatches
