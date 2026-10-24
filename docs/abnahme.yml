@@ -56,3 +56,13 @@ proben:
     art: datei
     pfad: scripts/autonomy/status.mjs
     enthaelt: "Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)"
+  - id: SIN-1043-vercel-ignorecommand
+    issue: SIN-1043
+    art: datei
+    pfad: vercel.json
+    enthaelt: scripts/vercel-ignore.mjs
+  - id: SIN-1043-ui-pr-baut-weiter
+    issue: SIN-1043
+    art: datei
+    pfad: scripts/vercel-ignore.mjs
+    enthaelt: UI_PFADE
