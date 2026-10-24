@@ -185,3 +185,24 @@ export const PROMPT_NAMEN = {
   richter: "richter-maf",
   erzeuger: "erzeuger-maf",
 } as const;
+
+/** SIN-1048: Massenläufe (Grundbestand, neues Modul) werden gesampelt; Reparatur und Vergleich nie. */
+const MASSENLAEUFE: readonly LaufArt[] = ["grundbestand", "neuesModul"];
+
+/** `LANGFUSE_SAMPLE_RATE` (0 bis 1); fehlt oder ungültig → 1 (alles schreiben). */
+export function sampleRate(env: Record<string, string | undefined> = process.env): number {
+  const raw = env.LANGFUSE_SAMPLE_RATE?.trim();
+  const r = Number(raw);
+  return raw && Number.isFinite(r) && r >= 0 && r <= 1 ? r : 1;
+}
+
+/**
+ * Schreibt diese Einheit einen Langfuse-Trace? Stabil je Einheit (FNV-1a), nur für Massenläufe.
+ * Richter-Scores bleiben in question_evaluations vollständig; das Qualitäts-Tor liest dort, nicht aus Langfuse.
+ */
+export function traceStichprobe(unitId: string, laufArt: LaufArt | undefined, rate: number = sampleRate()): boolean {
+  if (rate >= 1 || !laufArt || !MASSENLAEUFE.includes(laufArt)) return true;
+  let h = 0x811c9dc5;
+  for (const c of unitId) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193) >>> 0;
+  return h / 0x100000000 < rate;
+}

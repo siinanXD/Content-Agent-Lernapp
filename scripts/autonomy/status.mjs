@@ -638,17 +638,22 @@ export async function collectUsage({ env = process.env, now = new Date(), runs =
   const lf = !env.LANGFUSE_PUBLIC_KEY || !env.LANGFUSE_SECRET_KEY ? "LANGFUSE_PUBLIC_KEY/SECRET_KEY" : null;
   await guard("langfuse_units_monat", lf, async () => {
     const auth = Buffer.from(`${env.LANGFUSE_PUBLIC_KEY}:${env.LANGFUSE_SECRET_KEY}`).toString("base64");
-    const from = new Date(now.getTime() - 30 * DAY_MS).toISOString();
+    // SIN-1048: Kalendermonat (UTC) statt 30 Tage rollierend; Traces, Observations und Scores zählen als Units.
+    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
     const base = env.LANGFUSE_BASE_URL || "https://cloud.langfuse.com";
+    const get = (path) => json(`${base}${path}`, { headers: { Authorization: `Basic ${auth}` } });
     let page = 1;
     let units = 0;
     for (;;) {
-      const r = await json(`${base}/api/public/metrics/daily?fromTimestamp=${encodeURIComponent(from)}&page=${page}&limit=50`, { headers: { Authorization: `Basic ${auth}` } });
-      for (const d of r.data) units += (d.countTraces ?? 0) + (d.countObservations ?? 0);
+      const r = await get(`/api/public/metrics/daily?fromTimestamp=${encodeURIComponent(from)}&page=${page}&limit=50`);
+      for (const d of r.data) {
+        if (String(d.date).slice(0, 10) >= from.slice(0, 10)) units += (d.countTraces ?? 0) + (d.countObservations ?? 0);
+      }
       if (page >= (r.meta?.totalPages ?? 1)) break;
       page += 1;
     }
-    return units;
+    const scores = await get(`/api/public/v2/scores?fromTimestamp=${encodeURIComponent(from)}&limit=1`);
+    return units + Number(scores.meta?.totalItems ?? 0);
   });
   return usage;
 }
