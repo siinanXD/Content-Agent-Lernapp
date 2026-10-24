@@ -13,6 +13,10 @@ test("UI-Datei: bauen", () => {
   }
 });
 
+test("UI-PR neben Docs-Änderung bekommt weiter eine Vorschau (PR-Crawler)", () => {
+  assert.equal(ueberspringen("claude/issue-1", ["docs/a.md", "src/app/lernpfad/page.tsx"]), false);
+});
+
 test("main baut immer", () => {
   assert.equal(ueberspringen("main", ["docs/a.md"]), false);
 });

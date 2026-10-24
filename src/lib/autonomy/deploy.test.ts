@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { attemptState, behindAlarm, changedFilesSince, decideDeploy, deployIntervalH, isAppCodePath, lastProductionDeployAt, planDeploy, renderDeploy, triggerDeploy } from "../../../scripts/autonomy/deploy.mjs";
 import { ueberspringen } from "../../../scripts/vercel-ignore.mjs";
 
-const now =new Date("2026-10-06T12:00:00Z");
+const now = new Date("2026-10-06T12:00:00Z");
 
 test("Deploy: nur App-Code zählt, Doku/CI/Tests/Autonomie nicht", () => {
   for (const p of ["docs/PRODUCT.md", "README.md", ".github/workflows/status.yml", "e2e/smoke.spec.ts", "scripts/autonomy/deploy.mjs", "src/lib/a.test.ts", "playwright.config.ts"]) {
