@@ -51,3 +51,8 @@ proben:
     art: datei
     pfad: scripts/autonomy/status.mjs
     enthaelt: "/api/public/v2/scores?fromTimestamp="
+  - id: SIN-1048-langfuse-monatsbeginn
+    issue: SIN-1048
+    art: datei
+    pfad: scripts/autonomy/status.mjs
+    enthaelt: "Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)"
