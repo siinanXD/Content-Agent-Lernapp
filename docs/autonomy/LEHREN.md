@@ -136,7 +136,6 @@ Jeder Lauf liest diese Datei zuerst. Eine Zeile je Lehre: **Was nicht geht → w
 ## Datenbank-Rechte
 - Tabellenrechte nach Migrationen auf allen aktuellen public-Tabellen prüfen; eine feste Sechserliste übersieht spätere Tabellen. DML/RLS beim Rechte-Entzug vergleichen und Rollback testen. (SIN-438)
 - Verbrauch nie in öffentliche PRs/Logs spiegeln: strukturierte Marker privat in Linear, öffentliche Digest-/Steckbriefausgaben neutral, Wiederholungen nach Laufkennung deduplizieren. (SIN-911)
-
 - Neue Tabelle mit Personenbezug bekommt von Supabase TRUNCATE, TRIGGER, REFERENCES für `authenticated` (RLS gilt dafür nicht) → in der Migration `revoke truncate, trigger, references … from anon, authenticated` setzen, Lese-Rechte nur für RLS-Policies lassen, `scripts/verify-table-grants.sql` ergänzen. (SIN-438)
 - Worker durften laut `--allowedTools` keine Doku lesen (kein WebFetch/MCP), Preise blieben `null` → Context7 (`mcp__context7__*`, `--mcp-config`) und `WebFetch` sind in `claude.yml` und `worker.yml` erlaubt; erst Context7, dann offizielle Doku, Quelle im PR nennen. (SIN-537)
 - Live-Check UI-04 blieb trotz richtigem Klickweg rot: Klicks auf der Live-Seite vor der Hydration bewirken nichts → mehrstufige Klickwege in `live/live.spec.ts` mit `clickUntil` (Klick wiederholen, bis die URL wechselt) und `networkidle` bauen. (SIN-557)
