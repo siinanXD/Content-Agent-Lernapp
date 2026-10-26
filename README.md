@@ -32,7 +32,7 @@ npm run dev        # http://127.0.0.1:43123, works without keys (in-memory mock 
 
 ## License
 
-No license file yet; the choice is open (SIN-752).
+No open-source license: all rights reserved. Course content and the app are part of a paid product (owner decision, SIN-752).
 
 ---
 
