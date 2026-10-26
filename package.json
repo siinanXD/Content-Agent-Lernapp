@@ -74,7 +74,7 @@
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/core": "^2.0.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
-    "@opentelemetry/sdk-node": "^0.300.0",
+    "@opentelemetry/sdk-node": "^0.223.0",
     "@opentelemetry/sdk-trace-base": "^2.0.1",
     "@sentry/nextjs": "^11.8.0",
     "@sentry/node": "^11.4.0",
