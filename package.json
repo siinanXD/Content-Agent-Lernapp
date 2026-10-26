@@ -92,7 +92,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "chrome-launcher": "^1.2.2",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.4.2",
     "lighthouse": "^13.5.0",
     "mermaid": "^12.2.0",
