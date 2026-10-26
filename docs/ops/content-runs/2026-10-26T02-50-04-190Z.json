@@ -1,0 +1,117 @@
+{
+  "runId": "2026-10-26T02-50-04-190Z",
+  "mode": "live",
+  "startedAt": "2026-10-26T02:50:04.190Z",
+  "mapId": null,
+  "moduleId": null,
+  "moduleIds": [],
+  "nextModuleId": null,
+  "resumeModuleId": null,
+  "generated": 0,
+  "passed": 0,
+  "discarded": 0,
+  "discardedUnitIds": [],
+  "deferred": 0,
+  "schema": {
+    "generated": 0,
+    "invalid": 0,
+    "repaired": 0,
+    "discarded": 0
+  },
+  "repair": {
+    "ran": true,
+    "costEur": 0
+  },
+  "sourceRefresh": {
+    "units": 0,
+    "replaced": 0,
+    "changeKeys": []
+  },
+  "model": "claude-haiku-5-5",
+  "costEur": 0,
+  "capEur": 20,
+  "stopReason": null,
+  "safetySampleUnitIds": [],
+  "batchIds": [],
+  "mapPlan": [
+    {
+      "mapId": "maf-metall",
+      "ziel": 890,
+      "vorhanden": 701,
+      "geteilt": 0,
+      "neu": 52
+    },
+    {
+      "mapId": "indkfl",
+      "ziel": 1160,
+      "vorhanden": 1140,
+      "geteilt": 0,
+      "neu": 18
+    },
+    {
+      "mapId": "maf-kunststoff",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-textil",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-textilveredelung",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-lebensmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    },
+    {
+      "mapId": "maf-druckverarbeitung",
+      "ziel": 890,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 750
+    },
+    {
+      "mapId": "maf-packmittel",
+      "ziel": 850,
+      "vorhanden": 0,
+      "geteilt": 140,
+      "neu": 710
+    }
+  ],
+  "schritte": {
+    "erzeugen": 0,
+    "quellenNeu": 0,
+    "schemaReparatur": 0,
+    "richter": 0,
+    "reparatur": 0
+  },
+  "nichtVersucht": [
+    {
+      "grund": "begonnene-module",
+      "units": 18
+    },
+    {
+      "grund": "andere-map",
+      "units": 4392
+    }
+  ],
+  "batchFailures": {
+    "sent": 0,
+    "failed": 0,
+    "errors": []
+  },
+  "failReason": null
+}
