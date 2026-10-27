@@ -44,6 +44,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Was | Wo |
 | --- | --- |
 | Workflows | `.github/workflows/` (`dispatch`, `worker`, `repair`, `planner`, `pr-gate`, `post-merge`, `digest`, `status`, `aufraeumen`, …) |
+| PR-Prüfungen: Auslöser, Median-Dauer, Entscheidung je Workflow (SIN-1140) | `docs/ci/pr-pruefungen.md` |
 | Skripte der Workflows | `scripts/autonomy/` (`dispatch`, `linear`, `planner`, `risk`, `steckbrief`, `digest`, `sparen`, `verbrauch`, …) |
 | Diagramme als Mermaid (SIN-376, Quelle für FigJam) | `docs/diagramme/pipeline.mmd`, `nutzerwege.mmd`; Hinweis im PR-Steckbrief (`diagrammHinweis`) |
 | Vorlagen und Konfiguration | `docs/autonomy/` (`README.md`, `groessen.md`, `tokens.md`, Fixtures) |
