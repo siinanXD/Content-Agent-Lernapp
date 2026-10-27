@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d" font-family="ui-monospace, monospace" font-size="14">
+  <title id="t">Content-Agent-Lernapp architecture</title>
+  <desc id="d">Learners use the Next.js app on Vercel, which reads courses and progress from Supabase EU. Route handlers under /api/courses run the pipeline: research, plan, generate with the Claude API, evaluate with an OpenAI judge, and publish through the content guard into Supabase. Generation and judging are traced in Langfuse EU. A weekly source check starts a refresh.</desc>
+  <rect width="900" height="430" fill="#fff7ed"/>
+  <g fill="#ffffff" stroke="#1c1917" stroke-width="1">
+    <rect x="20" y="30" width="170" height="60" rx="2"/>
+    <rect x="300" y="30" width="260" height="60" rx="2"/>
+    <rect x="670" y="30" width="210" height="60" rx="2"/>
+    <rect x="20" y="200" width="150" height="60" rx="2"/>
+    <rect x="195" y="200" width="150" height="60" rx="2"/>
+    <rect x="370" y="200" width="150" height="60" rx="2"/>
+    <rect x="545" y="200" width="150" height="60" rx="2"/>
+    <rect x="720" y="200" width="160" height="60" rx="2"/>
+    <rect x="370" y="340" width="325" height="60" rx="2"/>
+    <rect x="20" y="340" width="230" height="60" rx="2"/>
+  </g>
+  <g fill="#1c1917" text-anchor="middle">
+    <text x="105" y="57">Learner</text>
+    <text x="105" y="77" fill="#57534e" font-size="12">browser, PWA</text>
+    <text x="430" y="57">Next.js app (Vercel)</text>
+    <text x="430" y="77" fill="#57534e" font-size="12">pages, route handlers /api/courses</text>
+    <text x="775" y="57">Supabase EU</text>
+    <text x="775" y="77" fill="#57534e" font-size="12">courses, units, progress</text>
+    <text x="95" y="227">research</text>
+    <text x="95" y="247" fill="#57534e" font-size="12">official sources</text>
+    <text x="270" y="227">plan</text>
+    <text x="270" y="247" fill="#57534e" font-size="12">curriculum map</text>
+    <text x="445" y="227">generate</text>
+    <text x="445" y="247" fill="#57534e" font-size="12">Claude API</text>
+    <text x="620" y="227">evaluate</text>
+    <text x="620" y="247" fill="#57534e" font-size="12">OpenAI judge</text>
+    <text x="800" y="227">publish</text>
+    <text x="800" y="247" fill="#57534e" font-size="12">content guard</text>
+    <text x="532" y="367">Langfuse EU</text>
+    <text x="532" y="387" fill="#57534e" font-size="12">traces, scores, prompt versions</text>
+    <text x="135" y="367">weekly source check</text>
+    <text x="135" y="387" fill="#57534e" font-size="12">starts a refresh</text>
+  </g>
+  <g stroke="#b45309" stroke-width="1" fill="none">
+    <path d="M190 60H300M560 60H670"/>
+    <path d="M430 90V150H95V200"/>
+    <path d="M170 230H195M345 230H370M520 230H545M695 230H720"/>
+    <path d="M800 200V90"/>
+    <path d="M445 260V340M620 260V340"/>
+    <path d="M95 340V260"/>
+  </g>
+  <g fill="#57534e" font-size="12" text-anchor="middle">
+    <text x="245" y="52">uses</text>
+    <text x="615" y="52">reads</text>
+    <text x="262" y="142">pipeline steps</text>
+    <text x="840" y="150">writes</text>
+  </g>
+</svg>
