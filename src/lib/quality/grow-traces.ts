@@ -7,7 +7,7 @@ import type { CostLedger } from "./cost-guard";
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import { flushLangfuseOtel } from "./langfuse-otel";
 import { recordUnitTrace } from "./langfuse-client";
-import { kurslaufSessionId, type LaufArt, type TraceKontext } from "./langfuse-names";
+import { kurslaufSessionId, traceStichprobe, type LaufArt, type TraceKontext } from "./langfuse-names";
 import type { ErzeugenInfo } from "./unit-traces";
 import type { QuestionEval } from "./schemas";
 
@@ -54,6 +54,7 @@ export function createGrowTracer(o: GrowTracerOptions) {
         const mine = evals.filter((e) => e.unitId === unit.id);
         const gen = erzeugt.get(unit.id);
         if (mine.length === 0 || !gen) continue;
+        if (!traceStichprobe(unit.id, gen.laufArt)) continue; // SIN-1048
         const id = await write({
           courseId: o.courseId,
           sessionId,

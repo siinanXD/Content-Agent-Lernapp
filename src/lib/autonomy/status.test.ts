@@ -173,6 +173,29 @@ test("Status: collectUsage ohne Tokens → nicht messbar, mit Vercel-Token → Z
   assert.match(bad.vercel_deployments_tag.error, /403/);
 });
 
+test("Test: Messung zählt nur den laufenden Kalendermonat (Fixture über Monatsgrenze).", async () => {
+  const now = new Date("2026-10-02T12:00:00Z");
+  const urls: string[] = [];
+  const fetchImpl = (async (url: string) => {
+    urls.push(url);
+    if (url.includes("/metrics/daily")) {
+      const data = [
+        { date: "2026-09-30", countTraces: 1000, countObservations: 1000 },
+        { date: "2026-10-01", countTraces: 10, countObservations: 20 },
+        { date: "2026-10-02", countTraces: 1, countObservations: 2 },
+      ];
+      return { ok: true, json: async () => ({ data, meta: { totalPages: 1 } }) };
+    }
+    return { ok: true, json: async () => ({ meta: { totalItems: 100 } }) };
+  }) as unknown as typeof fetch;
+  const env = { LANGFUSE_PUBLIC_KEY: "p", LANGFUSE_SECRET_KEY: "s" } as unknown as NodeJS.ProcessEnv;
+  const u = await collectUsage({ env, now, runs: [], fetchImpl });
+  assert.equal(u.langfuse_units_monat, 10 + 20 + 1 + 2 + 100);
+  assert.ok(urls.every((x) => x.includes(encodeURIComponent("2026-10-01T00:00:00.000Z"))));
+  const row = buildQuotaRows({ langfuse_units_monat: u.langfuse_units_monat }, limits).find((r: { key: string }) => r.key === "langfuse_units_monat");
+  assert.equal(typeof row?.pct, "number");
+});
+
 test("Status: Fehlerzeile aus Annotation, sonst Schrittname", async () => {
   const jobs = { jobs: [{ id: 9, name: "work", conclusion: "failure", steps: [{ name: "Test-Fehler", conclusion: "failure" }] }] };
   const withNote = (async (path: string) => (path.includes("annotations") ? [{ annotation_level: "failure", message: "Boom\nzweite Zeile" }] : jobs)) as never;

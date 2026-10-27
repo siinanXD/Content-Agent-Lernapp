@@ -46,6 +46,16 @@ proben:
     art: datei
     pfad: src/lib/quality/evaluate-agent.ts
     enthaelt: richter_antwort_ungueltig
+  - id: SIN-1048-langfuse-kalendermonat
+    issue: SIN-1048
+    art: datei
+    pfad: scripts/autonomy/status.mjs
+    enthaelt: "/api/public/v2/scores?fromTimestamp="
+  - id: SIN-1048-langfuse-monatsbeginn
+    issue: SIN-1048
+    art: datei
+    pfad: scripts/autonomy/status.mjs
+    enthaelt: "Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)"
   - id: SIN-1043-vercel-ignorecommand
     issue: SIN-1043
     art: datei
