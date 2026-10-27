@@ -2,7 +2,7 @@
   "runs": 7,
   "tolerance": 0.1,
   "routes": {
-    "/": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },
+    "/": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 1 },
     "/start": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 190 },
     "/lernpfad": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 205 },
     "/einheit/unit-03": { "lcpMs": 2500, "cls": 0.1, "tbtMs": 300, "jsKb": 210 }
