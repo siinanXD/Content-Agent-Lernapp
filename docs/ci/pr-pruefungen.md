@@ -1,0 +1,80 @@
+# PR-Prüfungen: Auslöser, Dauer, Entscheidung (SIN-1140)
+
+Teil 1 von SIN-1120. Nur Messung und Doku, kein Workflow wurde geändert. Teil 2 entscheidet auf dieser Grundlage.
+
+## Messung
+
+- Datum: 2026-10-27 (UTC).
+- Befehl je Workflow (10 jüngste Läufe, alle Ereignisse):
+  `gh run list --workflow <name>.yml --limit 10 --json databaseId,conclusion,createdAt,updatedAt,event`
+- Dauer = `updatedAt` minus `createdAt` des Laufs, Median über die 10 Läufe. Sie enthält Wartezeit in der Warteschlange.
+- Pflicht-Checks auf `main` (Branch-Protection, `strict: false`): `build`, `merge-gate`, `pr-title`. Nur diese bremsen den Auto-Merge.
+- Stand der `ci` ist nach SIN-1119 (PR #655, Playwright und Lighthouse parallel). Der Wert „`build` ca. 8 Min.“ aus
+  PR #652 gilt für die Zeit davor.
+
+## Tabelle
+
+| Workflow | Auslöser (Pfadfilter) | Median-Dauer (10 Läufe) | Entscheidung |
+|---|---|---|---|
+| `ci` auf PR | `pull_request`, kein Pfadfilter | 309 s (5 PR-Läufe; alle 10: 333 s) | behalten: enthält den Pflicht-Check `build`, bestimmt die Wartezeit |
+| `pr-gate` | `pull_request`, `workflow_run` (nach `ci`), alle 10 Min. (`schedule`), kein Pfadfilter | 10,5 s (alle 10 Läufe); PR-Läufe 160 s | behalten: setzt Risiko-Label und Auto-Merge, Pflicht-Checks `merge-gate`, `pr-title`; Rechenzeit der Jobs nur ca. 22 s |
+| `codeql` | `pull_request`, `push` auf `main`, montags 04:17, kein Pfadfilter | 183 s (PR-Läufe 94 s, `main` 270 s) | nur bei Bedarf prüfen: kein Pflicht-Check, läuft parallel zu `ci` und ist mit 94 s schneller, spart nur Rechenminuten |
+| `sichtpruefung` | `pull_request`, Pfadfilter ja (`src/app/**`, `src/components/**`) | 121,5 s (alle 10 Läufe vom 16. bis 21.10.; 2 davon ca. 1500 s) | behalten: Pfadfilter greift schon |
+| `pr-crawler` | `pull_request`, Pfadfilter ja (`src/app/**`, `src/components/**`, `public/**`, `**/*.css`), außerdem `deployment_status`, `workflow_dispatch` | nicht messbar: 0 Läufe (`total_count` 0) | behalten: Pfadfilter greift schon |
+| `visual` | `pull_request`, kein Pfadfilter im Workflow, aber `scripts/autonomy/visual-scope.mjs` beendet den Job früh | 11,5 s | behalten: bei Content-PRs sofort grün, kein Gewinn durch Umbau |
+| `goldset` | `pull_request`, kein Pfadfilter, Schritt „Betroffen?“ beendet den Job früh | 10 s | behalten: bei Content-PRs sofort grün, Pflicht-Check werden möglich |
+| `ci` auf `main` nach Merge | `push` auf `main` | 675 s (5 `main`-Läufe, Spanne 293 bis 816 s) | siehe nächster Abschnitt |
+
+Zur Einordnung der Zeiten:
+
+- `pr-gate`: Die PR-Läufe zeigen 28 bis 325 s, weil `regate` den Lauf nach Ende von `ci` neu startet und `updatedAt` mitwandert.
+  Die Jobs selbst brauchen zusammen ca. 22 s (Lauf 40581637512: `pr-title` 3 s, `gate` 13 s, `merge-gate` 6 s).
+- Kritischer Pfad eines Content-PRs ist `ci`: Lauf 40581605540 hatte `pruefen` 66 s, `bauen` 50 s, `perf` 143/151 s, `e2e` 196 s, Gesamt 260 s.
+  `codeql` (91 s im selben PR) läuft daneben und verlängert die Wartezeit nicht. Die Annahme aus dem Auftrag „Zeit kommt aus `build` und `codeql`“
+  stimmt damit nur für `build`.
+- `sichtpruefung`: Die 10 Läufe sind alt, weil seit dem 21.10. kein PR mehr `src/app/**` oder `src/components/**` geändert hat.
+  Der Median beschreibt UI-PRs, nicht Content-PRs.
+
+## `ci` auf `main` nach Merge
+
+- Median 675 s (5 Läufe, 293 bis 816 s). Der Ausreißer-Lauf 40564230698 hatte `perf (2/2)` mit 720 s statt ca. 150 s.
+- Hat der Lauf einen Zweck? Ja. Die Branch-Protection hat `strict: false`: Ein PR muss nicht auf dem neuesten `main` stehen. Der Squash-Commit kann daher
+  etwas enthalten, das im PR so nie grün war (zwei PRs kurz hintereinander). Außerdem hängt `revert-guard` (SIN-252) per `workflow_run` an `ci` auf `main`:
+  Ohne diesen Lauf gäbe es keinen automatischen Revert bei rotem `main`.
+- Bei einem reinen Content-Squash (nur `docs/ops/content-runs/`) ist der Squash-Inhalt im PR schon grün und kann `main` nicht rot machen.
+- Empfehlung für Teil 2: `ci` auf `main` behalten. Prüfen, ob Content-Squashes übersprungen werden können. Achtung: `post-merge.yml` startet
+  nach einem Auto-Merge durch `github-actions[bot]` die Workflows per `workflow_dispatch` (laut Kommentar in `ci.yml` und `post-merge.yml`).
+  Ein `paths-ignore` auf `push` allein würde dann nichts sparen; der Pfadfilter müsste in `post-merge` oder als Schritt in `ci` sitzen.
+
+## Beleg: `chore(content)`-PRs lösen `sichtpruefung` und `pr-crawler` nicht aus
+
+PR [siinanXD/Content-Agent-Lernapp#652](https://github.com/siinanXD/Content-Agent-Lernapp/pull/652)
+(`chore(content): Content-Lauf 20261027-1250 (SIN-220)`) ändert genau eine Datei: `docs/ops/content-runs/2026-10-27T12-50-16-681Z.json`.
+Abgerufen mit `gh pr checks 652` und `gh pr view 652 --json statusCheckRollup`. Beteiligte Workflows:
+`ci`, `codeql`, `goldset`, `pr-gate`, `visual`. Check-Liste:
+
+| Check | Ergebnis | Dauer |
+|---|---|---|
+| `build` | pass | 8 min 6 s (vor SIN-1119) |
+| `analyze` (codeql) | pass | 1 min 36 s |
+| `bildvergleich` (visual) | pass | 7 s |
+| `goldset` | pass | 6 s |
+| `gate` (pr-gate) | pass | 8 s |
+| `merge-gate` | pass | 7 s |
+| `pr-title` | pass | 2 s |
+| `einspruch-ende`, `regate`, `Supabase Preview` | skipping | 0 s |
+
+`sichtpruefung` und `pr-crawler` fehlen, wie es die Pfadfilter vorsehen.
+
+## Ausgangswert für Teil 2: PR geöffnet bis merge-fähig
+
+- Median **8,3 Minuten** über die 10 jüngsten gemergten PRs (#651, #652, #653, #655, #656, #658 bis #662).
+- Einzelwerte in Minuten: 4,6 / 5,4 / 5,3 / 6,2 / 12,7 / 9,0 / 14,3 / 8,3 / 8,4 / 8,6 (in der Reihenfolge #662 bis #651).
+- Befehl: `gh pr list --state merged --limit 10 --json number,createdAt,mergedAt`, Dauer = `mergedAt` minus `createdAt`.
+- Näherung: „merge-fähig“ ist hier der Merge-Zeitpunkt. Der Auto-Merge feuert direkt nach dem letzten grünen Pflicht-Check, der Fehler liegt unter einer Minute.
+- Der Wert mischt 8 Content-PRs, einen `ci`-PR (#655, 14,3 min) und einen `feat`-PR (#660). Von den 10 liefen #651 bis #653 noch mit der alten `ci`.
+
+## Nicht erfasst
+
+- Weitere Workflows, die bei einem PR laufen, standen nicht im Auftrag und sind nicht gemessen (z. B. `review`).
+- Die Messung beruht auf den 10 letzten Läufen. Sie schwankt mit Last und Warteschlange (siehe Ausreißer oben).
