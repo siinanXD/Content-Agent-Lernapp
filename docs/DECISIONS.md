@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1119 | SIN-1119: CI-Prüfungen laufen parallel | [SIN-1119-ci-parallel.md](decisions/SIN-1119-ci-parallel.md) |
 | SIN-1043 | SIN-1043: Vercel-Vorschau nur bei UI-Änderungen | [SIN-1043-vercel-vorschau-nur-ui.md](decisions/SIN-1043-vercel-vorschau-nur-ui.md) |
 | SIN-1036 | SIN-1036: Strukturiertes JSON in der Content-Pipeline | [SIN-1036-structured-json.md](decisions/SIN-1036-structured-json.md) |
 | SIN-1010 | SIN-1010: Fehlender Prüfer-Beleg ist kein Gate-Bruch | [SIN-1010-beleg-warten-kein-gate-bruch.md](decisions/SIN-1010-beleg-warten-kein-gate-bruch.md) |
