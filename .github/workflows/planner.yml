@@ -68,7 +68,7 @@ jobs:
       LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       # Leitstand (SIN-303): Start/Ende als Ereignis in Supabase (nie ein Fehlerabbruch).
