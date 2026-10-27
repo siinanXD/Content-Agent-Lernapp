@@ -4,7 +4,8 @@
  * (mobil, Median aus `runs` Läufen). Überschreitung → Exit 1 → der CI-Job `build` wird rot und blockiert den Merge.
  * Messgrößen: LCP, CLS, TBT und Größe der übertragenen JavaScript-Dateien der Route (resource-summary).
  *
- * Usage: node scripts/performance-budget.mjs [--base http://127.0.0.1:43123] [--out messung.json] [--runs 3] [--serve] [--details]
+ * Usage: node scripts/performance-budget.mjs [--base http://127.0.0.1:43123] [--out messung.json] [--runs 3] [--serve] [--details] [--shard 1/2]
+ * --shard i/n misst nur jede n-te Route ab der i-ten (SIN-1119: CI teilt die Messung auf parallele Jobs; alle Grenzen bleiben).
  * --details zeigt je Route das LCP-Element und die LCP-Phasen (Ursachenanalyse, SIN-311); bei Überschreitung immer.
  * Braucht einen laufenden Server (`npm run build && npm start -- --port 43123`) oder --serve: startet `next start` selbst.
  * SIN-455: Reißt eine Route die Grenze, wird sie einmal nachgemessen; rot nur, wenn auch die Nachmessung reißt.
@@ -35,6 +36,22 @@ export function violations(measured, limit, tolerance = 0) {
   return rows
     .filter(([, key]) => limit[key] !== undefined && measured[key] >= allowed(key, limit[key], tolerance))
     .map(([name, key, unit]) => `${name} ${measured[key]}${unit && ` ${unit}`} (Grenze ${limit[key]}${unit && ` ${unit}`}${allowed(key, limit[key], tolerance) !== limit[key] ? `, mit Toleranz ${allowed(key, limit[key], tolerance)}` : ""})`);
+}
+
+/**
+ * Teilt die Routen für parallele CI-Jobs auf (SIN-1119): Teil `index` von `count` (1-basiert), reihum verteilt.
+ * @template T
+ * @param {T[]} entries
+ * @param {string | undefined} shard z. B. "1/2"; leer = alle
+ * @returns {T[]}
+ */
+export function shardRoutes(entries, shard) {
+  if (!shard) return entries;
+  const m = /^(\d+)\/(\d+)$/.exec(shard);
+  const index = Number(m?.[1]);
+  const count = Number(m?.[2]);
+  if (!m || index < 1 || index > count) throw new Error(`--shard erwartet i/n mit 1 <= i <= n, bekam "${shard}"`);
+  return entries.filter((_, i) => i % count === index - 1);
 }
 
 /** GitHub-Anmerkung, über die Check-API lesbar (SIN-455). Zeilenumbrüche und `::` würden das Format brechen. */
@@ -88,6 +105,7 @@ async function main(argv) {
   const out = take("--out");
   const budget = JSON.parse(readFileSync(new URL("../performance-budget.json", import.meta.url), "utf8"));
   const runs = Number(take("--runs") ?? budget.runs ?? 3);
+  const routes = shardRoutes(Object.entries(budget.routes), take("--shard"));
   const serve = args.includes("--serve");
   const details = args.includes("--details");
 
@@ -108,7 +126,7 @@ async function main(argv) {
 
   const rows = [];
   try {
-    for (const [route, limit] of Object.entries(budget.routes)) {
+    for (const [route, limit] of routes) {
       const runRoute = async () => {
         const lhrs = [];
         // Aufwärmlauf (SIN-329): der erste Abruf trifft kalte Caches und Server; er zählt nicht in den Median.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { annotation, measure, summary, verdict, violations } from "../../../scripts/performance-budget.mjs";
+import { annotation, measure, shardRoutes, summary, verdict, violations } from "../../../scripts/performance-budget.mjs";
 
 const limit = { lcpMs: 2500, cls: 0.1, tbtMs: 300, jsKb: 250 };
 
@@ -59,4 +59,15 @@ test("SIN-455: Ausreißer wird nachgemessen, rot nur wenn auch die Nachmessung r
   assert.equal(real.ok, false);
   assert.ok(real.notes.some((n) => n.startsWith("::error title=Leistungsbudget /start::LCP 2900 ms")));
   assert.match(real.notes[0]!, /Nachmessung: wieder über der Grenze/);
+});
+
+test("Shards teilen die Routen reihum auf, jede Route genau einmal", () => {
+  const routes = ["/", "/start", "/lernpfad", "/einheit/unit-03", "/x"];
+  assert.deepEqual(shardRoutes(routes, "1/2"), ["/", "/lernpfad", "/x"]);
+  assert.deepEqual(shardRoutes(routes, "2/2"), ["/start", "/einheit/unit-03"]);
+  assert.deepEqual(shardRoutes(routes, undefined), routes);
+});
+
+test("ungültiger Shard bricht ab statt still alles zu messen", () => {
+  for (const bad of ["0/2", "3/2", "2", "a/b"]) assert.throws(() => shardRoutes(["/"], bad), /--shard erwartet i\/n/);
 });
