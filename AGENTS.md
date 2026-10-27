@@ -9,13 +9,15 @@
 1. **Vor dem Start den Auftrag aktualisieren.** Worker liest Issue inkl. neuester Kommentare, Masterauftrag, vorhandene PRs, relevante Register (rollen.json, agents.json, abnahme.yml). Ändern sich Kriterien während der Arbeit: vor Merge erneuter Abgleich.
 2. **Behauptungen zuerst gegen Belege prüfen.** Vor einer Reparatur vorhandene Logs/loop_events lesen und Ursache eingrenzen. Diagnose gehört in den bestehenden Auftrag, nicht in ein neues Issue.
 3. **Begrenzte Reparaturen automatisch.** Innerhalb des freigegebenen Auftrags darf der Worker Code, Regressionstests und Doku korrigieren und vorhandene Prüfungen ausführen. Höchstens zwei erfolglose Reparaturrunden, dann Stopp mit konkretem Blocker. Kein Extra-Issue für kleine Fixes.
-4. **Abschluss unabhängig prüfen.** Prüfer gleicht jedes aktuelle Fertig-Kriterium mit einem Beleg ab: Commit, Workflow-Lauf, gespeichertes Ergebnis (Supabase-Zeile) oder Live-Ausgabe (Vercel, Screenshot). Fehlender Beleg hält das Issue offen und geht automatisch als Nacharbeit an denselben Worker. „PR gemergt“ reicht nicht.
-5. **Nur echte Entscheidungen an Sinan.** Rückfrage bei neuen Kosten, Secrets, Rechten, Löschungen, wesentlich geändertem Umfang, vorbehaltenen Produktionsaktionen. Routinefehler laufen innerhalb der Freigabe. Meldung an Sinan kurz: erledigt / belegt / blockiert.
+4. **Abschluss unabhängig prüfen.** Der Codex-Review gleicht jedes aktuelle Fertig-Kriterium mit einem Beleg ab: Commit, Workflow-Lauf, gespeichertes Ergebnis (Supabase-Zeile) oder Live-Ausgabe (Vercel, Screenshot). Fehlender Beleg hält das Issue offen und wird im selben PR nachgeholt. „PR gemergt“ reicht nicht.
+5. **Nur echte Entscheidungen an Sinan.** Rückfrage bei neuen Kosten, Secrets, Rechten, Löschungen, wesentlich geändertem Umfang, vorbehaltenen Produktionsaktionen, Entfernen von Workflows oder Pflicht-Checks. Routinefehler laufen innerhalb der Freigabe. Ablauf siehe „Entscheidungen an Sinan“. Meldung an Sinan kurz: erledigt / belegt / blockiert.
 
 Diese Regeln haben Vorrang vor älteren Wiederholungs- und Abschlussregeln. Fehlender Beleg: kein Merge, In Progress. „Part of“: nie Done.
 
 
 Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Sinan.
+
+**Arbeitsweise seit 27.10.2026 (Leitstand 2.0, SIN-1104, SIN-1117):** Ein T3-Chat bearbeitet ein Linear-Issue: ein Issue, ein Branch, ein PR. Das Gate ist `build` plus Codex-Review. Der alte Loop (Dispatcher, Planer, Worker, Repair, Prüfer-Workflows, Labels `repair:*`, `einspruch:*`, `pruefer:*`) ist abgeschaltet und hier nicht mehr beschrieben.
 
 ## Zuerst lesen
 
@@ -44,7 +46,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Fertige Open-Source-Lösung vor Eigenbau, wenn: Lizenz MIT oder Apache, letzter Commit jünger als 6 Monate, mehr als 500 Sterne
 - Das günstigste Modell, das die Qualitäts-Schwelle besteht
 - Bei zwei gleich guten Wegen: der mit weniger Abhängigkeiten
-- Nie zurückfragen. Bei Unsicherheit die Annahme in der Entscheidungsdatei (`docs/decisions/`) notieren und weiterarbeiten
+- Nur bei echten Entscheidungen zurückfragen (Grundregel Nr. 5). Bei Unsicherheit die Annahme in der Entscheidungsdatei (`docs/decisions/`) notieren und weiterarbeiten
 
 ### Stopp-Regeln
 
@@ -61,20 +63,18 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 ## Linear-Issues bearbeiten
 
-1. Issue starten (In Progress) / zuweisen, bevor Code geschrieben wird — zuerst **AP-00**.
+1. Issue samt neuesten Kommentaren lesen und auf In Progress setzen, bevor Code geschrieben wird.
 2. Scope und Akzeptanzkriterien des Issues einhalten; Annahmen in `docs/decisions/<ISSUE-ID>-<kurz>.md` festhalten.
-3. Branch: `cursor/<kurzname>-85a9` (Cursor) oder `claude/<kurzname>` (Claude). Pull Request öffnen. Gemerged wird automatisch, siehe „Pull Requests und Merge“.
-4. Nach Merge Issue schließen und nächsten Block laut Bauplan starten.
-5. Reihenfolge: AP-00 → AP-01 → AP-02 nacheinander; danach Pipeline (AP-03–AP-06) und App (AP-07–AP-09) parallel möglich; Hermes **AP-10** zuletzt unter Infra; **AP-11** Pilot; **AP-12** Lern-Schleife nach dem Pilot.
-6. Blocker nach 3 PR-Reparatur-Runden oder bei fehlenden Secrets: kurz melden und mit Arbeit ohne Live-Keys weitermachen (Docs, Scaffold, Mocks, OpenAPI, Linear).
+3. Ein Issue → ein Branch `sin-<nr>-<kurzname>` → ein PR. Kein `claude/`- oder `codex/`-Präfix: dort verlangt `merge-gate` noch den alten Prüfer-Beleg (`scripts/autonomy/beleg-gate.mjs`) und bleibt rot. Gemerged wird automatisch, siehe „Pull Requests und Merge“.
+4. Nach Merge setzt Leitstand 2.0 das Issue auf Done. Reihenfolge und Nachziehen neuer Issues macht sein Planer (SIN-1116).
+5. Blocker nach 3 PR-Reparatur-Runden oder bei fehlenden Secrets: als Linear-Kommentar melden und mit Arbeit ohne Live-Keys weitermachen (Docs, Scaffold, Mocks, OpenAPI, Linear).
 
 ## Pull Requests und Merge (SIN-207)
 
 - Ein PR pro Arbeitspaket (1 Linear-Issue = 1 PR). Reparaturen kommen in denselben PR, kein Folge-PR.
-- Der Dispatcher (`dispatch.yml`, alle 2 h) startet das nächste Todo-Issue ohne offene Blocker, höchstens 2 parallel. Der Planer (`planner.yml`, sonntags) legt höchstens 5 Issues pro Woche an. Beide laufen mit `--dry-run` ohne Änderungen.
-- PR-Titel = Commit auf `main` (Squash-Merge): Conventional Commit mit Linear-ID, z. B. `feat(lernpfad): Fortschrittsbalken (SIN-123)`. Der Check `pr-title` prüft das.
-- Das Risiko setzt der Workflow `pr-gate` automatisch als Label `risk:low` (Standard), `risk:medium` oder `risk:high`. Nach jedem Merge stößt `post-merge` den Dispatcher direkt an. Nie selbst setzen oder entfernen. Die Regeln stehen in `scripts/autonomy/risk.mjs` (SIN-223).
-  - `risk:low` (Standard, SIN-811): Auto-Merge (Squash) ohne Frist, sobald `build`, `pr-title` und `merge-gate` grün sind. Gilt für Design-Tokens und Komponenten aus Figma, Docs, Tests, Migrationen (nur hinzufügen), `src/lib/storage/`, `.env.example`, `next.config.*`, `vercel.json` und neue npm-Pakete mit MIT/Apache und mehr als 500 Sternen. Nicht selbst mergen. Wird CI auf `main` rot, öffnet `revert-guard` automatisch einen Revert-PR (SIN-252).
+- PR-Titel = Commit auf `main` (Squash-Merge): Conventional Commit mit Linear-ID, z. B. `feat(lernpfad): Fortschrittsbalken (SIN-123)`. Der Check `pr-title` prüft das. Teilschritte tragen `Part of SIN-xxx` im Commit, ein Part-Of-PR schließt das Issue nie.
+- Das Risiko setzt der Workflow `pr-gate` automatisch als Label `risk:low` (Standard), `risk:medium` oder `risk:high`. Nie selbst setzen oder entfernen. Die Regeln stehen in `scripts/autonomy/risk.mjs` (SIN-223).
+  - `risk:low` (Standard, SIN-811): Auto-Merge (Squash) ohne Frist, sobald `build`, `pr-title` und `merge-gate` grün sind. Gilt für Design-Tokens und Komponenten aus Figma, Docs, Tests, Migrationen (nur hinzufügen), `src/lib/storage/`, `.env.example`, `next.config.*`, `vercel.json` und neue npm-Pakete mit MIT/Apache und mehr als 500 Sternen. Nicht selbst mergen. `revert-guard` ist abgeschaltet: wird CI auf `main` rot, sofort im Chat und im Issue melden.
   - **Aufbauphase (SIN-855, Sinan 19.10.2026): keine Einspruchsfrist.** `risk:low` und `risk:medium` mergen nach grünen Pflicht-Checks; `risk:high`, `no-automerge` und Draft sperren weiter. Schalter `AUFBAUPHASE` in `scripts/autonomy/risk.mjs`, zurück erst nach belegter Produktreife und Workflow-Abnahme.
   - `risk:medium` mit **Einspruchsfrist 30 Min** (nach der Aufbauphase; SIN-547, SIN-811, Label `einspruch:30m`): jede Workflow-Änderung (auch Schritte, Skripte, Zeitpläne), `permissions:`/Secrets in YAML, `write`-Rechte, `allowedTools`/`allowed_bots`, bekannte Secrets und Actions von `actions/*`, `anthropics/*` und den Owners in `docs/autonomy/config.json` (`ERLAUBTE_ACTION_OWNER`); das Gate selbst (`pr-gate.yml`, `dispatch.yml`, `scripts/autonomy/risk.mjs`); Framework/DB-Wechsel. Auto-Merge erst nach der Frist (Kommentar `pr-gate-einspruch`, `merge-gate` bis dahin rot), Sinan stoppt mit `no-automerge`.
   - `risk:high` nur bei: Secret-Leak (gitleaks, Werte in Env-Dateien); Datenverlust (`drop`, `delete`, `truncate`, `alter ... drop`/`rename` in Migrationen, Änderung bestehender Migrationen); Sicherheit (RLS, Auth/Middleware, Service-Role-Key im Client, Branch-Protection, Fork); Geld (Stripe-Live-Schalter, Preise, neue kostenpflichtige Dienste); `pull_request_target`, neuen Secrets und Drittanbieter-Actions außerhalb der Liste; `docs/PRODUCT.md`; neuen npm-Paketen ohne MIT/Apache oder unter 500 Sternen. Wartet, bis Sinan das Label `freigegeben` setzt. Die Freigabe bleibt bei Folge-Commits bestehen, außer ein neuer Commit bringt einen neuen High-Grund.
@@ -82,28 +82,24 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - `build` prüft Lint, Typecheck, Unit-Tests, Build, Playwright-Smoke und axe-core.
 - Vor dem Push: `git fetch origin main && git merge origin/main`, dann `npm ci` und `npm run check:fast` (Lint und Typecheck parallel, dann Unit-Tests, ohne Keys, ca. 1,5–2 Min., SIN-875). Erst bei grün pushen; rot → reparieren (höchstens zwei Runden, SIN-840). Kein PR mit bekannten roten Checks (SIN-240). Dieselbe Prüfung läuft in `ci`; Build, Playwright, axe und Lighthouse bleiben dort das Tor.
 - Alles, was PRs anlegt, pusht, labelt oder mergt, läuft mit `AGENT_WORKFLOW_TOKEN`, nie mit `github.token` (dessen Ereignisse lösen keine Folge-Workflows aus).
-- Rote CI: Der Workflow `repair` lässt Claude bis zu 3 Runden reparieren (Labels `repair:1` bis `repair:3`), danach Label `needs-human` und Stopp.
+- Rote CI: im selben PR reparieren, höchstens 3 Runden, danach Stopp und Blocker als Linear-Kommentar. Der Workflow `repair` (Labels `repair:*`) ist abgeschaltet.
 - Workflows: In github-script@v7 nie `getOctokit` verwenden (nicht definiert). Stattdessen `new github.constructor({ auth: process.env.AGENT_TOKEN })`.
 
 ## Fertig-Liste: v1 zuerst, Ideen nach und nach (SIN-528)
 
 - Die Produktbeschreibung ist das **Grundgerüst** (Linear-Meilenstein „v1 Grundgerüst“). Ideen, die beim Bauen dazukommen, werden sichtbar markiert (Label `idee`, Meilenstein „v2 Ideen“, Backlog) und nach und nach aufgenommen.
-- Reihenfolge des Dispatchers: `dringend` (sofort, überspringt alles) → v1 → höchstens **eine** `idee` pro Woche (älteste zuerst), erst nach allen v1-Issues.
-- Der Planer legt Issues nur für Lücken der Fertig-Liste an (Lern-App: Prüfungen in `scripts/autonomy/readiness.mjs`; Leitstand: `docs/FERTIG.md` dort). Alles andere ist `idee`.
-- Neue Wünsche von Sinan (Chat, Kommentar) bekommen automatisch `idee`, außer er sagt „dringend“ (dann Label `dringend`, kein `idee`). Agenten setzen `dringend` nie selbst.
-- Einmalig einsortieren: `node scripts/autonomy/einsortieren.mjs --projekt <Name> [--fertig docs/FERTIG.md]` (Trockenlauf, `--apply` schreibt). Fortschritt steht in `loop_snapshot` (`fertig_v1`, `gesamt_v1`, `ideen_offen`). Entscheidung: `docs/decisions/SIN-528-fertig-liste-steuert-loop.md`.
+- Reihenfolge und Nachziehen der Issues steuert der Planer in Leitstand 2.0 (SIN-1116), nicht dieses Repo. Agenten setzen `dringend` nie selbst.
 
-## Aufgaben für Sinan (SIN-310)
+## Entscheidungen an Sinan (SIN-1117)
 
-- Braucht ein Worker, der Wächter oder der Planer etwas, das nur Sinan tun kann (Konto, Vertrag, Token, Einstellung), steht die Anleitung **nicht** im PR-Text. Es entsteht ein Linear-Issue mit Label `sinan` (nie `claude`, der Dispatcher nimmt es nie): `node scripts/autonomy/sinan.mjs create --titel … --wo … --link … --minuten … --schritt "…" (mehrfach) --pruefung …`. Der PR verlinkt das Issue unter `## Nach dem Merge`.
-- Beschreibung im festen Block: `wo`, `link`, `minuten`, `schritte` (nummeriert, mit kopierbaren Werten, nie Geheimnisse), `pruefung` (wie der Loop erkennt, dass es erledigt ist).
-- Tages-Update und Status-Seite zeigen offene `sinan`-Issues unter „Braucht dich“ mit Link und Minuten. Der Loop schließt sie selbst, wenn die Prüfung greift (`scripts/autonomy/sinan.mjs`, Standard-Aufgaben in `SEED`).
+- Braucht ein Agent eine Entscheidung (Kosten, Secrets, Rechte, Löschen, Workflow oder Pflicht-Check entfernen, Konto/Vertrag/Token): Label `entscheidung` auf das Issue, Frage mit Optionen und Empfehlung als Linear-Kommentar, dieselbe Frage im Chat, dann auf die Antwort warten. Die Anleitung steht nicht im PR-Text.
+- Arbeit, die ohne die Antwort möglich ist, läuft weiter.
 
 ## Done heißt live (SIN-616)
 
 - Ein Linear-Issue darf nur auf „Done“, wenn die Funktion läuft (Workflow aktiv, Migration angewendet, Secret gesetzt), nicht nur, wenn Code oder eine Vorlage gemergt ist.
-- Bleibt etwas für Sinan, entsteht ein `sinan`-Issue (siehe oben) und der PR verlinkt es. Das Original bleibt bis dahin „In Review“.
-- Fehlende Secrets bündelt der Worker in ein einziges `sinan`-Issue (bis SIN-611 sie aus Infisical holt).
+- Bleibt etwas für Sinan, steht es als Kommentar im Issue (bei einer Entscheidung mit Label `entscheidung`, siehe oben) und der PR verlinkt es. Das Original bleibt bis dahin „In Review“.
+- Fehlende Secrets bündelt der Agent in einen einzigen Kommentar (bis SIN-611 sie aus Infisical holt).
 - Kein Done ohne grüne Abnahme-Probe (SIN-626): Jedes Issue bekommt beim Bauen mindestens eine Probe in `docs/abnahme.yml` des Leitstands (HTTP, lesende Abfrage, Datei-Check) mit erwartetem Ergebnis. Erst wenn sie im stündlichen Lauf grün ist, geht das Linear-Issue auf „Done“.
 
 ## Technik (siehe DECISIONS.md)
@@ -133,30 +129,24 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Keine Karten in Karten; eine Hero-Komposition je Screen; Texte kurz, deutsch, konkret.
 - Zugänglichkeit vor Optik: Kontrast ≥ 4,5:1, sichtbarer Fokus, Ziele ≥ 44 px.
 
-## Lehren, Skills, Laufprotokoll (SIN-296)
+## Lehren und Skills (SIN-296)
 
 - Nach jedem behobenen Bug (auch im Reparatur-Lauf) ergänzt du `docs/autonomy/LEHREN.md` um **eine Zeile** im selben PR: Was nicht geht → wie es richtig geht. Erst suchen, ob es sie schon gibt. Höchstens 150 Zeilen.
 - Wiederholt sich ein Arbeitsablauf, lege `docs/skills/<name>/SKILL.md` an (Aufbau: `docs/skills/README.md`) und nutze vorhandene Skills bei passenden Issues. Neue Skills nennst du im PR unter `## Neue Skills`.
-- Das Laufprotokoll (gelesene Dateien, Entscheidungen, Prüfungen, Ergebnis, Abbruchgrund) baut der Worker-Workflow selbst aus dem Log (`scripts/autonomy/protokoll.mjs`, Artefakt `laufprotokoll`, Link im PR-Steckbrief und in Linear). Du schreibst es nicht.
-
 ## Qualität
 
 - Jeder Pull Request: Tests grün, axe-core und Lighthouse ohne Fehler.
 - Barrierefreiheit: WCAG 2.2 Stufe AA, Kontrast mindestens 4,5 zu 1, komplett per Tastatur bedienbar.
 - Leistungsbudget (SIN-300): `performance-budget.json` legt je Route LCP, CLS, TBT und JS-Größe fest; CI (`npm run perf:budget`) blockiert bei Überschreitung. Grenzen nie anheben, um einen Merge durchzubekommen.
 - Bildvergleich (SIN-300): `visual.yml` vergleicht Handy- und Desktop-Bilder aller Seiten mit main (Hinweis im Lauf-Bericht, Artefakt `bildvergleich`). Gewollte Änderungen brauchen nichts.
-- README und Changelog (SIN-300): Ändern sich Funktion, Einrichtung, Befehle oder Umgebungsvariablen, wird `README.md` im selben PR angepasst (CI warnt sonst). `CHANGELOG.md` ist erzeugt (`npm run changelog`), nie von Hand bearbeiten. Der Aufräum-Agent (`aufraeumen.yml`, montags) macht höchstens einen PR pro Woche.
-- Jede Lerneinheit speichert Quelle und Abrufdatum.
+- README und Changelog (SIN-300): Ändern sich Funktion, Einrichtung, Befehle oder Umgebungsvariablen, wird `README.md` im selben PR angepasst (CI warnt sonst). `CHANGELOG.md` ist erzeugt (`npm run changelog`), nie von Hand bearbeiten.- Jede Lerneinheit speichert Quelle und Abrufdatum.
 - Zugangsdaten nie ins Repo (öffentlich).
 
-## Claude als Ersatz-Agent (SIN-205)
+## Draft-PRs und Merge
 
-- Worker ist Claude (seit 09.10.2026 nur Claude-Kontingent, SIN-420). Der Dispatcher startet Todo-Issues sofort. Cursor bekommt nur Vorrang, wenn `CURSOR_GRACE_MIN` (Minuten) gesetzt ist.
-- Der Workflow `.github/workflows/claude.yml` startet Claude (`claude-code-action@v1`, nur für Nutzer mit Schreibrechten).
 - Draft-PR nur, solange du noch arbeitest. Fertig und lokal geprüft: auf „Ready for review" stellen. Draft-PRs werden nie automatisch gemerged.
 - Nie selbst mergen. Das übernimmt der Auto-Merge (siehe Abschnitt Pull Requests und Merge).
-- Commit-Nachrichten enthalten `Part of SIN-xxx` (die Issue-Nummer des Auftrags).
-- Maximal 3 Reparaturrunden pro Pull Request, dann stoppen und den Blocker melden.
+- Label `claude` und `@claude`-Kommentare (`claude.yml`) sind ein Altweg: nicht benutzen, Arbeit startet im T3-Chat.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
