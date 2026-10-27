@@ -39,8 +39,8 @@ Zur Einordnung der Zeiten:
 
 - Median 675 s (5 Läufe, 293 bis 816 s). Der Ausreißer-Lauf 40564230698 hatte `perf (2/2)` mit 720 s statt ca. 150 s.
 - Hat der Lauf einen Zweck? Ja. Die Branch-Protection hat `strict: false`: Ein PR muss nicht auf dem neuesten `main` stehen. Der Squash-Commit kann daher
-  etwas enthalten, das im PR so nie grün war (zwei PRs kurz hintereinander). Außerdem hängt `revert-guard` (SIN-252) per `workflow_run` an `ci` auf `main`:
-  Ohne diesen Lauf gäbe es keinen automatischen Revert bei rotem `main`.
+  etwas enthalten, das im PR so nie grün war (zwei PRs kurz hintereinander). Der Lauf ist die einzige Erkennung für ein rotes `main`:
+  `revert-guard` (SIN-252) ist abgeschaltet (`disabled_manually`, laut `AGENTS.md`), ein rotes `main` wird im Chat und im Issue gemeldet.
 - Bei einem reinen Content-Squash (nur `docs/ops/content-runs/`) ist der Squash-Inhalt im PR schon grün und kann `main` nicht rot machen.
 - Empfehlung für Teil 2: `ci` auf `main` behalten. Prüfen, ob Content-Squashes übersprungen werden können. Achtung: `post-merge.yml` startet
   nach einem Auto-Merge durch `github-actions[bot]` die Workflows per `workflow_dispatch` (laut Kommentar in `ci.yml` und `post-merge.yml`).
