@@ -65,7 +65,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 1. Issue samt neuesten Kommentaren lesen und auf In Progress setzen, bevor Code geschrieben wird.
 2. Scope und Akzeptanzkriterien des Issues einhalten; Annahmen in `docs/decisions/<ISSUE-ID>-<kurz>.md` festhalten.
-3. Ein Issue → ein Branch `sin-<nr>-<kurzname>` → ein PR. Kein `claude/`- oder `codex/`-Präfix: dort verlangt `merge-gate` noch den alten Prüfer-Beleg (`scripts/autonomy/beleg-gate.mjs`) und bleibt rot. Gemerged wird automatisch, siehe „Pull Requests und Merge“.
+3. Ein Issue → ein Branch `sin-<nr>-<kurzname>` (oder `claude/sin-<nr>-…` wie in leitstand-2) → ein PR. Der alte Prüfer-Beleg für `claude/`-Branches ist weg (SIN-1121). Gemerged wird automatisch, siehe „Pull Requests und Merge“.
 4. Nach Merge setzt Leitstand 2.0 das Issue auf Done. Reihenfolge und Nachziehen neuer Issues macht sein Planer (SIN-1116).
 5. Blocker nach 3 PR-Reparatur-Runden oder bei fehlenden Secrets: als Linear-Kommentar melden und mit Arbeit ohne Live-Keys weitermachen (Docs, Scaffold, Mocks, OpenAPI, Linear).
 
