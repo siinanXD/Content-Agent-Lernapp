@@ -29,3 +29,9 @@ export async function adminClient(
   }
   return { client: getServiceSupabase() };
 }
+
+/** Für Routen, die nur den Admin-Check brauchen (SIN-1178): `null` heißt freigegeben, sonst die Fehlerantwort. */
+export async function adminGuard(request: Request): Promise<Response | null> {
+  const admin = await adminClient(request);
+  return "response" in admin ? admin.response : null;
+}
