@@ -37,6 +37,7 @@ import {
   chooseRunMap,
   contentPunkteOffen,
   erzeugteIds,
+  berichtHatErgebnis,
   leerlaufGrund,
   offeneContentMaps,
   COST_MARGIN,
@@ -385,6 +386,12 @@ async function main() {
         console.error("::warning::Fabrik-Status nicht geschrieben:", e instanceof Error ? e.message : e);
         await reportPipelineError(e).catch(() => undefined);
       }
+    }
+    // SIN-1179: Ohne Ergebnis kein Bericht im Repo (= kein PR, kein Linear-Kommentar); das JSON bleibt nur als Artefakt.
+    if (!dry && !berichtHatErgebnis(report)) {
+      writeFileSync(join(ROOT, "content-run-leer.json"), JSON.stringify(report, null, 2) + "\n");
+      console.log("Lauf ohne Ergebnis: kein Bericht im Repo, kein PR.");
+      process.exit(code);
     }
     writeFileSync(join(OUT_DIR, reportFileName(report)), JSON.stringify(report, null, 2) + "\n");
     // SIN-1030: PR-Text (content-run-summary.md) ohne Kosten, Linear-Kommentar (-intern) mit Kosten.

@@ -16,6 +16,8 @@ on:
   pull_request:
   push:
     branches: [main]
+    # SIN-1179: Berichts-PRs der Content-Fabrik lösen nach dem Merge keinen zweiten Lauf aus.
+    paths-ignore: ["docs/ops/content-runs/**"]
   # Startet post-merge.yml nach einem Auto-Merge (SIN-213).
   workflow_dispatch:
 

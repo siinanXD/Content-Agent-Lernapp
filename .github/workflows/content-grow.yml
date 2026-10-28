@@ -1,5 +1,6 @@
 # AP-23 Content-Fabrik (SIN-220): Content wächst ohne manuellen Start.
 # SIN-797: Alle 2 h (Minute 47), solange docs/FERTIG.md offene Content-Punkte hat: keine Tages-/Wochengrenze, nur 20 € je Lauf; concurrency verhindert parallele Läufe.
+# SIN-1179: Einziger Takt ist dieser GitHub-Cron (pg_cron-Job github_content_grow_2h abgeschaltet, Migration sin1179); ein Lauf ohne Ergebnis erzeugt keinen PR.
 # SIN-807: Der Cron feuert auf GitHub unzuverlässig; zusätzlich stößt der Dispatcher (alle 30 Min) den Lauf an, wenn der letzte > 2 h her ist (scripts/autonomy/fabrik-anstoss.mjs).
 # Sind alle Content-Punkte abgehakt, gilt wieder der alte Takt (Mo/Mi/Fr, höchstens einer je Tag, Wochendeckel; runAllowed in src/lib/generate/content-grow.ts, SIN-469).
 # Meldet die Anthropic-API kein Guthaben, endet der Lauf als „pausiert“; weiter erst nach manuellem Start, ein `sinan`-Issue sagt Bescheid.
@@ -93,6 +94,7 @@ jobs:
             docs/ops/content-runs/
             content-run-summary.md
             source-report.json
+            content-run-leer.json
           if-no-files-found: ignore
       - name: Linear-Kommentar
         if: env.DRY_RUN != 'true' && hashFiles('content-run-summary.md') != ''

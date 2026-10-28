@@ -5,6 +5,8 @@ name: codeql
 
 on:
   pull_request:
+    # SIN-1179: Berichts-PRs der Content-Fabrik enthalten nur JSON, nichts zu analysieren.
+    paths-ignore: ["docs/ops/content-runs/**"]
   push:
     branches: [main]
   schedule:
