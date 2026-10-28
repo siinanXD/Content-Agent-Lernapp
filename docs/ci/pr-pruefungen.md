@@ -78,3 +78,16 @@ Abgerufen mit `gh pr checks 652` und `gh pr view 652 --json statusCheckRollup`. 
 
 - Weitere Workflows, die bei einem PR laufen, standen nicht im Auftrag und sind nicht gemessen (z. B. `review`).
 - Die Messung beruht auf den 10 letzten Läufen. Sie schwankt mit Last und Warteschlange (siehe Ausreißer oben).
+
+## Umsetzung (SIN-1141, Teil 2 von SIN-1120)
+
+| Workflow | Änderung | Begründung |
+|---|---|---|
+| `codeql` auf PR | `paths-ignore: docs/ops/content-runs/**` | Ein PR, der nur Lauf-Berichte ändert, hat keinen Code zu prüfen. Kein Pflicht-Check, der Montagslauf bleibt. |
+| `codeql` auf `main` (`push`) | gleicher `paths-ignore` | Gleicher Grund. |
+| `ci` auf `main` (`push`) | gleicher `paths-ignore` | Ein reiner Content-Squash war im PR schon grün und kann `main` nicht rot machen. Gemischte Squashes laufen weiter. |
+| `ci` auf PR | unverändert | Enthält die Pflicht-Checks `build`; nicht anfassen. |
+
+- Alle Content-Squashes kamen bisher als `push` (nicht `workflow_dispatch`), daher greift der Pfadfilter direkt; `post-merge.yml` bleibt unverändert.
+- Grenze: Merged `github-actions[bot]` einen Content-PR, startet `post-merge` `ci` und `codeql` per `workflow_dispatch`, und die ignoriert der Pfadfilter nicht. Das ist in den letzten 12 `main`-Läufen nie vorgekommen. Tritt es auf, ist `post-merge` anzupassen.
+- Median „PR geöffnet bis merge-fähig“: vorher 8,3 min (Teil 1, 10 PRs, davor ohne SIN-1119). Vor dieser Änderung, nach SIN-1119, über die 10 jüngsten Content-PRs (#666 bis #675): 5,1 min. Diese Änderung ändert den PR-Pfad von Content-PRs nicht (`codeql` lief schon parallel zu `ci`); sie spart Rechenminuten (ca. 12 `ci`-Läufe à 11 min und 12 `codeql`-Läufe à 4,5 min auf `main` pro Tag).
