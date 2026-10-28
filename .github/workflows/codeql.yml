@@ -1,12 +1,18 @@
 # CodeQL (SIN-295): Codeanalyse bei jedem PR, bei Push auf main und wöchentlich.
+# SIN-1141: Nicht bei reinen Content-PRs (nur Lauf-Berichte in docs/ops/content-runs/): dort gibt es keinen Code zu prüfen.
+# Kein Pflicht-Check, der wöchentliche Lauf deckt alles ab.
 # Nur Leserechte: Ergebnisse gehen nicht an den Security-Tab (dafür wäre `security-events: write` nötig),
 # sondern werden hier ausgewertet. Funde mit hoher Schwere (CVSS >= 7.0) lassen den Lauf scheitern.
 name: codeql
 
 on:
   pull_request:
+    paths-ignore:
+      - "docs/ops/content-runs/**"
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/ops/content-runs/**"
   schedule:
     - cron: "17 4 * * 1"
   workflow_dispatch:

@@ -16,6 +16,10 @@ on:
   pull_request:
   push:
     branches: [main]
+    # SIN-1141: Ein reiner Content-Squash (nur Lauf-Berichte) ist im PR schon grün gewesen und kann main nicht rot machen.
+    # Gemischte Squashes laufen weiter. Der PR-Lauf bleibt ohne Filter (Pflicht-Check `build`).
+    paths-ignore:
+      - "docs/ops/content-runs/**"
   # Startet post-merge.yml nach einem Auto-Merge (SIN-213).
   workflow_dispatch:
 
