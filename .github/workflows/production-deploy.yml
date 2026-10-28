@@ -2,13 +2,17 @@
 # Der Hook erzeugte unter `git.deploymentEnabled: false` keinen Deploy, und `deployment_status` kommt bei Deploys ohne Git-Anbindung
 # nicht an. Darum: `vercel deploy --prod` per CLI vom Stand von main, danach direkt /api/health und /api/learner/phase-a.
 # Rot beim Smoke-Test: Revert-PR (wie revert-guard, SIN-252) und der Lauf wird rot. Grün: Live-Check (nach-deploy.yml) anstoßen.
-# Auslöser: der Status-Wächter (status.yml) per workflow_dispatch, höchstens 1× pro Stunde und nur bei neuem App-Code
-# (scripts/autonomy/deploy.mjs); von Hand möglich. Secrets: VERCEL_TOKEN, AGENT_WORKFLOW_TOKEN (nie github.token).
+# Auslöser: workflow_run nach grünem ci auf main (SIN-1185) oder von Hand per workflow_dispatch; status.yml ist abgeschaltet. Secrets: VERCEL_TOKEN, AGENT_WORKFLOW_TOKEN (nie github.token).
 # Variablen: VERCEL_PROJECT_ID, VERCEL_TEAM_ID (bei persönlichem Konto leer lassen), optional PRODUCTION_URL.
 name: production-deploy
 
 on:
   workflow_dispatch:
+  # SIN-1185: nach einem grünen ci-Lauf auf main automatisch deployen (ci läuft auf main nur bei App-Änderungen, SIN-1141).
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -19,6 +23,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
