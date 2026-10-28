@@ -1,3 +1,12 @@
+import {
+  handleCreateCourse,
+  handleEvaluate,
+  handleGenerate,
+  handlePlan,
+  handlePublish,
+  handleResearch,
+} from "@/lib/pipeline/mock-handlers";
+
 export type PilotStepResult = {
   step: string;
   ok: boolean;
@@ -16,14 +25,9 @@ export type PilotReport = {
   passed: boolean;
 };
 
-const BASE = process.env.PILOT_BASE_URL ?? "http://127.0.0.1:43123";
-
-async function post(path: string, body?: unknown) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+/** Ruft die Pipeline-Handler direkt auf: die HTTP-Routen verlangen seit SIN-1178 ein Admin-Token. */
+async function run(call: () => Promise<Response>) {
+  const res = await call();
   const text = await res.text();
   let json: Record<string, unknown> = {};
   try {
@@ -34,12 +38,27 @@ async function post(path: string, body?: unknown) {
   return { res, json };
 }
 
+const STEP_HANDLERS = {
+  research: handleResearch,
+  plan: handlePlan,
+  generate: handleGenerate,
+  evaluate: handleEvaluate,
+} as const;
+
 /** AP-11: end-to-end seed/fixture pilot against local/mock pipeline. */
 export async function runMafPilot(): Promise<PilotReport> {
   const steps: PilotStepResult[] = [];
   const keyword = "Maschinen- und Anlagenführer";
 
-  const create = await post("/api/courses", { keyword, variants: 2 });
+  const create = await run(() =>
+    handleCreateCourse(
+      new Request("http://pilot.local/api/courses", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ keyword, variants: 2 }),
+      }),
+    ),
+  );
   const courseId = String(create.json.id ?? "");
   steps.push({
     step: "create",
@@ -59,7 +78,7 @@ export async function runMafPilot(): Promise<PilotReport> {
   }
 
   for (const step of ["research", "plan", "generate", "evaluate"] as const) {
-    const { res, json } = await post(`/api/courses/${courseId}/${step}`);
+    const { res, json } = await run(() => STEP_HANDLERS[step](courseId));
     steps.push({
       step,
       ok: res.ok,
@@ -69,7 +88,7 @@ export async function runMafPilot(): Promise<PilotReport> {
     });
   }
 
-  const pub = await post(`/api/courses/${courseId}/publish`);
+  const pub = await run(() => handlePublish(courseId));
   const blocked = pub.json.blocked === true;
   steps.push({
     step: "publish",
