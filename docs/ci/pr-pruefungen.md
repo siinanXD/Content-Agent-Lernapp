@@ -91,3 +91,7 @@ Abgerufen mit `gh pr checks 652` und `gh pr view 652 --json statusCheckRollup`. 
 - Alle Content-Squashes kamen bisher als `push` (nicht `workflow_dispatch`), daher greift der Pfadfilter direkt; `post-merge.yml` bleibt unverändert.
 - Grenze: Merged `github-actions[bot]` einen Content-PR, startet `post-merge` `ci` und `codeql` per `workflow_dispatch`, und die ignoriert der Pfadfilter nicht. Das ist in den letzten 12 `main`-Läufen nie vorgekommen. Tritt es auf, ist `post-merge` anzupassen.
 - Median „PR geöffnet bis merge-fähig“: vorher 8,3 min (Teil 1, 10 PRs, davor ohne SIN-1119). Vor dieser Änderung, nach SIN-1119, über die 10 jüngsten Content-PRs (#666 bis #675): 5,1 min. Diese Änderung ändert den PR-Pfad von Content-PRs nicht (`codeql` lief schon parallel zu `ci`); sie spart Rechenminuten (ca. 12 `ci`-Läufe à 11 min und 12 `codeql`-Läufe à 4,5 min auf `main` pro Tag).
+
+## Secrets in PR-Läufen (SIN-1180, 28.10.2026)
+
+Nur `goldset` führt PR-Code mit Schlüsseln aus (Richter OpenAI, Langfuse, Supabase Service-Role). Seit SIN-1180 prüft der Job `betroffen` ohne Secrets, ob der PR Prompts, Richter oder Goldset ändert; nur dann läuft `goldset` – und erst nach Freigabe in der GitHub-Umgebung `goldset` (Required reviewer: Sinan). `pr-gate`, `pr-crawler` und `sichtpruefung` haben Secrets, führen aber nur Code aus `main` aus (Checkout der Basis); der PR-Stand wird dort nur gelesen.
