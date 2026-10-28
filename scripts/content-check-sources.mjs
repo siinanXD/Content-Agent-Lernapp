@@ -3,7 +3,7 @@
  * AP-16 source monitor: compare the official documents behind docs/content/*.json
  * with docs/content/sources.lock.json and report changes.
  *
- *   node --import tsx scripts/content-check-sources.mjs            # live check, exit 2 on change
+ *   node --import tsx scripts/content-check-sources.mjs            # live check, exit 2 on changed source (feed hits are report-only)
  *   node --import tsx scripts/content-check-sources.mjs --update   # live check and rewrite the lock
  *   node --import tsx scripts/content-check-sources.mjs --offline  # coverage report only, no network
  *
@@ -107,7 +107,10 @@ if (update && diff) {
   console.error(`[source-monitor] lock updated: ${LOCK_PATH}`);
 }
 
-const changed = (diff?.changed.length ?? 0) + feedHits.filter((h) => !h.error).length;
+// SIN-1179: Ein Feed-Treffer allein (BIBB, wiederkehrend) ist keine Änderung; er steht im Bericht, löst aber kein Issue und keinen Exit 2 aus.
+const changed = diff?.changed.length ?? 0;
+const hits = feedHits.filter((h) => !h.error);
+if (hits.length) console.error(`[source-monitor] ${hits.length} Feed-Treffer ohne geänderte Quelle (nur Hinweis): ${hits.map((h) => `${h.feed}: ${h.title}`).join("; ")}`);
 if (missing.length) {
   console.error(`[source-monitor] ${missing.length} source(s) missing in lock — run with --update after adding them`);
   process.exit(3);

@@ -1,6 +1,6 @@
 # AP-16 Quellen-Monitor: vergleicht die amtlichen Quellen der Curriculum-Maps
 # (docs/content/*.json) wöchentlich mit docs/content/sources.lock.json.
-# Exit 0 = unverändert, 2 = Änderung oder Feed-Treffer (Issue), 3 = Lock unvollständig (Job rot).
+# Exit 0 = unverändert (Feed-Treffer allein zählen nicht, SIN-1179), 2 = geänderte Quelle (Issue), 3 = Lock unvollständig (Job rot).
 # Läuft hier statt im Cloud-Agent, weil dessen Proxy gesetze-im-internet.de und kmk.org sperrt.
 name: Quellen-Monitor (AP-16)
 

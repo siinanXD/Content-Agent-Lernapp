@@ -8,6 +8,7 @@ import { MIN_PASSED_QUESTIONS } from "./repair-questions";
 import {
   affectedUnitIds,
   affordableUnits,
+  berichtHatErgebnis,
   buildQueue,
   changeKey,
   chooseRunMap,
@@ -591,4 +592,25 @@ test("SIN-558: Einheiten unter der Mindestzahl Fragen gehen nicht zum bezahlten 
   const u = (n: number) => ({ questions: Array.from({ length: n }) });
   assert.deepEqual(judgeable([u(4), u(5), u(8)], 5).map((x) => x.questions.length), [5, 8]);
   assert.deepEqual(judgeable([u(0)], 5), []);
+});
+
+test("SIN-1179: ein folgenloser Lauf hat kein Ergebnis, jeder Rest davon schon", () => {
+  const leer = {
+    generated: 0,
+    discarded: 0,
+    discardedUnitIds: [] as string[],
+    costEur: 0,
+    batchIds: [] as string[],
+    resumeModuleId: null,
+    stopReason: null,
+    failReason: null,
+    sourceRefresh: { units: 0, replaced: 0, changeKeys: [] as string[] },
+  };
+  assert.equal(berichtHatErgebnis(leer), false);
+  assert.equal(berichtHatErgebnis({ ...leer, generated: 1 }), true);
+  assert.equal(berichtHatErgebnis({ ...leer, costEur: 0.01 }), true);
+  assert.equal(berichtHatErgebnis({ ...leer, discardedUnitIds: ["M0-1-u1"] }), true);
+  assert.equal(berichtHatErgebnis({ ...leer, resumeModuleId: "M0-1" }), true);
+  assert.equal(berichtHatErgebnis({ ...leer, failReason: "Batch fehlgeschlagen" }), true);
+  assert.equal(berichtHatErgebnis({ ...leer, sourceRefresh: { units: 2, replaced: 0, changeKeys: ["k"] } }), true);
 });
