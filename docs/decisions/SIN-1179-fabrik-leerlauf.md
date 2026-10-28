@@ -1,0 +1,11 @@
+# SIN-1179: Content-Fabrik ohne Leerlauf-PRs, ein Takt
+
+- Issue: https://linear.app/sinan-kahraman/issue/SIN-1179
+- Befund (Bestandsaufnahme 28.10.): seit 21.10. 124 Läufe von `content-grow.yml` ohne erzeugte Einheit, je Lauf ein PR plus `ci` und `codeql` (auf PR und nach Merge), etwa 17 PRs und 4–5 Runner-Stunden am Tag.
+- Entscheidung 1, kein PR ohne Ergebnis: `berichtHatErgebnis` (`src/lib/generate/content-grow.ts`) prüft den Lauf. Ohne Ergebnis, Kosten, Zustand für den Folgelauf oder Fehler schreibt `finish` nur `content-run-leer.json` (Artefakt `content-run`) und die Zeile in `content_factory_runs`; weder Bericht in `docs/ops/content-runs`, noch Summary, noch Linear-Kommentar, noch PR. Dry-Läufe schreiben wie bisher.
+- Entscheidung 2, Feed-Treffer: `content-check-sources.mjs` meldet Exit 2 nur noch bei geänderter Quelle (`diff.changed`). Feed-Treffer (BIBB) stehen weiter im Bericht und im Log, lösen aber weder Exit 2 noch das Issue-Kommentar von `source-check.yml` aus. Grenze: ein neuer Feed-Treffer wird nicht mehr als Issue gemeldet, nur im Wochenbericht sichtbar.
+- Entscheidung 3, ein Takt: GitHub-Cron in `content-grow.yml` bleibt, der pg_cron-Job `github_content_grow_2h` wird per Migration `20261029020000_sin1179_content_grow_cron_aus.sql` abgeschaltet. Begründung: die 124 Läufe seit 21.10. zeigen, dass der GitHub-Cron nun regelmäßig feuert; zusätzlich stößt `fabrik-anstoss.mjs` den Lauf an, wenn der letzte über 2 h her ist (SIN-807). Die Dispatcher-Jobs aus SIN-847 bleiben.
+- Entscheidung 4, Pfadfilter: `ci.yml` (push main) und `codeql.yml` (pull_request) ignorieren `docs/ops/content-runs/**`. `ci` auf `pull_request` bleibt ohne Filter, damit der Pflicht-Check `build` bei jedem PR meldet.
+- Annahme: ein folgenloser Lauf fehlt in `docs/ops/content-runs`; `resumeModuleId` bleibt dann vom letzten Lauf mit Ergebnis stehen (gleicher Stand, weil der folgenlose Lauf nichts verschoben hat).
+- Nicht Teil dieses PR: die 18 Industriekaufleute-Einheiten, die wegen eines begonnenen Moduls hängen (Reparatur zuständig).
+- Nach dem Merge: Migration anwenden (`migrate.yml`, nicht von Hand), dann `select jobname from cron.job;` zeigt `github_content_grow_2h` nicht mehr; 24 h später kein leerer Content-PR.

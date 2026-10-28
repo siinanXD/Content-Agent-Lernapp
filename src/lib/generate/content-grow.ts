@@ -213,6 +213,26 @@ export function leerlaufGrund(gewaehlteMap: string | null, quellenAenderung: boo
   return gewaehlteMap === null && !quellenAenderung ? FERTIG_STOP : null;
 }
 
+/**
+ * SIN-1179: Hat der Lauf etwas hinterlassen, das ein PR wert ist (Ergebnis, Kosten, Zustand für den nächsten Lauf, Fehler)?
+ * Nein → der Bericht bleibt Artefakt und Zeile in `content_factory_runs`, es gibt keinen PR und keinen Linear-Kommentar.
+ * shortcut: ein folgenloser Lauf fehlt in `docs/ops/content-runs`; `resumeModuleId` bleibt dann vom letzten Lauf mit Ergebnis stehen.
+ */
+export function berichtHatErgebnis(r: Pick<RunReport, "generated" | "discarded" | "discardedUnitIds" | "costEur" | "batchIds" | "resumeModuleId" | "stopReason" | "failReason" | "sourceRefresh">): boolean {
+  return (
+    r.generated > 0 ||
+    r.discarded > 0 ||
+    r.discardedUnitIds.length > 0 ||
+    r.costEur > 0 ||
+    r.batchIds.length > 0 ||
+    r.resumeModuleId !== null ||
+    r.sourceRefresh.replaced > 0 ||
+    r.sourceRefresh.changeKeys.length > 0 ||
+    Boolean(r.stopReason) ||
+    Boolean(r.failReason)
+  );
+}
+
 /** SIN-901: Einheiten-IDs je Map, die schon erzeugt sind (Entwurf, geprüft oder veröffentlicht). */
 export function erzeugteIds(units: ReadonlyArray<{ id: string }>): Set<string> {
   return new Set(units.map((u) => u.id));
