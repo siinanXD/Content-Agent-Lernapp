@@ -3,6 +3,8 @@
 # Mehr als 3 Prozentpunkte schlechter oder ein verletzter Prüfsatz = Job rot. Ergebnis als PR-Kommentar.
 # Der Job läuft immer und endet grün, wenn nichts Relevantes geändert wurde (so kann er Pflicht-Check werden).
 # Kosten: wenige Cent je Lauf (Deckel 2 €), Ledger `goldset-regression`, Trace in Langfuse. Nur PRs aus diesem Repo (Secrets).
+# SIN-1180: Der Messlauf führt PR-Code mit Richter-, Langfuse- und Supabase-Schlüsseln aus. Deshalb prüft ein Job ohne Secrets,
+# ob der PR überhaupt betroffen ist, und der Messlauf startet erst nach Freigabe in der GitHub-Umgebung `goldset` (Required reviewer Sinan).
 name: goldset
 
 on:
@@ -18,20 +20,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  goldset:
+  betroffen:
     if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 3
+    outputs:
+      relevant: ${{ steps.relevant.outputs.relevant }}
     env:
-      COURSE_STORAGE: supabase
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
-      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
-      LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       BASIS: ${{ github.event.pull_request.base.sha }}
-      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,19 +49,51 @@ jobs:
           scripts/goldset-regression.ts' | sed 's/^ *//' > /tmp/beobachtet.txt
           git diff --name-only "$BASIS"...HEAD | grep -Fxf /tmp/beobachtet.txt > /tmp/geaendert.txt || true
           if [ -s /tmp/geaendert.txt ]; then echo "relevant=true" >> "$GITHUB_OUTPUT"; cat /tmp/geaendert.txt; else echo "Nichts Relevantes geändert."; fi
+
+  goldset:
+    needs: betroffen
+    if: needs.betroffen.outputs.relevant == 'true'
+    # SIN-1180: erst nach Freigabe, weil hier PR-Code mit Schlüsseln läuft.
+    environment: goldset
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COURSE_STORAGE: supabase
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BASIS: ${{ github.event.pull_request.base.sha }}
+      GH_TOKEN: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Geänderte Dateien bestimmen
+        run: |
+          echo 'src/lib/generate/didaktik-prompts.ts
+          src/lib/generate/generate-agent.ts
+          src/lib/generate/batch-generate.ts
+          src/lib/generate/api-schema.ts
+          src/lib/quality/evaluate-agent.ts
+          src/lib/quality/claude-judge.ts
+          src/lib/quality/regression.ts
+          src/lib/anthropic/client.ts
+          src/lib/review/pruefhinweise.ts
+          docs/quality/maf-goldset-70.json
+          scripts/goldset-regression.ts' | sed 's/^ *//' > /tmp/beobachtet.txt
+          git diff --name-only "$BASIS"...HEAD | grep -Fxf /tmp/beobachtet.txt > /tmp/geaendert.txt || true
       - uses: actions/setup-node@v7
-        if: steps.relevant.outputs.relevant == 'true'
         with:
           node-version: "22"
           cache: npm
       - name: Pakete
-        if: steps.relevant.outputs.relevant == 'true'
         run: npm ci
       - name: Messen mit dem Stand des PRs
-        if: steps.relevant.outputs.relevant == 'true'
         run: npm run quality:regression -- messen --out /tmp/pr.json --ledger
       - name: Messen mit dem Stand von main
-        if: steps.relevant.outputs.relevant == 'true'
         run: |
           # Beobachtete Dateien auf den Stand von main setzen; Dateien, die main noch nicht hat, bleiben wie im PR.
           # Skript und Prüfsätze bleiben die des PRs, nur Prompts und Modellwahl wechseln.
@@ -75,7 +103,6 @@ jobs:
           done < /tmp/geaendert.txt
           npm run quality:regression -- messen --out /tmp/basis.json
       - name: Vergleichen, Kommentar schreiben
-        if: steps.relevant.outputs.relevant == 'true'
         run: |
           rot=0
           npm run quality:regression -- vergleichen --basis /tmp/basis.json --pr /tmp/pr.json --out /tmp/kommentar.md || rot=1
