@@ -1,7 +1,7 @@
 /**
  * SIN-299: Langfuse einrichten (idempotent, mehrfach ausführbar).
  *   npm run langfuse:setup
- * Legt Score-Configs (Quellentreue, Eindeutigkeit, Niveau, Sprache, Stichprobe Sicherheit),
+ * Legt Score-Configs (Sicherheit, bestanden, Prüfpunkte je Richter-Lauf, Kosten, Stichprobe Sicherheit),
  * die Prüf-Warteschlange und die Prompts (Richter, Erzeuger) an. Braucht LANGFUSE_PUBLIC_KEY/SECRET_KEY.
  * Das Dashboard baut man in der Oberfläche: docs/ops/langfuse-dashboard.md.
  */

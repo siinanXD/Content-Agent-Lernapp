@@ -3,7 +3,7 @@
  * Aufbau in Langfuse:
  *   Trace „M3 · 02 Spannmittel“ (Session = Kurslauf)
  *     ├─ Generation „Erzeugen“ (Modell, Tokens, Kosten, Prompt-Auszug, erzeugte Fragen)
- *     ├─ Evaluator „Prüfen · Frage n“ je Frage (Text, richtige Antwort, Begründung, Scores)
+ *     ├─ Evaluator „Prüfen · Frage n“ je Frage (Text, richtige Antwort, Begründung, Prüfpunkte als Metadaten, Scores Sicherheit und bestanden)
  *     └─ Event „Ergebnis“ (veröffentlicht oder verworfen, mit Grund)
  * Lerninhalte sind keine Personendaten und dürfen hinein; Personendaten bleiben verboten.
  * Dieses Modul kennt keine Zugangsdaten: ohne Tracer-Anbieter schreibt es nichts (siehe langfuse-client).
@@ -169,10 +169,7 @@ export async function schreibeEinheitTrace(p: EinheitTraceInput): Promise<string
           const grund = ev.reasons.join("; ").slice(0, 500) || undefined;
           const s = (name: string, value: number, dataType: "NUMERIC" | "BOOLEAN" = "NUMERIC") =>
             p.score?.(obs.otelSpan, { name, value, dataType, comment: grund });
-          s(PRUEFPUNKTE.sourceFidelity, ev.scores.sourceFidelity);
-          s(PRUEFPUNKTE.uniqueness, ev.scores.uniqueness);
-          s(PRUEFPUNKTE.niveau, ev.scores.niveau);
-          s(PRUEFPUNKTE.language, ev.scores.language);
+          // SIN-1191: nur 2 Scores je Frage (Langfuse zählt jeden als Unit); die übrigen Prüfpunkte stehen oben in den Metadaten.
           s(SICHERHEIT_SCORE, ev.scores.safetyFlag ? 1 : 0);
           s(BESTANDEN_SCORE, ev.passed ? 1 : 0, "BOOLEAN");
           obs.end();

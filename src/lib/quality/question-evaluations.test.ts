@@ -63,6 +63,28 @@ describe("question evaluations (AP-19)", () => {
     assert.equal(frageSchluessel("LF1-1-u1", "q1"), frageSchluessel("LF1-1-u1", "LF1-1-u1-q1"));
   });
 
+  it("SIN-1191: question_evaluations behält alle Prüfpunkte, auch wenn Langfuse nur 2 Scores je Frage bekommt", () => {
+    const result = {
+      courseId: "c1",
+      modelId: "judge",
+      mode: "live",
+      questions: [
+        {
+          questionId: "u1-q1",
+          unitId: "u1",
+          passed: true,
+          reasons: [],
+          scores: { sourceFidelity: 1, uniqueness: 1, niveau: 4.5, language: 4, safetyFlag: true },
+        },
+      ],
+    } as unknown as Parameters<typeof toQuestionEvaluationRecords>[0];
+    const [row] = toQuestionEvaluationRecords(result);
+    assert.deepEqual(
+      [row!.quellentreue, row!.eindeutigkeit, row!.niveau, row!.sprache, row!.sicherheitFlag, row!.passed],
+      [1, 1, 4.5, 4, true, true],
+    );
+  });
+
   it("latestPerQuestion returns the newest row per question", async () => {
     const courseId = crypto.randomUUID();
     const result = await runEvaluateAgent({ courseId, generated: EVAL_ITEMS });
