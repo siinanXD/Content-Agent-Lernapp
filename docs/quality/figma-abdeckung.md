@@ -34,7 +34,7 @@ Umgesetzt: 58 von 61 Frames, fehlend: 0, kein App-Screen: 3.
 | `17 Zustände (Laden · Leer · Fehler · Offline)` | Komponente StateView | `src/components/ui/state-view.tsx` | umgesetzt |
 | `18 Startseite · Bildungsträger` | / | `src/app/page.tsx` | umgesetzt |
 | `19 Gruppenübersicht · Ausbilder` | /ausbilder | `src/app/ausbilder/page.tsx` | umgesetzt |
-| `20 Demo-Zugang anfragen · Anmelden` | /demo, /anmelden | `src/app/demo/page.tsx`, `src/app/anmelden/page.tsx` | umgesetzt |
+| `20 Demo-Zugang anfragen · Anmelden` | /demo, /anmelden, /registrieren, /passwort-vergessen, /passwort-neu | `src/app/demo/page.tsx`, `src/app/anmelden/page.tsx`, `src/app/registrieren/page.tsx`, `src/app/passwort-vergessen/page.tsx`, `src/app/passwort-neu/page.tsx` | umgesetzt |
 | `21 Prüfung · Ergebnis` | /pruefung/ergebnis | `src/app/pruefung/ergebnis/page.tsx` | umgesetzt |
 | `22 Lernpfad · Serie und Tagesziel` | /lernpfad | `src/app/lernpfad/page.tsx`, `src/components/ui/daily-goal.tsx`, `src/components/ui/stat-chip.tsx` | umgesetzt |
 | `23 Ergebnis · Serie verlängert` | /ergebnis | `src/app/ergebnis/page.tsx`, `src/components/ui/stat-chip.tsx` | umgesetzt |

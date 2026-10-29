@@ -25,7 +25,7 @@
     { "frame": "17 Zustände (Laden · Leer · Fehler · Offline)", "route": "Komponente StateView", "code": ["src/components/ui/state-view.tsx"], "stand": "umgesetzt" },
     { "frame": "18 Startseite · Bildungsträger", "route": "/", "code": ["src/app/page.tsx"], "stand": "umgesetzt" },
     { "frame": "19 Gruppenübersicht · Ausbilder", "route": "/ausbilder", "code": ["src/app/ausbilder/page.tsx"], "stand": "umgesetzt" },
-    { "frame": "20 Demo-Zugang anfragen · Anmelden", "route": "/demo, /anmelden", "code": ["src/app/demo/page.tsx", "src/app/anmelden/page.tsx"], "stand": "umgesetzt" },
+    { "frame": "20 Demo-Zugang anfragen · Anmelden", "route": "/demo, /anmelden, /registrieren, /passwort-vergessen, /passwort-neu", "code": ["src/app/demo/page.tsx", "src/app/anmelden/page.tsx", "src/app/registrieren/page.tsx", "src/app/passwort-vergessen/page.tsx", "src/app/passwort-neu/page.tsx"], "stand": "umgesetzt" },
     { "frame": "21 Prüfung · Ergebnis", "route": "/pruefung/ergebnis", "code": ["src/app/pruefung/ergebnis/page.tsx"], "stand": "umgesetzt" },
     { "frame": "22 Lernpfad · Serie und Tagesziel", "route": "/lernpfad", "code": ["src/app/lernpfad/page.tsx", "src/components/ui/daily-goal.tsx", "src/components/ui/stat-chip.tsx"], "stand": "umgesetzt" },
     { "frame": "23 Ergebnis · Serie verlängert", "route": "/ergebnis", "code": ["src/app/ergebnis/page.tsx", "src/components/ui/stat-chip.tsx"], "stand": "umgesetzt" },

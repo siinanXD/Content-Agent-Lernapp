@@ -105,6 +105,10 @@ npm run lint
 
 A11y gates (axe über alle Routen, Tastatur, Lighthouse a11y ≥ 0.9) laufen in den CI-Jobs `e2e` und `perf` (`.github/workflows/ci.yml`, gemeldet über den Sammel-Check `build`) und dürfen nicht abgeschaltet werden.
 
+### Anmeldung (SIN-1197)
+
+`/anmelden`: E-Mail + Passwort (mit „Passwort anzeigen“), „Mit Google anmelden“, „Link per E-Mail schicken“ (bisheriger Weg, nur bestehende Konten) und „Passwort vergessen?“. `/registrieren` legt ein Konto an (E-Mail, Passwort, Zustimmung zum Datenschutz) und zeigt den Hinweis auf die Bestätigungsmail. `/passwort-vergessen` schickt den Link, `/passwort-neu` setzt das Passwort. `?weiter=/seite` führt nach dem Login dorthin zurück; sonst gehen Ausbilder zu `/ausbilder/gruppen`, alle anderen zu `/lernpfad`. Jeder Mail-Link und der Google-Rücksprung setzen `emailRedirectTo` bzw. `redirectTo` auf die eigene Origin. Selbst registrierte Konten haben keine Rolle und keine Organisation (`app_metadata` setzt nur der Server): Sie sehen keine Gruppendaten, bis ein Ausbilder einlädt. Entscheidung: [`SIN-1197`](docs/decisions/SIN-1197-anmeldung-standard.md). Google und der eigene Mail-Absender sind im gemeinsamen Supabase-Projekt eingerichtet (SIN-1199), in der Lernapp ist dafür nichts zu setzen.
+
 ## Pipeline-Ablauf (SIN-376)
 
 Quelle: [`docs/diagramme/pipeline.mmd`](docs/diagramme/pipeline.mmd), Nutzerwege: [`docs/diagramme/nutzerwege.mmd`](docs/diagramme/nutzerwege.mmd). Der Block unten ist eine Kopie von `pipeline.mmd` (ein Test prüft das). FigJam wird in einer Claude-Sitzung aus den `.mmd` nachgezogen, das Tages-Update meldet „Diagramme geändert“.

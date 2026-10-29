@@ -10,8 +10,10 @@ let cached: Promise<SupabaseClient | null> | undefined;
  */
 export function getBrowserSupabase(): Promise<SupabaseClient | null> {
   if (cached) return cached;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  // Testnaht (SIN-1197): Playwright setzt die Adresse per Init-Skript, weil der CI-Build ohne Supabase-Umgebung läuft.
+  const test = (globalThis as { __SUPABASE_TEST__?: { url: string; key: string } }).__SUPABASE_TEST__;
+  const url = test?.url ?? process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = test?.key ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   cached =
     url && key
       ? import("@supabase/supabase-js").then(({ createClient }) => createClient(url, key))
