@@ -12,7 +12,6 @@ Das legt Score-Configs, die Warteschlange „Sicherheits-Stichprobe“, die Prom
 | --- | --- | --- | --- | --- | --- |
 | Kosten je Kurslauf gegen den 20-Euro-Deckel | Scores numeric | `costEur`, `capEur` | Name | max | Linie über Zeit |
 | Bestehensquote je Lauf | Scores numeric | `bestanden` | Session | Mittel | Balken |
-| Schwächster Prüfpunkt | Scores numeric | `Quellentreue`, `Eindeutigkeit`, `Niveau`, `Sprache` | Name | Mittel | Balken |
 | Kosten je veröffentlichter Frage | Scores numeric | `Kosten je Frage (EUR)` | keine | Mittel | Zahl |
 | Haiku gegen Sonnet | Scores numeric | `Kosten je Frage (EUR)` | Tags (`modell:…`) | Mittel | Balken |
 
@@ -20,7 +19,7 @@ Quelle der Scores: Kurslauf `scripts/content-grow.ts`, Namen in `src/lib/quality
 
 ## Kurslauf lesen
 
-Sessions → `kurslauf-<Zeitstempel>`: ein Trace je Einheit (`M3 · 02 Spannmittel`), dazu „Veröffentlichen“ und „Kosten“. Im Einheiten-Trace stehen „Erzeugen“ (Modell, Tokens, Kosten, Prompt-Auszug, erzeugte Fragen), je Frage „Prüfen · Frage n“ und „Ergebnis“. Filtern über Tags `modul:`, `lauf:`, `modell:`, `umgebung:`. Die Scores `Quellentreue`, `Eindeutigkeit`, `Niveau`, `Sprache`, `Sicherheit`, `bestanden` hängen an der Frage und tragen die Begründung des Richter-Modells als Kommentar (SIN-383).
+Sessions → `kurslauf-<Zeitstempel>`: ein Trace je Einheit (`M3 · 02 Spannmittel`), dazu „Veröffentlichen“ und „Kosten“. Im Einheiten-Trace stehen „Erzeugen“ (Modell, Tokens, Kosten, Prompt-Auszug, erzeugte Fragen), je Frage „Prüfen · Frage n“ und „Ergebnis“. Filtern über Tags `modul:`, `lauf:`, `modell:`, `umgebung:`. An der Frage hängen nur die Scores `Sicherheit` und `bestanden` (mit der Begründung des Richter-Modells als Kommentar). `Quellentreue`, `Eindeutigkeit`, `Niveau` und `Sprache` stehen als Metadaten an „Prüfen · Frage n“ und in `question_evaluations`; im Dashboard gibt es dafür keine Kachel mehr, weil jeder Score eine Langfuse-Unit kostet (SIN-1191, `docs/decisions/SIN-1191-langfuse-scores.md`). Die vier Prüfpunkte schreibt nur noch der Richter-Lauf (`evaluate-agent.ts`) als Mittelwert je Lauf.
 
 ## Sicherheits-Stichprobe
 

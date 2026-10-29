@@ -83,8 +83,9 @@ async function main() {
               name: "judge-backfill-question",
               courseId: ctx.courseId,
               passed: q.passed,
-              scores: { ...q.scores },
-              metadata: { kind: "question-eval", runId: ctx.runId, unitId: q.unitId, questionId: q.questionId },
+              // SIN-1191: Prüfpunkte nur als Metadaten, nicht als Scores (je Score eine Langfuse-Unit).
+              scores: {},
+              metadata: { kind: "question-eval", runId: ctx.runId, unitId: q.unitId, questionId: q.questionId, ...q.scores },
             });
           },
           run: async (s) => {

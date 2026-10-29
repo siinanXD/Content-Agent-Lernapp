@@ -116,8 +116,15 @@ describe("Einheiten-Traces (SIN-383)", () => {
     assert.ok(ergebnisse.some((o) => o.includes("veröffentlicht")));
     assert.ok(ergebnisse.some((o) => o.includes("verworfen") && o.includes("nur 1 von 4")));
 
-    // 6 Scores je Frage: 4 Prüfpunkte, Sicherheit, bestanden
-    assert.equal(scores.length, 7 * 6);
+    // SIN-1191: 2 Scores je Frage (Sicherheit, bestanden); die 4 Prüfpunkte nur als Metadaten
+    assert.equal(scores.length, 7 * 2);
+    assert.deepEqual([...new Set(scores.map((s) => s.name))].sort(), ["Sicherheit", "bestanden"]);
+    const pruefen = spans.filter((s) => s.name.startsWith("Prüfen · Frage"));
+    for (const sp of pruefen) {
+      for (const k of ["Quellentreue", "Eindeutigkeit", "Niveau", "Sprache", "Sicherheit"]) {
+        assert.ok(`langfuse.observation.metadata.${k}` in sp.attributes, `Metadatum fehlt: ${k}`);
+      }
+    }
     assert.equal(scores.filter((s) => s.name === "bestanden" && s.value === 1).length, 4);
   });
 

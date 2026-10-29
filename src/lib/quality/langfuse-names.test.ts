@@ -75,9 +75,9 @@ describe("Langfuse lesbar (SIN-299)", () => {
     assert.deepEqual(pruefpunktScores([]), []);
   });
 
-  it("hat 5 Kacheln, die auf Scores zeigen, die der Kurslauf schreibt", () => {
+  it("hat 4 Kacheln, die auf Scores zeigen, die der Kurslauf schreibt", () => {
     const widgets = dashboardWidgetSpecs();
-    assert.equal(widgets.length, 5);
+    assert.equal(widgets.length, 4);
     const src =
       readFileSync("scripts/content-grow.ts", "utf8") +
       readFileSync("src/lib/quality/unit-traces.ts", "utf8") +

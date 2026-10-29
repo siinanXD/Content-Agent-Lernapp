@@ -42,10 +42,10 @@ export function scoreConfigSpecs() {
     description,
   });
   return [
-    numeric(PRUEFPUNKTE.sourceFidelity, "Je Frage: Antwort folgt aus der amtlichen Quelle (1) oder nicht (0).", 0, 1),
-    numeric(PRUEFPUNKTE.uniqueness, "Je Frage: genau eine richtige Antwort (1) oder nicht (0).", 0, 1),
-    numeric(PRUEFPUNKTE.niveau, "Je Frage: Niveau (1–5), Schwelle 4.", 1, 5),
-    numeric(PRUEFPUNKTE.language, "Je Frage: Sprachqualität (1–5), Schwelle 4.", 1, 5),
+    numeric(PRUEFPUNKTE.sourceFidelity, "Je Richter-Lauf (Mittel): Antwort folgt aus der amtlichen Quelle (1) oder nicht (0).", 0, 1),
+    numeric(PRUEFPUNKTE.uniqueness, "Je Richter-Lauf (Mittel): genau eine richtige Antwort (1) oder nicht (0).", 0, 1),
+    numeric(PRUEFPUNKTE.niveau, "Je Richter-Lauf (Mittel): Niveau (1–5), Schwelle 4.", 1, 5),
+    numeric(PRUEFPUNKTE.language, "Je Richter-Lauf (Mittel): Sprachqualität (1–5), Schwelle 4.", 1, 5),
     numeric(SICHERHEIT_SCORE, "Je Frage: 1 = Sicherheitsthema, braucht die Stichprobe durch einen Menschen.", 0, 1),
     { name: BESTANDEN_SCORE, dataType: "BOOLEAN" as const, description: "Je Frage: hat der Richter die Frage bestanden?" },
     numeric("Fragen veröffentlicht", "Anzahl veröffentlichter Fragen im Kurslauf.", 0, 100000),
@@ -148,7 +148,7 @@ export async function queueSafetySample(
 
 export const DASHBOARD_NAME = "Kurslauf: Kosten und Qualität";
 
-/** Die 5 Kacheln des Dashboards (Widget-API, Stand SDK 5.11; Anleitung zum Nachbauen: docs/ops/langfuse-dashboard.md). */
+/** Die 4 Kacheln des Dashboards (SIN-1191: Prüfpunkt-Kachel entfällt, die Prüfpunkte stehen als Metadaten) (Widget-API, Stand SDK 5.11; Anleitung zum Nachbauen: docs/ops/langfuse-dashboard.md). */
 type WidgetRequest = Parameters<LangfuseClient["api"]["unstable"]["dashboardWidgets"]["create"]>[0];
 
 export function dashboardWidgetSpecs(): Array<WidgetRequest & { breite: number }> {
@@ -175,17 +175,6 @@ export function dashboardWidgetSpecs(): Array<WidgetRequest & { breite: number }
       filters: scoreFilter([BESTANDEN_SCORE]),
       chartType: "HORIZONTAL_BAR",
       chartConfig: { row_limit: 20, show_value_labels: true },
-      breite: 6,
-    },
-    {
-      name: "Schwächster Prüfpunkt",
-      description: "Mittelwert je Prüfpunkt über alle Fragen; der niedrigste Balken ist der schwächste Punkt.",
-      view: "scores-numeric",
-      dimensions: [{ field: "name" }],
-      metrics: [{ measure: "value", agg: "avg" }],
-      filters: scoreFilter([PRUEFPUNKTE.sourceFidelity, PRUEFPUNKTE.uniqueness, PRUEFPUNKTE.niveau, PRUEFPUNKTE.language]),
-      chartType: "HORIZONTAL_BAR",
-      chartConfig: { show_value_labels: true },
       breite: 6,
     },
     {
