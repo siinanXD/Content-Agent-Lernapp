@@ -95,3 +95,22 @@ Abgerufen mit `gh pr checks 652` und `gh pr view 652 --json statusCheckRollup`. 
 ## Secrets in PR-Läufen (SIN-1180, 28.10.2026)
 
 Nur `goldset` führt PR-Code mit Schlüsseln aus (Richter OpenAI, Langfuse, Supabase Service-Role). Seit SIN-1180 prüft der Job `betroffen` ohne Secrets, ob der PR Prompts, Richter oder Goldset ändert; nur dann läuft `goldset` – und erst nach Freigabe in der GitHub-Umgebung `goldset` (Required reviewer: Sinan). `pr-gate`, `pr-crawler` und `sichtpruefung` haben Secrets, führen aber nur Code aus `main` aus (Checkout der Basis); der PR-Stand wird dort nur gelesen.
+
+## Beleg und Nachher-Wert (SIN-1120, 30.10.2026)
+
+Abgerufen mit `gh pr checks 683`, `gh run list --workflow ci.yml|codeql.yml --branch main` und `gh pr list --state merged`.
+
+- Echter Content-PR nach SIN-1141: [#683](https://github.com/siinanXD/Content-Agent-Lernapp/pull/683) (`chore(content)`, nur `docs/ops/content-runs/`).
+  Seine Check-Liste hat weder `analyze` (codeql) noch `sichtpruefung` noch `pr-crawler`; `bildvergleich` (visual) und `goldset` brauchen 6 s und 5 s.
+- Der Squash-Commit `088cff1` auf `main` hat keinen `ci`- und keinen `codeql`-Lauf (beide Workflows: 0 Läufe für diese SHA). `paths-ignore` greift also auf `push`, nicht nur im Test.
+- Seit SIN-1179 (PR #681) legt die Content-Fabrik keine Leerlauf-PRs mehr an; nach #679 gab es deshalb nur diesen einen Content-PR.
+  Die „nachher“-Stichprobe für Content-PRs ist damit klein (n = 1).
+
+| Median „PR geöffnet bis merge-fähig“ | Wert | Stichprobe |
+|---|---|---|
+| Vorher (Teil 1, vor SIN-1119) | 8,3 min | 10 PRs #651 bis #662 |
+| Nach SIN-1119, vor SIN-1141 | 5,1 min | 10 Content-PRs #666 bis #675 |
+| Nachher (nach SIN-1141) | 5,1 min | Content-PR #683 |
+| Nachher, alle PR-Arten | 6,1 min | 9 PRs #680 bis #688; Ausreißer #682 16,9 min (Gate-Umbau), #687 wartete auf Review |
+
+`ci` auf `main`: Median 288 s über die 8 jüngsten `push`-Läufe (Spanne 256 bis 314 s), vorher 675 s mit einem Ausreißer von 816 s. Der Lauf bleibt, weil er das einzige Signal für ein rotes `main` ist (`strict: false`).
