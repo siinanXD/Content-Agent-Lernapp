@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1197 | SIN-1197 Anmeldung nach Standard: Passwort, Registrieren, Passwort vergessen, Google | [SIN-1197-anmeldung-standard.md](decisions/SIN-1197-anmeldung-standard.md) |
 | SIN-1191 | SIN-1191 · Langfuse: Richter-Scores je Frage von 6 auf 2 | [SIN-1191-langfuse-scores.md](decisions/SIN-1191-langfuse-scores.md) |
 | SIN-1179 | SIN-1179: Content-Fabrik ohne Leerlauf-PRs, ein Takt | [SIN-1179-fabrik-leerlauf.md](decisions/SIN-1179-fabrik-leerlauf.md) |
 | SIN-1119 | SIN-1119: CI-Prüfungen laufen parallel | [SIN-1119-ci-parallel.md](decisions/SIN-1119-ci-parallel.md) |

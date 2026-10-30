@@ -45,7 +45,7 @@ test("Demo-Formular: falsche E-Mail zeigt Fehler am Feld", async ({ page }) => {
 test("Anmelden: ohne eingerichtete Anmeldung klare Meldung statt Absturz", async ({ page }) => {
   await page.goto("/anmelden");
   await page.getByLabel("E-Mail").fill("trainer@beispiel.de");
-  await page.getByRole("button", { name: "Anmelde-Link senden" }).click();
+  await page.getByRole("button", { name: "Link per E-Mail schicken" }).click();
   await expect(page.getByText("Anmeldung nicht eingerichtet")).toBeVisible();
 });
 
