@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { RETRY_DELAYS_MS, ServiceError, fetchJson, rateLimitLine, retryAfterMs } from "../../../scripts/autonomy/http.mjs";
 import { fetchProjectIssues, linear } from "../../../scripts/autonomy/linear.mjs";
-import { abortLinearDown, collectMetrics } from "../../../scripts/autonomy/planner.mjs";
-import { analyze } from "../../../scripts/autonomy/status.mjs";
 
 type Reply = { status?: number; body: string; headers?: Record<string, string> };
 const reply = ({ status = 200, body, headers = { "content-type": "application/json" } }: Reply) =>
@@ -94,52 +92,4 @@ test("Linear: GraphQL-Fehler bleiben Fehler, ohne Wiederholung", async () => {
   const { fetchImpl, calls } = sequence([{ body: JSON.stringify({ errors: [{ message: "bad" }] }) }]);
   await assert.rejects(linear("q", {}, { key: "k", fetchImpl, ...quick }), /Linear-Fehler/);
   assert.equal(calls.length, 1);
-});
-
-test("Planer: optionale Dienste mit Fehlerseite → „nicht messbar“, kein Absturz", async (t) => {
-  // Kein echter Transport darf die synthetischen Testadressen erreichen.
-  const network = t.mock.method(globalThis, "fetch", async () => { throw new Error("Echte Netzabfrage im Unit-Test verboten"); });
-  const env = {
-    SUPABASE_URL: "https://sb.test",
-    SUPABASE_SERVICE_ROLE_KEY: "k",
-    SENTRY_AUTH_TOKEN: "t",
-    SENTRY_ORG: "o",
-    SENTRY_PROJECT: "p",
-    POSTHOG_PERSONAL_API_KEY: "k",
-    POSTHOG_PROJECT_ID: "1",
-  };
-  const { fetchImpl } = sequence([{ status: 200, ...HTML }]);
-  const m = await collectMetrics(env as never, { fetchImpl, ...quick });
-  assert.match(String(m.einheiten), /^nicht messbar \(Supabase: keine JSON-Antwort/);
-  assert.match(String(m.sentry), /^nicht messbar \(Sentry: keine JSON-Antwort/);
-  assert.match(String(m.posthog), /^nicht messbar \(PostHog: /);
-  assert.match(String(m.sentry_kritisch), /^nicht messbar \(Sentry: keine JSON-Antwort/);
-  assert.equal(network.mock.callCount(), 0, "Alle Dienste müssen den injizierten Transport nutzen");
-});
-
-test("Planer: Linear nicht erreichbar → saubere Warnung und Ausgabe linear_ok=false", () => {
-  const lines: string[] = [];
-  abortLinearDown(new ServiceError("Linear", "HTTP 503"), {} as never,(l: string) => void lines.push(l));
-  assert.match(lines[0], /^::warning::Planer abgebrochen: Linear: HTTP 503/);
-});
-
-test("Wächter: Linear nicht lesbar → kein Nachfüllen, Sperre (lastRefill) bleibt unverändert", () => {
-  const snap = { now: "2026-10-06T05:00:00Z", runs: [], prs: [], issues: [], linearOk: false, phaseEnv: { phase: "bauen" }, usage: {} };
-  const r = analyze(snap, {}, { lastRefill: "2026-10-05T01:00:00Z" } as never);
-  assert.equal(r.refill.trigger, false);
-  assert.match(r.refill.reason, /Linear nicht lesbar/);
-  assert.equal(r.state.lastRefill, "2026-10-05T01:00:00Z");
-  const ok = analyze({ ...snap, linearOk: true }, {}, {});
-  assert.equal(ok.refill.trigger, true);
-});
-
-test("Planer: Kostentabelle fehlt (404 PGRST205) → klare Meldung statt HTTP 404", async () => {
-  const env = { SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" };
-  const fetchImpl = (async (url: string) =>
-    String(url).includes("pipeline_run_costs")
-      ? reply({ status: 404, body: JSON.stringify({ code: "PGRST205", message: "Could not find the table" }) })
-      : reply({ body: "[]", headers: { "content-type": "application/json", "content-range": "0-0/3" } })) as never;
-  const m = await collectMetrics(env as never, { fetchImpl, ...quick });
-  assert.match(String(m.kosten_pro_lauf), /^nicht messbar \[Tabelle oder Schema-Cache\]: pipeline_run_costs nicht im Schema-Cache: Tabelle fehlt oder Cache veraltet/);
-  assert.doesNotMatch(String(m.kosten_pro_lauf), /404/);
 });

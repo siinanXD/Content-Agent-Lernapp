@@ -5,7 +5,6 @@ import { AUFBAUPHASE, approvalStillValid, classifyRisk, einspruchFrist, fristGil
 import { claudeMayTake, cursorGraceMs, isPaused, pauseUntilFromLog } from "../../../scripts/autonomy/budget.mjs";
 import { hasOpenBlockers, laneOf, pickMany, pickNext, prMentions, reconcile } from "../../../scripts/autonomy/linear.mjs";
 import { diffColorTokens, readNodeValues } from "../../../scripts/autonomy/figma.mjs";
-import { DESIGN_VORLAGEN_BLOCK, MAX_ISSUES_PER_WEEK,extractDefinition, validatePlan } from "../../../scripts/autonomy/planner.mjs";
 import {
   CHECKS,
   abnahmeIssue,
@@ -52,7 +51,7 @@ test("Gate: Workflow-Änderungen sind nie low, sondern medium mit Frist (SIN-811
 });
 
 test("Gate: auf main bekannte Secrets sind medium, neue high (SIN-516)", () => {
-  const guard = ".github/workflows/revert-guard.yml";
+  const guard = ".github/workflows/content-grow.yml";
   const used = patch("+        LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}");
   const known = secretNames(["env:\n  K: ${{ secrets.LINEAR_API_KEY }}\n  G: ${{ secrets.GITHUB_TOKEN }}"]);
   assert.deepEqual(known, ["LINEAR_API_KEY", "GITHUB_TOKEN"]);
@@ -102,7 +101,7 @@ test("Gate: Workflow-Rechte sind medium mit Einspruchsfrist, Neues bleibt high (
 });
 
 test("Gate: das Gate selbst ist medium mit Einspruchsfrist (SIN-547)", () => {
-  for (const f of [".github/workflows/pr-gate.yml", ".github/workflows/dispatch.yml", "scripts/autonomy/risk.mjs"]) {
+  for (const f of [".github/workflows/pr-gate.yml", "scripts/autonomy/risk.mjs"]) {
     const r = risk([file(f, patch("+x"))]);
     assert.equal(r.risk, "risk:medium", f);
     assert.ok(r.einspruch.some((x: { category: string }) => x.category === "gate"), f);
@@ -127,7 +126,7 @@ test("Einspruchsfrist: 30 Min je Commit, neuer Commit setzt neu (SIN-547, SIN-81
 
 test("Einspruchsfrist: Commit ohne neue Frist-Gründe (z. B. main einmergen) startet die Frist nicht neu", () => {
   const t0 = Date.UTC(2026, 9, 19, 13);
-  const gruende = ["workflow-recht:repair.yml allowed_bots", "gate:dispatch.yml"];
+  const gruende = ["workflow-recht:claude.yml allowed_bots", "gate:pr-gate.yml"];
   const f1 = einspruchFrist(undefined, "abc", t0, gruende);
   // Neuer Head nur durch Merge von main, dieselben Gründe in anderer Reihenfolge: Frist bleibt, Marker zeigt den neuen Head.
   const merge = einspruchFrist(f1.comment, "def", t0 + 90 * 60_000, [...gruende].reverse());
@@ -138,8 +137,8 @@ test("Einspruchsfrist: Commit ohne neue Frist-Gründe (z. B. main einmergen) sta
   // Neuer Frist-Grund: neue Frist.
   const anders = einspruchFrist(f1.comment, "def", t0 + 90 * 60_000, [...gruende, "secret:NEU"]);
   assert.equal(anders.bis, t0 + 90 * 60_000 + 30 * 60_000);
-  // Leser des Markers (einspruch-ende in pr-gate.yml, status.mjs) erkennen das neue Feld.
-  for (const datei of [".github/workflows/pr-gate.yml", "scripts/autonomy/status.mjs"]) {
+  // Leser des Markers (einspruch-ende in pr-gate.yml) erkennen das neue Feld.
+  for (const datei of [".github/workflows/pr-gate.yml"]) {
     const quelle = readFileSync(datei, "utf8").match(/\/<!-- pr-gate-einspruch sha=.*? -->\//)?.[0];
     assert.ok(quelle, datei);
     assert.match(merge.comment, new RegExp(quelle.slice(1, -1)), datei);
@@ -152,7 +151,7 @@ test("Einspruchsfrist: PR mit altem Label einspruch:2h und abgelaufener Frist wi
   const t0 = Date.UTC(2026, 9, 19, 9);
   const alt = `<!-- pr-gate-einspruch sha=abc bis=${t0 + 2 * 3600_000} -->`;
   // Zeitstempel des alten Kommentars gilt weiter, keine neue Frist.
-  const f = einspruchFrist(alt, "abc", t0 + 2 * 3600_000 + 1, ["gate:dispatch.yml"]);
+  const f = einspruchFrist(alt, "abc", t0 + 2 * 3600_000 + 1, ["gate:pr-gate.yml"]);
   assert.equal(f.neu, false);
   assert.equal(f.vorbei, true);
   assert.equal(f.bis, t0 + 2 * 3600_000);
@@ -330,69 +329,6 @@ test("Dispatcher: höchstens 2 parallel", () => {
   assert.equal(pickNext([running("SIN-1"), running("SIN-2"), issue("SIN-3", 1)]).issue, null);
 });
 
-test("Planer: Definition fertig, Plan-Prüfung, Wochenlimit", () => {
-  const md = "# X\n\n## Definition fertig\n\n- a\n- b\n\n## Weiter\n\nrest";
-  assert.equal(extractDefinition(md), "- a\n- b");
-  assert.equal(extractDefinition("## Definition fertig\n\nletzter"), "letzter");
-  const mk = (n: number, lane = "backend") => ({ lane, title: `T${n}`, acceptance: ["ok"], priority: 2 });
-  assert.equal(validatePlan(Array.from({ length: 8 }, (_, i) => mk(i))).length, 3);
-  assert.equal(validatePlan([mk(1)], ["t1"]).length, 0);
-  // Nachfüllen (SIN-253): Obergrenze und nur Bugs
-  assert.equal(validatePlan(Array.from({ length: 8 }, (_, i) => mk(i)), [], { maxIssues: 2 }).length, 2);
-  assert.equal(validatePlan([mk(1), mk(2, "frontend")], [], { bugsOnly: true }).map((r: { lane: string }) => r.lane).join(), "backend");
-  // SIN-262: Label claude für Spuren, nicht für Design-Pakete
-  const labelsOf = (lane: string) => (validatePlan([mk(1, lane)])[0] as { labels: string[] }).labels;
-  // SIN-320: ohne `size` im Plan gilt `mittel`.
-  assert.deepEqual(labelsOf("backend"), ["backend", "claude", "groesse:mittel"]);
-  assert.deepEqual(labelsOf("content"), ["content", "claude", "groesse:mittel"]);
-  assert.deepEqual(labelsOf("frontend"), ["frontend", "claude", "groesse:mittel"]);
-  assert.deepEqual(labelsOf("design"), ["design", "frontend"]);
-  // SIN-320: Größe und Bereich werden Labels, `gross` wird vor dem Start verworfen
-  const sized = validatePlan([
-    { ...mk(1), size: "klein", area: "Doku" },
-    { ...mk(2), size: "gross" },
-  ]) as { labels: string[] }[];
-  assert.equal(sized.length, 1);
-  assert.deepEqual(sized[0].labels, ["backend", "claude", "groesse:klein", "bereich:doku"]);
-  assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: [], priority: 1 }]));
-  assert.throws(() => validatePlan([{ lane: "backend", title: "x", acceptance: ["a"], priority: 9 }]));
-  assert.throws(() => validatePlan([{ title: "x", acceptance: ["a"], priority: 1 }]), /lane/);
-  assert.match(validatePlan([mk(1)])[0].description, /- \[ \] ok/);
-});
-
-test("Planer: je Spur max. 3 (zusammen 9), 1 Design-Paket, Spur-Label", () => {
-  const plan = ["frontend", "content", "backend"].flatMap((lane, l) =>
-    Array.from({ length: 5 }, (_, i) => ({ lane, title: `${lane}${i}`, acceptance: ["ok"], priority: 2 + (l % 2) })),
-  );
-  plan.push(
-    { lane: "design", title: "D1", acceptance: ["ok"], priority: 2 },
-    { lane: "design", title: "D2", acceptance: ["ok"], priority: 2 },
-  );
-  const out = validatePlan(plan);
-  assert.equal(out.filter((i) => i.lane !== "design").length, MAX_ISSUES_PER_WEEK);
-  assert.equal(MAX_ISSUES_PER_WEEK, 9);
-  for (const lane of ["frontend", "content", "backend"]) assert.equal(out.filter((i) => i.lane === lane).length, 3);
-  assert.deepEqual(out.filter((i) => i.lane === "design").map((i) => i.title), ["D1"]);
-  assert.deepEqual(out[0].labels, ["design", "frontend"]); // Design zuerst angelegt
-  assert.deepEqual(out.find((i) => i.lane === "content")?.labels, ["content", "claude", "groesse:mittel"]);
-});
-
-test("Planer: Frontend mit neuer Oberfläche braucht Design als Blocker", () => {
-  const ui = { lane: "frontend", title: "UI", acceptance: ["ok"], priority: 2, needsDesign: true };
-  assert.throws(() => validatePlan([ui]), /blockedBy/);
-  assert.throws(() => validatePlan([{ ...ui, blockedBy: "Gibt es nicht" }]), /blockedBy/);
-  const design = { lane: "design", title: "Frame", acceptance: ["ok"], priority: 2 };
-  const out = validatePlan([ui, design].map((p) => ({ ...p, ...(p === ui ? { blockedBy: "Frame" } : {}) })));
-  assert.equal(out.find((i) => i.title === "UI")?.blockedBy, "Frame");
-  assert.equal(validatePlan([{ ...ui, blockedBy: "SIN-12" }])[0].blockedBy, "SIN-12");
-  assert.throws(() => validatePlan([{ ...ui, lane: "backend", blockedBy: "SIN-12" }]), /nur für frontend/);
-});
-
-test("Planer: Pflege-Modus plant nur Backend und Content", () => {
-  const plan = ["frontend", "content", "backend", "design"].map((lane) => ({ lane, title: lane, acceptance: ["ok"], priority: 2 }));
-  assert.deepEqual(validatePlan(plan, [], { maintenance: true }).map((i) => i.lane).sort(), ["backend", "content"]);
-});
-
 function modulData(open = false) {
   const mod = (id: string, ist: number) => ({ id, soll: 4, ist, pct: ist * 25 });
   return {
@@ -535,23 +471,6 @@ test("Abgleich: gemergter PR → Done, ohne Merge geschlossen → Todo, sonst un
   assert.equal(prMentions({ title: "x (SIN-2370)", head: "" }, "SIN-237"), false);
 });
 
-test("Planer-Dry-Run: Frontend ohne Design und mit Design unterscheidbar", () => {
-  const plain = { lane: "frontend", title: "Leerzustand", acceptance: ["ok"], priority: 3 };
-  const ui = { lane: "frontend", title: "Neuer Screen", acceptance: ["ok"], priority: 2, needsDesign: true, blockedBy: "SIN-12" };
-  const out = validatePlan([plain, ui]);
-  assert.equal(out.find((i) => i.title === "Leerzustand")?.needsDesign, false);
-  assert.equal(out.find((i) => i.title === "Neuer Screen")?.needsDesign, true);
-  assert.equal(validatePlan([{ ...plain, lane: "backend" }])[0].needsDesign, undefined);
-});
-
-test("post-merge: Dispatch läuft vor der Bot-Prüfung, also auch bei Merge durch den Agent-Token (SIN-811)", () => {
-  const yml = readFileSync(".github/workflows/post-merge.yml", "utf8");
-  const dispatch = yml.indexOf('workflow_id: "dispatch.yml"');
-  const botCheck = yml.indexOf("pr.merged_by?.login !== BOT");
-  assert.ok(dispatch > 0 && botCheck > 0 && dispatch < botCheck);
-  assert.equal(yml.split('workflow_id: "dispatch.yml"').length - 1, 1);
-});
-
 test("Figma: Worker liest Werte über die API (Mock)", async () => {
   const node = {
     name: "Button",
@@ -573,18 +492,4 @@ test("Figma: Worker liest Werte über die API (Mock)", async () => {
   assert.equal(await readNodeValues("KEY", "1:2", {}, fetchMock), null); // ohne Token: nicht verfügbar
   const tokens = { color: { a: { value: "#0B5F6E" }, b: { value: "#FFFFFF" } } };
   assert.deepEqual(await diffColorTokens(tokens, "KEY", { FIGMA_ACCESS_TOKEN: "t" }, fetchMock), ["b (#FFFFFF)"]);
-});
-
-test("Planer: Design-Paket enthält Abschnitt „Vorlagen geprüft“ und Hinweis für Sinan (SIN-306)", () => {
-  const [d] = validatePlan([{ lane: "design", title: "Paket", description: "Screens", acceptance: ["ok"], priority: 2 }]);
-  assert.match(d.description, /## Vorlagen geprüft/);
-  assert.match(d.description, /Figma Community/);
-  assert.match(d.description, /GitHub/);
-  assert.match(d.description, /## Hinweis für Sinan/);
-  assert.match(d.description, /nicht selbst übernehmen/);
-  // keine Dopplung, wenn der Plan den Abschnitt schon liefert
-  const [e] = validatePlan([{ lane: "design", title: "Paket", description: DESIGN_VORLAGEN_BLOCK, acceptance: ["ok"], priority: 2 }]);
-  assert.equal(e.description.match(/## Vorlagen geprüft/g)?.length, 1);
-  // andere Spuren bleiben unverändert
-  assert.doesNotMatch(validatePlan([{ lane: "backend", title: "B", acceptance: ["ok"], priority: 2 }])[0].description, /Vorlagen/);
 });

@@ -59,7 +59,7 @@ export const WIDERLEGT_PREFIX = "Fund geprüft, keine Änderung nötig";
 
 /** SIN-844: Marker der Widerlegung als PR-Kommentar (kein Commit, kein `synchronize`). */
 export const WIDERLEGT_MARKER_RE = /<!-- fund-widerlegt sha=\S+ -->/;
-/** Höchstens so viele Widerlegungen je PR nehmen die Reparatur-Runde zurück (`review.yml` nutzt dieselbe Zahl). */
+/** Höchstens so viele Widerlegungen je PR nehmen die Reparatur-Runde zurück. */
 export const MAX_WIDERLEGUNGEN = 2;
 
 /**

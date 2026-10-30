@@ -4,7 +4,7 @@
  *   - Grund eines Worker-Laufs ohne PR aus der Execution-Datei lesen,
  *   - Linear-Kontingent (Issue-Zahl gegen Limit) bewerten,
  *   - offene Entscheidungen in schon gemergten PRs finden.
- * Das Anlegen in Linear und das Lesen der Logs liegen in status.mjs und dispatch.mjs.
+ * Das Anlegen in Linear und das Lesen der Logs gehören zu Leitstand 2.0.
  */
 import { parseBody } from "./steckbrief.mjs";
 
@@ -55,7 +55,7 @@ export const CAUSES = [
     key: "ohne-start",
     label: "Läufe ohne Fehler, aber kein Worker gestartet",
     re: /Kein roter Lauf:/,
-    fix: "Dispatcher prüfen: Zeitplan (dispatch.yml) läuft, startbare Issues werden erkannt und der Worker wird ausgelöst (Blocker, Slots, Label `claude`, Pause). Schritt-Ausgabe des letzten dispatch-Laufs lesen und die Stelle beheben, die den Start verhindert.",
+    fix: "Starter in Leitstand 2.0 prüfen: startbare Issues werden erkannt und der Chat wird gestartet (Blocker, Slots, Pause). Ausgabe des letzten Laufs lesen und die Stelle beheben, die den Start verhindert.",
   },
 ];
 

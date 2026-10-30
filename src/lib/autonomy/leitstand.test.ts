@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 import { buildEvent, buildSnapshot, fehlerzeile, workerGrund, main, projectOf, sendEvent, sendSnapshot, sumUsage } from "../../../scripts/autonomy/leitstand.mjs";
-import { analyze } from "../../../scripts/autonomy/status.mjs";
 
 const ENV = {
   GITHUB_REPOSITORY: "siinanXD/Content-Agent-Lernapp",
@@ -137,12 +136,6 @@ test("CLI: mehrere Issues des Dispatchers werden je Issue als eigenes Ereignis g
   assert.deepEqual(bodies.map((b) => JSON.parse(b).issue), ["SIN-1", "SIN-2", "SIN-3"]);
 });
 
-test("Status liefert Schlange und offene PRs für den Schnappschuss", () => {
-  const res = analyze({ now: "2026-10-08T10:00:00Z", runs: [], prs: [{ number: 7, title: "feat(x): y (SIN-1)", head: "claude/sin-1", state: "open", labels: [{ name: "risk:medium" }], draft: false }], issues: [], usage: {} }, {}, {});
-  assert.deepEqual(Object.keys(res.queue).sort(), ["in_progress", "paused", "running", "startable", "todo", "waiting"]);
-  assert.equal(res.openPrList[0].number, 7);
-  assert.equal(res.openPrList[0].risk, "risk:medium");
-});
 
 test("Migration: nur neue Tabellen, RLS an, Lesen nur für Leitstand-Nutzer, keine Löschbefehle", () => {
   const name = readdirSync("supabase/migrations").find((f) => f.includes("sin303_leitstand"));
@@ -159,7 +152,7 @@ test("Migration: nur neue Tabellen, RLS an, Lesen nur für Leitstand-Nutzer, kei
 });
 
 test("Workflows: jeder Schritt schreibt Start und Ende", () => {
-  const files: Record<string, string> = { dispatch: "dispatch", worker: "worker", "pr-gate": "pr-gate", planner: "planner", digest: "digest", status: "status" };
+  const files: Record<string, string> = { "pr-gate": "pr-gate" };
   for (const [step, file] of Object.entries(files)) {
     const y = readFileSync(`.github/workflows/${file}.yml`, "utf8");
     assert.match(y, new RegExp(`leitstand\\.mjs ereignis --schritt ${step} --status start`), `${file}: Start`);
@@ -171,7 +164,6 @@ test("Worker-fehler hat immer einen Grund (SIN-881)", () => {
   const e = buildEvent({ schritt: "worker", status: "fehler", issue: "SIN-768" }, ENV, NOW) as { grund?: string };
   assert.ok(e.grund && e.grund.length > 10);
   assert.equal((buildEvent({ schritt: "worker", status: "ok" }, ENV, NOW) as { grund?: string }).grund, undefined);
-  assert.match(readFileSync(".github/workflows/worker.yml", "utf8"), /--claude "\$OUT1" --claude2 "\$OUT2" --limit/);
 });
 
 test("Worker-Grund: Limit, Outcome, Fehlerzeile ohne Schlüssel, sonst kein Diff", () => {

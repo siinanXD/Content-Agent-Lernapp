@@ -194,13 +194,6 @@ test("Review (SIN-844): Marker-Kommentar ohne Fund-Zeilen und fremde Kommentare 
   assert.deepEqual(parseWiderlegt(["- src/a.ts: Nullzugriff (ohne Marker)"]), []);
 });
 
-test("Review (SIN-844): höchstens 2 Widerlegungen nehmen die Runde zurück, danach zählt sie (review.yml)", () => {
-  const yml = readFileSync(".github/workflows/review.yml", "utf8");
-  assert.equal(MAX_WIDERLEGUNGEN, 2);
-  assert.match(yml, new RegExp(`MAX_WIDERLEGUNGEN: "${MAX_WIDERLEGUNGEN}"`));
-  assert.match(yml, /refuted\.length > Number\(process\.env\.MAX_WIDERLEGUNGEN\)/);
-  assert.doesNotMatch(yml, /--allow-empty/);
-});
 
 test("Review (SIN-381): anderer Fund in derselben Datei bleibt schwer", () => {
   const widerlegt = parseWiderlegt(["Fund geprüft, keine Änderung nötig\n- src/a.ts: Nullzugriff in load() wirft"]);

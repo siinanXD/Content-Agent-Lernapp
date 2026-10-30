@@ -1,5 +1,5 @@
 # PR-Crawler (SIN-906): prüft nur die Seiten, die ein PR ändert, auf der Vercel-Vorschau und belegt sie im PR mit Bild (je Route,
-# Handy und Desktop) und, bei 2+ Seiten, mit einem Video (WebM). Der nächtliche Vollcrawl (testnutzer.yml) bleibt als Netz.
+# Handy und Desktop) und, bei 2+ Seiten, mit einem Video (WebM).
 # Ablauf: deployment_status der Vorschau → PR finden → geänderte Dateien → Routen (scripts/pr-crawler/routen.mjs) → Playwright
 # gegen die Vorschau → Artefakt + Kommentar `<!-- pr-crawler -->` (wird aktualisiert). Rot im Fund = roter Lauf, Grund in loop_events (Schritt pr-crawler).
 # Auslöser (SIN-906/SIN-914): Die Lern-App baut keine Vorschau über die Git-Anbindung (`git.deploymentEnabled: false`, SIN-309,

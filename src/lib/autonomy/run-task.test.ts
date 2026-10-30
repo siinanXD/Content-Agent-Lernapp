@@ -23,9 +23,7 @@ import {
   runTask,
   safetySample,
   stageResult,
-  taskForCheck,
 } from "../../../scripts/autonomy/run-task.mjs";
-import { startRuns, summarizeWeekCosts } from "../../../scripts/autonomy/planner.mjs";
 
 const now = new Date("2026-10-06T10:00:00Z");
 
@@ -45,8 +43,6 @@ test("ab-alle-modelle: bezahlt, beide Schlüssel nötig, Probelauf kostenlos (SI
 test("feste Liste: die fünf Messläufe und migrate, kein freier Befehl", async () => {
   assert.deepEqual(TASK_IDS, ["judge-backfill", "ab-haiku-sonnet", "ab-alle-modelle", "goldset-indkfl", "cost-report", "lighthouse", "offline-check", "migrate", "content-bereinigen", "safety-sample"]);
   await assert.rejects(() => runTask("rm -rf /", { env: {}, now }), /Unbekannte Aufgabe/);
-  const yml = readFileSync(".github/workflows/run-task.yml", "utf8");
-  for (const id of TASK_IDS) assert.match(yml, new RegExp(`- ${id}\\n`));
 });
 
 test("fehlende Secrets: Blocker, nichts ausgeführt, keine Namen mit Werten", async () => {
@@ -151,23 +147,6 @@ test("dispatchRun startet nur ohne Treffer am Tag und über das Agenten-Token", 
   assert.equal((await dispatchRun("cost-report", { env: {}, now })).started, false);
 });
 
-test("Planer: gebaut, nicht gelaufen → Lauf starten statt Issue", async () => {
-  const rows = [{ id: "qual-offline", stufe: "gebaut, nicht gelaufen" }, { id: "recht-impressum", stufe: "fehlt" }];
-  const plan = [
-    { title: "Offline prüfen", check: "qual-offline" },
-    { title: "Impressum", check: "recht-impressum" },
-    { title: "Anderes" },
-  ];
-  const started: string[] = [];
-  const { rest, started: log } = await startRuns(plan, rows, { dispatch: async (t: string) => (started.push(t), { started: true }) });
-  assert.deepEqual(started, ["offline-check"]);
-  assert.deepEqual(rest.map((e: { title: string }) => e.title), ["Impressum", "Anderes"]);
-  assert.equal(log[0].started, true);
-  const dry = await startRuns(plan, rows, { dry: true, dispatch: async () => assert.fail("kein Start im Trockenlauf") });
-  assert.equal(dry.started[0].started, false);
-  assert.equal(taskForCheck("betrieb-kosten"), "cost-report");
-  assert.equal(taskForCheck("recht-impressum"), undefined);
-});
 
 test("Kosten: Deckel, Wochenkosten und Stichtag der Teilbatches", () => {
   const now = new Date("2026-10-15T12:00:00Z");
@@ -188,7 +167,7 @@ test("Kosten: Deckel, Wochenkosten und Stichtag der Teilbatches", () => {
   assert.equal(costResult([{ cost_eur: 21.78, kind: "x", created_at: "2026-10-12T10:00:00Z" }], 20, { now }).ok, null);
 });
 
-test("Kosten (SIN-682): cost-report und Planer-Kennzahl nennen dieselbe Wochensumme", () => {
+test("Kosten (SIN-682): cost-report rechnet die Wochensumme der letzten 7 Tage", () => {
   const now = new Date("2026-10-15T12:00:00Z");
   const rows = [
     { cost_eur: 14.89, kind: "content-grow", created_at: "2026-10-14T10:00:00Z" },
@@ -197,7 +176,6 @@ test("Kosten (SIN-682): cost-report und Planer-Kennzahl nennen dieselbe Wochensu
   ];
   const bericht = costResult(rows, 20, { now });
   assert.equal(bericht.wocheEur, 17.09);
-  assert.match(summarizeWeekCosts(rows, 20, now), /^17\.09 € in 2 Läufen/);
 });
 
 test("Migrationen: nur additive, fehlende nach Tabellen und Version", () => {
@@ -311,6 +289,4 @@ test("SIN-885: content-bereinigen schreibt nur nach frischer Sicherung, Trockenl
   assert.match(ohne.ergebnis, /keine Sicherung/);
   const alt = await runTask("content-bereinigen", { env: { ...env, BACKUP_AT: new Date(now.getTime() - 40 * 3600_000).toISOString() }, now });
   assert.match(alt.ergebnis, /keine Sicherung/);
-  const yml = readFileSync(".github/workflows/run-task.yml", "utf8");
-  assert.match(yml, /inputs\.task == 'content-bereinigen'\) && !inputs\.dry_run/);
 });

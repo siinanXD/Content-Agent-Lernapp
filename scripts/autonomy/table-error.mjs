@@ -73,7 +73,7 @@ export function sinanTaskForTableError(table, migration, e, exists) {
       link: "https://supabase.com/dashboard",
       minuten: 5,
       schritte: [
-        `Im SQL-Editor prüfen: \`select to_regclass('public.${table}');\` (leer = Migration ${migration} fehlt, dann Aufgabe \`migrate\` in run-task.yml starten).`,
+        `Im SQL-Editor prüfen: \`select to_regclass('public.${table}');\` (leer = Migration ${migration} fehlt, dann den Workflow \`migrate\` starten).`,
         "Ist die Tabelle vorhanden: `NOTIFY pgrst, 'reload schema';` ausführen.",
       ],
       pruefung: "Der nächste Planer-Lauf meldet bei den Kennzahlen nicht mehr „Schema-Cache“. Du schließt das Issue danach selbst.",

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Lauf-Aufgaben mit Secrets (SIN-302). Wird nur vom Workflow `run-task.yml` gestartet.
+ * Lauf-Aufgaben mit Secrets (SIN-302). Wird von `content-grow.yml` und `migrate.yml` gestartet.
  * Die Aufgaben stehen in einer festen Liste (TASKS); es gibt keinen freien Befehl.
  *
  * Aufruf: node scripts/autonomy/run-task.mjs --task <id> [--dry-run]

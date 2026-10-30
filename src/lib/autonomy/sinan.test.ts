@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { buildDigest, needsYou } from "../../../scripts/autonomy/digest.mjs";
 import { isHumanIssue } from "../../../scripts/autonomy/linear.mjs";
 import {
   CHECK_FILES,
@@ -16,7 +15,6 @@ import {
   sortSinan,
   syncSinan,
 } from "../../../scripts/autonomy/sinan.mjs";
-import { analyze } from "../../../scripts/autonomy/status.mjs";
 
 const NOW = new Date("2026-10-07T08:00:00Z");
 const files = () => readCheckFiles((f: string) => readFileSync(f, "utf8")) as Record<string, string>;
@@ -127,28 +125,4 @@ test("Sync: legt fehlende an und schließt erledigte mit Kommentar; offene bleib
   const dry = await syncSinan({ call: call as never, files: f, dry: true });
   assert.equal(dry.closed.length, 1);
   assert.deepEqual(writes, [], "Trockenlauf schreibt nichts");
-});
-
-test("Anzeige: früh Fälliges zuerst, Link und Minuten in Update und Status-Seite", () => {
-  const issues = SEED.map((t, i) => issueOf(20 + i, t));
-  const sorted = sortSinan(issues);
-  assert.match(sorted[0].title, /GitHub-Tokens/);
-  assert.match(sinanLine(sorted[0]), /^SIN-\d+ GitHub-Tokens erneuern \(20 Min, fällig 20\.12\.\) https:\/\/linear\.app/);
-  assert.match(renderSinan(issues), /- \[SIN-26\]\(https:\/\/linear\.app\/x\/issue\/SIN-26\) GitHub-Tokens erneuern, 20 Min, fällig 20\.12\./);
-  assert.match(renderSinan([]), /Keine offenen Aufgaben/);
-
-  const need = needsYou({ sinan: issues, legalOpen: ["a"], now: NOW });
-  assert.equal(need.length, SEED.length, "Rechts-Sammelhinweis entfällt, wenn die Aufgaben als Issues da sind");
-  assert.ok(need.every((n: string) => n.startsWith("Sinan SIN-")));
-
-  const { text } = buildDigest({ now: NOW.toISOString(), slot: "morgen", issues: [], openPrs: [], mergedPrs: [], decisions: [], sinanIssues: issues });
-  const block = text.split("**Braucht dich**\n")[1].split("\n\n")[0].split("\n");
-  assert.equal(block.length, 6, "5 Aufgaben und „… und 3 weitere“");
-  assert.match(block[0], /^- Sinan SIN-26 GitHub-Tokens erneuern \(20 Min, fällig 20\.12\.\)/);
-  assert.equal(block[5], "… und 2 weitere");
-
-  const fixture = JSON.parse(readFileSync("docs/autonomy/fixture-status.json", "utf8"));
-  const limits = JSON.parse(readFileSync("docs/autonomy/free-tier-limits.json", "utf8"));
-  const body = analyze({ ...fixture, sinanIssues: issues }, limits, {}).body;
-  assert.match(body, /## Braucht dich[\s\S]*Aufgaben mit Label `sinan`[\s\S]*\[SIN-26\]/);
 });

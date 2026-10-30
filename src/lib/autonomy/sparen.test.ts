@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildDigest } from "../../../scripts/autonomy/digest.mjs";
 import { laneOf, startOrder } from "../../../scripts/autonomy/linear.mjs";
 import {
   MAX_BUNDLE,
@@ -158,12 +157,4 @@ test("Wochensumme: Summe, Tokens je PR, teuerste 3", () => {
   assert.equal(weekUsage([{ title: "x (SIN-9)", body: "" }]), null);
   assert.match(renderWeekUsage(w).join("\n"), /Teuerste 3: SIN-2 3,00 \$, SIN-3 2,00 \$, SIN-1 1,00 \$/);
   assert.match(renderWeekUsage(null)[0], /noch keine Messwerte/);
-});
-
-test("Tages-Update zeigt Wochenverbrauch", () => {
-  const w = weekUsage([{ title: "feat(a): A (SIN-1)", body: appendUsage("x", usageFromExecution(execution), { label: "Worker", model: "m", run: "1" }) }]);
-  const { text } = buildDigest({ now: "2026-10-12T08:00:00Z", slot: "morgen", privateDetails: true, usageWeek: w });
-  assert.match(text, /Verbrauch \(7 Tage\): 7\.900 Tokens/);
-  assert.match(text, /Teuerste 3: SIN-1/);
-  assert.match(buildDigest({ now: "2026-10-12T08:00:00Z", slot: "morgen" }).text, /Details privat in Linear/);
 });

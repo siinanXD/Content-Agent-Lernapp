@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { needsYou, openLegalItems } from "../../../scripts/autonomy/digest.mjs";
 import { LEGAL_SLUGS, loadLegalDocument, parseInline, parseLegal, slugify } from "./legal-content";
 import { legalMetadata } from "./legal-metadata";
 
@@ -75,13 +74,4 @@ test("Auftragsverarbeiter passen zur Konfiguration im Repo", () => {
   assert.match(region("Vercel") ?? "", /^Funktionen in Frankfurt \(fra1\)/);
   assert.equal(region("Supabase"), "EU (Irland)");
   assert.equal(region("Sentry"), "EU");
-});
-
-test("Rechts-Checkliste: offene Punkte erscheinen unter „Braucht dich“, abgehakte nicht", () => {
-  const md = readFileSync("docs/legal/checkliste-demo-zugang.md", "utf8");
-  const open = openLegalItems(md);
-  assert.ok(open.length >= 11);
-  assert.deepEqual(openLegalItems("- [x] fertig\n- [ ] offen\n"), ["offen"]);
-  assert.match(needsYou({ legalOpen: open })[0], /^Recht: \d+ Punkte offen vor dem Demo-Zugang/);
-  assert.deepEqual(needsYou({ legalOpen: [] }), []);
 });

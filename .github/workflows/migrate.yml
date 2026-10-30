@@ -1,8 +1,8 @@
 # Migrationen automatisch anwenden (SIN-374): nach jedem Merge auf main mit Änderungen unter supabase/migrations/.
-# Vorher: Sicherung (SIN-293). Dann dieselbe Aufgabe `migrate` wie in run-task.yml: nur additive Migrationen, jede in einer
+# Vorher: Sicherung (SIN-293). Dann die Aufgabe `migrate` aus scripts/autonomy/run-task.mjs: nur additive Migrationen, jede in einer
 # Transaktion, danach Version in supabase_migrations.schema_migrations und `notify pgrst, 'reload schema'`.
 # Nicht additive Migrationen bleiben liegen (risk:high, Sinan entscheidet) und machen den Lauf rot.
-# Der Wächter (status.yml) vergleicht Dateien und Datenbank und zeigt „Migrationen: n/n angewendet“.
+# Der Wächter (Leitstand 2.0) vergleicht Dateien und Datenbank und zeigt „Migrationen: n/n angewendet“.
 # Der Production-Deploy (production-deploy.yml) wartet, solange additive Migrationen fehlen.
 # Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (Sicherung), SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF (Secret oder Variable).
 name: migrate

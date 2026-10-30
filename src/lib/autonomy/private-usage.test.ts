@@ -4,7 +4,6 @@ import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main } from "../../../scripts/autonomy/verbrauch.mjs";
-import { buildDigest } from "../../../scripts/autonomy/digest.mjs";
 import { buildSteckbrief } from "../../../scripts/autonomy/steckbrief.mjs";
 import { privateWeekUsage, recordPrivateUsage } from "../../../scripts/autonomy/private-usage.mjs";
 import { appendUsage } from "../../../scripts/autonomy/sparen.mjs";
@@ -28,12 +27,6 @@ test("worker usage stays in private Linear, never GitHub or stdout", async () =>
     assert.match(writes[0], /"usd":1\.234/);
     assert.doesNotMatch(logs.join("\n"), /1[.,]23|API-Gegenwert|usage:|public network forbidden/);
   } finally { console.log=oldLog; globalThis.fetch=oldFetch; rmSync(dir,{recursive:true,force:true}); }
-});
-
-test("public digest excludes amounts and quota information, private digest preserves them", () => {
-  const snap = {now:"2026-10-22T00:00:00Z",slot:"morgen",content:{einheitenNeuWoche:3,bestehensquote:90,kostenWocheEur:12.34},quotas:[{name:"internal",pct:71}]};
-  assert.doesNotMatch(buildDigest(snap).text, /12[.,]34|€|\$|internal|71 %/);
-  assert.match(buildDigest({...snap,privateDetails:true}).text, /12[.,]34/);
 });
 
 test("public PR summary excludes legacy cost and usage sections", () => {

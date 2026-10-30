@@ -110,11 +110,11 @@ test("Steckbrief: Block Bereiche in Reihenfolge, eigener Satz überschreibt", ()
 });
 
 test("Diagramme (SIN-376): Hinweis, wenn Workflow ohne pipeline.mmd geändert wird", () => {
-  const r = buildSteckbrief({ ...base, files: [{ filename: ".github/workflows/dispatch.yml" }] });
+  const r = buildSteckbrief({ ...base, files: [{ filename: ".github/workflows/ci.yml" }] });
   assert.match(r.body, /\*\*Diagramme:\*\* Hinweis, kein Blocker: docs\/diagramme\/pipeline\.mmd/);
   const ok = buildSteckbrief({
     ...base,
-    files: [{ filename: ".github/workflows/dispatch.yml" }, { filename: "docs/diagramme/pipeline.mmd" }],
+    files: [{ filename: ".github/workflows/ci.yml" }, { filename: "docs/diagramme/pipeline.mmd" }],
   });
   assert.ok(!ok.body.includes("**Diagramme:**"));
   assert.deepEqual(diagrammHinweis([{ filename: "src/app/ergebnis/page.tsx" }]), ["docs/diagramme/nutzerwege.mmd"]);
