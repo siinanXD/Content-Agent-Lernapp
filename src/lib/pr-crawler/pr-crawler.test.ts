@@ -166,3 +166,24 @@ test("SIN-914: UI-PR löst den Crawler selbst aus und baut die Vorschau per CLI 
   assert.match(yml, /head\.repo\.full_name == github\.repository/);
   assert.equal(JSON.parse(readFileSync("vercel.json", "utf8")).git.deploymentEnabled, false);
 });
+
+test("Vercel-Schutzseite wird erkannt (SIN-1210)", async () => {
+  const { istSchutzseite } = await import("../../../scripts/pr-crawler/lauf.mjs");
+  assert.equal(istSchutzseite("https://vercel.com/login?next=%2Fsso-api", ""), true);
+  assert.equal(istSchutzseite("https://x-siinanxds-projects.vercel.app/anmelden", "Log in to Vercel"), true);
+  assert.equal(istSchutzseite("https://x-siinanxds-projects.vercel.app/anmelden", "Anmelden"), false);
+  assert.equal(istSchutzseite("about:blank"), false);
+});
+
+test("401er der API hinter dem Login werden zu einem Fund mit Ursache (SIN-1210)", async () => {
+  const { sitzungAbgelehnt } = await import("../../../scripts/pr-crawler/lauf.mjs");
+  const funde = [
+    { kategorie: "http", route: "/ausbilder", viewport: "handy", text: "HTTP 401 bei /api/ausbilder/gruppe" },
+    { kategorie: "konsole", route: "/ausbilder", viewport: "handy", text: "Failed to load resource: the server responded with a status of 401 ()" },
+    { kategorie: "a11y", route: "/ausbilder", viewport: "handy", text: "color-contrast (serious): x, 1 Stelle(n)" },
+  ];
+  const aus = sitzungAbgelehnt(funde, "/ausbilder");
+  assert.deepEqual(aus.map((f: { kategorie: string }) => f.kategorie), ["a11y", "login"]);
+  assert.match(aus[1].text, /NEXT_PUBLIC_SUPABASE_URL/);
+  assert.equal(sitzungAbgelehnt([funde[2]], "/ausbilder").length, 1);
+});

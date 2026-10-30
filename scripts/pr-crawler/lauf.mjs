@@ -20,6 +20,20 @@ import { loginRolle, stateFuer } from "../agent-testnutzer/sitzung.mjs";
 export const MAX_VIDEO_MB = 10;
 export const ROT = (f) => f.kategorie !== "lcp";
 
+/** Vercel-Schutzseite statt Lernapp (SIN-1210): der Bypass-Header kam nicht an oder wurde abgelehnt. */
+export const istSchutzseite = (url, titel = "") => /(^|\.)vercel\.com$/.test(new URL(url).hostname) || /Log in to Vercel/i.test(titel);
+
+const ist401 = (f) => (f.kategorie === "http" && /HTTP 401 bei \/api\//.test(f.text)) || (f.kategorie === "konsole" && /status of 401/.test(f.text));
+
+/** Seite hinter dem Login: 401er der API ergeben einen Fund mit Ursache statt vieler Folgefunde (SIN-1210). */
+export function sitzungAbgelehnt(funde, route) {
+  const erster = funde.find(ist401);
+  if (!erster) return funde;
+  const text =
+    "Sitzung greift nicht: die API antwortet 401. Vorschau-Build ohne NEXT_PUBLIC_SUPABASE_URL/_ANON_KEY (Vercel Preview) oder anderes Supabase-Projekt als im Lauf (SUPABASE_URL).";
+  return [...funde.filter((f) => !ist401(f)), { kategorie: "login", route, viewport: erster.viewport, text }];
+}
+
 /** Erste Frage beantworten, wo es eine gibt (Einheit, Prüfung); Fehler wird als Fund gemeldet. */
 export async function ersteFrage(page, route) {
   if (route.startsWith("/pruefung") && route !== "/pruefung/ergebnis") await page.getByRole("button", { name: "Prüfung starten" }).click({ timeout: 5000 });
@@ -87,7 +101,10 @@ export async function pruefe(base, routen, ordner = "pr-crawler-ergebnis") {
       for (const route of routen) {
         const context = await holeKontext(stateFuer(route));
         const { funde: f, page } = await pruefeSeite(context, base, route, vp, ordner);
-        funde.push(...f);
+        if (istSchutzseite(page.url(), await page.title().catch(() => ""))) {
+          throw new Error(`Vercel-Schutzseite statt Lernapp bei ${route}: Bypass-Header ${process.env.VERCEL_AUTOMATION_BYPASS_SECRET ? "gesetzt, aber abgelehnt" : "fehlt im Lauf"}`);
+        }
+        funde.push(...(stateFuer(route) ? sitzungAbgelehnt(f, route) : f));
         // Sitzung gesetzt, Seite aber auf /anmelden gelandet: kein Beleg, sondern ein Fund (sonst zeigt das Bild die Anmeldung).
         const eingeloggt = stateFuer(route) ? loginRolle(route) : null;
         if (eingeloggt && new URL(page.url()).pathname.startsWith("/anmelden")) {
