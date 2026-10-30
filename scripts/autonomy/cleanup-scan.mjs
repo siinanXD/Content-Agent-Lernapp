@@ -5,8 +5,8 @@
  *   2. Pakete in package.json, die nirgends vorkommen,
  *   3. zu große Dateien (> MAX_LINES Zeilen),
  *   4. doppelte Blöcke (≥ DUP_LINES gleiche Zeilen in zwei Dateien).
- * Der wöchentliche Aufräum-Agent (.github/workflows/aufraeumen.yml) startet damit und macht daraus ein PR.
- * Treffer sind Hinweise, keine Urteile: der Agent prüft jeden einzeln.
+ * Läuft von Hand (`npm run cleanup:scan`).
+ * Treffer sind Hinweise, keine Urteile: jeder wird einzeln geprüft.
  *
  *   node scripts/autonomy/cleanup-scan.mjs [--json]
  */

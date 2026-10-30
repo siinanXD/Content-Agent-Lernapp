@@ -132,24 +132,6 @@ jobs:
             }
 
             if (!pr.merged) { core.info("PR ist nicht gemerged."); return; }
-            // Dispatcher sofort anstoßen (SIN-334, SIN-811): auch wenn der Agent (nicht der Bot) gemerged hat; sonst wartet
-            // der nächste Worker auf den Zeitplan. Eigener Marker, damit mehrere Läufe nach dem Merge nur einmal starten.
-            // Die Gruppe `dispatch` in dispatch.yml verhindert Doppelstarts.
-            const DISPATCH_MARKER = ["<!", "-- post-merge-dispatch --", ">"].join("");
-            if (pr.base.ref === (await github.rest.repos.get({ owner, repo })).data.default_branch) {
-              const done = (await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: number, per_page: 100 }))
-                .some((c) => c.body?.includes(DISPATCH_MARKER) || c.body?.includes(MARKER));
-              if (!done) {
-                try {
-                  await github.rest.actions.createWorkflowDispatch({
-                    owner, repo, workflow_id: "dispatch.yml", ref: pr.base.ref, inputs: { dry_run: "false" },
-                  });
-                  await github.rest.issues.createComment({ owner, repo, issue_number: number, body: `${DISPATCH_MARKER}\nDispatcher nach dem Merge angestoßen.` });
-                } catch (e) {
-                  core.warning(`Dispatcher nicht angestoßen: ${e.message}`);
-                }
-              }
-            }
             if (pr.merged_by?.login !== BOT) {
               core.info(`Gemerged von ${pr.merged_by?.login}: GitHub startet die Push-Workflows selbst.`);
               return;

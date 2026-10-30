@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { collectFabrikMetrics } from "../../../scripts/autonomy/fabrik.mjs";
-import { collectMetrics } from "../../../scripts/autonomy/planner.mjs";
 import { classifyTableError, describeTableError, isSchemaCache, sinanTaskForTableError } from "../../../scripts/autonomy/table-error.mjs";
 
 const err = (status: number, body: unknown) => ({ status, body: typeof body === "string" ? body : JSON.stringify(body) });
@@ -50,21 +49,6 @@ test("Tabellenfehler: isSchemaCache erkennt Schema-Cache-Fehler", () => {
   assert.equal(isSchemaCache(UNBEKANNT), false);
 });
 
-test("Planer und Fabrik: Mock-Antwort 401 → Zugriff verweigert, Sinan-Aufgabe vorgemerkt", async () => {
-  const body = JSON.stringify({ code: "PGRST301", message: "JWT invalid" });
-  const fetchImpl = (async (url: string) =>
-    String(url).includes("pipeline_run_costs") || String(url).includes("content_factory_runs")
-      ? reply(401, body)
-      : reply(200, "[]")) as never;
-  const sinanTasks: unknown[] = [];
-  const m = await collectMetrics(env as never, { fetchImpl, sinanTasks, ...quick } as never);
-  assert.match(String(m.kosten_pro_lauf), /\[Zugriff verweigert\]/);
-  assert.match(String(m.content_fabrik), /\[Zugriff verweigert\]/);
-  assert.equal(sinanTasks.length, 2);
-  const f = await collectFabrikMetrics(env as never, { fetchImpl, ...quick } as never);
-  assert.match(String(f.content_fabrik), /content_factory_runs/);
-});
-
 test("Fabrik: Schema-Cache-Fehler beim ersten Versuch → einmalige Wiederholung", async () => {
   let callCount = 0;
   const body = JSON.stringify({ code: "PGRST205", message: "Could not find the table 'public.content_factory_runs' in the schema cache" });
@@ -89,19 +73,4 @@ test("Fabrik: Schema-Cache-Fehler bleibt auch nach Wiederholung → Bericht nenn
   assert.match(String(f.content_fabrik), /\[Tabelle oder Schema-Cache\]/);
   assert.match(String(f.content_fabrik), /content_factory_runs/);
   assert.equal(sinanTasks.length, 0, "ohne bekannte Existenz keine Aufgabe „Cache neu laden“ (SIN-374)");
-});
-
-test("Planer: kosten_pro_lauf Schema-Cache-Fehler beim ersten Versuch → einmalige Wiederholung", async () => {
-  let callCount = 0;
-  const body = JSON.stringify({ code: "PGRST205", message: "Could not find the table 'public.pipeline_run_costs' in the schema cache" });
-  const fetchImpl = (async (url: string) => {
-    if (String(url).includes("pipeline_run_costs")) {
-      callCount++;
-      return callCount === 1 ? reply(404, body) : reply(200, JSON.stringify([]));
-    }
-    return reply(200, JSON.stringify([]));
-  }) as never;
-  const m = await collectMetrics(env as never, { fetchImpl, ...quick } as never);
-  assert.equal(callCount, 2, "erwartete genau 2 Aufrufe für pipeline_run_costs");
-  assert.match(String(m.kosten_pro_lauf), /keine Läufe/, "Wiederholung war erfolgreich");
 });

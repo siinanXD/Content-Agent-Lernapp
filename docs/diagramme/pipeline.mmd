@@ -1,64 +1,30 @@
-%% Pipeline-Ablauf des Loops, Stand main 09.10. (SIN-376). Quelle für das FigJam-Board „Pipeline-Ablauf“.
+%% Pipeline-Ablauf, Stand Leitstand 2.0 (SIN-376, SIN-1122). Quelle für das FigJam-Board „Pipeline-Ablauf“.
 %% Ändern sich .github/workflows/ oder scripts/autonomy/, diese Datei im selben PR anpassen.
 flowchart TD
   subgraph Planung
-    Radar["Trend-Radar (sonntags)"] --> Planer
-    Planer["Planer (planner.yml, sonntags; offene Fertig-Liste sperrt Ideen)"] --> Schlange["Linear-Schlange"]
+    Linear["Linear-Issue (Planer und Starter laufen in Leitstand 2.0)"] --> Chat["T3-Chat: ein Issue, ein Branch, ein PR"]
   end
-  Schlange --> Dispatcher["Dispatcher (dispatch.yml): dringend, dann v1, höchstens 1 Idee pro Woche; sofort nach Merge, höchstens 2 parallel"]
-  Dispatcher --> Worker["Worker (worker.yml, Claude; bei offenen Haken nur daran, derselbe Haken-Stand höchstens 2-mal, sonst needs-human, SIN-795)"]
-  Worker --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
-  PR --> Anstoss["pruefer-anstoss.yml: Anstoß an den Leitstand-Prüfer; merge-gate verlangt Beleg für den Head (SIN-1001)"]
+  Chat --> PR["Pull Request mit Steckbrief (Bereiche: Frontend, Backend, Datenbank, Infra, Deploy)"]
   subgraph Prüfung
     PR --> CI["CI: Lint, Typecheck, Tests, Build, axe, Layout-Test, Lighthouse, Leistungsbudget"]
     PR -- "Frontend geändert" --> Sicht["KI-Sichtprüfung gegen Figma: Kommentar, kein Gate (sichtpruefung.yml, SIN-523)"]
     PR -- "Vorschau fertig" --> PRC["PR-Crawler: nur geänderte Seiten, auch eingeloggt, Bild oder Video im PR (pr-crawler.yml, SIN-906, SIN-914)"]
     PR -- "Prompt, Richter oder Modell geändert" --> Gold["Goldset-Prüfung: Basis gegen PR, über 3 Prozentpunkte schlechter = rot (goldset.yml, SIN-629)"]
     PR --> CodeQL["CodeQL"]
-    PR --> Review["Review-Agent (zweites Modell)"]
     CI --> Gate{"pr-gate: Risiko"}
     CodeQL --> Gate
-    Review --> Gate
   end
-  CI -- rot --> Repair["repair.yml: bis 3 Runden, ohne Commit startet ci neu, Claude-Fehler = sofort needs-human"]
-  Repair --> CI
-  Repair -- "nach Runde 3" --> Mensch["needs-human, Stopp"]
   Gate -- "risk:high" --> Freigabe["Label freigegeben (Sinan)"]
   Freigabe --> Merge
   Gate -- "risk:medium (Aufbauphase: ohne Frist)" --> Merge
   Gate -- "risk:low" --> Merge["Auto-Merge (Squash)"]
-  Merge --> Haken{"Alle Fertig-Kriterien belegt? (SIN-779)"}
-  Haken -- ja --> Done["Linear: Done"]
-  Haken -- nein --> Offen["Issue bleibt offen, Kommentar nennt offene Haken"]
-  Merge --> Dispatcher
   Merge --> Migr["Migrationen anwenden: additiv automatisch, sonst Sinan-Aufgabe (SIN-374, SIN-451)"]
-  Merge --> Bruch{"gate-bruch-Erkennung"}
-  Bruch -- "CI auf main rot" --> Revert["revert-guard: Revert-PR nur wenn Schritt davor grün (SIN-502)"]
-  Revert -- "Revert-PR gemergt" --> LinearTodo["Linear: Issue auf Todo, 2. Rücknahme needs-human (SIN-492)"]
   Migr --> Deploy["production-deploy (höchstens 1× pro Stunde)"]
   Deploy --> Smoke["Smoke-Test"]
-  Smoke -- rot --> Revert
   Smoke -- grün --> Live["Live-Check (nach-deploy.yml)"]
-  Live -. "nachts / montags" .-> Testnutzer["Testnutzer-Agent: Crawler (auch eingeloggt) und 3 Personas, Funde werden Issues (testnutzer.yml, SIN-640, SIN-914)"]
   Deploy -- "grün, höchstens 1× pro Tag" --> Video["Tutorial-Video (video.yml): Freigabe nötig (SIN-483)"]
-  Deploy -- "nur von Hand, freigabe ja" --> Werbeclip["KI-Werbeclip (werbeclip.yml): bis 5 €, Freigabe nötig (SIN-520)"]
-  Kurs["Kurs veröffentlicht"] -- "von Hand" --> Marketing["Werbetexte (marketing.yml): Prüfung, dann Freigabe nötig (SIN-484)"]
-  Live --> Waechter["Wächter / Loop-Status (status.yml)"]
-  Waechter -- "neuer App-Code" --> Deploy
-  Backup["Sicherung (backup.yml) nachts, Restore-Test (restore-test.yml) monatlich in wegwerfbarer Supabase (SIN-337)"] --> Waechter
-  Waechter --> Update["Tages-Update (digest.yml, 10:00 und 20:00)"]
-  Waechter --> Leitstand["Leitstand: Start/Ende jedes Schritts und Schnappschuss in Supabase (SIN-303)"]
-  Worker -.-> Leitstand
-  subgraph Projektwaechter["Projekt-Wächter (Leitstand-Repo, waechter.yml, stündlich, alle Projekte In Progress mit GitHub-Link)"]
-    PW["Projekt-Wächter"] --> PWS["Schlange leer: Backlog rückt nach, sonst Planungs-Issue"]
-    PW --> PWH["Hänger: über 6 h In Progress ohne PR, nur Label claude: Todo, beim 2. Mal needs-human; Worker 2-mal ohne PR: needs-human; Claude-Sofortabbruch zählt als Limit-Pause; 3 Fehlläufe desselben Auftrags in 60 Min ohne PR: Pause 60 Min (SIN-548)"]
-    PW --> PWU["Projekt-Update in Linear, einmal am Tag"]
-    PW --> PWR["Roter PR, 30 Min ohne Commit: @claude, Runde zählt mit"]
-  end
-  PWS --> Schlange
-  PWR --> Repair
+  Backup["Sicherung (backup.yml) nachts, Restore-Test (restore-test.yml) monatlich in wegwerfbarer Supabase (SIN-337)"]
   subgraph Inhalte
-    Fabrik["Content-Fabrik (content-grow.yml, alle 2 h solange Content-Punkte der Fertig-Liste offen sind (sonst Mo/Mi/Fr), Cron und Anstoß durch den Dispatcher (Ereignis fabrik-anstoss), jeder Lauf im Statusprotokoll, bei API-Limit pausiert und sinan-Issue, am Ende Kostenbericht)"] --> Bewertung["Bewertungslauf"]
-    Bewertung --> Update
-    Bewertung --> Freigabe["Kurs veröffentlichen (content-publish.yml, von Hand, Prüfung vor published, danach Live-Check)"]
+    Fabrik["Content-Fabrik (content-grow.yml, alle 2 h solange Content-Punkte der Fertig-Liste offen sind (sonst Mo/Mi/Fr), jeder Lauf im Statusprotokoll, bei API-Limit pausiert und sinan-Issue, am Ende Kostenbericht)"] --> Bewertung["Bewertungslauf"]
+    Bewertung --> Freigabe2["Kurs veröffentlichen (content-publish.yml, von Hand, Prüfung vor published, danach Live-Check)"]
   end

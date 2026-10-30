@@ -9,7 +9,7 @@ const agents = loadAgents() as { id: string; workflows: string[] }[];
 test("Register: alle 9 Rollen mit Pflichtfeldern", () => {
   assert.deepEqual(
     agents.map((a) => a.id),
-    ["research", "planer", "design", "coding", "pruefen", "betrieb", "content", "video", "marketing"],
+    ["research", "planer", "design", "coding", "pruefen", "betrieb", "content", "video"],
   );
   for (const a of agents as unknown as Record<string, unknown>[]) {
     for (const k of ["id", "name", "auftrag", "ausloeser", "workflows", "modell", "budget", "eingabe", "ausgabe"]) assert.ok(k in a, `${a.id}: ${k} fehlt`);

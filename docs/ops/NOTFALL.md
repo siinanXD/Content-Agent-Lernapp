@@ -6,7 +6,7 @@ Gilt für Einheiten und Fragen. Reihenfolge: erst ausblenden, dann zurücksetzen
 
 - Einzelne Frage: neue Zeile in `question_evaluations` mit `passed = false` (die letzte Bewertung zählt, `src/lib/learner/discarded.ts` filtert die Frage dann aus allen Lernwegen). Nur hinzufügen, nie löschen.
 - Ganze Einheit: Wenn das Ausblenden nicht reicht, gleich zu Schritt 2 (Zurücksetzen); im Lernpfad prüfen, dass der falsche Text weg ist.
-- Weitere Inhalte stoppen: Label `no-automerge` an offene Inhalts-PRs, Content-Fabrik (`content-grow.yml`) pausieren (`loop-pause.yml`).
+- Weitere Inhalte stoppen: Label `no-automerge` an offene Inhalts-PRs, Content-Fabrik (`content-grow.yml`) unter GitHub → Actions deaktivieren.
 
 ## 2. Zurücksetzen
 

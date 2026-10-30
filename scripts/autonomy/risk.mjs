@@ -25,7 +25,7 @@ export function fristGilt(risk, einspruch = [], aufbauphase = AUFBAUPHASE) {
 }
 const PRINCIPLE_PATHS = [/^docs\/PRODUCT\.md$/];
 // Das Gate selbst: Frist statt Freigabe (SIN-547). Branch-Protection als Datei bleibt high.
-const GATE_PATHS = [/^\.github\/workflows\/(pr-gate|dispatch)\.ya?ml$/, /^scripts\/autonomy\/risk\.mjs$/];
+const GATE_PATHS = [/^\.github\/workflows\/pr-gate\.ya?ml$/, /^scripts\/autonomy\/risk\.mjs$/];
 const PROTECTION_PATHS = [/^\.github\/(rulesets?\/|settings\.ya?ml$)/];
 const PAYMENT_PATH = /(billing|payment|stripe|checkout|(^|\/)pricing?(\/|\.)|(^|\/)prices?(\/|\.))/i;
 const MONEY_LINE = /\b(sk_live|pk_live|rk_live)\b|STRIPE_[A-Z_]*LIVE|livemode\s*[:=]\s*true/i;

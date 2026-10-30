@@ -6,11 +6,6 @@ proben:
     art: datei
     pfad: scripts/agent-testnutzer/sitzung.mjs
     enthaelt: generateLink
-  - id: SIN-1001-pruefer-anstoss
-    issue: SIN-1001
-    art: datei
-    pfad: .github/workflows/pruefer-anstoss.yml
-    enthaelt: repos/siinanXD/Leitstand/dispatches
   - id: SIN-1008-planungsbild-im-pr-kommentar
     issue: SIN-1008
     art: datei
@@ -21,11 +16,6 @@ proben:
     art: datei
     pfad: scripts/autonomy/posthog.mjs
     enthaelt: "keine Lernweg-Ereignisse in 7 Tagen (Ursache: kein NEXT_PUBLIC_POSTHOG_KEY im Build, keine Einwilligung"
-  - id: SIN-1001-anstoss-ereignis
-    issue: SIN-1001
-    art: datei
-    pfad: .github/workflows/pruefer-anstoss.yml
-    enthaelt: event_type=pruefer-anstoss
   - id: SIN-1040-pr-text-filter-eur-budget
     issue: SIN-1040
     art: datei
@@ -36,26 +26,11 @@ proben:
     art: datei
     pfad: scripts/content-grow.ts
     enthaelt: prSummary(
-  - id: SIN-1010-beleg-warten
-    issue: SIN-1010
-    art: datei
-    pfad: scripts/autonomy/warten.mjs
-    enthaelt: Kein Prüfer-Beleg für den Head
   - id: SIN-1036-richter-ohne-stilles-leer
     issue: SIN-1036
     art: datei
     pfad: src/lib/quality/evaluate-agent.ts
     enthaelt: richter_antwort_ungueltig
-  - id: SIN-1048-langfuse-kalendermonat
-    issue: SIN-1048
-    art: datei
-    pfad: scripts/autonomy/status.mjs
-    enthaelt: "/api/public/v2/scores?fromTimestamp="
-  - id: SIN-1048-langfuse-monatsbeginn
-    issue: SIN-1048
-    art: datei
-    pfad: scripts/autonomy/status.mjs
-    enthaelt: "Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)"
   - id: SIN-1043-vercel-ignorecommand
     issue: SIN-1043
     art: datei

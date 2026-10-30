@@ -6,8 +6,7 @@
  *   node scripts/changelog.mjs            schreibt CHANGELOG.md aus `git log` (braucht die volle Historie)
  *   node scripts/changelog.mjs --check    Exit 1, wenn CHANGELOG.md nicht dem Verlauf entspricht
  *
- * Die Datei ist erzeugt und wird nie von Hand bearbeitet. Der wöchentliche Aufräum-Lauf aktualisiert sie im
- * Aufräum-PR (.github/workflows/aufraeumen.yml).
+ * Die Datei ist erzeugt und wird nie von Hand bearbeitet. Sie wird mit `npm run changelog` aktualisiert.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";

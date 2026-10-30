@@ -29,9 +29,6 @@ test("Prompt verlangt Live-Updates und Reparatur vor dem Push; Worker darf das S
   assert.match(p, /live\.mjs fortschritt SIN-9/);
   assert.match(p, /live\.mjs frage SIN-9/);
   assert.match(p, /selbst beheben/);
-  const wf = readFileSync(".github/workflows/worker.yml", "utf8");
-  assert.match(wf, /Bash\(node scripts\/autonomy\/live\.mjs:\*\)/);
-  assert.match(wf, /cache: npm/);
 });
 
 test("allowFortschritt: höchstens 3 je Lauf und Issue", () => {

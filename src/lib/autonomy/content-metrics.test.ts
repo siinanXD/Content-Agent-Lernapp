@@ -12,7 +12,6 @@ import {
   summarizeRuns,
   weakestUnits,
 } from "../../../scripts/autonomy/content-metrics.mjs";
-import { buildPlannerPrompt } from "../../../scripts/autonomy/planner.mjs";
 
 const mod = (id: string, units: number) => ({ id, title: id, blocks: [{ id: `${id}-1`, units }] });
 const maps = [
@@ -90,12 +89,6 @@ test("Regeln: Quote < 70 %, hängende Fabrik, neuer Beruf, Lern-Schleife; sonst 
   const weak = [{ unitId: "u1", answers: 9, pct: 10 }];
   assert.deepEqual(rules({ progress: { a: { learners: 49, weakest: weak } } }), []);
   assert.deepEqual(rules({ progress: { a: { learners: 50, weakest: weak } } }), ["lern-schleife"]);
-});
-
-test("Planer-Prompt enthält Content-Regeln und Abdeckungstabelle", () => {
-  const prompt = buildPlannerPrompt({ definition: "", issues: [], metrics: {}, content: "| Beruf/Map |" });
-  assert.match(prompt, /Content-Fabrik \(AP-23\) selbst/);
-  assert.match(prompt, /## Content \(Abdeckung je Beruf\/Modul\)\n\| Beruf\/Map \|/);
 });
 
 test("SIN-395: Verwerfungsgründe nach Modul und Fragetyp, häufigste zuerst", () => {

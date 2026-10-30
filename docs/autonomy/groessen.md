@@ -11,7 +11,7 @@ Der Planer setzt je Issue genau ein Label `groesse:klein`, `groesse:mittel` oder
 ## Regeln
 
 - **Große Aufträge werden vor dem Start geteilt.** Der Planer teilt selbst in mittlere oder kleine Einträge (Blocker-Reihenfolge). Ein Planer-Eintrag mit `size: gross` wird verworfen. Ein gestarteter Auftrag, der ohne PR an die Zug-Grenze stößt, wird wie bisher in Teil-Issues zerlegt (SIN-291).
-- **Haiku nur für `klein`.** Liefert der Haiku-Lauf keinen PR (und ist es kein Limit), startet derselbe Worker-Lauf einen zweiten Versuch mit Sonnet (80 Runden). Wird CI nach einem Haiku-PR rot, repariert `repair.yml` ohnehin mit Sonnet.
+- **Haiku nur für `klein`.** Liefert der Haiku-Lauf keinen PR (und ist es kein Limit), startet derselbe Worker-Lauf einen zweiten Versuch mit Sonnet (80 Runden). Wird CI nach einem Haiku-PR rot, repariert der Agent im selben PR mit Sonnet.
 - **Bündeln.** Mehrere `klein`-Issues desselben Bereichs startet der Dispatcher als **einen** Lauf mit **einem** PR (höchstens 4). Bereich = Label `bereich:<name>` (der Planer setzt es für Kleinkram, z. B. `bereich:doku`), sonst die Spur (frontend, content, backend). Ein gebündelter Lauf zählt für die Größe als das größte seiner Issues. Der PR-Titel nennt alle Kennungen, beim Merge gehen alle auf Done.
 - **Keine KI für Mechanik.** Index neu erzeugen (`npm run decisions:index`), Konflikte in erzeugten Dateien, Labels und Changelog erledigen Skripte, nie ein Claude-Lauf (SIN-312).
 

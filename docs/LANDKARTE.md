@@ -1,6 +1,6 @@
 # Repo-Landkarte
 
-Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (SIN-320). Halten aktuell: der Aufräum-Agent (`aufraeumen.yml`, montags). Stimmt hier etwas nicht mehr, im selben PR korrigieren. Höchstens 150 Zeilen.
+Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (SIN-320). Stimmt hier etwas nicht mehr, im selben PR korrigieren. Höchstens 150 Zeilen.
 
 ## Grundsätze
 
@@ -48,11 +48,9 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Skripte der Workflows | `scripts/autonomy/` (`dispatch`, `linear`, `planner`, `risk`, `steckbrief`, `digest`, `sparen`, `verbrauch`, …) |
 | Diagramme als Mermaid (SIN-376, Quelle für FigJam) | `docs/diagramme/pipeline.mmd`, `nutzerwege.mmd`; Hinweis im PR-Steckbrief (`diagrammHinweis`) |
 | Vorlagen und Konfiguration | `docs/autonomy/` (`README.md`, `groessen.md`, `tokens.md`, Fixtures) |
-| Review-Agent (zweites Modell, SIN-297) | `.github/workflows/review.yml`, `scripts/autonomy/review.mjs` |
+| Review-Regeln für Inhalte (SIN-297, genutzt von `src/lib/review/regeln.ts`) | `scripts/autonomy/review.mjs` |
 | Codeanalyse, Paket-Updates | `.github/workflows/codeql.yml`, `scripts/autonomy/codeql-gate.mjs`, `.github/dependabot.yml` |
-| Konflikte in erzeugten Dateien (Index, CHANGELOG) ohne KI | `scripts/autonomy/konflikt.mjs` (Wächter `status.yml`, `repair.yml`) |
 | Lehren, Skills, Laufprotokoll (SIN-296) | `docs/autonomy/LEHREN.md`, `docs/skills/`, `scripts/autonomy/protokoll.mjs` |
-| Trend-Radar (SIN-313, wöchentlich) | `.github/workflows/trend-radar.yml`, `scripts/autonomy/trend-radar.mjs`, Berichte `docs/research/trend-radar-*.md` |
 | Aufgaben für Sinan als Linear-Issues, Label `sinan` (SIN-310) | `scripts/autonomy/sinan.mjs` (`create`, `sync`, `SEED`), Tages-Update und Status-Seite zeigen sie unter „Braucht dich“ |
 | Migrationen automatisch anwenden, Wächter „n/n“ (SIN-374) | `.github/workflows/migrate.yml`, `scripts/autonomy/migrationen.mjs`, Aufgabe `migrate` in `run-task.mjs` |
 | Live-Kommentare des Workers in Linear (SIN-298) | `scripts/autonomy/live.mjs` (`gestartet`, `fortschritt`, `frage`, `fertig`, `gescheitert`) |
@@ -60,12 +58,9 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Leitstand: Ereignisse und Schnappschuss nach Supabase `loop_events`, `loop_snapshot` (SIN-303) | `scripts/autonomy/leitstand.mjs` (`ereignis`, `sendSnapshot`), Migration `20261011010000_sin303_leitstand.sql`, Schritte „Leitstand Start/Ende“ in den Workflows |
 | Agenten-Rollen: Register aller Workflows, Feld `agent` in `loop_events` (SIN-481) | `docs/autonomy/agents.json`, `scripts/autonomy/agents.mjs`, Test `src/lib/autonomy/agents.test.ts` (neuer Workflow muss ins Register) |
 | Video-Agent: Tutorial-Video aus dem Klickweg (SIN-483) | `.github/workflows/video.yml`, Aufnahme `video/aufnahme.spec.ts` + `playwright.video.config.ts`, Schnitt `video/schnitt/` (Revideo, eigenes Paket), Hilfen `scripts/autonomy/video.mjs`, Tabelle `werbemittel` (Migration `20261018010000_sin483_werbemittel.sql`) |
-| Marketing-Agent: Werbetexte aus Datenbankzahlen, Prüfung, Ablage in `werbemittel` (SIN-484) | `.github/workflows/marketing.yml`, `scripts/autonomy/marketing.mjs`, Test `src/lib/autonomy/marketing.test.ts`, Migration `20261019020000_sin484_werbemittel_texte.sql` |
-| Video-Agent: KI-Werbeclips über Higgsfield, Deckel 5 € (SIN-485, API-Aufruf SIN-520) | `scripts/autonomy/werbeclip.mjs` (`plan`, `lauf`), Workflow `.github/workflows/werbeclip.yml` (nur von Hand, bezahlt), Einblendung `video/schnitt/` (`--werbeclip`), Konfig `docs/autonomy/higgsfield.json`, Test `src/lib/autonomy/werbeclip.test.ts`, Migration `20261019010000_sin485_werbeclips.sql` |
 | Projekt-Starter, nur Plan (SIN-202) | `scripts/autonomy/starter.mjs` (`plan`, `sql`), Entscheidung `docs/decisions/SIN-202-projekt-starter.md` |
-| Revert-Entscheidung des Wächters `revert-guard` (SIN-502) | `scripts/autonomy/revert-guard.mjs` (`decideRevert`), Test `src/lib/autonomy/revert-guard.test.ts` |
-| Fertig-Liste: v1/v2, Idee je Woche, Einsortieren, Fortschritt (SIN-528) | `scripts/autonomy/linear.mjs` (`startOrder`, `isIdea`, `classifyNew`, `fetchProgress`), `einsortieren.mjs`, Test `src/lib/autonomy/fertig-liste.test.ts`, Migration `20261020010000_sin528_loop_snapshot_fortschritt.sql` |
-| Fertig-Liste Lern-App v1: offene Punkte je ein Issue, solange offen keine Ideen (SIN-764) | `docs/FERTIG.md` (Checkboxen, Wortlaut Sinan), `scripts/autonomy/fertig.mjs` (`parseFertig`, `fertigIssues`, `fertigKriterien`), Planer `planner.mjs` (`validatePlan` mit `fertigOffen`), Test `src/lib/autonomy/fertig-v1.test.ts` |
+| Fertig-Liste: v1/v2, Idee je Woche, Einsortieren, Fortschritt (SIN-528) | `scripts/autonomy/linear.mjs` (`startOrder`, `isIdea`, `classifyNew`, `fetchProgress`), Migration `20261020010000_sin528_loop_snapshot_fortschritt.sql` |
+| Fertig-Liste Lern-App v1: offene Punkte je ein Issue, solange offen keine Ideen (SIN-764) | `docs/FERTIG.md` (Checkboxen, Wortlaut Sinan), `scripts/autonomy/fertig.mjs` (`parseFertig`, `fertigIssues`, `fertigKriterien`) |
 | Restore-Test der Sicherung, monatlich in lokaler Supabase im Runner (SIN-337) | `.github/workflows/restore-test.yml`, Alarm `scripts/autonomy/backup.mjs` (`analyzeRestoreTest`), Doku `docs/ops/BACKUP.md` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
@@ -80,7 +75,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Bildvergleich | `visual/` | `npm run visual` |
 | Layout-Prüfer, Gate im CI-Job `e2e` (Teil von `build`, SIN-523): Überlappung, Scrollen, Abschneiden, Ziele ≥ 44 px; Ausnahme `data-layout-ok` | `e2e/layout.spec.ts`, `e2e/layout-pruefer.ts` | `npx playwright test e2e/layout.spec.ts` |
 | KI-Sichtprüfung gegen Figma, nur Hinweis (SIN-523) | `.github/workflows/sichtpruefung.yml`, `scripts/autonomy/sichtpruefung.mjs`, `figma.mjs --bild`, Test `src/lib/autonomy/sichtpruefung.test.ts` | |
-| Testnutzer-Agent (SIN-640): Crawler nachts (ohne KI), 3 Personas montags (Haiku bewertet), Funde → Issues mit Dubletten-Prüfung | `.github/workflows/testnutzer.yml`, `scripts/autonomy/{crawler,personas,testnutzer}.mjs`, Test `src/lib/autonomy/testnutzer.test.ts` | `LIVE_URL=<url> node scripts/autonomy/crawler.mjs` |
+| Testnutzer-Agent (SIN-640): Crawler (ohne KI) und 3 Personas (Haiku bewertet), Einsatz im PR-Crawler | `scripts/autonomy/{crawler,personas,testnutzer}.mjs`, Test `src/lib/autonomy/testnutzer.test.ts` | `LIVE_URL=<url> node scripts/autonomy/crawler.mjs` |
 | PR-Crawler (SIN-906): nur geänderte Seiten auf der Vorschau, Bild/Video im PR | `.github/workflows/pr-crawler.yml`, `scripts/pr-crawler/{routen,lauf,kommentar,soll}.mjs` (`soll`: Planungsbild aus Linear, SIN-1008), Test `src/lib/pr-crawler/pr-crawler.test.ts` | |
 | Agent-Testnutzer eingeloggt (SIN-914): Testkonten, Sitzung ohne Passwort, Filter `ohneTestdaten` | `scripts/agent-testnutzer/sitzung.mjs`, Test `src/lib/agent-testnutzer/sitzung.test.ts`, Smoke `e2e/agent-eingeloggt.spec.ts`, Proben `docs/abnahme.yml` | |
 | API-Tests (Newman) | `docs/api/postman-collection.json`, `scripts/api-test.mjs` | `npm run api:test -- --serve` |
