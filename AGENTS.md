@@ -133,6 +133,11 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 - Nach jedem behobenen Bug (auch im Reparatur-Lauf) ergänzt du `docs/autonomy/LEHREN.md` um **eine Zeile** im selben PR: Was nicht geht → wie es richtig geht. Erst suchen, ob es sie schon gibt. Höchstens 150 Zeilen.
 - Wiederholt sich ein Arbeitsablauf, lege `docs/skills/<name>/SKILL.md` an (Aufbau: `docs/skills/README.md`) und nutze vorhandene Skills bei passenden Issues. Neue Skills nennst du im PR unter `## Neue Skills`.
+## Nutzerweg (SIN-1453)
+
+- `npm run test:nutzerweg` spielt die Lernapp wie ein Mensch durch (`nutzerweg/nutzerweg.spec.ts`): Env `LIVE_URL`, `TESTNUTZER_EMAIL`, `TESTNUTZER_PASSWORT`, Passwort nie ausgeben. Er läuft gegen jede Adresse, ohne Workflow-Änderung; die Klickprobe im Leitstand ruft ihn auf.
+- Sichtbare Änderungen (neue Screens, Abläufe, Zustände) erweitern den Weg im selben PR. Ein roter Weg bleibt rot, bis das zugehörige Ticket gemergt ist, und steht benannt im Bericht.
+
 ## Qualität
 
 - Jeder Pull Request: Tests grün, axe-core und Lighthouse ohne Fehler.
