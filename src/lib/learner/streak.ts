@@ -1,7 +1,7 @@
 /**
  * Serie und Tagesziel (SIN-290, Figma Screens 22–26).
  * Alles wird aus echten Lernereignissen berechnet, die lokal im Browser liegen
- * (`cal-learn-events`, kein Server, keine Personendaten). Ein Ereignis entsteht,
+ * (`cal-learn-events`); für angemeldete Konten gleicht `konto-sync.ts` sie mit dem Server ab (SIN-1451). Ein Ereignis entsteht,
  * wenn eine Einheit, eine Wiederholung oder eine Prüfung abgeschlossen wird.
  *
  * Ein „Tag“ ist ein Kalendertag in der Zeitzone des Geräts. Er wird beim
@@ -29,6 +29,8 @@ export type LearningEvent = {
 };
 
 const KEY = "cal-learn-events";
+/** Lokale Änderung (SIN-1451): der Konto-Abgleich schiebt sie danach zum Server. */
+export const LERNSTAND_GEAENDERT = "cal-lernstand-geaendert";
 /** Älteres wird nicht mehr für die Serie gebraucht; hält den Speicher klein. */
 const MAX_EVENTS = 800;
 
@@ -120,6 +122,11 @@ export function computeDailyGoal(
 /** Wirft, wenn der Speicher gesperrt oder der Inhalt kein gültiges JSON ist. */
 function readLearningEvents(): LearningEvent[] {
   if (isDemoMode()) return demoEvents(new Date());
+  return readStoredEvents();
+}
+
+/** Roh gespeicherte Ereignisse (ohne Beispielmodus), auch für den Konto-Abgleich (SIN-1451). Wirft wie `readLearningEvents`. */
+export function readStoredEvents(): LearningEvent[] {
   const raw = window.localStorage.getItem(KEY);
   const parsed: unknown = raw ? JSON.parse(raw) : [];
   if (!Array.isArray(parsed)) throw new Error("cal-learn-events ist keine Liste");
@@ -127,6 +134,10 @@ function readLearningEvents(): LearningEvent[] {
     (e): e is LearningEvent =>
       !!e && typeof e.at === "string" && typeof e.day === "string",
   );
+}
+
+export function writeStoredEvents(events: readonly LearningEvent[]) {
+  window.localStorage.setItem(KEY, JSON.stringify(events.slice(-MAX_EVENTS)));
 }
 
 export function loadLearningEvents(): LearningEvent[] {
@@ -154,6 +165,7 @@ export function recordLearningEvent(
   } catch {
     /* Speicher voll oder gesperrt: Lernen geht trotzdem weiter */
   }
+  window.dispatchEvent(new Event(LERNSTAND_GEAENDERT));
   return next;
 }
 

@@ -8,6 +8,7 @@ import {
   type ReviewItem,
 } from "@/lib/content/didaktik";
 import { demoStack, isDemoMode } from "@/lib/learner/demo-modus";
+import { LERNSTAND_GEAENDERT } from "@/lib/learner/streak";
 
 const KEY = "cal-leitner-stack";
 
@@ -24,7 +25,8 @@ export function loadStack(): LeitnerStack {
   if (typeof window === "undefined") return emptyStack();
   if (isDemoMode()) return demoStack(new Date());
   try {
-    const raw = window.sessionStorage.getItem(KEY);
+    // SIN-1451: localStorage, damit der Stapel Tab-Schließen und Offline überlebt; ältere Stände lagen in sessionStorage.
+    const raw = window.localStorage.getItem(KEY) ?? window.sessionStorage.getItem(KEY);
     if (!raw) return emptyStack();
     return JSON.parse(raw) as LeitnerStack;
   } catch {
@@ -34,10 +36,17 @@ export function loadStack(): LeitnerStack {
 
 export function saveStack(stack: LeitnerStack) {
   if (typeof window === "undefined" || isDemoMode()) return;
-  window.sessionStorage.setItem(
-    KEY,
-    JSON.stringify({ ...stack, updatedAt: new Date().toISOString() }),
-  );
+  writeStoredStack(stack);
+  window.dispatchEvent(new Event(LERNSTAND_GEAENDERT));
+}
+
+/** Schreibt den Stapel lokal, ohne den Konto-Abgleich anzustoßen. */
+export function writeStoredStack(stack: LeitnerStack) {
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify({ ...stack, updatedAt: new Date().toISOString() }));
+  } catch {
+    /* Speicher voll oder gesperrt: Lernen geht trotzdem weiter */
+  }
 }
 
 function addDays(iso: string, days: number): string {

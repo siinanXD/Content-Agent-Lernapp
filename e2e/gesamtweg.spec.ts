@@ -42,7 +42,7 @@ type StackItem ={ stage: number; dueAt: string };
 
 async function readStack(page: Page): Promise<StackItem[]> {
   return page.evaluate(
-    () => JSON.parse(window.sessionStorage.getItem("cal-leitner-stack") ?? "{}").items ?? [],
+    () => JSON.parse(window.localStorage.getItem("cal-leitner-stack") ?? "{}").items ?? [],
   );
 }
 
