@@ -29,6 +29,9 @@ const units = Array.from({ length: 4 }, (_, i) => ({
   blockId: "M0-1",
 }));
 
+// Der Service Worker holt /api/learner/phase-a selbst (network-first, sw.js); `page.route` sähe diese Abrufe nicht mehr.
+test.use({ serviceWorkers: "block" });
+
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/learner/phase-a", (route) =>
     route.fulfill({
@@ -43,6 +46,10 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+/** Wartet, bis die gemockte Liste die vom Server gelieferte ersetzt hat; sonst passt die Id der Einheit nicht zum Pfad. */
+const pfadGeladen = (page: import("@playwright/test").Page) =>
+  expect(page.getByText("Berufsbildung 1").first()).toBeVisible();
+
 const nodes = (page: import("@playwright/test").Page, state: string) => page.locator(`[data-state="${state}"]`);
 
 test("neues Konto: nichts erledigt, erste Einheit ist Jetzt, Prüfungsreife 0 %", async ({ page }, info) => {
@@ -56,9 +63,8 @@ test("neues Konto: nichts erledigt, erste Einheit ist Jetzt, Prüfungsreife 0 %"
 });
 
 test("nach einer abgeschlossenen Einheit: genau diese erledigt, Als Nächstes springt weiter, auch nach Neuladen", async ({ page }, info) => {
-  // Ohne Mock: Server und Browser liefern dieselbe Liste, die Id der Einheit passt also immer zum Pfad.
-  await page.unroute("**/api/learner/phase-a");
   await page.goto("/lernpfad");
+  await pfadGeladen(page);
   await nodes(page, "heute").first().click();
   await page.locator("button[aria-pressed]").first().click();
   await page.getByRole("button", { name: "Antwort prüfen" }).click();
@@ -68,14 +74,12 @@ test("nach einer abgeschlossenen Einheit: genau diese erledigt, Als Nächstes sp
   for (const reload of [false, true]) {
     if (reload) await page.reload();
     else await page.goto("/lernpfad");
+    await pfadGeladen(page);
     await expect(nodes(page, "erledigt")).toHaveCount(1);
     await expect(nodes(page, "erledigt")).toContainText("01 · Fertig");
     await expect(nodes(page, "heute")).toHaveCount(1);
     await expect(nodes(page, "heute")).toContainText("02 · Jetzt");
-    const reife = await page
-      .getByRole("progressbar", { name: /^Modul .* Fortschritt$/ })
-      .evaluateAll((els) => els.map((e) => Number(e.getAttribute("aria-valuenow"))));
-    expect(Math.max(...reife)).toBeGreaterThan(0);
+    await expect(page.getByRole("progressbar", { name: "Modul M0 Fortschritt" })).toHaveAttribute("aria-valuenow", "25");
   }
   await page.screenshot({ path: info.outputPath("nach-einheit.png"), fullPage: true });
 });
