@@ -220,12 +220,68 @@ describe("Wochen-Säulen und Lerntage (SIN-317)", () => {
     ev("2026-09-20T08:00:00Z"),
   ];
 
-  it("liefert 7 Tage bis heute, älteste zuerst, mit Anzahl je Tag", () => {
-    const week = weekActivity(events, now, BERLIN);
-    assert.equal(week.length, 7);
-    assert.equal(week[0]!.day, "2026-10-01");
-    assert.deepEqual(week.map((d) => d.count), [0, 0, 0, 0, 1, 0, 2]);
-    assert.deepEqual(week.map((d) => d.today), [false, false, false, false, false, false, true]);
+  it("liefert die Kalenderwoche Montag bis Sonntag mit Anzahl je Tag (SIN-1447)", () => {
+    const week = weekActivity(events, now, BERLIN); // Mittwoch, 07.10.2026
+    assert.deepEqual(week.map((d) => d.day), [
+      "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11",
+    ]);
+    assert.deepEqual(week.map((d) => d.count), [1, 0, 2, 0, 0, 0, 0]);
+    assert.deepEqual(week.map((d) => d.today), [false, false, true, false, false, false, false]);
+  });
+
+  const wochentage = (d: Date, tz = BERLIN) =>
+    weekActivity([], d, tz).map((w) => new Date(`${w.day}T12:00:00Z`).getUTCDay());
+  const MO_BIS_SO = [1, 2, 3, 4, 5, 6, 0];
+
+  it("beginnt am Montag mit dem heutigen Tag als erster Säule", () => {
+    const week = weekActivity([], new Date("2026-11-02T08:00:00Z"), BERLIN);
+    assert.equal(week[0]!.day, "2026-11-02");
+    assert.equal(week[6]!.day, "2026-11-08");
+    assert.deepEqual(week.map((d) => d.today), [true, false, false, false, false, false, false]);
+    assert.deepEqual(wochentage(new Date("2026-11-02T08:00:00Z")), MO_BIS_SO);
+  });
+
+  it("endet am Sonntag mit dem heutigen Tag als letzter Säule", () => {
+    const week = weekActivity([], new Date("2026-11-01T20:00:00Z"), BERLIN);
+    assert.equal(week[0]!.day, "2026-10-26");
+    assert.equal(week[6]!.day, "2026-11-01");
+    assert.equal(week[6]!.today, true);
+    assert.deepEqual(wochentage(new Date("2026-11-01T20:00:00Z")), MO_BIS_SO);
+  });
+
+  it("läuft über den Monatswechsel", () => {
+    const week = weekActivity([], new Date("2026-10-28T10:00:00Z"), BERLIN); // Mittwoch
+    assert.deepEqual(week.map((d) => d.day), [
+      "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01",
+    ]);
+  });
+
+  it("bleibt über die Zeitumstellung Montag bis Sonntag", () => {
+    // Herbst: Sonntag 25.10.2026, 03:00 → 02:00 (die Woche hat 25 Stunden am Ende)
+    const herbst = weekActivity([], new Date("2026-10-25T12:00:00Z"), BERLIN);
+    assert.equal(herbst[0]!.day, "2026-10-19");
+    assert.equal(herbst[6]!.day, "2026-10-25");
+    assert.equal(herbst[6]!.today, true);
+    assert.deepEqual(wochentage(new Date("2026-10-25T12:00:00Z")), MO_BIS_SO);
+    // Frühling: Sonntag 29.03.2026, 02:00 → 03:00; Mittwoch davor
+    const fruehling = weekActivity([], new Date("2026-03-25T12:00:00Z"), BERLIN);
+    assert.deepEqual(fruehling.map((d) => d.day), [
+      "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-28", "2026-03-29",
+    ]);
+    assert.deepEqual(wochentage(new Date("2026-03-29T12:00:00Z")), MO_BIS_SO);
+  });
+
+  it("nimmt den Wochentag in der Zeitzone, nicht in UTC", () => {
+    // Sonntag 23:30 UTC ist in Berlin (UTC+1) schon Montag, 02.11.
+    const week = weekActivity([], new Date("2026-11-01T23:30:00Z"), BERLIN);
+    assert.equal(week[0]!.day, "2026-11-02");
+    assert.equal(week[0]!.today, true);
+  });
+
+  it("zeigt künftige Tage leer, auch bei einem Ereignis mit späterem Tag", () => {
+    const spaeter = [ev("2026-10-09T08:00:00Z")]; // Uhr des Geräts ging nach
+    const week = weekActivity(spaeter, now, BERLIN);
+    assert.deepEqual(week.map((d) => d.count), [0, 0, 0, 0, 0, 0, 0]);
   });
 
   it("zählt verschiedene Lerntage", () => {

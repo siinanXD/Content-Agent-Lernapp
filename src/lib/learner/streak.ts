@@ -158,20 +158,24 @@ export type WeekDay = {
   day: string;
   /** Lernereignisse an diesem Tag */
   count: number;
-  /** Heute (letzte Säule) */
+  /** Heute */
   today: boolean;
 };
 
-/** Die letzten 7 Kalendertage bis heute (älteste zuerst) mit der Zahl der Lernereignisse (Figma W9, Wochen-Säulen). */
+/** Die Kalenderwoche von Montag bis Sonntag mit der Zahl der Lernereignisse je Tag (Figma W9, Wochen-Säulen). Künftige Tage bleiben leer. */
 export function weekActivity(
   events: readonly LearningEvent[],
   now: Date = new Date(),
   timeZone?: string,
 ): WeekDay[] {
   const today = dayKey(now, timeZone);
+  // Wochentag des Kalendertags (0 = Sonntag); auf Datumsebene gerechnet, daher sommerzeitfest.
+  const sinceMonday = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7;
+  const monday = shiftDay(today, -sinceMonday);
   return Array.from({ length: 7 }, (_, i) => {
-    const day = shiftDay(today, i - 6);
-    return { day, count: events.filter((e) => e.day === day).length, today: day === today };
+    const day = shiftDay(monday, i);
+    const count = day > today ? 0 : events.filter((e) => e.day === day).length;
+    return { day, count, today: day === today };
   });
 }
 

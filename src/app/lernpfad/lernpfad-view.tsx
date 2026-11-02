@@ -44,7 +44,7 @@ const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
 
 const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
 
-/** Letzte 7 Tage aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
+/** Aktuelle Kalenderwoche (Mo bis So) aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
 const loadWeek = (): WeekDay[] => weekActivity(loadLearningEvents());
 
 /** Wochentag und Begrüßung im Browser; stabile Referenz für `useAfterMount`. */
@@ -183,7 +183,7 @@ export function LernpfadView({
                 {days === 1 ? "Tag am Stück" : "Tage am Stück"}
               </span>
             </p>
-            <ol aria-label="Letzte 7 Tage" className="mt-auto flex justify-between gap-1 pt-1">
+            <ol aria-label="Diese Woche" className="mt-auto flex justify-between gap-1 pt-1">
               {(week ?? EMPTY_WEEK).map((d, i) => (
                 <li key={d?.day ?? i} className="flex flex-col items-center gap-1">
                   <span
