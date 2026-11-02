@@ -34,6 +34,16 @@ test("Migrationen: Stand n/n und fehlende Dateien", () => {
   assert.deepEqual(bug!.labels, ["claude", "Bug"]);
 });
 
+test("Migrationen: Version im Ledger gilt als angewendet, auch wenn Tabellen fehlen (SIN-1243)", () => {
+  const files = [
+    { name: "20261011010000_a.sql", sql: "create table if not exists public.leitstand_nutzer (id int);" },
+    { name: "20261012010000_b.sql", sql: "create table if not exists public.leitstand_aufgaben (id int);" },
+  ];
+  const s = migrationStatus(files, { tables: new Set(), versions: new Set(["20261011010000"]) });
+  assert.deepEqual(s.missing, ["20261012010000_b.sql"]);
+  assert.equal(s.applied, 1);
+});
+
 test("Migrationen: Wächter liest Tabellen und Versionen über die Management-API", async () => {
   const files = [{ name: "20261003030000_a.sql", sql: "create table if not exists public.courses (id int);" }];
   const reply = (rows: unknown) => ({ ok: true, status: 200, headers: new Headers(), text: async () => JSON.stringify(rows) });
