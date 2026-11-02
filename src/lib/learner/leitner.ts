@@ -58,6 +58,30 @@ export function dueItems(
     .slice(0, limit);
 }
 
+/** „Jetzt üben“ (SIN-1450): der ganze Stapel, auch nicht Fälliges, älteste Fälligkeit zuerst. */
+export function practiceItems(stack: LeitnerStack, limit = 10): ReviewItem[] {
+  return [...stack.items]
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt) || a.stage - b.stage)
+    .slice(0, limit);
+}
+
+/**
+ * Antwort in der Wiederholung. Falsch: zurück auf Stufe 1. Richtig und fällig: nächste Stufe.
+ * Richtig vor der Fälligkeit (Üben am selben Tag): Stufe und Termin bleiben, der Plan 1 · 3 · 7 · 14 gilt weiter.
+ */
+export function applyReviewAnswer(
+  stack: LeitnerStack,
+  questionId: string,
+  correct: boolean,
+  opts: { anwenden?: boolean } = {},
+  now = new Date(),
+): LeitnerStack {
+  if (!correct) return markWrong(stack, questionId, now);
+  const existing = stack.items.find((i) => i.questionId === questionId);
+  if (existing && existing.dueAt > now.toISOString()) return stack;
+  return markCorrect(stack, questionId, opts, now);
+}
+
 /** Wrong answer: insert or reset to stage 1, due tomorrow. */
 export function markWrong(stack: LeitnerStack, questionId: string, now = new Date()): LeitnerStack {
   const dueAt = addDays(now.toISOString(), LEITNER_INTERVALS_DAYS[1]);

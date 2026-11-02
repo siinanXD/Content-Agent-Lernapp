@@ -11,10 +11,10 @@ import {
   type AnswerResult,
 } from "@/components/learner/question-panel";
 import {
+  applyReviewAnswer,
   dueItems,
   loadStack,
-  markCorrect,
-  markWrong,
+  practiceItems,
   saveStack,
   stackSize,
   type LeitnerStack,
@@ -131,6 +131,8 @@ export default function WiederholungPage() {
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  // „Jetzt üben“ (SIN-1450): ganzer Stapel, auch wenn noch nichts fällig ist.
+  const [practice, setPractice] = useState(false);
   // Fragen kommen aus dem veröffentlichten Kurs; nach hartem Reload erst laden.
   const [pathReady, setPathReady] = useState(false);
 
@@ -147,8 +149,13 @@ export default function WiederholungPage() {
   // Die Fälligkeitsliste bleibt für die ganze Runde fest: Antworten verschieben
   // dueAt und würden sonst Fragen aus der Liste fallen lassen.
   const due = useMemo(
-    () => (loadedStack ? dueItems(loadedStack, new Date(), 10) : []),
-    [loadedStack],
+    () =>
+      loadedStack
+        ? practice
+          ? practiceItems(loadedStack, 10)
+          : dueItems(loadedStack, new Date(), 10)
+        : [],
+    [loadedStack, practice],
   );
   const currentItem = due[index];
   const question = currentItem
@@ -184,11 +191,9 @@ export default function WiederholungPage() {
     if (!currentItem || !question || revealed) return;
     setRevealed(true);
     let nextStack = stack ?? loadStack();
-    nextStack = result.correct
-      ? markCorrect(nextStack, currentItem.questionId, {
-          anwenden: question.level === "anwenden",
-        })
-      : markWrong(nextStack, currentItem.questionId);
+    nextStack = applyReviewAnswer(nextStack, currentItem.questionId, result.correct, {
+      anwenden: question.level === "anwenden",
+    });
     saveStack(nextStack);
     setAnsweredStack(nextStack);
     enqueueProgress({ questionId: currentItem.questionId, correct: result.correct });
@@ -291,6 +296,24 @@ export default function WiederholungPage() {
                 ? `Heute sind keine fälligen Fragen übrig. Die nächsten kommen am ${formatDueDate(nextDue)}.`
                 : "Heute sind keine fälligen Fragen übrig. Falsche und Anwenden-Fragen landen hier."}
             </p>
+            {stackSize(stack) > 0 ? (
+              <>
+                <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
+                  {stackSize(stack)} {stackSize(stack) === 1 ? "Frage" : "Fragen"} im Stapel. Du kannst sie
+                  schon jetzt üben; der Plan 1 · 3 · 7 · 14 bleibt gleich.
+                </p>
+                <Button
+                  onClick={() => {
+                    setIndex(0);
+                    setRevealed(false);
+                    setCorrectCount(0);
+                    setPractice(true);
+                  }}
+                >
+                  Jetzt üben
+                </Button>
+              </>
+            ) : null}
             {goalReached ? (
               <p className="text-[15px] font-medium text-[var(--color-text-soft-on-dark)]">
                 Tagesziel erreicht. Deine Serie ist für heute sicher.
