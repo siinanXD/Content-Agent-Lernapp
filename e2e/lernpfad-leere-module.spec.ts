@@ -4,7 +4,9 @@ import AxeBuilder from "@axe-core/playwright";
 // SIN-452: Module ohne Einheiten zeigen „Noch keine Einheiten“, ohne Startknopf, aber fokussierbar.
 
 test("Lernpfad: Modul ohne Einheiten ist beschriftet, fokussierbar und nicht startbar", async ({ page }) => {
-  await page.goto("/lernpfad");
+  // Pfad zeigt ein Modul; das ohne Einheiten ist über die Modulwahl erreichbar.
+  await page.goto("/lernpfad/pfad");
+  await page.getByRole("button", { name: /^(PA|LF2)$/ }).first().click();
   await page.waitForLoadState("networkidle");
 
   const leer = page.getByTestId("modul-leer");

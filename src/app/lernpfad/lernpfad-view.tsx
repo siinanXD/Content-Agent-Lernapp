@@ -26,7 +26,7 @@ import {
   type LeitnerStack,
 } from "@/lib/learner/leitner";
 import { nextDueAt, reviewTileCopy } from "@/lib/learner/review-overview";
-import { listExamParts } from "@/lib/learner/exam";
+import { sauberTitel } from "@/lib/learner/titel";
 import {
   EMPTY_LEARNING_SUMMARY,
   loadLearningEvents,
@@ -60,6 +60,12 @@ const loadProgress = (): Progress => ({
 /** Wochentag und Begrüßung im Browser; stabile Referenz für `useAfterMount`. */
 const loadGreeting = (): Begruessung => begruessung(new Date());
 
+/** Erster Satz der Erklärung als Vorschau, ohne Adressen; die Fragen gehören nicht auf die Startkarte. */
+const kurzSatz = (text: string): string | undefined => {
+  const satz = sauberTitel(text).split(/(?<=[.!?])\s/)[0]?.trim();
+  return satz && satz.length <= 160 ? satz : undefined;
+};
+
 const weekdayShort = (day: string) =>
   new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "");
 
@@ -78,7 +84,10 @@ export function LernpfadView({
   initialUnits,
   modules = [],
   courseId = null,
+  ansicht = "heute",
 }: {
+  /** „Heute“ (A1) oder „Pfad“ (N5, genau ein Modul) (SIN-1455). */
+  ansicht?: "heute" | "pfad";
   initialUnits: PathUnit[];
   /** Kurs aus `/lernpfad/[kurs]`; ohne Angabe der Standardkurs (SIN-777). */
   courseId?: string | null;
@@ -109,7 +118,13 @@ export function LernpfadView({
   );
   const groups = groupUnitsByModule(pathUnits);
   const pathModules = withEmptyModules(groups, modules);
-  const examParts = listExamParts().filter((p) => p.simulated);
+  // Pfad zeigt ein Modul: gewähltes, sonst das mit der nächsten offenen Einheit, sonst das erste mit Einheiten.
+  const [chosen, setChosen] = useState<string | null>(null);
+  const current =
+    pathModules.find((m) => m.moduleId === chosen) ??
+    pathModules.find((m) => m.blocks.some((b) => b.units.some((u) => u.status !== "done"))) ??
+    pathModules.find((m) => m.units > 0) ??
+    pathModules[0];
   const online = useOnline();
   const days = summary === "fehler" ? 0 : summary.streak.days;
 
@@ -149,15 +164,37 @@ export function LernpfadView({
       <ConsentBanner />
       <main className="flex flex-1 flex-col">
       <header className="px-6 pb-4 pt-11 md:px-12">
-        <p className="bento-label uppercase">{hello?.weekday}</p>
+        <p className="bento-label uppercase">{ansicht === "heute" ? hello?.weekday : "Modul für Modul"}</p>
         <h1
           className="mt-0.5 text-[24px] font-bold leading-[31px] text-[var(--color-text-primary)]"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {hello?.greeting ?? "Hallo"}
+          {ansicht === "heute" ? (hello?.greeting ?? "Hallo") : "Dein Pfad"}
         </h1>
+        <nav aria-label="Ansicht" className="mt-3 flex gap-2">
+          {(
+            [
+              ["heute", "Heute", courseId ? `/lernpfad/${courseId}` : "/lernpfad"],
+              ["pfad", "Pfad", courseId ? `/lernpfad/${courseId}/pfad` : "/lernpfad/pfad"],
+            ] as const
+          ).map(([id, label, href]) => (
+            <Link
+              key={id}
+              href={href}
+              aria-current={ansicht === id ? "page" : undefined}
+              className={`inline-flex min-h-11 items-center rounded-[var(--radius-md)] border px-4 text-sm font-semibold ${focus} ${
+                ansicht === id
+                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-text-on-brand)]"
+                  : "border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </header>
 
+      {ansicht === "heute" ? (
       <div className="bento px-6 md:px-12">
         {online ? null : (
           <div className="bento-tile bento-span-6">
@@ -170,7 +207,7 @@ export function LernpfadView({
             indexLabel={nextUnit.indexLabel}
             title={nextUnit.title}
             minutes={nextUnit.minutes}
-            preview={nextUnit.questions[0]?.prompt}
+            preview={kurzSatz(nextUnit.explanation)}
             href={`/einheit/${nextUnit.id}`}
           />
         ) : null}
@@ -289,8 +326,9 @@ export function LernpfadView({
           </section>
         ) : null}
       </div>
+      ) : null}
 
-      {pathModules.length === 0 ? (
+      {ansicht === "pfad" && pathModules.length === 0 ? (
         <StateView
           kind="leer"
           title="Noch keine Einheiten"
@@ -298,7 +336,31 @@ export function LernpfadView({
         />
       ) : null}
 
-      {pathModules.map((mod) => {
+      {ansicht === "pfad" && pathModules.length > 1 ? (
+        <nav aria-label="Modul wählen" className="px-6 pt-2 md:px-12">
+          <ul className="flex flex-wrap gap-2">
+            {pathModules.map((m) => (
+              <li key={m.moduleId}>
+                <button
+                  type="button"
+                  aria-pressed={m.moduleId === current?.moduleId}
+                  onClick={() => setChosen(m.moduleId)}
+                  className={`mono-label min-h-11 rounded-[var(--radius-md)] border px-3.5 ${focus} ${
+                    m.moduleId === current?.moduleId
+                      ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-text-on-brand)]"
+                      : "border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]"
+                  }`}
+                >
+                  {m.moduleId}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
+
+      {(ansicht === "pfad" && current ? [current] : []).map((mod) => {
+        const modulNext = mod.blocks.flatMap((b) => b.units).find((u) => u.status !== "done");
         return (
           <section
             key={mod.moduleId}
@@ -360,37 +422,19 @@ export function LernpfadView({
                 </ol>
               </div>
             ))}
+            {modulNext ? (
+              <Link
+                href={`/einheit/${modulNext.id}`}
+                className={`mt-2 flex min-h-[50px] items-center justify-between rounded-[var(--radius-md)] bg-[var(--color-brand-accent)] px-4 text-base font-semibold text-[var(--color-bg-hero)] ${focus}`}
+              >
+                Einheit starten
+                <span aria-hidden="true">→</span>
+              </Link>
+            ) : null}
           </section>
         );
       })}
 
-      <section className="px-6 py-8 md:px-12">
-        <p className="bento-label">Prüfung</p>
-        <h2
-          className="text-lg font-medium text-[var(--color-text-primary)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Prüfungsgebiete
-        </h2>
-        <ul className="mt-3 flex flex-col gap-2">
-          {examParts.map((p) => (
-            <li key={p.id}>
-              <Link
-                href={`/pruefung?part=${p.id}`}
-                className="flex min-h-11 items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-              >
-                <span className="text-sm text-[var(--color-text-primary)]">
-                  {p.bereich}
-                </span>
-                <span className="text-xs text-[var(--color-text-secondary)]">
-                  {p.durationMinutes} Min
-                  {p.weightPercent != null ? ` · ${p.weightPercent}%` : ""}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
       </main>
 
       <BottomNav />

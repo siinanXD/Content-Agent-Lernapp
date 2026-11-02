@@ -6,6 +6,7 @@ import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import { type PathUnit, PLAYABLE_UNITS as SEED_UNITS } from "./playable-path";
 import { normalizeQuestions } from "./normalize-question";
 import phaseAIndex from "./phase-a-index.json";
+import { sauberTitel } from "./titel";
 import phaseATitles from "./phase-a-titles.json";
 
 export type PhaseASnapshot = {
@@ -38,7 +39,7 @@ function modTitle(id?: string): string {
 
 function blockTitle(blockId?: string): string {
   if (!blockId) return "Block";
-  return (phaseATitles.blocks as Record<string, string>)[blockId] ?? blockId;
+  return (phaseATitles.blocks as Record<string, string>)[blockId] ?? (sauberTitel(blockId) || "Block");
 }
 
 /** Nur Einheiten mit Id, Titel und mindestens einer Frage sind spielbar (SIN-249). */
@@ -58,7 +59,7 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
     return {
       id: u.id,
       indexLabel: String(index + 1).padStart(2, "0"),
-      title: u.title,
+      title: sauberTitel(u.title) || u.title,
       // Stand kommt aus den Lernereignissen (path-progress.ts), nicht aus der Position.
       status: "open",
       statusLabel: "Noch offen",

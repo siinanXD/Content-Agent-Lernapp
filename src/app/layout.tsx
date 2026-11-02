@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Content-Agent-Lernapp",
+  title: "Lernpfad MAF",
   description:
     "Autonomer Kurs-Generator aus amtlichen Ausbildungsquellen — Pilot MAF.",
   manifest: "/manifest.webmanifest",

@@ -29,6 +29,7 @@ import {
 type Load =
   | { kind: "laden" }
   | { kind: "anmelden" }
+  | { kind: "kein-zugang" }
   | { kind: "ohne-gruppe" }
   | { kind: "fehler"; text: string }
   | { kind: "bereit"; overview: Overview; demo: boolean };
@@ -68,7 +69,9 @@ export default function AusbilderPage() {
       });
       // Antwort immer ganz lesen, auch bei 401/404: sonst bleibt die Anfrage offen.
       const data: unknown = await res.json().catch(() => null);
-      if (res.status === 401 || res.status === 403) return setLoad({ kind: "anmelden" });
+      if (res.status === 401) return setLoad({ kind: "anmelden" });
+      // Angemeldet, aber ohne Ausbilder-Rolle: klar sagen, dass der Zugang fehlt (SIN-1455).
+      if (res.status === 403) return setLoad({ kind: "kein-zugang" });
       // Mehrere aktive Gruppen und keine gewählt: zur Auswahl.
       if (res.status === 409) return router.replace("/ausbilder/gruppen");
       if (res.status === 404) return setLoad({ kind: "ohne-gruppe" });
@@ -103,6 +106,20 @@ export default function AusbilderPage() {
                 className={`inline-flex min-h-11 items-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 py-3 text-base font-semibold text-[var(--color-text-on-brand)] ${focusRing}`}
               >
                 Anmelden
+              </Link>
+            </StateView>
+          ) : null}
+          {load.kind === "kein-zugang" ? (
+            <StateView
+              kind="leer"
+              title="Kein Zugang"
+              text="Dein Konto hat keinen Zugang zur Gruppenübersicht. Sie ist für Ausbilder gedacht."
+            >
+              <Link
+                href="/lernpfad"
+                className={`inline-flex min-h-11 items-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 py-3 text-base font-semibold text-[var(--color-text-on-brand)] ${focusRing}`}
+              >
+                Zurück zu Heute
               </Link>
             </StateView>
           ) : null}
