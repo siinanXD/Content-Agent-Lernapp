@@ -20,6 +20,7 @@ const GUARD_PRUEFUNG = {
   personendaten: "verbotsliste",
   "ihk-aehnlichkeit": "verbotsliste",
   pruefhinweis: "verbotsliste",
+  quellenfrage: "verbotsliste",
 } as const;
 
 export function pruefeKursFuerVeroeffentlichung(course: Course, evaluations: QuestionEvaluationRecord[]): Mangel[] {

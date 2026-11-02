@@ -7,7 +7,7 @@ import type { Course } from "@/lib/storage/types";
 import { PRUEFHINWEIS_MUSTER } from "@/lib/review/pruefhinweise";
 
 export type Verstoss = {
-  regel: "quelle" | "abrufdatum" | "ki-kennzeichnung" | "personendaten" | "ihk-aehnlichkeit" | "pruefhinweis" | "inhalt";
+  regel: "quelle" | "abrufdatum" | "ki-kennzeichnung" | "personendaten" | "ihk-aehnlichkeit" | "pruefhinweis" | "quellenfrage" | "inhalt";
   ort: string;
   hinweis: string;
 };
@@ -83,6 +83,9 @@ function gueltigeUrl(s: unknown): boolean {
   }
 }
 
+/** SIN-1452: Frage, die nach der Quelle statt nach dem Stoff fragt. */
+export const QUELLENFRAGE_MUSTER = /\b(laut|nach)\s+(der\s+)?Quelle\b|\bdie\s+Quelle\s+ist\b/i;
+
 function texte(lf: Lernfeld): Array<{ ort: string; text: string }> {
   const out: Array<{ ort: string; text: string }> = [];
   for (const u of lf.units ?? []) {
@@ -129,6 +132,15 @@ export function pruefeVeroeffentlichung(
     const ort = `Einheit ${u.id ?? "?"}`;
     if (!gueltigeUrl(u.sourceUrl)) v.push({ regel: "quelle", ort, hinweis: "Einheit ohne Quelle." });
     if (!gueltigesDatum(u.sourceFetchedAt)) v.push({ regel: "abrufdatum", ort, hinweis: "Einheit ohne Abrufdatum." });
+  }
+
+  for (const u of lf.units) {
+    const uid = u.id ?? "?";
+    for (const q of u.questions ?? []) {
+      if (q.prompt && QUELLENFRAGE_MUSTER.test(q.prompt)) {
+        v.push({ regel: "quellenfrage", ort: `Frage ${uid}/${q.id ?? "?"}`, hinweis: "Frage prüft die Quelle statt den Stoff." });
+      }
+    }
   }
 
   if (!lf.aiDisclosure?.text?.trim()) {

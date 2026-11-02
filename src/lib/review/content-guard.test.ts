@@ -18,6 +18,16 @@ describe("Recht-und-Inhalt-Wächter (SIN-297)", () => {
     assert.deepEqual(pruefeVeroeffentlichung(vollstaendig()), []);
   });
 
+  it("blockiert reine Quellenfragen (SIN-1452)", () => {
+    const lf = structuredClone(vollstaendig().generated);
+    lf.units[0].questions = [
+      { ...lf.units[0].questions[0], prompt: "Die Quelle ist die Anlage zur Maschinenverordnung. Welchen Inhalt hat diese Anlage laut Quelle?" },
+    ];
+    const v = pruefeVeroeffentlichung({ ...vollstaendig(), generated: lf }).filter((x) => x.regel === "quellenfrage");
+    assert.equal(v.length, 1);
+    assert.ok(!JSON.stringify(v).includes("Maschinenverordnung"));
+  });
+
   it("blockiert ohne Quelle am Kurs", () => {
     assert.ok(arten({ ...vollstaendig(), sources: [] }).includes("quelle"));
   });

@@ -44,6 +44,12 @@ const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
   open: "offen",
 };
 
+/** Kurzer Einstieg für „Als Nächstes“: erster Satz der Erklärung, ohne Links (SIN-1452). */
+function startText(erklaerung: string): string | undefined {
+  const text = erklaerung.replace(/\(?https?:\/\/\S+/g, "").replace(/\s+/g, " ").trim();
+  return text.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? (text || undefined);
+}
+
 const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
 
 /** Letzte 7 Tage aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
@@ -170,7 +176,7 @@ export function LernpfadView({
             indexLabel={nextUnit.indexLabel}
             title={nextUnit.title}
             minutes={nextUnit.minutes}
-            preview={nextUnit.questions[0]?.prompt}
+            preview={startText(nextUnit.explanation)}
             href={`/einheit/${nextUnit.id}`}
           />
         ) : null}
