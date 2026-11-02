@@ -274,17 +274,18 @@ export const createdTables = (sql) =>
   [...stripSqlComments(sql).matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?"?([a-z_][a-z0-9_]*)"?/gi)].map((m) => m[1].toLowerCase());
 
 /**
- * Welche Migrationen fehlen? Eine Datei mit `create table` gilt als angewendet, wenn alle Tabellen existieren
- * (Supabase-Projekte werden teils von Hand befüllt, die Versionstabelle ist dann leer). Ohne `create table`
- * zählt die Versionstabelle `supabase_migrations.schema_migrations`.
+ * Welche Migrationen fehlen? Eine Migration gilt als angewendet, wenn ihre Version in
+ * `supabase_migrations.schema_migrations` steht (SIN-1243: Tabellen können später absichtlich entfernt worden sein).
+ * Steht sie dort nicht, zählt bei `create table`, dass alle Tabellen existieren
+ * (Supabase-Projekte werden teils von Hand befüllt, die Versionstabelle ist dann leer).
  * @param {{ name: string, sql: string }[]} files nach Name sortiert
  */
 export function pendingMigrations(files, { tables = new Set(), versions = new Set() } = {}) {
   return files
     .filter(({ name, sql }) => {
+      if (versions.has(name.split("_")[0])) return false;
       const created = createdTables(sql);
-      if (created.length) return !created.every((t) => tables.has(t));
-      return !versions.has(name.split("_")[0]);
+      return !created.length || !created.every((t) => tables.has(t));
     })
     .map(({ name, sql }) => ({ name, sql, additiv: isAdditive(sql) }));
 }

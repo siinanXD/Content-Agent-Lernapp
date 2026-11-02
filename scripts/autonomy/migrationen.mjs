@@ -4,8 +4,8 @@
  *
  *   node scripts/autonomy/migrationen.mjs [--check]
  *
- * Eine Migration gilt als angewendet, wenn alle ihre Tabellen existieren oder (ohne `create table`) ihre Version in
- * `supabase_migrations.schema_migrations` steht (gleiche Regel wie `migrate` in run-task.mjs). `--check` endet mit 1,
+ * Eine Migration gilt als angewendet, wenn ihre Version in `supabase_migrations.schema_migrations` steht oder (mit
+ * `create table`) alle ihre Tabellen existieren (gleiche Regel wie `migrate` in run-task.mjs, SIN-1243). `--check` endet mit 1,
  * wenn additive Migrationen fehlen (Production-Deploy wartet dann auf migrate.yml). Reine Funktionen + ein Netzaufruf.
  */
 import { readdirSync, readFileSync } from "node:fs";
