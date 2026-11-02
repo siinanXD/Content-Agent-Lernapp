@@ -221,7 +221,7 @@ export default function EinheitPage() {
       variant: "pruefung" as const,
       totalPoints: 1720,
     };
-    recordLearningEvent("unit");
+    recordLearningEvent("unit", new Date(), unit!.id);
     const points = scored * 20 + 20;
     saveSession({
       ...session,

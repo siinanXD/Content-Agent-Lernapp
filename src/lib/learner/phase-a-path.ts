@@ -3,11 +3,7 @@
  * Client-safe: no node:fs. Titles come from a static JSON slice of Phase-A modules/blocks.
  */
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
-import {
-  type PathUnit,
-  type PathUnitStatus,
-  PLAYABLE_UNITS as SEED_UNITS,
-} from "./playable-path";
+import { type PathUnit, PLAYABLE_UNITS as SEED_UNITS } from "./playable-path";
 import { normalizeQuestions } from "./normalize-question";
 import phaseAIndex from "./phase-a-index.json";
 import phaseATitles from "./phase-a-titles.json";
@@ -59,21 +55,13 @@ function isPlayable(u: GeneratedUnit | null | undefined): u is GeneratedUnit {
 
 export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
   return units.filter(isPlayable).map((u, index): PathUnit => {
-    let status: PathUnitStatus = "open";
-    let statusLabel = "Noch offen";
-    if (index < 2) {
-      status = "done";
-      statusLabel = "Abgeschlossen";
-    } else if (index < 6) {
-      status = "today";
-      statusLabel = "Teil des Tagesziels";
-    }
     return {
       id: u.id,
       indexLabel: String(index + 1).padStart(2, "0"),
       title: u.title,
-      status,
-      statusLabel,
+      // Stand kommt aus den Lernereignissen (path-progress.ts), nicht aus der Position.
+      status: "open",
+      statusLabel: "Noch offen",
       minutes: u.minutes ?? 5,
       explanation: u.explanation ?? "",
       sections: u.sections,

@@ -16,6 +16,8 @@ import {
   type PathUnitStatus,
 } from "@/lib/learner/playable-path";
 import { fetchPhaseAPathUnits, setActiveCourse } from "@/lib/learner/phase-a-path";
+import { completedUnitIds, withProgress } from "@/lib/learner/path-progress";
+import { demoDoneUnitIds, isDemoMode } from "@/lib/learner/demo-modus";
 import { begruessung, type Begruessung } from "@/lib/learner/begruessung";
 import {
   dueItems,
@@ -46,6 +48,14 @@ const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
 
 /** Letzte 7 Tage aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
 const loadWeek = (): WeekDay[] => weekActivity(loadLearningEvents());
+
+/** Erledigte Einheiten aus den lokalen Lernereignissen; im Beispielmodus erfundene (SIN-1446). */
+type Progress = { demo: boolean; done: ReadonlySet<string> };
+const NO_PROGRESS: Progress = { demo: false, done: new Set() };
+const loadProgress = (): Progress => ({
+  demo: isDemoMode(),
+  done: completedUnitIds(loadLearningEvents()),
+});
 
 /** Wochentag und Begrüßung im Browser; stabile Referenz für `useAfterMount`. */
 const loadGreeting = (): Begruessung => begruessung(new Date());
@@ -86,7 +96,17 @@ export function LernpfadView({
   const dueCount = useMemo(() => (stack ? dueItems(stack).length : 0), [stack]);
   const stackCount = stack ? stackSize(stack) : 0;
   const reviewCopy = reviewTileCopy(dueCount, stackCount, stack ? nextDueAt(stack) : null);
-  const [pathUnits, setPathUnits] = useState(initialUnits);
+  const [loadedUnits, setPathUnits] = useState(initialUnits);
+  // Server-HTML und erster Bildaufbau zeigen den Stand ohne Ereignisse: nichts erledigt, die erste Einheit ist „Jetzt“.
+  const progress = useAfterMount<Progress>(loadProgress, NO_PROGRESS);
+  const pathUnits = useMemo(
+    () =>
+      withProgress(
+        loadedUnits,
+        progress.demo ? demoDoneUnitIds(loadedUnits.map((u) => u.id)) : progress.done,
+      ),
+    [loadedUnits, progress],
+  );
   const groups = groupUnitsByModule(pathUnits);
   const pathModules = withEmptyModules(groups, modules);
   const examParts = listExamParts().filter((p) => p.simulated);
@@ -108,10 +128,8 @@ export function LernpfadView({
     };
   }, [initialUnits, courseId]);
 
-  // „Als Nächstes“: heutige Einheit, sonst die erste offene.
-  const nextUnit =
-    pathUnits.find((u) => u.status === "today") ??
-    pathUnits.find((u) => u.status === "open");
+  // „Als Nächstes“: die erste Einheit, die nicht erledigt ist.
+  const nextUnit = pathUnits.find((u) => u.status !== "done");
 
   // Nur Module mit Einheiten zählen (`groups` enthält keine leeren Module).
   const readiness = groups.map((mod) => {
