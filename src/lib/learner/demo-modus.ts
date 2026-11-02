@@ -57,6 +57,11 @@ export function demoEvents(now: Date): LearningEvent[] {
   );
 }
 
+/** Im Beispielmodus gelten die ersten beiden Einheiten als erledigt (erfunden, wird nicht gespeichert). */
+export function demoDoneUnitIds(unitIds: readonly string[]): Set<string> {
+  return new Set(unitIds.slice(0, 2));
+}
+
 /** Wiederholungsstapel aus echten Fragen des Lernpfads, mit gestern, heute und später fälligen Karten. */
 export function demoStack(now: Date): LeitnerStack {
   const ids = activePathUnits()

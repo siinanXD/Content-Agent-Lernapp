@@ -24,6 +24,8 @@ export type LearningEvent = {
   /** Kalendertag `YYYY-MM-DD` in der Zeitzone des Geräts zum Zeitpunkt `at` */
   day: string;
   kind: LearningEventKind;
+  /** Einheit, die abgeschlossen wurde (nur `unit`); Grundlage für den Stand im Lernpfad (SIN-1446) */
+  unitId?: string;
 };
 
 const KEY = "cal-learn-events";
@@ -140,11 +142,12 @@ export function loadLearningEvents(): LearningEvent[] {
 export function recordLearningEvent(
   kind: LearningEventKind,
   now: Date = new Date(),
+  unitId?: string,
 ): LearningEvent[] {
   if (isDemoMode()) return loadLearningEvents();
   const next = [
     ...loadLearningEvents(),
-    { at: now.toISOString(), day: dayKey(now), kind },
+    { at: now.toISOString(), day: dayKey(now), kind, ...(unitId ? { unitId } : {}) },
   ].slice(-MAX_EVENTS);
   try {
     window.localStorage.setItem(KEY, JSON.stringify(next));
