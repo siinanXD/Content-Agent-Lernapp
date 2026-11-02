@@ -43,6 +43,10 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+/** Wartet, bis die gemockte Liste die vom Server gelieferte ersetzt hat; sonst passt die Id der Einheit nicht zum Pfad. */
+const pfadGeladen = (page: import("@playwright/test").Page) =>
+  expect(page.getByRole("link", { name: /Berufsbildung 1/ }).first()).toBeVisible();
+
 const nodes = (page: import("@playwright/test").Page, state: string) => page.locator(`[data-state="${state}"]`);
 
 test("neues Konto: nichts erledigt, erste Einheit ist Jetzt, Prüfungsreife 0 %", async ({ page }, info) => {
@@ -57,6 +61,7 @@ test("neues Konto: nichts erledigt, erste Einheit ist Jetzt, Prüfungsreife 0 %"
 
 test("nach einer abgeschlossenen Einheit: genau diese erledigt, Als Nächstes springt weiter, auch nach Neuladen", async ({ page }, info) => {
   await page.goto("/lernpfad");
+  await pfadGeladen(page);
   await nodes(page, "heute").first().click();
   await page.locator("button[aria-pressed]").first().click();
   await page.getByRole("button", { name: "Antwort prüfen" }).click();
