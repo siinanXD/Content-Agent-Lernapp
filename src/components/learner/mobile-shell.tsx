@@ -1,16 +1,22 @@
 import type { ReactNode } from "react";
+import { BottomNav } from "@/components/learner/bottom-nav";
 import { DemoHinweis } from "@/components/learner/demo-hinweis";
 
-/** Centers the Figma 390 mobile composition on larger viewports; `wide` lets 2026 screens grow to desktop. */
+/**
+ * Gemeinsamer Seitenrahmen (SIN-1448): höchstens 390 px, am Desktop mittig; Seiten setzen 16 px Rand (Inhalt 358 px).
+ * `wide` nur für die Desktop-Frames aus Figma: `/` (A3), `/ausbilder` (W11), `/admin` (X1).
+ * `nav` zeigt die Hauptnavigation fest am unteren Rand des Rahmens (alle Seiten nach der Anmeldung).
+ */
 export function MobileShell({
   children,
   className = "",
   wide = false,
+  nav = false,
 }: {
   children: ReactNode;
   className?: string;
-  /** Variante 2026: ab 768 px bis 1120 px breit (Startseite, Gruppenübersicht, Formulare, Rechtstexte). */
   wide?: boolean;
+  nav?: boolean;
 }) {
   return (
     <div className="flex min-h-full justify-center bg-[var(--color-bg-canvas)]">
@@ -19,6 +25,7 @@ export function MobileShell({
       >
         <DemoHinweis />
         {children}
+        {nav ? <BottomNav /> : null}
       </div>
     </div>
   );
