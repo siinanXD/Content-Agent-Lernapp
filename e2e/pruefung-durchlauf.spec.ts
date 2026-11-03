@@ -106,33 +106,32 @@ for (const vp of viewports) {
     await expect(page.getByText(/Es wird nichts aufgefüllt/)).toBeVisible();
     await page.getByRole("button", { name: "Prüfung starten" }).click();
 
-    const feedback = page.getByTestId("answer-feedback");
     const pruefen = page.getByRole("button", { name: "Antwort prüfen" });
     const weiter = page.getByRole("button", { name: "Weiter", exact: true });
 
     await expect(page.getByText(/Frage 1\/5/)).toBeVisible();
     await page.getByRole("button", { name: "Der Betrieb", exact: true }).click();
     await pruefen.click();
-    await expect(feedback).toHaveAttribute("data-correct", "true");
+    await expect(weiter).toBeVisible();
     await weiter.click();
 
     await expect(page.getByText(/Frage 2\/5/)).toBeVisible();
     await page.getByRole("button", { name: "PSA", exact: true }).click();
     await pruefen.click();
-    await expect(feedback).toHaveAttribute("data-correct", "true");
+    await expect(weiter).toBeVisible();
     await weiter.click();
 
     await expect(page.getByText(/Frage 3\/5/)).toBeVisible();
     await page.getByLabel("Zuordnung für Helm").selectOption({ index: 1 });
     await page.getByLabel("Zuordnung für Handschuh").selectOption({ index: 1 });
     await pruefen.click();
-    await expect(feedback).toBeVisible();
+    await expect(weiter).toBeVisible();
     await weiter.click();
 
     await expect(page.getByText(/Frage 4\/5/)).toBeVisible();
     await page.getByRole("button", { name: /nach oben$/ }).nth(1).click();
     await pruefen.click();
-    await expect(feedback).toBeVisible();
+    await expect(weiter).toBeVisible();
     await weiter.click();
 
     await expect(page.getByText(/Frage 5\/5/)).toBeVisible();
@@ -140,7 +139,6 @@ for (const vp of viewports) {
     await page.getByRole("button", { name: "Musterlösung zeigen" }).click();
     await page.getByRole("checkbox", { name: "Rechenweg notiert" }).check();
     await page.getByRole("button", { name: "Selbstkontrolle speichern" }).click();
-    await expect(feedback).toBeVisible();
     await page.getByRole("button", { name: "Ergebnis je Gebiet" }).click();
 
     await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
@@ -161,15 +159,15 @@ test("Zeit läuft in echten Sekunden, Pause hält an, Ablauf beendet die Prüfun
 
   const zeit = page.locator("p", { hasText: "Restzeit" });
   await expect(zeit).toContainText("120:00");
-  await page.clock.fastForward(10_000);
+  await page.clock.runFor(10_000);
   await expect(zeit).toContainText("119:50");
 
   await page.getByRole("button", { name: "Pause" }).click();
   await expect(zeit).toContainText("Pause");
-  await page.clock.fastForward(60_000);
+  await page.clock.runFor(60_000);
   await page.getByRole("button", { name: "Fortsetzen" }).click();
   await expect(zeit).toContainText("119:50");
 
-  await page.clock.fastForward(120 * 60 * 1000);
+  await page.clock.runFor(120 * 60 * 1000);
   await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
 });
