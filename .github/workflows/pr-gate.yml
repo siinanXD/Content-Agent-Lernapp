@@ -47,6 +47,8 @@ concurrency:
 jobs:
   # SIN-1481: Steht das Urteil der Belegprüfung am PR, bewertet der letzte pr-gate-Lauf des Commits frisch.
   # issue_comment läuft mit der Fassung vom Standard-Branch; nur Kommentare des Repo-Owners zählen.
+  # Bekannte Grenze: Läuft der pr-gate-Lauf noch, wenn das Urteil kommt, startet hier nichts; hat er die Kommentare schon gelesen,
+  # bleibt Auto-Merge aus, bis ein anderes Ereignis (Label, edited, ci fertig) das Gate neu bewertet.
   beleg-anstoss:
     if: github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '<!-- belegpruefung:') && github.event.comment.user.login == github.repository_owner
     runs-on: ubuntu-latest
