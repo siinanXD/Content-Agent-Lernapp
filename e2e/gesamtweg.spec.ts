@@ -73,7 +73,7 @@ test("Es gibt mindestens einen veröffentlichten Kurs", () => {
 });
 
 for (const course of PUBLISHED_COURSES) {
-test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0, 8)})`, async ({ page, context }) => {
+test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0, 8)})`, async ({ page, context }, testInfo) => {
   await page.clock.install({ time: START });
   // context.route greift auch für den Service Worker, der phase-a seit SIN-256 selbst lädt.
   await context.route("**/api/learner/phase-a", (route) =>
@@ -133,6 +133,21 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
   const wait = Math.min(...dueAt) - START.getTime();
   expect(wait).toBeGreaterThanOrEqual(DAY_MS);
   expect(wait).toBeLessThan(DAY_MS + MINUTE_MS);
+
+  // SIN-1450: Am selben Tag lässt sich der Stapel über „Jetzt üben“ durchspielen.
+  // Richtig vor der Fälligkeit ändert Stufe und Termin nicht (Plan 1 · 3 · 7 · 14).
+  await testInfo.attach("wiederholung-leer", {
+    body: await page.screenshot(),
+    contentType: "image/png",
+  });
+  await page.getByRole("button", { name: "Jetzt üben", exact: true }).click();
+  await reviewAllCorrect(page);
+  expect(await readStack(page)).toEqual(items);
+  await testInfo.attach("wiederholung-ueben", {
+    body: await page.screenshot(),
+    contentType: "image/png",
+  });
+  await page.goto("/wiederholung");
 
   // Je Intervall: kurz davor nichts fällig, danach fällig; richtig → nächste Stufe.
   const intervals = [
