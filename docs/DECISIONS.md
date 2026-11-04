@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1451 | SIN-1451: Lernstand gehört zum Konto | [SIN-1451-lernstand-konto.md](decisions/SIN-1451-lernstand-konto.md) |
 | SIN-1450 | SIN-1450: Wiederholung sofort üben | [SIN-1450-wiederholung-ueben.md](decisions/SIN-1450-wiederholung-ueben.md) |
 | SIN-1446 | SIN-1446 — Lernpfad: Stand aus Lernereignissen | [SIN-1446-lernpfad-echter-stand.md](decisions/SIN-1446-lernpfad-echter-stand.md) |
 | SIN-1197 | SIN-1197 Anmeldung nach Standard: Passwort, Registrieren, Passwort vergessen, Google | [SIN-1197-anmeldung-standard.md](decisions/SIN-1197-anmeldung-standard.md) |

@@ -72,9 +72,8 @@ async function neuerBrowser(browser: Browser): Promise<Page> {
     if (pfad !== "/rest/v1/learner_state") return route.fulfill({ status: 404, headers: cors, json: {} });
     if (server.aus) return route.abort("internetdisconnected");
     if (req.method() === "GET") {
-      return server.zeile
-        ? route.fulfill({ headers: cors, json: server.zeile })
-        : route.fulfill({ status: 406, headers: cors, json: { code: "PGRST116", details: "0 rows", hint: null, message: "x" } });
+      // supabase-js maybeSingle() fragt eine Liste ab: keine Zeile = [], eine Zeile = [zeile].
+      return route.fulfill({ headers: cors, json: server.zeile ? [server.zeile] : [] });
     }
     server.zeile = req.postDataJSON() as Zeile;
     return route.fulfill({ status: 201, headers: cors, body: "" });
