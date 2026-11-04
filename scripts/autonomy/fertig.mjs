@@ -19,7 +19,7 @@ export const offeneFertigPunkte = (md) => parseFertig(md).filter((p) => p.offen)
 const KRITERIEN = [
   [/industriemechaniker/i, ["Alle Einheiten des Berufs sind veröffentlicht; jede Einheit nennt Quelle und Abrufdatum", "Nur Fragen, die den Richter bestehen, sind im Lernpfad sichtbar", "Der Beruf ist im Lernpfad live; Live-Check nach dem Deploy ist grün"]],
   [/industriekaufmann/i, ["Einheiten sind aus amtlicher Quelle erzeugt, belegt und veröffentlicht; ohne Quelle kein Inhalt", "Content-Guard und Richter laufen über alle Einheiten; kein Treffer auf der Verbotsliste", "Der Beruf ist im Lernpfad live auffindbar"]],
-  [/crawler|testnutzer/i, ["Der Crawler läuft täglich über alle Routen", "Drei Tage in Folge 0 Fehler im Bericht", "Funde landen als Issues mit Dublettenprüfung"]],
+  [/crawler|testnutzer/i, ["Der PR-Crawler (`pr-crawler.yml`) prüft die geänderten Seiten auf der Vercel-Vorschau", "Der letzte Lauf meldet 0 Funde (auch `/ausbilder/archiv` und `/ausbilder/gruppen`: Sitzung greift)", "Funde landen als Kommentar im PR mit Bild oder Video (SIN-906)"]],
   [/impressum/i, ["Impressum, Datenschutz und KI-Hinweis sind live und von der Startseite aus erreichbar", "Stripe-Abo ist im Testmodus von der Anmeldung bis zur Bestätigung durchspielbar", "Der Stripe-Live-Schalter bleibt unverändert (Freigabe nur durch Sinan)"]],
   [/platzhalter-kurse/i, ["Die leeren MAF-Schwerpunkt-Kurse erscheinen in keiner Auswahl (Kursliste, Startseite, Lernpfad)", "Ein Test prüft, dass leere Kurse ausgeblendet sind"]],
   [/so funktioniert/i, ["Die Seite „So funktioniert's“ ist live und vom Ausbilder-Bereich aus erreichbar", "Texte und Screens kommen aus Figma; fehlt ein Frame, ein Design-Issue statt Improvisation", "Der Klickpfad im Live-Check ist grün"]],

@@ -48,14 +48,16 @@ export async function ersteFrage(page, route) {
   }
 }
 
+/** Bypass für die Vercel-Schutzseite (Protection Bypass for Automation): Header plus Cookie, damit Folgeaufrufe ohne Header gehen. */
+export const bypassHeader = (secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET) =>
+  secret ? { "x-vercel-protection-bypass": secret, "x-vercel-set-bypass-cookie": "true" } : undefined;
+
 const kontext = (browser, vp, extra = {}) =>
   browser.newContext({
     viewport: { width: vp.width, height: vp.height },
     isMobile: vp.mobil,
     hasTouch: vp.mobil,
-    extraHTTPHeaders: process.env.VERCEL_AUTOMATION_BYPASS_SECRET
-      ? { "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET, "x-vercel-set-bypass-cookie": "true" }
-      : undefined,
+    extraHTTPHeaders: bypassHeader(),
     ...extra,
   });
 const nurLesen = (context) => context.route("**/api/**", (r) => (r.request().method() === "GET" ? r.continue() : r.fulfill({ status: 201, json: { ok: true } })));

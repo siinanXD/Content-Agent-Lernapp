@@ -74,6 +74,7 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 - Ein PR pro Arbeitspaket (1 Linear-Issue = 1 PR). Reparaturen kommen in denselben PR, kein Folge-PR.
 - PR-Titel = Commit auf `main` (Squash-Merge): Conventional Commit mit Linear-ID, z. B. `feat(lernpfad): Fortschrittsbalken (SIN-123)`. Der Check `pr-title` prüft das. Teilschritte tragen `Part of SIN-xxx` im Commit, ein Part-Of-PR schließt das Issue nie.
 - Das Risiko setzt der Workflow `pr-gate` automatisch als Label `risk:low` (Standard), `risk:medium` oder `risk:high`. Nie selbst setzen oder entfernen. Die Regeln stehen in `scripts/autonomy/risk.mjs` (SIN-223).
+  - Vor jedem Auto-Merge steht das Urteil `belegt` der Belegprüfung für genau diesen Commit am PR (SIN-1481, Auftrag in `siinanXD/leitstand-2`: `docs/belegpruefung.md`). Ohne Urteil bleibt Auto-Merge aus, auch bei `risk:low`. Schreib nie selbst ein Urteil.
   - `risk:low` (Standard, SIN-811): Auto-Merge (Squash) ohne Frist, sobald `build`, `pr-title` und `merge-gate` grün sind. Gilt für Design-Tokens und Komponenten aus Figma, Docs, Tests, Migrationen (nur hinzufügen), `src/lib/storage/`, `.env.example`, `next.config.*`, `vercel.json` und neue npm-Pakete mit MIT/Apache und mehr als 500 Sternen. Nicht selbst mergen. `revert-guard` ist abgeschaltet: wird CI auf `main` rot, sofort im Chat und im Issue melden.
   - **Aufbauphase (SIN-855, Sinan 19.10.2026): keine Einspruchsfrist.** `risk:low` und `risk:medium` mergen nach grünen Pflicht-Checks; `risk:high`, `no-automerge` und Draft sperren weiter. Schalter `AUFBAUPHASE` in `scripts/autonomy/risk.mjs`, zurück erst nach belegter Produktreife und Workflow-Abnahme.
   - `risk:medium` mit **Einspruchsfrist 30 Min** (nach der Aufbauphase; SIN-547, SIN-811, Label `einspruch:30m`): jede Workflow-Änderung (auch Schritte, Skripte, Zeitpläne), `permissions:`/Secrets in YAML, `write`-Rechte, `allowedTools`/`allowed_bots`, bekannte Secrets und Actions von `actions/*`, `anthropics/*` und den Owners in `docs/autonomy/config.json` (`ERLAUBTE_ACTION_OWNER`); das Gate selbst (`pr-gate.yml`, `scripts/autonomy/risk.mjs`); Framework/DB-Wechsel. Auto-Merge erst nach der Frist (Kommentar `pr-gate-einspruch`, `merge-gate` bis dahin rot), Sinan stoppt mit `no-automerge`.
@@ -133,6 +134,11 @@ Regeln für alle Agenten in diesem Repo. Diese Regeln ersetzen Rückfragen an Si
 
 - Nach jedem behobenen Bug (auch im Reparatur-Lauf) ergänzt du `docs/autonomy/LEHREN.md` um **eine Zeile** im selben PR: Was nicht geht → wie es richtig geht. Erst suchen, ob es sie schon gibt. Höchstens 150 Zeilen.
 - Wiederholt sich ein Arbeitsablauf, lege `docs/skills/<name>/SKILL.md` an (Aufbau: `docs/skills/README.md`) und nutze vorhandene Skills bei passenden Issues. Neue Skills nennst du im PR unter `## Neue Skills`.
+## Nutzerweg (SIN-1453)
+
+- `npm run test:nutzerweg` spielt die Lernapp wie ein Mensch durch (`nutzerweg/nutzerweg.spec.ts`): Env `LIVE_URL`, `TESTNUTZER_EMAIL`, `TESTNUTZER_PASSWORT`, Passwort nie ausgeben. Er läuft gegen jede Adresse, ohne Workflow-Änderung; die Klickprobe im Leitstand ruft ihn auf.
+- Sichtbare Änderungen (neue Screens, Abläufe, Zustände) erweitern den Weg im selben PR. Ein roter Weg bleibt rot, bis das zugehörige Ticket gemergt ist, und steht benannt im Bericht.
+
 ## Qualität
 
 - Jeder Pull Request: Tests grün, axe-core und Lighthouse ohne Fehler.
