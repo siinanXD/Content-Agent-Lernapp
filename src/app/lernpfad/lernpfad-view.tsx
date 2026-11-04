@@ -299,18 +299,23 @@ export function LernpfadView({
       ) : null}
 
       {pathModules.map((mod) => {
+        const modUnits = mod.blocks.flatMap((b) => b.units);
+        const modDone = modUnits.filter((u) => u.status === "done").length;
+        const heading = (
+          <h2
+            className="inline text-lg font-medium text-[var(--color-text-primary)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {mod.moduleId} · {mod.moduleTitle}
+          </h2>
+        );
         return (
           <section
             key={mod.moduleId}
             className="px-6 pt-8 md:px-12"
             data-module-state={mod.units ? "mit-einheiten" : "leer"}
           >
-            <h2
-              className="mb-2 text-lg font-medium text-[var(--color-text-primary)]"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {mod.moduleId} · {mod.moduleTitle}
-            </h2>
+            {mod.units === 0 ? <div className="mb-2">{heading}</div> : null}
             {mod.units === 0 ? (
               <div
                 tabIndex={0}
@@ -330,7 +335,23 @@ export function LernpfadView({
                 </p>
               </div>
             ) : null}
-            {mod.blocks.map((block) => (
+            {mod.units > 0 ? (
+              // Module einklappbar (SIN-1513): zuerst nur Module, offen ist das mit der nächsten Einheit.
+              <details
+                key={`${mod.moduleId}-${nextUnit?.moduleId === mod.moduleId}`}
+                open={nextUnit?.moduleId === mod.moduleId}
+                data-testid="modul"
+                className="group"
+              >
+                <summary
+                  className={`mb-2 flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 ${focus}`}
+                >
+                  {heading}
+                  <span className="mono-label shrink-0 text-[var(--color-text-secondary)]">
+                    {modDone} / {modUnits.length}
+                  </span>
+                </summary>
+                {mod.blocks.map((block) => (
               <div key={block.blockId} className="mb-3">
                 <p className="mb-2 text-sm text-[var(--color-text-secondary)]">
                   {block.blockTitle}
@@ -359,7 +380,9 @@ export function LernpfadView({
                   ))}
                 </ol>
               </div>
-            ))}
+                ))}
+              </details>
+            ) : null}
           </section>
         );
       })}
