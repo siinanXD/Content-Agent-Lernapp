@@ -102,3 +102,108 @@ test("unbekannte Form: null statt Absturz, Rest der Liste bleibt", () => {
   ]);
   assert.deepEqual(list.map((q) => q.id), ["q2"]);
 });
+
+// SIN-1532: echte Formen aus der Datenbank (MAF), Paare und Schritte stehen dort in `correct`.
+test("SIN-1532: choice/choices/true_false werden zu auswahl", () => {
+  const choices = ["0,81 kg", "5,4 kg", "8,1 kg", "81 kg"];
+  for (const type of ["choice", "choices"]) {
+    const q = normalizeQuestion({ ...base, type, choices, correct: "8,1 kg" });
+    assert.equal(q?.type, "auswahl", type);
+    assert.deepEqual(q?.choices, choices);
+  }
+  const tf = normalizeQuestion({ ...base, type: "true_false", choices: ["Wahr", "Falsch"], correct: "Falsch" });
+  assert.equal(tf?.type, "auswahl");
+  assert.equal(tf?.correct, "Falsch");
+});
+
+test("SIN-1532: true_false ohne choices bekommt Wahr/Falsch, correct passt sich der Schreibweise an", () => {
+  const q = normalizeQuestion({ ...base, type: "true_false", correct: "falsch" });
+  assert.deepEqual(q?.choices, ["Wahr", "Falsch"]);
+  assert.equal(q?.correct, "Falsch");
+});
+
+test("SIN-1532: true_false mit anderer Antwort bleibt ausgeblendet", () => {
+  assert.equal(normalizeQuestion({ ...base, type: "true_false", correct: "vielleicht" }), null);
+});
+
+test("SIN-1532: blank/blanks/fill_in_blank/fill_in_blanks/cloze mit einer Lücke werden zu lueckentext", () => {
+  for (const [type, correct] of [
+    ["blank", "Wiedereinschalten"],
+    ["blank", ["Wiedereinschalten"]],
+    ["blanks", ["Messmittel"]],
+    ["fill_in_blank", ["Prüfmittel"]],
+    ["fill_in_blanks", ["jedem"]],
+    ["cloze", ["geschlossenen"]],
+  ] as const) {
+    const q = normalizeQuestion({ ...base, type, prompt: "Gesichert gegen ____ .", correct });
+    assert.equal(q?.type, "lueckentext", type);
+    assert.deepEqual(q?.gaps, [{ id: "1", options: [], accepted: [Array.isArray(correct) ? correct[0] : correct] }]);
+  }
+});
+
+test("SIN-1532: zwei Lücken im Text und zwei Lösungen ergeben zwei Lücken", () => {
+  const q = normalizeQuestion({
+    ...base,
+    type: "blanks",
+    prompt: "Messwerte werden mit dem ____ ermittelt und mit dem ____ dokumentiert.",
+    correct: ["Messmittel", "Ergebnis"],
+  });
+  assert.deepEqual(q?.gaps, [
+    { id: "1", options: [], accepted: ["Messmittel"] },
+    { id: "2", options: [], accepted: ["Ergebnis"] },
+  ]);
+  assert.equal(q?.prompt, "Messwerte werden mit dem [Lücke 1] ermittelt und mit dem [Lücke 2] dokumentiert.");
+});
+
+test("SIN-1532: mehr Lösungen als Lücken im Text bleibt ausgeblendet, nichts wird geraten", () => {
+  assert.equal(
+    normalizeQuestion({ ...base, type: "blanks", prompt: "Nur ein ____ im Text.", correct: ["a", "b"] }),
+    null,
+  );
+});
+
+test("SIN-1532: pairs mit correct als Objekt- oder Listen-Paare wird zu zuordnen", () => {
+  const objekte = normalizeQuestion({
+    ...base,
+    type: "pairs",
+    correct: [{ left: "Abfälle sind verunreinigt", right: "Sie können nicht recycelt werden" }],
+  });
+  assert.equal(objekte?.type, "zuordnen");
+  assert.deepEqual(objekte?.pairs, [["Abfälle sind verunreinigt", "Sie können nicht recycelt werden"]]);
+  const listen = normalizeQuestion({ ...base, type: "pairs", correct: [["a", "b"], ["c", "d"]] });
+  assert.deepEqual(listen?.pairs, [["a", "b"], ["c", "d"]]);
+});
+
+test("SIN-1532: matching mit correct als Paaren wird spielbar, mit reiner Textliste bleibt es ausgeblendet", () => {
+  const ok = normalizeQuestion({ ...base, type: "matching", correct: [{ left: "a", right: "b" }] });
+  assert.deepEqual(ok?.pairs, [["a", "b"]]);
+  assert.equal(normalizeQuestion({ ...base, type: "matching", correct: ["nur rechts", "nur rechts 2"] }), null);
+});
+
+test("SIN-1532: steps/ordering mit correct als Textliste wird zu reihenfolge", () => {
+  const steps = ["Abfälle vermeiden", "Nach Stoffen getrennt erfassen", "Fachgerecht entsorgen"];
+  for (const type of ["steps", "ordering"]) {
+    const q = normalizeQuestion({ ...base, type, correct: steps });
+    assert.equal(q?.type, "reihenfolge", type);
+    assert.deepEqual(q?.steps, steps);
+  }
+});
+
+test("SIN-1532: steps mit correct als ein Text bleibt ausgeblendet", () => {
+  assert.equal(normalizeQuestion({ ...base, type: "steps", correct: "A → B → C" }), null);
+});
+
+test("SIN-1532: numeric_input wird zu rechnen", () => {
+  const q = normalizeQuestion({ ...base, type: "numeric_input", correct: "1019" });
+  assert.equal(q?.type, "rechnen");
+  assert.equal(q?.sampleSolution, "1019");
+});
+
+test("SIN-1532: short_answer passt zu keinem der fünf Typen und bleibt ausgeblendet", () => {
+  assert.equal(normalizeQuestion({ ...base, type: "short_answer", correct: ["Verletzung"] }), null);
+});
+
+test("SIN-1532: die fünf Typen ziehen pairs/steps nicht aus correct (unverändert)", () => {
+  assert.equal(normalizeQuestion({ ...base, type: "zuordnen", correct: [{ left: "a", right: "b" }] }), null);
+  assert.equal(normalizeQuestion({ ...base, type: "reihenfolge", correct: ["a", "b"] }), null);
+});
