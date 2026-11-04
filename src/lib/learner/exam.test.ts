@@ -99,4 +99,9 @@ describe("exam mode (AP-18c)", () => {
     assert.equal(getExamQuestions("PT", [unitOf(...many)]).length, 30);
     assert.equal(getExamQuestions("PT", [unitOf(q("x", ["ANDERS"]))]).length, 0);
   });
+
+  it("nimmt Kursfragen ohne examAreas, jede einmal (SIN-1449)", () => {
+    const ids = getExamQuestions("PT", [unitOf(q("a", []), q("a", []), q("b", []))]).map((x) => x.id);
+    assert.deepEqual(ids, ["a", "b"]);
+  });
 });

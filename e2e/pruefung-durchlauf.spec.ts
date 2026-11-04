@@ -11,7 +11,7 @@ const base = (id: string) => ({
   explanation: "Kurz erklärt.",
   sourceUrl: SOURCE,
   sourceFetchedAt: "2026-10-03",
-  examAreas: ["WISO-1"],
+  examAreas: [],
 });
 
 const questions = [

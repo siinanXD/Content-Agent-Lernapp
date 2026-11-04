@@ -85,13 +85,16 @@ export function buildExamPool(
   const target = examQuestionTarget(part.id, parseDurationMinutes(part.duration));
   const areaIds = new Set<string>([part.id, ...part.gebiete.map((g) => g.id)]);
   const seen = new Set<string>();
-  const questions: PathQuestion[] = [];
+  const tagged: PathQuestion[] = [];
+  const untagged: PathQuestion[] = [];
   for (const q of units.flatMap((u) => u.questions)) {
     if (seen.has(q.id)) continue;
-    if (!q.examAreas.some((a) => areaIds.has(a) || a === "WISO-1")) continue;
     seen.add(q.id);
-    questions.push(q);
+    if (q.examAreas.length === 0) untagged.push(q);
+    else if (q.examAreas.some((a) => areaIds.has(a) || a === "WISO-1")) tagged.push(q);
   }
+  // Echte Kursfragen tragen oft kein Prüfungsgebiet: sie füllen (ohne Kopien) nach den gekennzeichneten auf.
+  const questions = [...tagged, ...untagged];
   return { questions: questions.slice(0, target), target };
 }
 
