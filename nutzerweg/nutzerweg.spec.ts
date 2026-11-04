@@ -134,10 +134,25 @@ test("Weg 4: Prüfung läuft mit der angezeigten Dauer bis zum Ergebnis", async 
   console.log(`Fragetypen in der Prüfung: ${[...typen].join(", ")}`);
 });
 
-test("Weg 5: Falsche Antwort ist in der Wiederholung sofort übbar", async ({ page }) => {
+test("Weg 5: Falsche Antwort ist in der Wiederholung sofort übbar", async ({ page }, testInfo) => {
   await anmelden(page);
   await einheitDurchspielen(page, true);
+  // Dieselbe Stapelzahl in Lernpfad-Karte, Profil und Wiederholungsseite (SIN-1450).
+  const stapelKachel = (seite: Page) => seite.locator("p", { hasText: /^Stapel$/ }).locator("xpath=following-sibling::p[1]");
+  await page.goto("/lernpfad");
+  const karte = await page.getByRole("region", { name: "Wiederholung" }).getByText(/\d+ Fragen? im Stapel|Stapel mit \d+/).textContent();
+  const imLernpfad = Number(/(\d+)/.exec(karte ?? "")?.[1]);
+  expect(imLernpfad, "Stapel im Lernpfad nach falschen Antworten").toBeGreaterThan(0);
+  await page.goto("/profil");
+  await expect(stapelKachel(page), "Stapel im Profil").toHaveText(String(imLernpfad));
   await page.goto("/wiederholung");
+  await expect(stapelKachel(page), "Stapel auf der Wiederholungsseite").toHaveText(String(imLernpfad));
+  // Direkt nach dem Lernen ist nichts fällig; „Jetzt üben“ startet die Runde trotzdem.
+  const ueben = page.getByRole("button", { name: "Jetzt üben", exact: true });
+  if (await ueben.isVisible()) {
+    await testInfo.attach("wiederholung-leer", { body: await page.screenshot(), contentType: "image/png" });
+    await ueben.click();
+  }
   await expect(page.getByText(/^Wiederholung \d+ von \d+/), "falsch beantwortete Fragen sind nicht sofort übbar").toBeVisible();
 });
 

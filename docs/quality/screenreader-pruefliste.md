@@ -58,7 +58,7 @@ Der erwartete Vorlesetext ist der Sollwert aus dem Code (Stand SIN-370). Kleine 
 | Schritt | Aktion | Erwarteter Vorlesetext |
 | --- | --- | --- |
 | 4.1 | Laden | „Wiederholungsstapel wird geladen“ |
-| 4.2 | Stapel | Überschrift „Fällige Fragen“, danach Stufen und Gebiete mit Überschriften |
+| 4.2 | Stapel | Überschrift „Fällige Fragen“ (bei „Jetzt üben“: „Stapel üben“), danach Stufen und Gebiete mit Überschriften |
 | 4.3 | Fragen | wie 2.3 bis 2.12 |
 | 4.4 | Nichts fällig | „Heute nichts fällig, Überschrift Ebene 1“ |
 | 4.5 | Fertig | „Wiederholung fertig, Überschrift Ebene 1“ |
