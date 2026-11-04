@@ -1,6 +1,15 @@
 {
   "_hinweis": "Bestätigungen für die Produktreife-Prüfung des Planers (docs/PRODUCT.md, Abschnitt Produktreife). Eintrag nur mit Datum und Beleg (PR, Messung, Link) setzen. Schlüssel siehe CHECKS in scripts/autonomy/readiness.mjs. Gemessen werden content-quote, design-issues, design-figma und betrieb-sentry und betrieb-fabrik; alles andere zählt nur mit Bestätigung.",
   "goldsetTarget": 0.9,
+  "fragenzahlen": {
+    "datum": "2026-11-04",
+    "quelle": "Supabase, Projekt Content-Agent-Lernapp, lesende Abfrage (Abfrage in docs/FERTIG.md)",
+    "kurse": {
+      "Maschinen- und Anlagenführer": { "einheiten": 701, "fragen": 4648 },
+      "Industriemechaniker": { "einheiten": 485, "fragen": 3149 },
+      "Industriekaufmann": { "einheiten": 1140, "fragen": 7311 }
+    }
+  },
   "gebaut": {
     "qual-offline": {
       "datum": "2026-10-06",
