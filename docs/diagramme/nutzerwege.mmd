@@ -2,6 +2,7 @@
 %% Gestrichelt: im Code noch nicht gebaut (Gruppe anlegen, Einladen, Beitritt).
 flowchart LR
   subgraph Azubi
+    A0["Startseite: Ich bin Azubi (/)"] --> A1
     A1["Onboarding (/willkommen)"] --> A2["Einwilligung (/einwilligung)"]
     A2 --> A2b["Beruf wählen (/beruf)"]
     A2b --> A3["Schwerpunkt (/schwerpunkt)"]
@@ -11,6 +12,8 @@ flowchart LR
     A3 --> A4["Lernpfad (/lernpfad): Module einklappbar, offen das mit der nächsten Einheit"]
     A4 --> A5["Einheit (/einheit/id)"]
     A5 --> A6["Ergebnis (/ergebnis)"]
+    A5 -- "Zurück" --> A4
+    A4 -- "Abmelden (Profil)" --> A0
     A6 --> A7["Wiederholung (/wiederholung)"]
     A7 -- "nichts fällig: Jetzt üben" --> A7
     A7 --> A4
@@ -22,6 +25,7 @@ flowchart LR
     B1["Startseite (/)"] --> B2["Demo-Zugang anfragen (/demo)"]
     B2 --> B8["Beispielansicht ohne Konto (/ausbilder?demo=1)"]
     B2 --> B9["Lernansichten mit Beispieldaten (/lernpfad?demo=1)"]
+    B9 -- "Beispiel beenden" --> B1
     B2 --> B3["Anmelden (/anmelden)"]
     B3 --> B4["Abo im Testmodus (/abo → Stripe → /abo/bestaetigung)"]
     B0["Einladungslink von Sinan (/ausbilder/zugang)"] --> B3

@@ -22,7 +22,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Hauptnavigation"
-      className="mt-auto flex border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]"
+      className="z-10 mt-auto flex max-md:sticky max-md:bottom-0 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]"
     >
       {items.map(({ href, label, Icon }) => {
         const active = pathname.startsWith(href);

@@ -205,3 +205,54 @@ test("Weg 8: Lernpfad zeigt zuerst Module, aufklappbar, Fortschritt bleibt (SIN-
   expect(await page.locator('[data-state="erledigt"]').count(), "erledigte Einheiten nach Neuladen").toBe(erledigt);
   expect(await summe(), "Modulzähler nach Neuladen").toBe(erledigt);
 });
+
+test("Weg 9: Einheit hat Zurück und behält den Stand nach Neuladen, Abmelden führt zur Startseite (SIN-1514)", async ({ page }) => {
+  await anmelden(page);
+  await page.goto("/lernpfad");
+  await page.locator('[data-state="heute"]').first().click();
+  await expect(page).toHaveURL(/\/einheit\//);
+  await expect(page.getByRole("link", { name: /Zurück zum Lernpfad/ })).toBeVisible();
+  const zaehler = page.getByText(/^Frage \d+ von \d+/);
+  const erste = (await zaehler.textContent()) ?? "";
+  if (!/^Frage (\d+) von \1\b/.test(erste)) {
+    await beantworten(page);
+    // Neuladen nach der Antwort, vor „Weiter“: dieselbe Frage, nichts doppelt gespeichert.
+    await page.reload();
+    await expect(page.getByText(/^Frage \d+ von \d+/)).toHaveText(erste);
+    await beantworten(page);
+    await page.getByRole("button", { name: "Weiter", exact: true }).click();
+    await expect(zaehler).not.toHaveText(erste);
+    const zweite = (await zaehler.textContent()) ?? "";
+    await page.reload();
+    await expect(page.getByText(/^Frage \d+ von \d+/)).toHaveText(zweite);
+  }
+  await page.goto("/profil");
+  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("Weg 10: Beispiel beenden beendet den Beispielmodus sichtbar (SIN-1514)", async ({ page }) => {
+  await page.goto("/lernpfad?demo=1");
+  const hinweis = page.getByRole("note").filter({ hasText: "Beispiel: Die Zahlen" });
+  await expect(hinweis).toBeVisible();
+  await hinweis.getByRole("link", { name: "Beispiel beenden" }).click();
+  await expect(page).toHaveURL(/\/\?demo=0$/);
+  await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem("cal-demo"))).toBeNull();
+  await expect(page.getByRole("note").filter({ hasText: "Beispiel: Die Zahlen" })).toHaveCount(0);
+});
+
+test("Weg 11: Die Navigation steht auf jeder Hauptseite fest unten, auch im langen Lernpfad (SIN-1514)", async ({ page }) => {
+  await anmelden(page);
+  const hoehe = page.viewportSize()!.height;
+  const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+  const unterkante = () => nav.evaluate((el) => Math.round(el.getBoundingClientRect().bottom));
+  for (const pfad of ["/lernpfad", "/wiederholung", "/pruefung", "/profil", "/einstellungen"]) {
+    await page.goto(pfad);
+    await expect(nav).toBeVisible();
+    expect(await unterkante(), `Navigation oben auf ${pfad}`).toBe(hoehe);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    expect(await unterkante(), `Navigation in der Mitte von ${pfad}`).toBe(hoehe);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    expect(await unterkante(), `Navigation am Ende von ${pfad}`).toBe(hoehe);
+  }
+});
