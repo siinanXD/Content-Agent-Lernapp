@@ -63,7 +63,7 @@ describe("reviewTileCopy (SIN-368)", () => {
   it("nichts fällig: nennt den nächsten echten Termin", () => {
     const copy = reviewTileCopy(0, 3, nextDueAt(stack));
     assert.equal(copy.title, "Heute nichts fällig");
-    assert.match(copy.text, /^Die nächsten Fragen kommen am \d{2}\.\d{2}\.\.$/);
+    assert.match(copy.text, /^3 Fragen im Stapel\. Die nächsten kommen am \d{2}\.\d{2}\.$/);
   });
 
   it("leerer Stapel: kein Termin, keine erfundene Zahl", () => {
