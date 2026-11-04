@@ -26,7 +26,8 @@ test("falsche Antwort → Feedback → Warum-Panel", async ({ page }) => {
   await page.getByRole("button", { name: "Warum?" }).click();
   const panel = page.getByTestId("why-panel");
   await expect(panel).toBeVisible();
-  await expect(panel).toContainText("KI-erklärt · geprüft");
+  await expect(panel).toContainText("KI-erklärt");
+  await expect(panel).not.toContainText("geprüft");
   await expect(feedback).toBeVisible();
   await page.screenshot({ path: "test-results/warum-panel.png" });
 

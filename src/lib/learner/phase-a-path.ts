@@ -4,6 +4,7 @@
  */
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import { type PathUnit, PLAYABLE_UNITS as SEED_UNITS } from "./playable-path";
+import { anzeigeText } from "./anzeige";
 import { normalizeQuestions } from "./normalize-question";
 import phaseAIndex from "./phase-a-index.json";
 import phaseATitles from "./phase-a-titles.json";
@@ -63,9 +64,14 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
       status: "open",
       statusLabel: "Noch offen",
       minutes: u.minutes ?? 5,
-      explanation: u.explanation ?? "",
-      sections: u.sections,
-      explanationSimple: u.explanationSimple,
+      explanation: anzeigeText(u.explanation ?? ""),
+      sections: u.sections && {
+        einstieg: anzeigeText(u.sections.einstieg),
+        kern: anzeigeText(u.sections.kern),
+        beispiel: anzeigeText(u.sections.beispiel),
+        merksatz: anzeigeText(u.sections.merksatz),
+      },
+      explanationSimple: u.explanationSimple && anzeigeText(u.explanationSimple),
       variant: u.variant ?? "standard",
       image: u.image,
       sourceLabel: `Quelle: ${
@@ -76,7 +82,11 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
       blockId: u.blockId ?? "M0-3",
       blockTitle: blockTitle(u.blockId),
       examAreas: u.questions[0]?.examAreas ?? [],
-      questions: normalizeQuestions(u.questions),
+      questions: normalizeQuestions(u.questions).map((q) => ({
+        ...q,
+        prompt: anzeigeText(q.prompt),
+        explanation: anzeigeText(q.explanation),
+      })),
     };
   }).filter((u) => u.questions.length > 0);
 }
