@@ -30,3 +30,5 @@ create policy learner_state_update_own on public.learner_state
 
 comment on table public.learner_state is
   'SIN-1451: Lernstand je Konto (events = Lernereignisse, stack = Leitner-Stapel). Der Browser bleibt Zwischenspeicher und führt beim Anmelden zusammen.';
+
+notify pgrst, 'reload schema';
