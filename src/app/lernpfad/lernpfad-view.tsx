@@ -430,10 +430,9 @@ export function LernpfadView({
             {modulNext ? (
               <Link
                 href={`/einheit/${modulNext.id}`}
-                className={`mt-2 flex min-h-[50px] items-center justify-between rounded-[var(--radius-md)] bg-[var(--color-brand-accent)] px-4 text-base font-semibold text-[var(--color-bg-hero)] ${focus}`}
+                className={`mt-2 flex min-h-[50px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-base font-semibold text-[var(--color-text-on-brand)] ${focus}`}
               >
-                Einheit starten
-                <span aria-hidden="true">→</span>
+                Einheit {modulNext.indexLabel} starten
               </Link>
             ) : null}
           </section>

@@ -22,4 +22,5 @@ test("Heute ist im Handyformat höchstens 1,2 Bildschirme hoch, Pfad zeigt ein M
   expect(hoehe).toBeLessThanOrEqual(844 * 1.2);
   await page.goto("/lernpfad/pfad");
   await expect(page.locator("section[data-module-state]")).toHaveCount(1);
+  await expect(page.getByRole("link", { name: /^Einheit \d+ starten$/ })).toBeVisible();
 });
