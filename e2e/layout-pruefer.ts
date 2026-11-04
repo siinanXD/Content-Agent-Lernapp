@@ -39,6 +39,8 @@ export function pruefeLayout(minZiel: number): Fund[] {
   const isVisible = (el: Element) => {
     const cs = getComputedStyle(el);
     if (cs.display === "none" || cs.visibility === "hidden" || Number(cs.opacity) === 0) return false;
+    // Inhalt eines geschlossenen <details> (content-visibility: hidden) sieht niemand, behält aber alte Maße.
+    if (!el.checkVisibility()) return false;
     const r = el.getBoundingClientRect();
     // Kleiner als 2 px (sr-only) oder ganz links vor der Seite (Honigtopf-Felder) sieht und erreicht niemand.
     return r.width >= 2 && r.height >= 2 && r.right > 0;

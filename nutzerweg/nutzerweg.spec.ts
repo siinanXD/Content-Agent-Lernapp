@@ -49,7 +49,8 @@ async function beantworten(page: Page, falsch = false): Promise<string> {
 
 async function anzahlErledigt(page: Page) {
   await page.goto("/lernpfad");
-  await expect(page.locator("[data-state]").first()).toBeVisible();
+  // Module sind eingeklappt (SIN-1513): sichtbar ist zuerst die Modulzeile, gezählt wird im ganzen Pfad.
+  await expect(page.getByTestId("modul").first()).toBeVisible();
   return page.locator('[data-state="erledigt"]').count();
 }
 
@@ -176,7 +177,36 @@ test("Weg 7: Die Navigation ist auf jeder Hauptseite und in der Prüfung sichtba
   await expect(nav, "Navigation fehlt in der laufenden Prüfung").toBeVisible();
 });
 
-test("Weg 8: Gerätewechsel: ein frischer Browser mit demselben Konto zeigt denselben Stand (SIN-1451)", async ({ page, browser }, testInfo) => {
+test("Weg 8: Lernpfad zeigt zuerst Module, aufklappbar, Fortschritt bleibt (SIN-1513)", async ({ page }) => {
+  await anmelden(page);
+  await einheitDurchspielen(page, false);
+  const erledigt = await anzahlErledigt(page);
+  expect(erledigt, "abgeschlossene Einheit ohne Haken im Lernpfad").toBeGreaterThan(0);
+  const moduleZeilen = page.getByTestId("modul");
+  const offen = page.locator('details[data-testid="modul"][open]');
+  expect(await offen.count(), "höchstens das Modul mit der nächsten Einheit ist offen").toBeLessThanOrEqual(1);
+  if ((await moduleZeilen.count()) > 1) {
+    const sichtbar = await page.locator("[data-state]:visible").count();
+    expect(sichtbar, "Einheiten sichtbar, obwohl Module eingeklappt sein sollen").toBeLessThan(await page.locator("[data-state]").count());
+    // Index festhalten: ein Locator mit :not([open]) würde nach dem Klick auf das nächste Modul zeigen.
+    const index = await moduleZeilen.evaluateAll((els) => els.findIndex((el) => !(el as HTMLDetailsElement).open));
+    const zu = moduleZeilen.nth(index);
+    await zu.locator("summary").click();
+    await expect(zu.locator("[data-state]").first()).toBeVisible();
+  }
+  // Zähler je Modul: Summe der erledigten Einheiten = Haken im Pfad, auch nach Neuladen.
+  const summe = async () => {
+    const texte = await moduleZeilen.locator("summary").allInnerTexts();
+    return texte.reduce((n, t) => n + Number(/(\d+) \/ \d+\s*$/.exec(t.trim())?.[1] ?? 0), 0);
+  };
+  expect(await summe(), "erledigt/gesamt je Modul").toBe(erledigt);
+  await page.reload();
+  await expect(moduleZeilen.first()).toBeVisible();
+  expect(await page.locator('[data-state="erledigt"]').count(), "erledigte Einheiten nach Neuladen").toBe(erledigt);
+  expect(await summe(), "Modulzähler nach Neuladen").toBe(erledigt);
+});
+
+test("Weg 9: Gerätewechsel: ein frischer Browser mit demselben Konto zeigt denselben Stand (SIN-1451)", async ({ page, browser }, testInfo) => {
   await anmelden(page);
   await einheitDurchspielen(page, false);
   const a = { haken: await anzahlErledigt(page), profil: await lerntage(page) };

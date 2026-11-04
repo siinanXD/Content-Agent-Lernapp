@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { loadPublishedCourseUnits } from "@/lib/learner/kurse";
 import { mapGeneratedToPathUnits, slimPathUnits } from "@/lib/learner/phase-a-path";
+import { mapTitlesForUnits } from "@/lib/learner/map-titles-server";
 import { getStorage } from "@/lib/storage";
 import { LernpfadView } from "../lernpfad-view";
 
@@ -10,12 +11,16 @@ export const revalidate = 300;
 export default async function KursLernpfadPage({ params }: { params: Promise<{ kurs: string }> }) {
   const { kurs } = await params;
   let units: ReturnType<typeof mapGeneratedToPathUnits> = [];
+  let titles: ReturnType<typeof mapTitlesForUnits>;
   try {
     const loaded = await loadPublishedCourseUnits(getStorage(), kurs);
-    units = mapGeneratedToPathUnits(loaded?.units ?? []);
+    titles = mapTitlesForUnits(loaded?.units ?? []);
+    units = mapGeneratedToPathUnits(loaded?.units ?? [], titles);
   } catch {
     /* 404 unten */
   }
   if (!units.length) notFound();
-  return <LernpfadView courseId={kurs} initialUnits={slimPathUnits(units)} />;
+  return (
+    <LernpfadView courseId={kurs} initialUnits={slimPathUnits(units)} modules={titles?.modules} />
+  );
 }
