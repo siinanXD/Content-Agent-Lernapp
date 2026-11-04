@@ -79,16 +79,13 @@ export default function EinheitPage() {
   let saved = { index: 0, correct: 0 };
   try {
     const s = mounted ? JSON.parse(window.sessionStorage.getItem(stateKey) ?? "null") : null;
-    if (s && Number.isInteger(s.index) && s.index > 0) saved = { index: s.index, correct: Number(s.correct) || 0 };
+    // Index hinter der letzten Frage (Inhalt geändert): von vorn beginnen.
+    if (Number.isInteger(s?.index) && s.index > 0 && s.index < (unit?.questions.length ?? 0)) saved = { index: s.index, correct: s.correct | 0 };
   } catch {}
   const [indexOverride, setIndexOverride] = useState<number | null>(null);
   const [countOverride, setCountOverride] = useState<number | null>(null);
-  // Gespeicherter Stand hinter der letzten Frage (Inhalt geändert): von vorn beginnen.
-  if (unit && saved.index >= unit.questions.length) saved = { index: 0, correct: 0 };
   const index = indexOverride ?? saved.index;
   const correctCount = countOverride ?? saved.correct;
-  const setIndex = (f: (i: number) => number) => setIndexOverride(f(index));
-  const setCorrectCount = (f: (c: number) => number) => setCountOverride(f(correctCount));
   const [revealed, setRevealed] = useState(false);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
@@ -198,7 +195,7 @@ export default function EinheitPage() {
   function onChecked(result: AnswerResult) {
     if (!question) return;
     if (result.selfChecked) {
-      if (result.correct) setCorrectCount((c) => c + 1);
+      if (result.correct) setCountOverride(correctCount + 1);
       setLastCorrect(result.correct);
       setAwaitSelfCheck(false);
       applyLeitner(question.id, result.correct, question.level === "anwenden");
@@ -219,7 +216,7 @@ export default function EinheitPage() {
       setAwaitSelfCheck(true);
       return;
     }
-    if (result.correct) setCorrectCount((c) => c + 1);
+    if (result.correct) setCountOverride(correctCount + 1);
     applyLeitner(question.id, result.correct, question.level === "anwenden");
     trackQuestionAnswered({
       unitId: unit!.id,
@@ -271,7 +268,7 @@ export default function EinheitPage() {
     }
     // Nur beim Wechsel speichern: Neuladen nach einer Antwort zählt die Frage nicht doppelt.
     window.sessionStorage.setItem(stateKey, JSON.stringify({ index: index + 1, correct: correctCount }));
-    setIndex((i) => i + 1);
+    setIndexOverride(index + 1);
     setRevealed(false);
     setLastCorrect(false);
     setAwaitSelfCheck(false);
@@ -282,7 +279,9 @@ export default function EinheitPage() {
     <MobileShell>
       <main className="flex flex-1 flex-col">
       <header className="px-6 pb-2 pt-12">
+        {/* prefetch aus: sonst lädt die Einheit das Bundle des Lernpfads mit und reißt das JS-Budget (SIN-1514). */}
         <Link
+          prefetch={false}
           href="/lernpfad"
           className="mb-2 inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
         >
