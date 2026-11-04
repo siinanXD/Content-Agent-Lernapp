@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signOut } from "@/lib/auth/browser-client";
 import { useState } from "react";
 import { useA11y } from "@/components/a11y/a11y-provider";
 import { BottomNav } from "@/components/learner/bottom-nav";
@@ -42,6 +44,7 @@ export default function EinstellungenPage() {
   const [message, setMessage] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const online = useOnline();
+  const router = useRouter();
 
   const shownReminder = reminder ?? storedReminder;
   const shownConsent =
@@ -223,6 +226,12 @@ export default function EinstellungenPage() {
           <p role="status" className="text-sm text-[var(--color-text-secondary)]">
             {message}
           </p>
+        </Section>
+
+        <Section title="Konto">
+          <Button variant="secondary" onClick={() => void signOut().then(() => router.push("/"))}>
+            Abmelden
+          </Button>
         </Section>
 
         <Section title="Rechtliches">

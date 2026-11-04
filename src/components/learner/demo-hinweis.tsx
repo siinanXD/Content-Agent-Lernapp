@@ -17,7 +17,7 @@ export function DemoHinweis() {
     >
       Beispiel: Die Zahlen und Ergebnisse dieser Ansicht sind erfunden. Es wird nichts gespeichert.{" "}
       <Link
-        href="/start?demo=0"
+        href="/?demo=0"
         className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
       >
         Beispiel beenden

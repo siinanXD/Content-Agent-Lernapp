@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnswerFeedback } from "@/components/ui/answer-feedback";
@@ -35,6 +36,7 @@ import {
   flushProgress,
 } from "@/lib/learner/progress-outbox";
 import { useOnline } from "@/lib/use-online";
+import { useAfterMount } from "@/lib/use-after-mount";
 import {
   trackExplanationReported,
   trackQuestionAnswered,
@@ -71,9 +73,24 @@ export default function EinheitPage() {
       : { unitId: params.unitId, unit: getUnit(params.unitId), fetched: false };
   const unit = current.unit;
   const loading = !unit && !current.fetched;
-  const [index, setIndex] = useState(0);
+  // Stand je Einheit in der Sitzung merken: Neuladen beginnt nicht bei Frage 1 (SIN-1514).
+  const stateKey = `cal-einheit-${params.unitId}`;
+  const mounted = useAfterMount(() => true, false);
+  let saved = { index: 0, correct: 0 };
+  try {
+    const s = mounted ? JSON.parse(window.sessionStorage.getItem(stateKey) ?? "null") : null;
+    if (s && Number.isInteger(s.index) && s.index > 0) saved = { index: s.index, correct: Number(s.correct) || 0 };
+  } catch {}
+  const [indexOverride, setIndexOverride] = useState<number | null>(null);
+  const [countOverride, setCountOverride] = useState<number | null>(null);
+  const index = indexOverride ?? saved.index;
+  const correctCount = countOverride ?? saved.correct;
+  const setIndex = (f: (i: number) => number) => setIndexOverride(f(index));
+  const setCorrectCount = (f: (c: number) => number) => setCountOverride(f(correctCount));
   const [revealed, setRevealed] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
+  useEffect(() => {
+    if (index > 0) window.sessionStorage.setItem(stateKey, JSON.stringify({ index, correct: correctCount }));
+  }, [stateKey, index, correctCount]);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
@@ -236,6 +253,7 @@ export default function EinheitPage() {
       },
     });
     progress.current.finished = true;
+    window.sessionStorage.removeItem(stateKey);
     trackUnitCompleted({
       unitId: unit!.id,
       unitTitle: unit!.title,
@@ -263,6 +281,12 @@ export default function EinheitPage() {
     <MobileShell>
       <main className="flex flex-1 flex-col">
       <header className="px-6 pb-2 pt-12">
+        <Link
+          href="/lernpfad"
+          className="mb-2 inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+        >
+          ‹ Zurück zum Lernpfad
+        </Link>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Einheit {unit.indexLabel} · {unit.minutes} Min · {unit.variant}
         </p>

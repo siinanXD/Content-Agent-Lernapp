@@ -4,6 +4,9 @@ import { useA11y } from "@/components/a11y/a11y-provider";
 import { BottomNav } from "@/components/learner/bottom-nav";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/auth/browser-client";
 import { Progress } from "@/components/ui/progress";
 import { StateView } from "@/components/ui/state-view";
 import { ToggleRow } from "@/components/ui/toggle-row";
@@ -44,6 +47,7 @@ export default function ProfilPage() {
     "laden",
   );
   const { prefs, setPrefs } = useA11y();
+  const router = useRouter();
 
   if (summary === "fehler") {
     return (
@@ -234,6 +238,9 @@ export default function ProfilPage() {
               <span>Datennutzung, Erinnerung und Daten</span>
               <span aria-hidden="true">›</span>
             </Link>
+            <Button variant="secondary" onClick={() => void signOut().then(() => router.push("/"))}>
+              Abmelden
+            </Button>
           </Tile>
         </Bento>
       </main>
