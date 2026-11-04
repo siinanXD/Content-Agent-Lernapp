@@ -74,6 +74,15 @@ test.describe("Layout-Prüfer erkennt Fehler", () => {
     expect(regeln).toEqual(expect.arrayContaining(["horizontal-scroll", "klickziel", "abgeschnitten"]));
   });
 
+  test("Inhalt eines geschlossenen details zählt nicht (SIN-1513)", async ({ page }) => {
+    await page.setContent(
+      `<main><details><summary style="min-height:44px">Modul</summary>
+       <a href="#a" style="display:block;min-height:44px">Einheit A</a></details>
+       <h2>Nächstes Modul</h2><p>Text darunter</p></main>`,
+    );
+    expect((await pruefe(page)).filter((f) => f.regel === "ueberlappung")).toEqual([]);
+  });
+
   test("Knopf hinter fixer Leiste", async ({ page }) => {
     await page.setContent(
       `<header style="position:fixed;left:0;right:0;top:0;height:5000px;background:#eee">Leiste</header>
