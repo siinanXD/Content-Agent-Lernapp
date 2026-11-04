@@ -49,7 +49,8 @@ async function beantworten(page: Page, falsch = false): Promise<string> {
 
 async function anzahlErledigt(page: Page) {
   await page.goto("/lernpfad");
-  await expect(page.locator("[data-state]").first()).toBeVisible();
+  // Module sind eingeklappt (SIN-1513): sichtbar ist zuerst die Modulzeile, gezählt wird im ganzen Pfad.
+  await expect(page.getByTestId("modul").first()).toBeVisible();
   return page.locator('[data-state="erledigt"]').count();
 }
 
@@ -159,4 +160,22 @@ test("Weg 7: Die Navigation ist auf jeder Hauptseite und in der Prüfung sichtba
   await page.goto("/pruefung");
   await page.getByRole("button", { name: "Prüfung starten" }).click();
   await expect(nav, "Navigation fehlt in der laufenden Prüfung").toBeVisible();
+});
+
+test("Weg 8: Lernpfad zeigt zuerst Module, aufklappbar, Fortschritt bleibt (SIN-1513)", async ({ page }) => {
+  await anmelden(page);
+  const erledigtVorher = await anzahlErledigt(page);
+  const moduleZeilen = page.getByTestId("modul");
+  const offen = page.locator('details[data-testid="modul"][open]');
+  expect(await offen.count(), "höchstens das Modul mit der nächsten Einheit ist offen").toBeLessThanOrEqual(1);
+  if ((await moduleZeilen.count()) > 1) {
+    const sichtbar = await page.locator("[data-state]:visible").count();
+    expect(sichtbar, "Einheiten sichtbar, obwohl Module eingeklappt sein sollen").toBeLessThan(await page.locator("[data-state]").count());
+    const zu = page.locator('details[data-testid="modul"]:not([open])').first();
+    await zu.locator("summary").click();
+    await expect(zu.locator("[data-state]").first()).toBeVisible();
+  }
+  await page.reload();
+  await expect(moduleZeilen.first()).toBeVisible();
+  expect(await page.locator('[data-state="erledigt"]').count(), "erledigte Einheiten nach Neuladen").toBe(erledigtVorher);
 });
