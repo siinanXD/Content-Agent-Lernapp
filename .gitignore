@@ -54,6 +54,7 @@ test-results/
 visual-referenz/
 visual-ergebnis/
 live-ergebnis/
+nutzerweg-ergebnis/
 playwright-report/
 # Laufprotokoll (SIN-296): vom Worker-Lauf erzeugt, als Artefakt hochgeladen
 laufprotokoll/

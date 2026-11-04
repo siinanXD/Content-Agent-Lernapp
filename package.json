@@ -33,6 +33,7 @@
     "api:test": "node scripts/api-test.mjs",
     "perf:budget": "node scripts/performance-budget.mjs",
     "live:api": "node scripts/autonomy/live-check.mjs api",
+    "test:nutzerweg": "playwright test --config playwright.nutzerweg.config.ts",
     "live:browser": "playwright test --config playwright.live.config.ts",
     "live:local": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:43123 playwright test --config playwright.live.config.ts",
     "live:report": "node scripts/autonomy/live-check.mjs report",

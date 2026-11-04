@@ -1,6 +1,7 @@
 # PR-Gate (SIN-207, ausgerollt mit SIN-208): prüft den PR-Titel, setzt das
 # Risiko-Label automatisch und schaltet Auto-Merge ein.
 #
+#   Ohne Urteil `belegt` der Belegprüfung für den Commit (SIN-1481) nie Auto-Merge.
 #   risk:low (Standard)    → Auto-Merge (Squash), sobald alle Pflicht-Checks grün sind, ohne Frist (SIN-811)
 #   risk:medium            → Auto-Merge nach 30 Min Einspruchsfrist (SIN-547, SIN-811)
 #   risk:high              → Job `merge-gate` endet rot („wartet auf Freigabe von Sinan“) und sperrt den
@@ -21,6 +22,8 @@ name: pr-gate
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  issue_comment:
+    types: [created]
   # SIN-240: Ist `ci` fertig, wird das Gate neu bewertet (Job `regate`). Ein eigener Lauf dieser Datei hinge nicht
   # am Head-Commit des PRs, darum startet `regate` den letzten pr-gate-Lauf des Commits neu.
   workflow_run:
@@ -42,6 +45,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # SIN-1481: Steht das Urteil der Belegprüfung am PR, bewertet der letzte pr-gate-Lauf des Commits frisch.
+  # issue_comment läuft mit der Fassung vom Standard-Branch; nur Kommentare des Repo-Owners zählen.
+  # Bekannte Grenze: Läuft der pr-gate-Lauf noch, wenn das Urteil kommt, startet hier nichts; hat er die Kommentare schon gelesen,
+  # bleibt Auto-Merge aus, bis ein anderes Ereignis (Label, edited, ci fertig) das Gate neu bewertet.
+  beleg-anstoss:
+    if: github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '<!-- belegpruefung:') && github.event.comment.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Letzten pr-gate-Lauf des Commits neu starten
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.AGENT_WORKFLOW_TOKEN || github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: context.issue.number });
+            if (pr.state !== "open" || pr.draft) { core.info("PR geschlossen oder Draft: nichts zu tun."); return; }
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner, repo, workflow_id: "pr-gate.yml", event: "pull_request", head_sha: pr.head.sha, per_page: 20,
+            });
+            const latest = data.workflow_runs.sort((a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt)[0];
+            if (!latest) { core.info("Kein pr-gate-Lauf zu diesem Commit."); return; }
+            if (latest.status !== "completed") { core.info("pr-gate läuft noch und bewertet frisch."); return; }
+            await github.rest.actions.reRunWorkflow({ owner, repo, run_id: latest.id });
+            core.info(`pr-gate-Lauf ${latest.id} neu gestartet (PR #${pr.number}).`);
+
   # Gate neu bewerten, wenn CI fertig ist: Freigabe (`freigegeben`) gilt, egal ob vor oder nach Grün gesetzt,
   # und ein vergessenes Auto-Merge wird nachgeholt. Das Neustarten hängt am selben Commit, nicht an einem Label-Ereignis.
   regate:
@@ -382,7 +411,16 @@ jobs:
               try { await agent.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: "einspruch:2h" }); }
               catch (e) { if (e.status !== 404) throw e; }
             }
-            const allowAutoMerge = !pr.draft && !labels.includes(NO_AUTOMERGE) && !fristOffen
+            // SIN-1481: Auto-Merge nur mit dem Urteil `belegt` der Belegprüfung für genau diesen Commit, vom Repo-Owner.
+            // Das jüngste Urteil zählt; der Check bleibt grün, von Hand mergen kann Sinan weiterhin.
+            // Nur die erste Zeile: Der Prüfauftrag enthält beide Marker, ein zitierter `belegt` darf nicht zählen.
+            const ersteZeile = (c) => (c.body ?? "").split(/\r?\n/)[0].trim();
+            const urteile = comments
+              .filter((c) => c.user?.login === owner && ersteZeile(c).startsWith(`<!-- belegpruefung:${pr.head.sha}:`))
+              .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+            const belegt = urteile.length > 0 && ersteZeile(urteile[0]) === `<!-- belegpruefung:${pr.head.sha}:belegt -->`;
+            core.info(`Belegprüfung ${pr.head.sha.slice(0, 7)}: ${belegt ? "belegt" : urteile.length ? "beanstandet" : "fehlt"}`);
+            const allowAutoMerge = !pr.draft && belegt && !labels.includes(NO_AUTOMERGE) && !fristOffen
               && (risk !== "risk:high" || approved);
 
             // Steckbrief (SIN-248): ein Kommentar für jeden PR, wird aktualisiert statt neu gepostet.
