@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Bento, Tile } from "@/components/ui/tile";
 import { MobileShell } from "@/components/learner/mobile-shell";
@@ -13,9 +13,13 @@ import {
 } from "@/components/learner/question-panel";
 import {
   getExamQuestions,
+  examSeconds,
   listExamParts,
   scoreByArea,
 } from "@/lib/learner/exam";
+import { isDemoMode } from "@/lib/learner/demo-modus";
+import { fetchPublishedPathUnits, phaseAPathUnits } from "@/lib/learner/phase-a-path";
+import type { PathUnit } from "@/lib/learner/playable-path";
 import { toWrongAnswer, type WrongAnswer } from "@/lib/learner/exam-result";
 import { loadStack, markWrong, saveStack } from "@/lib/learner/leitner";
 import { loadSession, saveSession } from "@/lib/learner/session";
@@ -96,11 +100,24 @@ function PruefungInner() {
   >([]);
 
   const part = parts.find((p) => p.id === partId) ?? parts[0];
+  // Nur veröffentlichte Kursfragen; Beispieldaten nur im ausdrücklichen Beispielmodus (SIN-1449).
+  const [units, setUnits] = useState<PathUnit[] | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    const load = isDemoMode()
+      ? Promise.resolve(phaseAPathUnits())
+      : fetchPublishedPathUnits();
+    void load.then((u) => live && setUnits(u));
+    return () => {
+      live = false;
+    };
+  }, []);
   const questions = useMemo(
-    () => (part ? getExamQuestions(part.id).slice(0, Math.min(8, part.questionTarget || 8)) : []),
-    [part],
+    () => (part && units ? getExamQuestions(part.id, units) : []),
+    [part, units],
   );
   const question = questions[index];
+  const finishing = useRef(false);
 
   useEffect(() => {
     if (!started || paused || !part?.durationMinutes) return;
@@ -118,8 +135,9 @@ function PruefungInner() {
 
   function start() {
     if (!part?.durationMinutes) return;
-    // Demo timer: 1 second per exam minute (real duration shown in label).
-    setSecondsLeft(part.durationMinutes);
+    if (questions.length === 0) return;
+    finishing.current = false;
+    setSecondsLeft(examSeconds(part.durationMinutes));
     setStarted(true);
     setPaused(false);
     setIndex(0);
@@ -151,7 +169,8 @@ function PruefungInner() {
   }
 
   function finish() {
-    if (!part) return;
+    if (!part || finishing.current) return;
+    finishing.current = true;
     const areaResults = scoreByArea(answers, part.gebiete);
     const correct = answers.filter((a) => a.correct).length;
     const wrongAnswers = answers.flatMap((a) => (a.wrong ? [a.wrong] : []));
@@ -171,7 +190,7 @@ function PruefungInner() {
         unitId: `exam-${part.id}`,
         unitTitle: part.bereich,
         correct,
-        total: answers.length || questions.length,
+        total: questions.length,
         points: correct * 10,
         kind: "exam",
         areaResults,
@@ -191,6 +210,14 @@ function PruefungInner() {
     setRevealed(false);
   }
 
+  // Zeit abgelaufen: die Prüfung endet mit dem, was beantwortet ist (so steht es auch auf der Startseite).
+  const expired = started && secondsLeft === 0;
+  useEffect(() => {
+    if (expired) finish();
+    // finish liest nur den aktuellen Stand; einmal beim Ablauf genügt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expired]);
+
   if (!part) {
     return (
       <MobileShell>
@@ -207,7 +234,7 @@ function PruefungInner() {
         <main className="flex flex-1 flex-col gap-[var(--bento-gap)] px-6 pb-6 pt-12">
           <Tile tone="hero" className="!p-[var(--bento-pad)]">
             <p className="mono-label text-[var(--color-text-muted-on-dark)]">
-              {part.durationMinutes} Min · {Math.min(8, part.questionTarget)} Fragen
+              {part.durationMinutes} Min · {units === undefined ? "…" : questions.length} Fragen
             </p>
             <h1
               className="text-[28px] font-bold leading-9"
@@ -216,9 +243,25 @@ function PruefungInner() {
               Prüfungsmodus
             </h1>
             <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
-              Schriftlicher Teil wie in der Abschlussprüfung. Die Zeit läuft sichtbar, Pause ist erlaubt.
+              Schriftlicher Teil wie in der Abschlussprüfung. Die Zeit läuft sichtbar, Pause ist
+              erlaubt. Läuft die Zeit ab, endet die Prüfung mit den bisherigen Antworten.
             </p>
-            <Button onClick={start} className="mt-2">
+            {units !== undefined && questions.length === 0 ? (
+              <p role="status" className="text-[15px]">
+                Für diesen Teil gibt es noch keine veröffentlichten Fragen im Kurs. Die Prüfung
+                startet, sobald welche da sind.
+              </p>
+            ) : units && questions.length < part.questionTarget ? (
+              <p role="status" className="text-[15px]">
+                Der Kurs hat bisher {questions.length} von {part.questionTarget} Fragen für diesen
+                Teil. Es wird nichts aufgefüllt, die Prüfung ist kürzer, die Zeit bleibt gleich.
+              </p>
+            ) : null}
+            <Button
+              onClick={start}
+              className="mt-2"
+              disabled={units === undefined || questions.length === 0}
+            >
               Prüfung starten
             </Button>
           </Tile>
@@ -343,7 +386,6 @@ function PruefungInner() {
       ) : (
         <main className="px-6 py-8">
           <p>Keine Fragen für diesen Teil.</p>
-          <Button onClick={finish}>Ergebnis anzeigen</Button>
         </main>
       )}
     </MobileShell>

@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1449 | SIN-1449 Prüfung: echte Zeit, echte Fragen | [SIN-1449-pruefung-echte-zeit.md](decisions/SIN-1449-pruefung-echte-zeit.md) |
 | SIN-1446 | SIN-1446 — Lernpfad: Stand aus Lernereignissen | [SIN-1446-lernpfad-echter-stand.md](decisions/SIN-1446-lernpfad-echter-stand.md) |
 | SIN-1197 | SIN-1197 Anmeldung nach Standard: Passwort, Registrieren, Passwort vergessen, Google | [SIN-1197-anmeldung-standard.md](decisions/SIN-1197-anmeldung-standard.md) |
 | SIN-1191 | SIN-1191 · Langfuse: Richter-Scores je Frage von 6 auf 2 | [SIN-1191-langfuse-scores.md](decisions/SIN-1191-langfuse-scores.md) |
