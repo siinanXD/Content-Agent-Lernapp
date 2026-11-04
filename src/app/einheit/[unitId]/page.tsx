@@ -22,6 +22,7 @@ import {
   unitExplanation,
 } from "@/lib/learner/playable-path";
 import { fetchPhaseAPathUnits } from "@/lib/learner/phase-a-path";
+import { anzeigeKopfzeile } from "@/lib/learner/anzeige";
 import { loadSession, saveSession } from "@/lib/learner/session";
 import { recordLearningEvent } from "@/lib/learner/streak";
 import {
@@ -168,6 +169,7 @@ export default function EinheitPage() {
   const question = unit.questions[index];
   const total = unit.questions.length;
   const explanation = unitExplanation(unit, prefs.simpleLanguage);
+  const kopfzeile = anzeigeKopfzeile([unit.moduleTitle, unit.blockTitle]);
 
   function applyLeitner(qid: string, correct: boolean, anwenden: boolean) {
     let stack = loadStack();
@@ -264,7 +266,7 @@ export default function EinheitPage() {
       <main className="flex flex-1 flex-col">
       <header className="px-6 pb-2 pt-12">
         <p className="text-sm text-[var(--color-text-secondary)]">
-          Einheit {unit.indexLabel} · {unit.minutes} Min · {unit.variant}
+          Einheit {unit.indexLabel} · {unit.minutes} Min
         </p>
         <h1
           className="mt-1 text-[26px] font-bold text-[var(--color-text-primary)]"
@@ -272,9 +274,9 @@ export default function EinheitPage() {
         >
           {unit.title}
         </h1>
-        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-          {unit.moduleTitle} · {unit.blockTitle}
-        </p>
+        {kopfzeile ? (
+          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{kopfzeile}</p>
+        ) : null}
       </header>
 
       {online ? null : (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MobileShell } from "@/components/learner/mobile-shell";
+import { SourceChip } from "@/components/ui/source-chip";
 import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
 
 const focusRing =
@@ -40,13 +41,7 @@ export default function QuellenPage() {
           {lernfeld.units.map((u) => (
             <li key={u.id} className="bento-tile !gap-1">
               <p className="bento-label">Einheit · {u.title}</p>
-              <a
-                href={u.sourceUrl}
-                rel="noopener noreferrer"
-                className={`inline-flex min-h-11 items-center break-all text-[15px] font-medium text-[var(--color-brand-primary)] underline underline-offset-2 ${focusRing}`}
-              >
-                {u.sourceUrl}
-              </a>
+              <SourceChip source={u.sourceUrl} />
               <p className="text-sm text-[var(--color-text-secondary)]">
                 Abgerufen am{" "}
                 <time dateTime={u.sourceFetchedAt}>{formatDate(u.sourceFetchedAt)}</time>

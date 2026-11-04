@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 /**
  * „Warum?“-Panel (Regeln 2026 §4): KI-Erklärung von unten, mit Quelle und Kennzeichnung.
  * Nicht modal: der Inhalt darüber bleibt sichtbar und lesbar. Esc oder „Schließen“ beendet es.
- * „KI-erklärt · geprüft“ steht nur, wenn eine Quelle vorliegt (ohne Quelle keine Erklärung).
+ * „KI-erklärt“ steht nur, wenn eine Quelle vorliegt (ohne Quelle keine Erklärung).
  */
 export function WhyPanel({
   explanation,
@@ -55,7 +55,7 @@ export function WhyPanel({
           Warum?
         </h2>
         <p className="mono-label text-[var(--color-text-secondary)]">
-          KI-erklärt · geprüft
+          KI-erklärt
         </p>
       </div>
       <p className="text-[15px] leading-6 text-[var(--color-text-primary)]">

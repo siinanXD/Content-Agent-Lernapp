@@ -6,7 +6,7 @@
  */
 
 // SIN-885: nur interne Prüf-Formulierungen. „Stichprobe“ und „Abgleich mit dem …“ sind Fachsprache (Prüftechnik, QS) und kamen 34× als echter Lerntext vor.
-export const PRUEFHINWEIS_MUSTER = /gegenzuprüfen|abgleich mit (?:der |einer )?stichprobe|bei der stichprobe|menschliche[nr]? stichprobe|stichprobe vor (?:dem )?(?:publish|veröffentlich)|Quelle: KMK/i;
+export const PRUEFHINWEIS_MUSTER = /gegenzuprüfen|abgleich mit (?:der |einer )?stichprobe|bei der stichprobe|menschliche[nr]? stichprobe|stichprobe vor (?:dem )?(?:publish|veröffentlich)|vor (?:der )?publikation|Quelle: KMK/i;
 
 export const ELEKTRO_MUSTER = /spannungsfrei|verdrahte|anklemm/i;
 export const ELEKTRO_VORHANDEN = /Elektrofachkr(?:aft|äfte)|elektrotechnisch unterwiesen/i;
