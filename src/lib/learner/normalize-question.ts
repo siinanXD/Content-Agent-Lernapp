@@ -12,18 +12,36 @@ const TYPE_ALIASES: Record<string, QuestionType> = {
   single: "auswahl",
   single_choice: "auswahl",
   multiple_choice: "auswahl",
+  choice: "auswahl",
+  choices: "auswahl",
+  true_false: "auswahl",
   zuordnen: "zuordnen",
   matching: "zuordnen",
   match: "zuordnen",
+  pairs: "zuordnen",
   lueckentext: "lueckentext",
   fill: "lueckentext",
   fill_blank: "lueckentext",
+  fill_in_blank: "lueckentext",
+  fill_in_blanks: "lueckentext",
+  blank: "lueckentext",
+  blanks: "lueckentext",
+  cloze: "lueckentext",
   reihenfolge: "reihenfolge",
   ordering: "reihenfolge",
   order: "reihenfolge",
+  steps: "reihenfolge",
   rechnen: "rechnen",
   numeric: "rechnen",
+  numeric_input: "rechnen",
 };
+
+/**
+ * SIN-1532: Die Tabelle `questions` kennt nur `choices` und `correct`. Bei den Schreibweisen oben stehen
+ * Paare, Schritte und Lösungslisten in `correct`. Für die fünf Typnamen selbst bleibt es beim bisherigen Lesen.
+ */
+const WAHR_FALSCH = ["Wahr", "Falsch"];
+const GAP_MARK = /_{2,}/g;
 
 /** Normalisierter Vergleich für Lücken: ohne Groß/Klein und Leerzeichen am Rand. */
 export function normalizeAnswer(s: string): string {
@@ -120,6 +138,12 @@ function normalizeGaps(blanks: unknown, correct: string | string[]): Gaps | null
   return gaps;
 }
 
+/** Mehrere Lösungen ohne `blanks`: nur eindeutig, wenn der Text genauso viele Lücken (`____`) hat. */
+function gapsFromAnswers(prompt: string, answers: string[]): Gaps | null {
+  if ((prompt.match(GAP_MARK) ?? []).length !== answers.length) return null;
+  return answers.map((a, i) => ({ id: String(i + 1), options: [], accepted: [a] }));
+}
+
 function reportSkipped(raw: unknown, reason: string): void {
   // Dynamisch, damit Pipeline-Skripte (ohne Next.js) das Modul ohne Sentry-Browser-Code laden.
   void import("@sentry/nextjs")
@@ -161,14 +185,23 @@ function build(raw: unknown): PathQuestion | string {
   const id = str(raw.id);
   const prompt = str(raw.prompt);
   if (!id || prompt === null) return "Id oder Fragetext fehlt";
-  const type = TYPE_ALIASES[String(raw.type ?? "").trim().toLowerCase()];
+  const rawType = String(raw.type ?? "").trim().toLowerCase();
+  const type = TYPE_ALIASES[rawType];
   if (!type) return `unbekannter Typ ${String(raw.type)}`;
+  const aliased = type !== rawType;
   const correctShape = normalizeCorrect(raw.correct);
   // SIN-477: Zuordnen nutzt nur `pairs`. `correct` kommt dort oft als Paarliste und wird nicht gebraucht.
   if (correctShape === null && type !== "zuordnen") return "unbekannte Form von correct";
-  const correct = correctShape ?? "";
-  const choices = raw.choices === undefined ? undefined : strList(raw.choices);
+  let correct = correctShape ?? "";
+  let choices = raw.choices === undefined ? undefined : strList(raw.choices);
   if (choices === null) return "unbekannte Form von choices";
+  if (rawType === "true_false") {
+    // Ohne choices gelten Wahr/Falsch; die Antwort wird auf die Schreibweise der Auswahl gebracht.
+    choices ??= WAHR_FALSCH;
+    const hit = choices.find((c) => typeof correct === "string" && normalizeAnswer(c) === normalizeAnswer(correct));
+    if (!hit) return "true_false: correct passt zu keiner Auswahl";
+    correct = hit;
+  }
 
   const out: PathQuestion = {
     id,
@@ -187,19 +220,25 @@ function build(raw: unknown): PathQuestion | string {
 
   if (type === "auswahl" && !choices?.length) return "Auswahl ohne choices";
   if (type === "zuordnen") {
-    const pairs = normalizePairs(raw.pairs);
+    const pairs = normalizePairs(raw.pairs ?? (aliased ? raw.correct : undefined));
     if (!pairs?.length) return "unbekannte Form von pairs";
     out.pairs = pairs;
   }
   if (type === "reihenfolge") {
-    const steps = strList(raw.steps);
+    const steps = strList(raw.steps ?? (aliased ? raw.correct : undefined));
     if (!steps?.length) return "unbekannte Form von steps";
     out.steps = steps;
   }
   if (type === "lueckentext") {
-    const gaps = normalizeGaps(raw.blanks, correct);
+    const mehrere = aliased && raw.blanks === undefined && Array.isArray(correct) && correct.length > 1;
+    const gaps = Array.isArray(correct) && mehrere ? gapsFromAnswers(prompt, correct) : normalizeGaps(raw.blanks, correct);
     if (!gaps) return "unbekannte Form von blanks";
     out.gaps = gaps;
+    if (mehrere) {
+      let n = 0;
+      out.prompt = prompt.replace(GAP_MARK, () => `[Lücke ${++n}]`);
+      return out;
+    }
     // `{{id}}` im Fragetext wird zu "[Lücke n]".
     out.prompt = prompt.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (m: string, key: string) => {
       const i = gaps.findIndex((g) => g.id === key);
