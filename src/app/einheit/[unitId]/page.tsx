@@ -83,14 +83,13 @@ export default function EinheitPage() {
   } catch {}
   const [indexOverride, setIndexOverride] = useState<number | null>(null);
   const [countOverride, setCountOverride] = useState<number | null>(null);
+  // Gespeicherter Stand hinter der letzten Frage (Inhalt geändert): von vorn beginnen.
+  if (unit && saved.index >= unit.questions.length) saved = { index: 0, correct: 0 };
   const index = indexOverride ?? saved.index;
   const correctCount = countOverride ?? saved.correct;
   const setIndex = (f: (i: number) => number) => setIndexOverride(f(index));
   const setCorrectCount = (f: (c: number) => number) => setCountOverride(f(correctCount));
   const [revealed, setRevealed] = useState(false);
-  useEffect(() => {
-    if (index > 0) window.sessionStorage.setItem(stateKey, JSON.stringify({ index, correct: correctCount }));
-  }, [stateKey, index, correctCount]);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
@@ -270,6 +269,8 @@ export default function EinheitPage() {
       finish(correctCount);
       return;
     }
+    // Nur beim Wechsel speichern: Neuladen nach einer Antwort zählt die Frage nicht doppelt.
+    window.sessionStorage.setItem(stateKey, JSON.stringify({ index: index + 1, correct: correctCount }));
     setIndex((i) => i + 1);
     setRevealed(false);
     setLastCorrect(false);

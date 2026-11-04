@@ -160,3 +160,24 @@ test("Weg 7: Die Navigation ist auf jeder Hauptseite und in der Prüfung sichtba
   await page.getByRole("button", { name: "Prüfung starten" }).click();
   await expect(nav, "Navigation fehlt in der laufenden Prüfung").toBeVisible();
 });
+
+test("Weg 8: Einheit hat Zurück und behält den Stand nach Neuladen, Abmelden führt zur Startseite (SIN-1514)", async ({ page }) => {
+  await anmelden(page);
+  await page.goto("/lernpfad");
+  await page.locator('[data-state="heute"]').first().click();
+  await expect(page).toHaveURL(/\/einheit\//);
+  await expect(page.getByRole("link", { name: /Zurück zum Lernpfad/ })).toBeVisible();
+  const zaehler = page.getByText(/^Frage \d+ von \d+/);
+  const erste = (await zaehler.textContent()) ?? "";
+  if (!/^Frage (\d+) von \1\b/.test(erste)) {
+    await beantworten(page);
+    await page.getByRole("button", { name: "Weiter", exact: true }).click();
+    await expect(zaehler).not.toHaveText(erste);
+    const zweite = (await zaehler.textContent()) ?? "";
+    await page.reload();
+    await expect(page.getByText(/^Frage \d+ von \d+/)).toHaveText(zweite);
+  }
+  await page.goto("/profil");
+  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
