@@ -293,7 +293,7 @@ export default function WiederholungPage() {
             </h1>
             <p className="text-[15px] text-[var(--color-text-soft-on-dark)]">
               {nextDue
-                ? `Heute sind keine fälligen Fragen übrig. Die nächsten kommen am ${formatDueDate(nextDue)}.`
+                ? `Heute sind keine fälligen Fragen übrig. Die nächsten kommen am ${formatDueDate(nextDue)}`
                 : "Heute sind keine fälligen Fragen übrig. Falsche und Anwenden-Fragen landen hier."}
             </p>
             {stackSize(stack) > 0 ? (
@@ -343,7 +343,7 @@ export default function WiederholungPage() {
           className="mt-1 text-[26px] font-bold text-[var(--color-text-primary)]"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          Fällige Fragen
+          {practice ? "Stapel üben" : "Fällige Fragen"}
         </h1>
         <div className="mt-3">
           <Progress

@@ -67,5 +67,5 @@ export function reviewTileCopy(
   if (stackCount === 0 || !nextDue) {
     return { title: "Heute nichts fällig", text: "Falsche Antworten und Anwenden-Fragen landen hier." };
   }
-  return { title: "Heute nichts fällig", text: `${stackCount} ${stackCount === 1 ? "Frage" : "Fragen"} im Stapel. Die nächsten kommen am ${formatDueDate(nextDue)}.` };
+  return { title: "Heute nichts fällig", text: `${stackCount} ${stackCount === 1 ? "Frage" : "Fragen"} im Stapel. Die nächsten kommen am ${formatDueDate(nextDue)}` };
 }
