@@ -54,7 +54,7 @@ export function renderReport(map, liveState) {
     "",
     `Datei \`${DEFAULT_FILE_KEY}\`. Zuordnung: \`${MAP_PATH}\`, Prüfung: \`node scripts/autonomy/figma-abdeckung.mjs\` (läuft in \`npm test\`). Erzeugt mit \`--write\`, nicht von Hand ändern.`,
     "",
-    "„umgesetzt“ heißt: Route oder Komponente existiert im Code. Der Abgleich der Werte (Farben, Abstände, Texte) ist `figma.mjs --node` und nicht Teil dieser Prüfung.",
+    "„umgesetzt“ heißt: Route oder Komponente existiert im Code. Der Abgleich der Werte (Farben, Abstände, Texte) ist `figma.mjs --node` und nicht Teil dieser Prüfung. „umgesetzt“ sagt nichts darüber, wie die Seite aussieht oder ob der Ablauf fachlich stimmt; das prüfen `npm run test:nutzerweg` und die Klickprobe im Leitstand.",
     "",
     `Abgleich mit der Figma-Datei (Bericht ohne Token erzeugt, Live-Abgleich nur in der Konsole): ${liveState}`,
     "",

@@ -187,3 +187,12 @@ test("401er der API hinter dem Login werden zu einem Fund mit Ursache (SIN-1210)
   assert.match(aus[1].text, /NEXT_PUBLIC_SUPABASE_URL/);
   assert.equal(sitzungAbgelehnt([funde[2]], "/ausbilder").length, 1);
 });
+
+test("Bypass-Header für die Vercel-Schutzseite: Schlüssel plus Cookie, ohne Schlüssel keiner (SIN-1209)", async () => {
+  const { bypassHeader } = await import("../../../scripts/pr-crawler/lauf.mjs");
+  assert.deepEqual(bypassHeader("geheim"), { "x-vercel-protection-bypass": "geheim", "x-vercel-set-bypass-cookie": "true" });
+  assert.equal(bypassHeader(""), undefined);
+  assert.equal(bypassHeader(undefined), undefined);
+  // Der Workflow reicht das Secret an den Crawler-Schritt durch (Job-Env).
+  assert.match(readFileSync(".github/workflows/pr-crawler.yml", "utf8"), /VERCEL_AUTOMATION_BYPASS_SECRET: \$\{\{ secrets\.VERCEL_AUTOMATION_BYPASS_SECRET \}\}/);
+});
