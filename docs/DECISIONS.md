@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1532 | SIN-1532: Fragetypen-Schreibweisen beim Lesen | [SIN-1532-fragetypen-schreibweisen.md](decisions/SIN-1532-fragetypen-schreibweisen.md) |
 | SIN-1513 | SIN-1513: Modul und Block im Lernpfad ohne Schema | [SIN-1513-modul-block-lernpfad.md](decisions/SIN-1513-modul-block-lernpfad.md) |
 | SIN-1451 | SIN-1451: Lernstand gehört zum Konto | [SIN-1451-lernstand-konto.md](decisions/SIN-1451-lernstand-konto.md) |
 | SIN-1450 | SIN-1450: Wiederholung sofort üben | [SIN-1450-wiederholung-ueben.md](decisions/SIN-1450-wiederholung-ueben.md) |
