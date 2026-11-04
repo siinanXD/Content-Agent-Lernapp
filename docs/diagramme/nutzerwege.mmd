@@ -8,13 +8,16 @@ flowchart LR
     A2b -- "Industriekaufmann/-frau" --> A4
     A2b -- "weiterer veröffentlichter Beruf" --> A4b["Lernpfad (/lernpfad/kurs)"]
     A4b --> A5
-    A3 --> A4["Lernpfad (/lernpfad)"]
+    A3 --> A4["Heute (/lernpfad)"]
+    A4 <--> A4p["Pfad: ein Modul (/lernpfad/pfad)"]
+    A4p --> A5
     A4 --> A5["Einheit (/einheit/id)"]
     A5 --> A6["Ergebnis (/ergebnis)"]
     A6 --> A7["Wiederholung (/wiederholung)"]
     A7 --> A4
     A6 --> A4
     A4 --> A8["Prüfung (/pruefung)"]
+    A0["Angemeldet (/start)"] --> A4
     A8 --> A9["Prüfungsergebnis (/pruefung/ergebnis)"]
   end
   subgraph Bildungsträger

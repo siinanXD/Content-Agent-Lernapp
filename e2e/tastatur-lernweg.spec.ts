@@ -70,7 +70,7 @@ test("Lernweg komplett mit der Tastatur", async ({ page, context }) => {
 
   // Lernpfad → Einheit
   await expect(page).toHaveURL(/\/lernpfad$/);
-  await activate(page, page.locator('[data-state="heute"]').first(), "Heutige Einheit");
+  await activate(page, page.getByRole("link", { name: "Einheit starten" }), "Einheit starten");
   await expect(page).toHaveURL(/\/einheit\//);
 
   // Einheit: jede Frage per Tastatur beantworten.

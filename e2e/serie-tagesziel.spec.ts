@@ -80,7 +80,7 @@ test("Tagesziel erreicht: die vierte Einheit des Tages schließt den Ring", asyn
   );
   await expect(page.locator('[data-kind="serie"]')).toContainText("3 Tage");
 
-  await page.locator('[data-state="heute"]').first().click();
+  await page.getByRole("link", { name: "Einheit starten" }).click();
   await page.locator("button[aria-pressed]").first().click();
   await page.getByRole("button", { name: "Antwort prüfen" }).click();
   await page.getByRole("button", { name: "Ergebnis anzeigen", exact: true }).click();

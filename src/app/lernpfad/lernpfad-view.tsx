@@ -125,6 +125,7 @@ export function LernpfadView({
     pathModules.find((m) => m.blocks.some((b) => b.units.some((u) => u.status !== "done"))) ??
     pathModules.find((m) => m.units > 0) ??
     pathModules[0];
+  const currentDone = current?.blocks.flatMap((b) => b.units).filter((u) => u.status === "done").length ?? 0;
   const online = useOnline();
   const days = summary === "fehler" ? 0 : summary.streak.days;
 
@@ -163,15 +164,25 @@ export function LernpfadView({
     <MobileShell wide>
       <ConsentBanner />
       <main className="flex flex-1 flex-col">
-      <header className="px-6 pb-4 pt-11 md:px-12">
-        <p className="bento-label uppercase">{ansicht === "heute" ? hello?.weekday : "Modul für Modul"}</p>
-        <h1
-          className="mt-0.5 text-[24px] font-bold leading-[31px] text-[var(--color-text-primary)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {ansicht === "heute" ? (hello?.greeting ?? "Hallo") : "Dein Pfad"}
-        </h1>
-        <nav aria-label="Ansicht" className="mt-3 flex gap-2">
+      <header className="flex items-start justify-between gap-3 px-6 pb-4 pt-11 md:px-12">
+        <div className="min-w-0">
+          <p className="bento-label uppercase">
+            {ansicht === "heute" ? hello?.weekday : current ? `Modul ${current.moduleId}` : "Modul"}
+          </p>
+          <h1
+            className="mt-0.5 text-[24px] font-bold leading-[31px] text-[var(--color-text-primary)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {ansicht === "heute" ? (hello?.greeting ?? "Hallo") : "Lernpfad"}
+          </h1>
+          {ansicht === "pfad" && current ? (
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              {current.moduleTitle}
+              {current.units > 0 ? ` · ${currentDone} von ${current.units} Einheiten` : ""}
+            </p>
+          ) : null}
+        </div>
+        <nav aria-label="Ansicht" className="flex shrink-0 gap-2">
           {(
             [
               ["heute", "Heute", courseId ? `/lernpfad/${courseId}` : "/lernpfad"],
@@ -295,9 +306,7 @@ export function LernpfadView({
             >
               Prüfungsreife
             </h2>
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Anteil der erledigten Einheiten. Ob du zur Prüfung zugelassen wirst, entscheidet ein Mensch.
-            </p>
+            <p className="text-xs text-[var(--color-text-secondary)]">Anteil erledigter Einheiten. Zulassung entscheidet ein Mensch.</p>
             <ul className="mt-1 flex flex-col gap-2.5">
               {readiness.map((r) => (
                 <li key={r.moduleId} className="flex items-center gap-2.5">
@@ -337,26 +346,22 @@ export function LernpfadView({
       ) : null}
 
       {ansicht === "pfad" && pathModules.length > 1 ? (
-        <nav aria-label="Modul wählen" className="px-6 pt-2 md:px-12">
-          <ul className="flex flex-wrap gap-2">
-            {pathModules.map((m) => (
-              <li key={m.moduleId}>
-                <button
-                  type="button"
-                  aria-pressed={m.moduleId === current?.moduleId}
-                  onClick={() => setChosen(m.moduleId)}
-                  className={`mono-label min-h-11 rounded-[var(--radius-md)] border px-3.5 ${focus} ${
-                    m.moduleId === current?.moduleId
-                      ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-text-on-brand)]"
-                      : "border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]"
-                  }`}
-                >
-                  {m.moduleId}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="px-6 pt-2 md:px-12">
+          <label className="flex flex-col gap-1 text-sm text-[var(--color-text-secondary)]">
+            Modul wählen
+            <select
+              value={current?.moduleId ?? ""}
+              onChange={(e) => setChosen(e.target.value)}
+              className={`min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 text-base text-[var(--color-text-primary)] ${focus}`}
+            >
+              {pathModules.map((m) => (
+                <option key={m.moduleId} value={m.moduleId}>
+                  {m.moduleId} · {m.moduleTitle}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       ) : null}
 
       {(ansicht === "pfad" && current ? [current] : []).map((mod) => {
@@ -368,7 +373,7 @@ export function LernpfadView({
             data-module-state={mod.units ? "mit-einheiten" : "leer"}
           >
             <h2
-              className="mb-2 text-lg font-medium text-[var(--color-text-primary)]"
+              className="sr-only"
               style={{ fontFamily: "var(--font-display)" }}
             >
               {mod.moduleId} · {mod.moduleTitle}

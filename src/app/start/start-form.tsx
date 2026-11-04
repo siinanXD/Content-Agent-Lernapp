@@ -25,7 +25,8 @@ export function StartForm() {
   useEffect(() => {
     let weg = false;
     getAccessToken().then((token) => {
-      if (token && !weg) router.replace("/lernpfad");
+      // Wer noch nicht eingeführt wurde, geht zuerst durchs Onboarding (oben).
+      if (token && !weg && !needsOnboarding(loadOnboarding())) router.replace("/lernpfad");
     });
     return () => {
       weg = true;

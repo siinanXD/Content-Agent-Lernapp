@@ -51,7 +51,7 @@ test("Onboarding → Einheit → Feedback → Einheit geschafft", async ({ page 
   await lernpfadErstellen.click();
 
   await expect(page).toHaveURL(/\/lernpfad$/);
-  await page.locator('[data-state="heute"]').first().click();
+  await page.getByRole("link", { name: "Einheit starten" }).click();
   await expect(page).toHaveURL(/\/einheit\//);
 
   const counter = page.getByText(/^Frage \d+ von \d+/);

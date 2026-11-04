@@ -82,6 +82,8 @@ test("nach einer abgeschlossenen Einheit: genau diese erledigt, Als Nächstes sp
     await expect(nodes(page, "heute")).toContainText("02 · Jetzt");
     await page.getByRole("link", { name: "Heute", exact: true }).click();
     await expect(page.getByRole("progressbar", { name: "Modul M0 Fortschritt" })).toHaveAttribute("aria-valuenow", "25");
+    await page.getByRole("link", { name: "Pfad", exact: true }).click();
+    await expect(page).toHaveURL(/\/lernpfad\/pfad$/);
   }
   await page.screenshot({ path: info.outputPath("nach-einheit.png"), fullPage: true });
 });

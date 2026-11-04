@@ -60,7 +60,12 @@ export default function AusbilderPage() {
     try {
       const token = await getAccessToken();
       // Anmeldung eingerichtet, aber keine Sitzung: gar nicht erst fragen (die API würde 401 melden, SIN-667).
-      if (!token && (await getBrowserSupabase())) return setLoad({ kind: "anmelden" });
+      const client = await getBrowserSupabase();
+      if (!token && client) return setLoad({ kind: "anmelden" });
+      // Angemeldet ohne Ausbilder-Rolle: gar nicht erst fragen, die API würde 403 melden und die Konsole färben (SIN-1455).
+      if (token && client && (await client.auth.getSession()).data.session?.user.app_metadata?.role !== "ausbilder") {
+        return setLoad({ kind: "kein-zugang" });
+      }
       // `?gruppe=` wählt eine bestimmte Gruppe, auch archiviert (SIN-415). Ohne: die einzige aktive.
       const gruppe = new URLSearchParams(window.location.search).get("gruppe");
       const res = await fetch(gruppe ? `/api/ausbilder/gruppe?id=${encodeURIComponent(gruppe)}` : "/api/ausbilder/gruppe", {

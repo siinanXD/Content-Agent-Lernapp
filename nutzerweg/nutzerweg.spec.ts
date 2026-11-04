@@ -48,7 +48,7 @@ async function beantworten(page: Page, falsch = false): Promise<string> {
 }
 
 async function anzahlErledigt(page: Page) {
-  await page.goto("/lernpfad");
+  await page.goto("/lernpfad/pfad");
   await expect(page.locator("[data-state]").first()).toBeVisible();
   return page.locator('[data-state="erledigt"]').count();
 }
@@ -64,7 +64,7 @@ async function lerntage(page: Page) {
 /** Spielt die heutige Einheit bis zum Ergebnis. Liefert die gesehenen Fragetypen. */
 async function einheitDurchspielen(page: Page, falsch: boolean) {
   await page.goto("/lernpfad");
-  await page.locator('[data-state="heute"]').first().click();
+  await page.getByRole("link", { name: "Einheit starten" }).click();
   await expect(page).toHaveURL(/\/einheit\//);
   const typen: string[] = [];
   const zaehler = page.getByText(/^Frage \d+ von \d+/);
