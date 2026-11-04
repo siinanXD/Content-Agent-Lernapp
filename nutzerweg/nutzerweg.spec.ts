@@ -175,3 +175,20 @@ test("Weg 7: Die Navigation ist auf jeder Hauptseite und in der Prüfung sichtba
   await page.getByRole("button", { name: "Prüfung starten" }).click();
   await expect(nav, "Navigation fehlt in der laufenden Prüfung").toBeVisible();
 });
+
+test("Weg 8: Gerätewechsel: ein frischer Browser mit demselben Konto zeigt denselben Stand (SIN-1451)", async ({ page, browser }, testInfo) => {
+  await anmelden(page);
+  await einheitDurchspielen(page, false);
+  const a = { haken: await anzahlErledigt(page), profil: await lerntage(page) };
+  // Frischer Kontext = anderes Gerät: kein Speicher, keine Sitzung. Der Abgleich mit dem Konto braucht einen Moment.
+  const { baseURL, viewport, hasTouch, extraHTTPHeaders } = testInfo.project.use;
+  const geraetB = await browser.newContext({ baseURL, viewport, hasTouch, extraHTTPHeaders });
+  try {
+    const b = await geraetB.newPage();
+    await anmelden(b);
+    await expect.poll(() => anzahlErledigt(b), { timeout: 30_000, message: "Haken auf dem zweiten Gerät" }).toBe(a.haken);
+    expect((await lerntage(b)).done, "Lerntage auf dem zweiten Gerät").toBe(a.profil.done);
+  } finally {
+    await geraetB.close();
+  }
+});
