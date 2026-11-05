@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { blockVon, dubletten, renderBericht, verhaeltnis } from "../../../scripts/autonomy/dubletten.mjs";
+import { blockVon, dubletten, renderBericht, tabellenText, verhaeltnis } from "../../../scripts/autonomy/dubletten.mjs";
 
 const e = (id: string, title: string, explanation = `Erklärung ${id}`) => ({ id, title, explanation });
 
@@ -40,5 +40,13 @@ test("Erklärungen werden nach 200 Zeichen gekürzt und Tabellenzeichen entschä
   const lang = "x".repeat(300) + "|";
   const md = renderBericht([{ name: "K", units: [e("A-1-u1", "Gleich", lang), e("A-1-u2", "Gleich", "a|b")] }], "2026-11-05");
   assert.ok(md.includes("x".repeat(200)) && !md.includes("x".repeat(201)));
-  assert.match(md, /a\\|b/);
+  assert.ok(md.includes("a\\|b"));
+});
+
+test("Tabellentext: Pipe wird wirklich entschärft, Objekte bleiben lesbar (Belegprüfung #722)", () => {
+  assert.equal(tabellenText("a|b"), "a\\|b");
+  assert.equal(tabellenText(["x", "y"]), "x → y");
+  assert.equal(tabellenText({ links: "A|B" }), '{"links":"A\\|B"}');
+  assert.equal(tabellenText([{ a: 1 }]), '[{"a":1}]');
+  assert.equal(tabellenText(null), "");
 });

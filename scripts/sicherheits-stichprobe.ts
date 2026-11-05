@@ -7,6 +7,7 @@
  */
 import { writeFileSync } from "node:fs";
 import { fetchAll } from "./autonomy/content-metrics.mjs";
+import { tabellenText as text } from "./autonomy/dubletten.mjs";
 import { discardedQuestionKeys } from "../src/lib/learner/discarded";
 import { merkerBlendetAus } from "../src/lib/learner/sicherheits-merker";
 import { deriveModuleBlock } from "../src/lib/learner/modul-block";
@@ -29,7 +30,6 @@ function zufall(seed: number) {
   };
 }
 
-const text = (v: unknown) => (Array.isArray(v) ? v.join(" → ") : String(v ?? "")).replace(/\s+/g, " ").replace(/\|/g, "\|");
 
 /** Auswahlfragen speichern die Lösung als Position in `choices`; für die Liste als Antworttext ausgeben. */
 const loesung = (q: Q) => (q.choices && /^\d+$/.test(String(q.correct)) ? (q.choices[Number(q.correct)] ?? String(q.correct)) : q.correct);
