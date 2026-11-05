@@ -15,7 +15,7 @@ import { PERSONAS } from "./testnutzer.mjs";
 
 const SCHRITT_MS = 8000;
 
-/** Onboarding wie in e2e/gesamtweg.spec.ts: Los geht’s → Ablehnen → Beruf → Schwerpunkt → Lernpfad erstellen. */
+/** Onboarding wie in e2e/weg-gesamtweg.spec.ts: Los geht’s → Ablehnen → Beruf → Schwerpunkt → Lernpfad erstellen. */
 const onboarding = [
   { label: "Einstieg", route: "/willkommen", tu: (p) => p.goto("/willkommen") },
   { label: "Los geht’s", route: "/willkommen", tu: (p) => p.getByRole("link", { name: "Los geht’s" }).click() },

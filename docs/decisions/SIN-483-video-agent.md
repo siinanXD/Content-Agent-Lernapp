@@ -4,7 +4,7 @@
 
 ## Entscheidung
 
-1. **Aufnahme mit Playwright, kein KI-Videomodell.** Das Video zeigt die echte App, es kann keine erfundenen Knöpfe enthalten. Klickweg: Start → Beruf wählen → Lernpfad → erste Einheit → Ergebnis (aus `e2e/gesamtweg.spec.ts` abgeleitet).
+1. **Aufnahme mit Playwright, kein KI-Videomodell.** Das Video zeigt die echte App, es kann keine erfundenen Knöpfe enthalten. Klickweg: Start → Beruf wählen → Lernpfad → erste Einheit → Ergebnis (aus `e2e/weg-gesamtweg.spec.ts` abgeleitet).
 2. **Schnitt mit Revideo** (MIT, fertige Lösung vor Eigenbau). Als eigenes Paket in `video/schnitt/`, nicht in der `package.json` der App: die App-Abhängigkeiten und `package-lock.json` bleiben unverändert, Typecheck und Lint der App ignorieren den Ordner. Farben kommen aus `docs/design/tokens.json`.
 3. **Ablage:** privater Bucket `werbemittel` und Tabelle `werbemittel` (additive Migration, RLS ohne Richtlinie, nur Service-Role). Status immer `wartet_auf_freigabe`. Der Workflow veröffentlicht nichts.
 4. **Tageslimit:** nach `production-deploy` höchstens 1 erfolgreicher Lauf pro UTC-Tag (`video.mjs limit`); von Hand immer möglich.
