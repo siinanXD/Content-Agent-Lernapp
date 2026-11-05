@@ -66,11 +66,12 @@ test("Google: Weiterleitung geht auf die eigene Origin", async ({ page }) => {
   await mockAuth(page, {});
   await page.route(`${AUTH}/auth/v1/authorize**`, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "ok" }));
   await page.goto("/anmelden?weiter=/profil");
+  const eigeneOrigin = new URL(page.url()).origin; // vor dem Klick: danach navigiert die Attrappe auf supabase.test
   const anfrage = page.waitForRequest((r) => r.url().startsWith(`${AUTH}/auth/v1/authorize`));
   await page.getByRole("button", { name: "Mit Google anmelden" }).click();
   const url = new URL((await anfrage).url());
   expect(url.searchParams.get("provider")).toBe("google");
-  expect(url.searchParams.get("redirect_to")).toBe(`${new URL(page.url()).origin}/profil`);
+  expect(url.searchParams.get("redirect_to")).toBe(`${eigeneOrigin}/profil`);
 });
 
 test("Registrieren bis zum Hinweis auf die Bestätigungsmail", async ({ page }) => {

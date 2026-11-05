@@ -33,6 +33,8 @@ export type ReviewItem = {
   questionId: string;
   stage: 1 | 2 | 3 | 4;
   dueAt: string;
+  /** Zeitpunkt der letzten Änderung (SIN-1451): der jüngere Stand gewinnt beim Konto-Abgleich. */
+  at?: string;
 };
 
 export type ExamSet = {
