@@ -1,0 +1,45 @@
+{
+  "duration": 19000.857,
+  "tests": [
+    {
+      "title": "weg-gesamtweg.spec.ts › Es gibt mindestens einen veröffentlichten Kurs",
+      "status": "expected",
+      "duration": 7
+    },
+    {
+      "title": "weg-gesamtweg.spec.ts › Gesamtweg bis Prüfungsmodus: Maschinen- und Anlagenführer (e22073de)",
+      "status": "expected",
+      "duration": 5656,
+      "webm": "02.webm",
+      "gif": "02.gif"
+    },
+    {
+      "title": "weg-pruefung.spec.ts › Maschinen- und Anlagenführer: Produktionsplanung mit Lücke bis zum Ergebnis (Desktop)",
+      "status": "expected",
+      "duration": 4107,
+      "webm": "03.webm",
+      "gif": "03.gif"
+    },
+    {
+      "title": "weg-pruefung.spec.ts › Maschinen- und Anlagenführer: Produktionsplanung mit Lücke bis zum Ergebnis (Handy)",
+      "status": "expected",
+      "duration": 3183,
+      "webm": "04.webm",
+      "gif": "04.gif"
+    },
+    {
+      "title": "weg-pruefung.spec.ts › Industriekaufmann: Teil 1 mit seinen Gebieten, nicht die MAF-Prüfung",
+      "status": "expected",
+      "duration": 3649,
+      "webm": "05.webm",
+      "gif": "05.gif"
+    },
+    {
+      "title": "weg-pruefung.spec.ts › Kurs ohne Prüfungsmodus (Industriemechaniker) zeigt den Satz statt der MAF-Prüfung",
+      "status": "expected",
+      "duration": 220,
+      "webm": "06.webm",
+      "gif": "06.gif"
+    }
+  ]
+}
