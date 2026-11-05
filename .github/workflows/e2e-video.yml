@@ -1,0 +1,164 @@
+name: e2e-video
+
+# SIN-1590 (Bauen in Wegen, SIN-1589): PRs mit dem Label `weg` bekommen ein Video vom Weg-Test (`e2e/weg-*.spec.ts`).
+# Kopie von `pr-video.yml` aus leitstand-2 (SIN-1159): dieses Repo ist öffentlich und darf den privaten Workflow nicht aufrufen.
+# Lokal gebaut mit `COURSE_STORAGE=mock`, ohne Preview und ohne Testkonto: die Medien auf `pr-media` sind öffentlich.
+# Die Rot-Sperre bleibt beim Pflicht-Check `build` (Job `e2e` in ci.yml); dieser Workflow liefert nur das Video.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions: {}
+
+jobs:
+  e2e:
+    if: contains(github.event.pull_request.labels.*.name, 'weg') && (github.event.action != 'labeled' || github.event.label.name == 'weg')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Im Job, nicht im Workflow: sonst bricht jedes andere Label (übersprungener Lauf) ein laufendes Video ab.
+    concurrency:
+      group: e2e-video-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+    outputs:
+      artifact-url: ${{ steps.upload.outputs.artifact-url }}
+    env:
+      COURSE_STORAGE: mock
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Weg-Tests mit Video
+        run: |
+          # Hülle um playwright.config.ts: Video an, JSON-Report; der Server (`next start`) kommt aus der Konfiguration.
+          cat > playwright.e2e-video.config.ts <<'EOF'
+          import base from "./playwright.config";
+          export default {
+            ...base,
+            outputDir: "pr-video/results",
+            reporter: [["list"], ["json", { outputFile: "pr-video/report.json" }]],
+            use: { ...base.use, video: "on" },
+          };
+          EOF
+          npx playwright test --config playwright.e2e-video.config.ts e2e/weg-
+      - name: Videos zu GIF
+        if: ${{ !cancelled() && hashFiles('pr-video/report.json') != '' }}
+        run: |
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
+          node - <<'EOF'
+          const fs = require("fs"), { execFileSync } = require("child_process");
+          const report = JSON.parse(fs.readFileSync("pr-video/report.json", "utf8"));
+          const tests = [];
+          const walk = (suite) => {
+            for (const s of suite.suites ?? []) walk(s);
+            for (const spec of suite.specs ?? []) for (const t of spec.tests) {
+              const r = t.results.at(-1), video = r?.attachments.find((a) => a.name === "video")?.path;
+              const n = String(tests.length + 1).padStart(2, "0"), e = { title: `${spec.file} › ${spec.title}`, status: t.status, duration: r?.duration ?? 0 };
+              if (video) {
+                fs.copyFileSync(video, `pr-video/out/${n}.webm`);
+                const vf = "fps=8,scale=640:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse";
+                execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-i", video, "-t", "30", "-vf", vf, "-loop", "0", `pr-video/out/${n}.gif`]);
+                Object.assign(e, { webm: `${n}.webm`, gif: `${n}.gif` });
+              }
+              tests.push(e);
+            }
+          };
+          fs.mkdirSync("pr-video/out", { recursive: true });
+          walk(report);
+          fs.writeFileSync("pr-video/out/summary.json", JSON.stringify({ duration: report.stats.duration, tests }, null, 2));
+          EOF
+      - uses: actions/upload-artifact@v7
+        id: upload
+        if: ${{ !cancelled() && hashFiles('pr-video/out/summary.json') != '' }}
+        with:
+          name: pr-video
+          path: pr-video/
+          retention-days: 14
+
+  media:
+    needs: e2e
+    if: ${{ !cancelled() && needs.e2e.outputs.artifact-url != '' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: pr-video
+          path: pr-video
+      - name: Medien auf Branch pr-media
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIR: pr-${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}
+        run: |
+          gh auth setup-git
+          git init -q media && cd media
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
+          # Parallele PRs: bei abgelehntem Push neu auf den aktuellen Stand setzen und erneut versuchen.
+          for i in 1 2 3 4 5; do
+            if git fetch -q --depth 1 origin pr-media; then git checkout -q -B pr-media FETCH_HEAD; else git checkout -q --orphan "neu$i"; fi
+            mkdir -p "$DIR" && cp ../pr-video/out/* "$DIR"/
+            git add -A && { git diff --cached --quiet || git commit -qm "media: $DIR"; }
+            git push -q origin HEAD:pr-media && exit 0
+            sleep $((i * 3))
+          done
+          exit 1
+
+  comment:
+    needs: [e2e, media]
+    if: ${{ !cancelled() && needs.media.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: pr-video
+          path: pr-video
+      - name: Sticky-Kommentar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          ARTIFACT: ${{ needs.e2e.outputs.artifact-url }}
+          E2E: ${{ needs.e2e.result }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node - > body.md <<'EOF'
+          const { tests, duration } = require(`${process.cwd()}/pr-video/out/summary.json`);
+          const { GITHUB_REPOSITORY, PR, SHA, ARTIFACT, E2E, RUN } = process.env;
+          const raw = (f) => `https://github.com/${GITHUB_REPOSITORY}/blob/pr-media/pr-${PR}/${SHA}/${f}?raw=true`;
+          const sec = (ms) => `${(ms / 1000).toFixed(1)} s`;
+          const label = { expected: "✅ bestanden", flaky: "⚠️ wackelig", unexpected: "❌ fehlgeschlagen", skipped: "⏭️ übersprungen" };
+          const title = (t) => t.title.replace(/\|/g, "\\|");
+          const ok = tests.filter((t) => t.status === "expected" || t.status === "flaky").length;
+          console.log([
+            "<!-- pr-video -->",
+            // Diese Zeile liest das Leitstand-Gate (SIN-1589); ein gescheiterter Lauf darf nie wie „alle bestanden“ aussehen.
+            E2E === "success" ? `### E2E mit Video: ${ok}/${tests.length} bestanden` : `### E2E mit Video: Lauf fehlgeschlagen (${ok}/${tests.length} Tests bestanden)`,
+            `Commit \`${SHA.slice(0, 7)}\` · Ziel: lokal (\`next start\`, \`COURSE_STORAGE=mock\`) · Gesamtdauer ${sec(duration)} · [Lauf](${RUN}) · [Artefakt mit Videos und Report](${ARTIFACT})`,
+            "",
+            "| Test | Ergebnis | Dauer | Video |",
+            "|---|---|---|---|",
+            ...tests.map((t) => `| ${title(t)} | ${label[t.status] ?? t.status} | ${sec(t.duration)} | ${t.webm ? `[webm](${raw(t.webm)})` : "–"} |`),
+            ...tests.filter((t) => t.gif).flatMap((t) => ["", `**${title(t)}**`, "", `![${title(t)}](${raw(t.gif)})`]),
+          ].join("\n"));
+          EOF
+          id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --jq '.[] | select(.body | startswith("<!-- pr-video -->")) | .id' | head -n1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@body.md > /dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@body.md > /dev/null
+          fi
