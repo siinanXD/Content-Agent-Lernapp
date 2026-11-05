@@ -12,16 +12,23 @@ export type AnswerResult = {
   correct: boolean;
   /** For open tasks: learner self-checked against sample — never AI graded. */
   selfChecked?: boolean;
+  /** Antwort der Lernenden als Text, für die Auswertung im Prüfungsmodus (SIN-1538). */
+  given?: string;
+  /** Prüfungsmodus, offene Aufgabe: nur gespeichert, nicht gewertet. */
+  open?: boolean;
 };
 
 export function QuestionPanel({
   question,
   revealed,
   onChecked,
+  exam = false,
 }: {
   question: PathQuestion;
   revealed: boolean;
   onChecked: (result: AnswerResult) => void;
+  /** Prüfungsmodus: offene Aufgabe wird gespeichert, die Musterlösung kommt erst im Ergebnis (SIN-1538). */
+  exam?: boolean;
 }) {
   if (question.type === "zuordnen" && question.pairs?.length) {
     return (
@@ -40,7 +47,7 @@ export function QuestionPanel({
   }
   if (question.type === "rechnen" && question.sampleSolution) {
     return (
-      <OpenOrChoiceQuestion question={question} revealed={revealed} onChecked={onChecked} />
+      <OpenOrChoiceQuestion question={question} revealed={revealed} onChecked={onChecked} exam={exam} />
     );
   }
   return (
@@ -85,7 +92,7 @@ function ChoiceQuestion({
       {!revealed ? (
         <Button
           onClick={() =>
-            selected && onChecked({ correct: selected === correct })
+            selected && onChecked({ correct: selected === correct, given: selected })
           }
           disabled={!selected}
           className="mt-2"
@@ -156,7 +163,9 @@ function BlankQuestion({
         ))}
         {!revealed ? (
           <Button
-            onClick={() => onChecked({ correct: isCorrect })}
+            onClick={() =>
+              onChecked({ correct: isCorrect, given: gaps.map((g) => values[g.id] ?? "").join(", ") })
+            }
             disabled={!allFilled}
             className="mt-2"
           >
@@ -196,7 +205,7 @@ function BlankQuestion({
       ))}
       {!revealed ? (
         <Button
-          onClick={() => selected && onChecked({ correct: selected === correct })}
+          onClick={() => selected && onChecked({ correct: selected === correct, given: selected })}
           disabled={!selected}
           className="mt-2"
         >
@@ -255,7 +264,12 @@ function PairQuestion({
       ))}
       {!revealed ? (
         <Button
-          onClick={() => onChecked({ correct: isCorrect })}
+          onClick={() =>
+            onChecked({
+              correct: isCorrect,
+              given: pairs.map(([left], i) => `${left} → ${picks[i]}`).join("; "),
+            })
+          }
           disabled={!allPicked}
           className="mt-2"
         >
@@ -342,7 +356,7 @@ function OrderQuestion({
       ))}
       </div>
       {!revealed ? (
-        <Button onClick={() => onChecked({ correct })} className="mt-2">
+        <Button onClick={() => onChecked({ correct, given: order.join(" → ") })} className="mt-2">
           Antwort prüfen
         </Button>
       ) : null}
@@ -355,10 +369,12 @@ function OpenOrChoiceQuestion({
   question,
   revealed,
   onChecked,
+  exam,
 }: {
   question: PathQuestion;
   revealed: boolean;
   onChecked: (result: AnswerResult) => void;
+  exam: boolean;
 }) {
   if (question.choices?.length) {
     return (
@@ -366,7 +382,7 @@ function OpenOrChoiceQuestion({
     );
   }
   return (
-    <OpenSampleQuestion question={question} revealed={revealed} onChecked={onChecked} />
+    <OpenSampleQuestion question={question} revealed={revealed} onChecked={onChecked} exam={exam} />
   );
 }
 
@@ -374,10 +390,12 @@ function OpenSampleQuestion({
   question,
   revealed,
   onChecked,
+  exam,
 }: {
   question: PathQuestion;
   revealed: boolean;
   onChecked: (result: AnswerResult) => void;
+  exam: boolean;
 }) {
   const [draft, setDraft] = useState("");
   const [checks, setChecks] = useState<Record<number, boolean>>({});
@@ -397,10 +415,16 @@ function OpenSampleQuestion({
       />
       {!revealed ? (
         <Button
-          onClick={() => onChecked({ correct: false, selfChecked: false })}
+          onClick={() =>
+            onChecked(
+              exam
+                ? { correct: false, open: true, given: draft.trim() }
+                : { correct: false, selfChecked: false },
+            )
+          }
           disabled={!draft.trim()}
         >
-          Musterlösung zeigen
+          {exam ? "Antwort speichern" : "Musterlösung zeigen"}
         </Button>
       ) : (
         <div

@@ -21,6 +21,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Datenbank | `supabase/migrations/` (nur hinzufügen, nie bestehende ändern) |
 | Versionen und Rücksetzen von Einheiten/Fragen (SIN-632) | Tabelle `content_versions` (Trigger), `src/lib/versions/`, `scripts/inhalte-zuruecksetzen.ts`, Notfallplan `docs/ops/NOTFALL.md` |
 | Lerninhalte | `docs/content/` (Curriculum-Maps), `content/legal/` |
+| Prüfungsmodus je Kurs, Verteilung nach Gewicht, Ergebnis je Gebiet (SIN-1516) | Katalog `src/lib/learner/exam-catalog.ts` (aus den Maps, Test gegen sie), Logik `exam.ts` (`buildExamPool`, `scoreByArea`), Auswertung `exam-result.ts`, Seiten `src/app/pruefung/`; Weg-Test `e2e/weg-pruefung.spec.ts`, Nutzerweg Weg 4 |
 | Prüfungsgebiet je Block/Einheit (SIN-1534) | `docs/content/zuordnung/gebiete-*.json`, Lesen `src/lib/content/pruefungsgebiete.ts`, gesetzt in `loadCourse` (`supabase-store.ts`); Spalten + Nachtrag Migration `20261105010000_sin1549_gliederung_spalten.sql` (SIN-1549) |
 | Dubletten-Bericht gleiche/ähnliche Einheiten je Block, nur lesen (SIN-1540) | `scripts/autonomy/dubletten.mjs` (`infisical run … -- node scripts/autonomy/dubletten.mjs`), Ausgabe `docs/ops/dubletten-<Datum>.md` |
 | Sicherheits-Merker nur in Blöcken mit `safety: true` (SIN-1541) | `src/lib/learner/sicherheits-merker.ts`, `discarded.ts`; Schalter `SICHERHEITS_MERKER=alle`; Stichprobe `scripts/sicherheits-stichprobe.ts` |

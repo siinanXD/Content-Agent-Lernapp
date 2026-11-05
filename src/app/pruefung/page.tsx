@@ -11,16 +11,16 @@ import {
   QuestionPanel,
   type AnswerResult,
 } from "@/components/learner/question-panel";
-import {
-  getExamQuestions,
-  examSeconds,
-  listExamParts,
-  scoreByArea,
-} from "@/lib/learner/exam";
+import { buildExamPool, examSeconds, isOpenTask, listExamParts, scoreByArea } from "@/lib/learner/exam";
 import { isDemoMode } from "@/lib/learner/demo-modus";
-import { fetchPublishedPathUnits, phaseAPathUnits } from "@/lib/learner/phase-a-path";
+import {
+  activeCourse,
+  fetchPublishedPathUnits,
+  phaseAPathUnits,
+  setActiveCourse,
+} from "@/lib/learner/phase-a-path";
 import type { PathUnit } from "@/lib/learner/playable-path";
-import { toWrongAnswer, type WrongAnswer } from "@/lib/learner/exam-result";
+import { toReviewItem, type ReviewItem } from "@/lib/learner/exam-result";
 import { loadStack, markWrong, saveStack } from "@/lib/learner/leitner";
 import { loadSession, saveSession } from "@/lib/learner/session";
 import { recordLearningEvent } from "@/lib/learner/streak";
@@ -81,7 +81,10 @@ function QuestionGrid({
 function PruefungInner() {
   const router = useRouter();
   const search = useSearchParams();
-  const parts = useMemo(() => listExamParts().filter((p) => p.simulated), []);
+  // Kurs aus der Adresse (Lernpfad) oder dem zuletzt geöffneten; so zeigt die Prüfung nie die eines anderen Kurses.
+  const [courseId] = useState(() => search.get("kurs") ?? activeCourse());
+  const allParts = useMemo(() => listExamParts(courseId), [courseId]);
+  const parts = useMemo(() => allParts.filter((p) => p.simulated), [allParts]);
   const initial = search.get("part") ?? parts[0]?.id ?? "PT";
   const [partId, setPartId] = useState(initial);
   const [started, setStarted] = useState(false);
@@ -95,7 +98,8 @@ function PruefungInner() {
       questionId: string;
       correct: boolean;
       examAreas: string[];
-      wrong?: WrongAnswer;
+      open?: boolean;
+      review: ReviewItem;
     }>
   >([]);
 
@@ -104,18 +108,21 @@ function PruefungInner() {
   const [units, setUnits] = useState<PathUnit[] | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
+    setActiveCourse(courseId);
     const load = isDemoMode()
       ? Promise.resolve(phaseAPathUnits())
-      : fetchPublishedPathUnits();
+      : fetchPublishedPathUnits(courseId);
     void load.then((u) => live && setUnits(u));
     return () => {
       live = false;
     };
-  }, []);
-  const questions = useMemo(
-    () => (part && units ? getExamQuestions(part.id, units) : []),
-    [part, units],
+  }, [courseId]);
+  const pool = useMemo(
+    () => (part && units ? buildExamPool(part.id, units, courseId) : null),
+    [part, units, courseId],
   );
+  const questions = useMemo(() => pool?.questions ?? [], [pool]);
+  const gaps = pool?.areas.filter((a) => a.available < a.quota) ?? [];
   const question = questions[index];
   const finishing = useRef(false);
 
@@ -154,6 +161,7 @@ function PruefungInner() {
     });
   }
 
+  // Im Prüfungsmodus wird die Antwort nur gespeichert; Lösung und Erklärung stehen erst im Ergebnis (SIN-1538).
   function onChecked(result: AnswerResult) {
     if (!question || revealed) return;
     setRevealed(true);
@@ -163,7 +171,8 @@ function PruefungInner() {
         questionId: question.id,
         correct: result.correct,
         examAreas: question.examAreas,
-        wrong: result.correct ? undefined : toWrongAnswer(question),
+        open: result.open,
+        review: toReviewItem(question, result),
       },
     ]);
   }
@@ -171,9 +180,9 @@ function PruefungInner() {
   function finish() {
     if (!part || finishing.current) return;
     finishing.current = true;
-    const areaResults = scoreByArea(answers, part.gebiete);
-    const correct = answers.filter((a) => a.correct).length;
-    const wrongAnswers = answers.flatMap((a) => (a.wrong ? [a.wrong] : []));
+    const areaResults = scoreByArea(answers, pool?.areas ?? part.gebiete);
+    const correct = answers.filter((a) => a.correct && !a.open).length;
+    const wrongAnswers = answers.flatMap((a) => (!a.open && !a.correct ? [a.review] : []));
     // Falsche Fragen kommen in die Wiederholung (Leitner: Stufe 1, nach 1, 3 und 7 Tagen).
     saveStack(
       wrongAnswers.reduce((stack, w) => markWrong(stack, w.id), loadStack()),
@@ -190,12 +199,13 @@ function PruefungInner() {
         unitId: `exam-${part.id}`,
         unitTitle: part.bereich,
         correct,
-        total: questions.length,
+        total: questions.filter((q) => !isOpenTask(q)).length,
         points: correct * 10,
         kind: "exam",
         areaResults,
         partTitle: part.title,
         wrongAnswers,
+        review: answers.map((a) => a.review),
       },
     });
     router.push("/pruefung/ergebnis");
@@ -221,9 +231,16 @@ function PruefungInner() {
   if (!part) {
     return (
       <MobileShell>
-        <main className="px-6 py-16">
-          <p>Kein schriftlicher Prüfungsteil in der Map.</p>
+        <main className="flex flex-1 flex-col gap-4 px-6 pb-6 pt-12">
+          <h1 className="text-[24px] font-bold" style={{ fontFamily: "var(--font-display)" }}>
+            Prüfungsmodus
+          </h1>
+          <p role="status">Für diesen Kurs gibt es noch keinen Prüfungsmodus.</p>
+          <Link href="/lernpfad" className={linkButton}>
+            Zurück zum Lernpfad
+          </Link>
         </main>
+        <BottomNav />
       </MobileShell>
     );
   }
@@ -252,10 +269,16 @@ function PruefungInner() {
                 startet, sobald welche da sind.
               </p>
             ) : units && questions.length < part.questionTarget ? (
-              <p role="status" className="text-[15px]">
-                Der Kurs hat bisher {questions.length} von {part.questionTarget} Fragen für diesen
-                Teil. Es wird nichts aufgefüllt, die Prüfung ist kürzer, die Zeit bleibt gleich.
-              </p>
+              <div role="status" className="text-[15px]">
+                <p>
+                  Der Kurs hat bisher {questions.length} von {part.questionTarget} Fragen für diesen
+                  Teil. Es wird nichts aufgefüllt, die Prüfung ist kürzer, die Zeit bleibt gleich.
+                </p>
+                <p className="mt-1">
+                  Zu wenige Fragen:{" "}
+                  {gaps.map((g) => `${g.id}: ${g.available} von ${g.quota}`).join(", ")}.
+                </p>
+              </div>
             ) : null}
             <Button
               onClick={start}
@@ -273,7 +296,7 @@ function PruefungInner() {
                 </span>
                 <select
                   className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 text-[15px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-                  value={partId}
+                  value={part.id}
                   onChange={(e) => setPartId(e.target.value)}
                 >
                   {parts.map((p) => (
@@ -285,6 +308,30 @@ function PruefungInner() {
                 </select>
               </label>
             </Tile>
+            {pool ? (
+              <Tile aria-labelledby="aufbau-titel">
+                <h2
+                  id="aufbau-titel"
+                  className="text-[17px] font-semibold leading-[22px]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Aufbau: {part.bereich}
+                </h2>
+                <ul className="flex flex-col gap-2">
+                  {pool.areas.map((a) => (
+                    <li key={a.id} className="flex items-baseline justify-between gap-3 text-sm">
+                      <span>
+                        <span className="mono-label mr-2 text-[var(--color-text-secondary)]">{a.id}</span>
+                        {a.title}
+                      </span>
+                      <span className="shrink-0 text-[13px]" style={{ fontFamily: "var(--font-mono)" }}>
+                        {a.taken} von {a.quota} Fragen
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Tile>
+            ) : null}
             <Tile tone="hint" as="div">
               <p className="mono-label">Übung, keine IHK-Prognose</p>
               <p className="text-sm leading-5">
@@ -358,23 +405,21 @@ function PruefungInner() {
           >
             {question.prompt}
           </h2>
-          <QuestionPanel
-            key={question.id}
-            question={question}
-            revealed={revealed}
-            onChecked={onChecked}
-          />
+          {/* Nach dem Speichern gesperrt, nie aufgedeckt: Lösung und Erklärung erst im Ergebnis. */}
+          <fieldset disabled={revealed} className="min-w-0 border-0 p-0">
+            <QuestionPanel
+              key={question.id}
+              question={question}
+              revealed={false}
+              onChecked={onChecked}
+              exam
+            />
+          </fieldset>
           {revealed ? (
             <div className="flex flex-col gap-2">
-              {question.sampleSolution && !question.choices?.length ? (
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  Musterlösung zur Selbstkontrolle — keine KI-Note.
-                </p>
-              ) : (
-                <p className="text-sm text-[var(--color-text-secondary)]" role="status">
-                  {question.explanation}
-                </p>
-              )}
+              <p className="text-sm text-[var(--color-text-secondary)]" role="status">
+                Antwort gespeichert. Lösung und Erklärung stehen im Ergebnis.
+              </p>
               <Button onClick={next}>
                 {index + 1 >= questions.length
                   ? "Ergebnis je Gebiet"

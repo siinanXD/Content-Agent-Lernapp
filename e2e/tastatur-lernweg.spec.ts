@@ -99,7 +99,7 @@ test("Lernweg komplett mit der Tastatur", async ({ page, context }) => {
   await expect(page.getByText(/keine fälligen Fragen/)).toBeVisible();
 
   // Prüfungsmodus
-  await page.goto("/pruefung");
+  await page.goto("/pruefung?part=WISO");
   await expect(page.getByRole("heading", { name: "Prüfungsmodus" })).toBeVisible();
   await activate(page, page.getByRole("button", { name: "Prüfung starten" }), "Prüfung starten");
   await expect(page.getByText(/Frage 1\/\d+/)).toBeVisible();

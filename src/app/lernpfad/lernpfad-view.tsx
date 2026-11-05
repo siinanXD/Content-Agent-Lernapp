@@ -109,7 +109,7 @@ export function LernpfadView({
   );
   const groups = groupUnitsByModule(pathUnits);
   const pathModules = withEmptyModules(groups, modules);
-  const examParts = listExamParts().filter((p) => p.simulated);
+  const examParts = listExamParts(courseId);
   const online = useOnline();
   const days = summary === "fehler" ? 0 : summary.streak.days;
 
@@ -395,24 +395,43 @@ export function LernpfadView({
         >
           Prüfungsgebiete
         </h2>
+        {examParts.length === 0 ? (
+          <p role="status" className="mt-3 text-sm text-[var(--color-text-secondary)]">
+            Für diesen Kurs gibt es noch keinen Prüfungsmodus.
+          </p>
+        ) : (
         <ul className="mt-3 flex flex-col gap-2">
-          {examParts.map((p) => (
-            <li key={p.id}>
-              <Link
-                href={`/pruefung?part=${p.id}`}
-                className="flex min-h-11 items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
-              >
-                <span className="text-sm text-[var(--color-text-primary)]">
-                  {p.bereich}
-                </span>
-                <span className="text-xs text-[var(--color-text-secondary)]">
-                  {p.durationMinutes} Min
-                  {p.weightPercent != null ? ` · ${p.weightPercent}%` : ""}
-                </span>
-              </Link>
-            </li>
-          ))}
+          {examParts.map((p) => {
+            const row =
+              "flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3";
+            const meta = (
+              <span className="text-right text-xs text-[var(--color-text-secondary)]">
+                {p.durationMinutes ? `${p.durationMinutes} Min` : p.durationText}
+                {p.weightPercent != null ? ` · ${p.weightPercent}%` : ""}
+                {p.simulated ? "" : " · nicht nachgebildet"}
+              </span>
+            );
+            return (
+              <li key={p.id}>
+                {p.simulated ? (
+                  <Link
+                    href={`/pruefung?part=${p.id}${courseId ? `&kurs=${courseId}` : ""}`}
+                    className={`${row} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]`}
+                  >
+                    <span className="text-sm text-[var(--color-text-primary)]">{p.bereich}</span>
+                    {meta}
+                  </Link>
+                ) : (
+                  <div className={row}>
+                    <span className="text-sm text-[var(--color-text-primary)]">{p.bereich}</span>
+                    {meta}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
+        )}
       </section>
       </main>
 

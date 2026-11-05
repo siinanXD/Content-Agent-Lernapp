@@ -4,6 +4,7 @@ import {
   baseQuestionId,
   examPassed,
   examPercent,
+  toReviewItem,
   toWrongAnswer,
   weakestAreas,
 } from "./exam-result";
@@ -62,4 +63,34 @@ test("schwächste Gebiete: nur rot, schwächstes zuerst", () => {
     out.map((a) => a.areaId),
     ["d", "c"],
   );
+});
+
+test("Auswertung je Frage: Antwort, richtige Lösung, Erklärung und Quelle (SIN-1538)", () => {
+  assert.deepEqual(toReviewItem(base, { correct: false, given: "A" }), {
+    id: "q1",
+    prompt: "Frage?",
+    given: "A",
+    answer: "B",
+    explanation: "Weil B.",
+    sourceUrl: "https://example.org",
+    correct: false,
+  });
+  const zuordnen = toReviewItem(
+    { ...base, type: "zuordnen", choices: undefined, correct: "x", pairs: [["Gefahr", "Schutz"], ["Lärm", "Gehörschutz"]] },
+    { correct: true, given: "Gefahr → Schutz; Lärm → Gehörschutz" },
+  );
+  assert.equal(zuordnen.answer, "Gefahr → Schutz; Lärm → Gehörschutz");
+  const reihenfolge = toReviewItem({ ...base, type: "reihenfolge", choices: undefined, steps: ["a", "b"] }, { correct: true });
+  assert.equal(reihenfolge.answer, "a → b");
+  assert.equal(reihenfolge.given, "");
+});
+
+test("offene Aufgabe: Musterlösung und Checkliste, nicht gewertet (SIN-1538)", () => {
+  const offen = toReviewItem(
+    { ...base, type: "rechnen", choices: undefined, sampleSolution: "20 + 100 × 2 = 220", sampleChecklist: ["Einheit genannt"] },
+    { correct: false, open: true, given: "220" },
+  );
+  assert.equal(offen.correct, null);
+  assert.equal(offen.answer, "20 + 100 × 2 = 220");
+  assert.deepEqual(offen.checklist, ["Einheit genannt"]);
 });

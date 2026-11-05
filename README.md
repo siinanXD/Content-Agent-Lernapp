@@ -82,7 +82,7 @@ Playable path (Figma approved by Sinan 2026-10-02; Didaktik D-31):
 2. `/lernpfad` — Module/Blöcke, Wiederholung, Prüfungsmodus  
 3. `/einheit/unit-03` — sections + alle 5 Fragetypen (+ Bildfragen)  
 4. `/wiederholung` — Leitner 1/3/7/14  
-5. `/pruefung` — schriftliche Teile aus `exam.gradedParts` (MAF PT/PP/WiSo)  
+5. `/pruefung` — schriftliche Teile aus `exam.gradedParts` je Kurs (MAF PT/PP/WiSo, Industriekaufmann T1/T2A/T2C), Fragen nach Gewicht über die Gebiete, Lösung erst im Ergebnis (`/pruefung/ergebnis`: Ergebnis je Gebiet; Industriemechaniker ohne Prüfungsmodus)  
 6. `/ergebnis` — Punkte + Ampel je Gebiet  
 7. `/profil` — Fortschritt, Stapelgröße, Prüfungsreife
 

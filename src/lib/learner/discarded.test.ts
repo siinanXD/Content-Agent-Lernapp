@@ -102,8 +102,8 @@ test("Lernpfad, Wiederholung und Prüfung liefern keine verworfene Frage", async
   assert.equal(getUnit("u2"), undefined);
 
   // Prüfung
-  const part = MAF_EXAM_PARTS.find((p) => p.form === "schriftlich")!;
-  const examIds = getExamQuestions(part.id).map((q) => q.id.replace(/-pad-\d+$/, ""));
+  const part = MAF_EXAM_PARTS.find((p) => p.id === "WISO")!;
+  const examIds = getExamQuestions(part.id, path).map((q) => q.id);
   assert.ok(examIds.length > 0);
   assert.ok(!examIds.includes("bad1") && !examIds.includes("bad2"));
 });

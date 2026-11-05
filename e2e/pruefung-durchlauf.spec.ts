@@ -11,12 +11,13 @@ const base = (id: string) => ({
   explanation: "Kurz erklärt.",
   sourceUrl: SOURCE,
   sourceFetchedAt: "2026-10-03",
-  examAreas: [],
+  examAreas: [] as string[],
 });
 
 const questions = [
   {
     ...base("p-single"),
+    examAreas: ["PT-a"],
     type: "auswahl",
     prompt: "Wer trägt die Kosten für Schutzkleidung?",
     choices: ["Der Betrieb", "Die Auszubildenden"],
@@ -24,6 +25,7 @@ const questions = [
   },
   {
     ...base("p-luecke"),
+    examAreas: ["PT-b"],
     type: "lueckentext",
     prompt: "Der Betrieb stellt ___ kostenlos.",
     blanks: ["PSA", "Werkzeug"],
@@ -31,6 +33,7 @@ const questions = [
   },
   {
     ...base("p-zuordnen"),
+    examAreas: ["PT-c"],
     type: "zuordnen",
     prompt: "Ordne zu.",
     pairs: [
@@ -41,6 +44,7 @@ const questions = [
   },
   {
     ...base("p-reihenfolge"),
+    examAreas: ["PT-d"],
     type: "reihenfolge",
     prompt: "Bringe die Schritte in die richtige Reihenfolge.",
     steps: ["Gefahr erkennen", "Maschine stoppen", "Meldung machen"],
@@ -48,6 +52,7 @@ const questions = [
   },
   {
     ...base("p-rechnen"),
+    examAreas: ["PT-f"],
     type: "rechnen",
     level: "anwenden",
     prompt: "Wie viele Pausenminuten bei 8 Stunden Arbeit?",
@@ -136,14 +141,14 @@ for (const vp of viewports) {
 
     await expect(page.getByText(/Frage 5\/5/)).toBeVisible();
     await page.getByLabel(/Deine Lösung/).fill("480 min minus 30 min");
-    await page.getByRole("button", { name: "Musterlösung zeigen" }).click();
-    await page.getByRole("checkbox", { name: "Rechenweg notiert" }).check();
-    await page.getByRole("button", { name: "Selbstkontrolle speichern" }).click();
+    await page.getByRole("button", { name: "Antwort speichern" }).click();
+    // Im Prüfungsmodus keine Musterlösung vor dem Ergebnis (SIN-1538).
+    await expect(page.getByText("30 Minuten")).toHaveCount(0);
     await page.getByRole("button", { name: "Ergebnis je Gebiet" }).click();
 
     await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
-    // Zwei richtige Auswahlfragen, die übrigen nicht (oder Selbstkontrolle): Ergebnis nennt 5 Fragen.
-    await expect(page.getByText(/von 5/).first()).toBeVisible();
+    // Die offene Aufgabe zählt nicht in die Wertung: 4 gewertete Fragen.
+    await expect(page.getByText(/^\d+\/4$/).first()).toBeVisible();
     await page.screenshot({
       path: info.outputPath(`pruefung-ergebnis-${vp.name.toLowerCase()}.png`),
       fullPage: true,
@@ -153,6 +158,7 @@ for (const vp of viewports) {
 
 test("Zeit läuft in echten Sekunden, Pause hält an, Ablauf beendet die Prüfung", async ({ page }) => {
   await page.clock.install();
+  test.setTimeout(120_000); // 7200 Sekunden Uhr vorspulen
   await vorbereiten(page);
   await page.goto("/pruefung");
   await page.getByRole("button", { name: "Prüfung starten" }).click();

@@ -154,7 +154,7 @@ export function setActiveCourse(courseId: string | null) {
   }
 }
 
-function activeCourse(): string | null {
+export function activeCourse(): string | null {
   try {
     return window.localStorage.getItem(COURSE_KEY);
   } catch {
