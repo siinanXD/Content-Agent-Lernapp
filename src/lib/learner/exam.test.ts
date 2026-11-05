@@ -3,7 +3,28 @@ import { describe, it } from "node:test";
 import { loadMafCurriculum } from "@/lib/content/curriculum";
 import { parseDurationMinutes } from "@/lib/content/didaktik";
 import { MAF_EXAM_PARTS } from "./exam-catalog";
-import { buildExamSet, listExamParts, scoreByArea } from "./exam";
+import {
+  buildExamPool,
+  buildExamSet,
+  examSeconds,
+  getExamQuestions,
+  listExamParts,
+  scoreByArea,
+} from "./exam";
+import type { PathQuestion, PathUnit } from "./playable-path";
+
+const q = (id: string, examAreas = ["WISO-1"]): PathQuestion => ({
+  id,
+  type: "auswahl",
+  level: "verstehen",
+  prompt: id,
+  choices: ["a", "b"],
+  correct: "a",
+  explanation: "",
+  sourceUrl: "",
+  examAreas,
+});
+const unitOf = (...questions: PathQuestion[]) => ({ questions }) as unknown as PathUnit;
 
 describe("exam mode (AP-18c)", () => {
   it("lists MAF graded parts with PT/PP/WISO times", () => {
@@ -52,5 +73,35 @@ describe("exam mode (AP-18c)", () => {
     );
     assert.equal(results[0]!.light, "green");
     assert.equal(results[1]!.light, "red");
+  });
+
+  it("rechnet die Zeit als Dauer x 60 Sekunden", () => {
+    assert.equal(examSeconds(120), 7200);
+    assert.equal(examSeconds(60), 3600);
+  });
+
+  it("nimmt jede Frage höchstens einmal und füllt nicht auf", () => {
+    const units = [unitOf(q("a"), q("b")), unitOf(q("a"), q("c"))];
+    const ids = getExamQuestions("PT", units).map((x) => x.id);
+    assert.deepEqual(ids, ["a", "b", "c"]);
+    const pool = buildExamPool("PT", units)!;
+    assert.equal(pool.target, 30);
+    assert.ok(pool.questions.length < pool.target);
+  });
+
+  it("liefert ohne Kursfragen eine leere Prüfung statt Beispielfragen", () => {
+    assert.deepEqual(getExamQuestions("PT", []), []);
+    assert.equal(buildExamSet("PT", undefined, undefined, [])!.questionIds.length, 0);
+  });
+
+  it("begrenzt auf die Soll-Anzahl und ignoriert fremde Gebiete", () => {
+    const many = Array.from({ length: 40 }, (_, i) => q(`q${i}`));
+    assert.equal(getExamQuestions("PT", [unitOf(...many)]).length, 30);
+    assert.equal(getExamQuestions("PT", [unitOf(q("x", ["ANDERS"]))]).length, 0);
+  });
+
+  it("nimmt Kursfragen ohne examAreas, jede einmal (SIN-1449)", () => {
+    const ids = getExamQuestions("PT", [unitOf(q("a", []), q("a", []), q("b", []))]).map((x) => x.id);
+    assert.deepEqual(ids, ["a", "b"]);
   });
 });

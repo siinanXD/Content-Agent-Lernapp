@@ -179,17 +179,27 @@ export function fetchPhaseAPathUnits(courseId: string | null = activeCourse()): 
 }
 
 async function loadPhaseAPathUnits(courseId: string | null): Promise<PathUnit[]> {
+  return (await fetchPublishedPathUnits(courseId)) ?? phaseAPathUnits();
+}
+
+/**
+ * Nur die veröffentlichten Einheiten des Kurses (SIN-1449), nie die Beispieldaten: `null`, wenn der Abruf
+ * scheitert oder der Kurs nichts Spielbares hat. Die Prüfung braucht das, damit sie nicht mit Seed-Fragen läuft.
+ */
+export async function fetchPublishedPathUnits(
+  courseId: string | null = activeCourse(),
+): Promise<PathUnit[] | null> {
   try {
     const query = courseId ? `?kurs=${encodeURIComponent(courseId)}` : "";
     const res = await fetch(`/api/learner/phase-a${query}`, { cache: "no-store" });
-    if (!res.ok) return phaseAPathUnits();
+    if (!res.ok) return null;
     const data = (await res.json()) as { units?: GeneratedUnit[]; titles?: MapTitles };
     if (data.units?.length) {
       const mapped = setPhaseAPathUnits(data.units, data.titles);
       if (mapped.length) return mapped;
     }
   } catch {
-    /* seed fallback */
+    /* kein Abruf, keine Prüfung aus Beispieldaten */
   }
-  return phaseAPathUnits();
+  return null;
 }

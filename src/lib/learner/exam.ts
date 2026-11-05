@@ -12,9 +12,7 @@ import {
   type ExamSet,
   type TrafficLight,
 } from "@/lib/content/didaktik";
-import { normalizeQuestions } from "@/lib/learner/normalize-question";
-import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
-import { activePathUnits, type PathQuestion } from "@/lib/learner/playable-path";
+import { activePathUnits, type PathQuestion, type PathUnit } from "@/lib/learner/playable-path";
 import {
   MAF_EXAM_PARTS,
   MAF_MAP_ID,
@@ -62,68 +60,67 @@ export function listExamParts(parts: CatalogExamPart[] = MAF_EXAM_PARTS): ExamPa
   });
 }
 
+/** Prüfungszeit in Sekunden: angezeigte Minuten × 60, keine Abkürzung (SIN-1449). */
+export function examSeconds(durationMinutes: number): number {
+  return durationMinutes * 60;
+}
+
+export type ExamPool = {
+  questions: PathQuestion[];
+  /** Soll-Anzahl laut Katalog; `questions` ist kürzer, wenn der Kurs nicht genug hergibt. */
+  target: number;
+};
+
+/**
+ * Fragen eines Teils aus den übergebenen Einheiten (veröffentlichter Kurs). Jede Frage höchstens einmal,
+ * nie aufgefüllt, nie aus Beispieldaten.
+ */
+export function buildExamPool(
+  partId: string,
+  units: PathUnit[],
+  parts: CatalogExamPart[] = MAF_EXAM_PARTS,
+): ExamPool | null {
+  const part = parts.find((p) => p.id === partId);
+  if (!part || part.form !== "schriftlich") return null;
+  const target = examQuestionTarget(part.id, parseDurationMinutes(part.duration));
+  const areaIds = new Set<string>([part.id, ...part.gebiete.map((g) => g.id)]);
+  const seen = new Set<string>();
+  const tagged: PathQuestion[] = [];
+  const untagged: PathQuestion[] = [];
+  for (const q of units.flatMap((u) => u.questions)) {
+    if (seen.has(q.id)) continue;
+    seen.add(q.id);
+    if (q.examAreas.length === 0) untagged.push(q);
+    else if (q.examAreas.some((a) => areaIds.has(a) || a === "WISO-1")) tagged.push(q);
+  }
+  // Echte Kursfragen tragen oft kein Prüfungsgebiet: sie füllen (ohne Kopien) nach den gekennzeichneten auf.
+  const questions = [...tagged, ...untagged];
+  return { questions: questions.slice(0, target), target };
+}
+
 export function buildExamSet(
   partId: string,
   parts: CatalogExamPart[] = MAF_EXAM_PARTS,
   mapId: string = MAF_MAP_ID,
+  units: PathUnit[] = activePathUnits(),
 ): ExamSet | null {
+  const pool = buildExamPool(partId, units, parts);
   const part = parts.find((p) => p.id === partId);
-  if (!part || part.form !== "schriftlich") return null;
-  const durationMinutes = parseDurationMinutes(part.duration) ?? 60;
-  const target = examQuestionTarget(part.id, durationMinutes);
-  const pool = collectQuestionsForPart(part);
-  const questionIds = pool.slice(0, Math.max(target, 1)).map((q) => q.id);
+  if (!pool || !part) return null;
   return {
     id: `exam-${mapId}-${part.id}`,
     mapId,
     partId: part.id,
-    durationMinutes,
-    questionIds,
+    durationMinutes: parseDurationMinutes(part.duration) ?? 60,
+    questionIds: pool.questions.map((q) => q.id),
   };
 }
 
-function collectQuestionsForPart(part: CatalogExamPart): PathQuestion[] {
-  const areaIds = new Set<string>([part.id, ...part.gebiete.map((g) => g.id)]);
-  const fromPlayable = activePathUnits().flatMap((u) =>
-    u.questions.filter((q) =>
-      q.examAreas.some((a) => areaIds.has(a) || a === "WISO-1"),
-    ),
-  );
-  if (fromPlayable.length > 0) {
-    const padded = [...fromPlayable];
-    let i = 0;
-    const target = examQuestionTarget(part.id, parseDurationMinutes(part.duration));
-    while (padded.length < target) {
-      const base = fromPlayable[i % fromPlayable.length]!;
-      padded.push({ ...base, id: `${base.id}-pad-${padded.length}` });
-      i += 1;
-      if (i > 80) break;
-    }
-    return padded;
-  }
-  const seed = mafSeedLernfeldSicherheit();
-  return seed.units.flatMap((u) =>
-    u.questions
-      .filter((q) => (q.examAreas ?? []).some((a) => areaIds.has(a)))
-      .flatMap((q) => normalizeQuestions([q])),
-  );
-}
-
-export function getExamQuestions(partId: string): PathQuestion[] {
-  const set = buildExamSet(partId);
-  if (!set) return [];
-  const byId = new Map(
-    activePathUnits().flatMap((u) => u.questions).map((q) => [q.id, q] as const),
-  );
-  return set.questionIds
-    .map((id) => {
-      const direct = byId.get(id);
-      if (direct) return direct;
-      const baseId = id.replace(/-pad-\d+$/, "");
-      const base = byId.get(baseId);
-      return base ? { ...base, id } : undefined;
-    })
-    .filter((q): q is PathQuestion => Boolean(q));
+export function getExamQuestions(
+  partId: string,
+  units: PathUnit[] = activePathUnits(),
+): PathQuestion[] {
+  return buildExamPool(partId, units)?.questions ?? [];
 }
 
 export function scoreByArea(
