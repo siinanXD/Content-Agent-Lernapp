@@ -15,6 +15,7 @@ import { variantFromBlock } from "@/lib/content/didaktik";
 import { modulesToGenerate } from "@/lib/content/shared-modules";
 import { anthropicFetch, GENERATOR_MODEL } from "@/lib/anthropic/client";
 import { REPAIR_API_SCHEMA, structuredParams, UNITS_API_SCHEMA } from "./api-schema";
+import { bildwunschOderNull } from "./bildwunsch";
 import { buildDidaktikBlockPrompt } from "./didaktik-prompts";
 import { repairPlanWithSourceExcerpts } from "./repair-source-excerpt";
 import type { GeneratedLernfeld, GeneratedQuestion, GeneratedUnit } from "./maf-lernfeld-seed";
@@ -536,6 +537,7 @@ export function annotateUnit(
     niveau: u.niveau || meta?.module.niveau,
     safetyFlag: u.safetyFlag ?? Boolean(meta?.block.safety || meta?.module.safety),
     variant: u.variant || variant,
+    bildwunsch: bildwunschOderNull(u.bildwunsch),
     questions,
   };
 }
