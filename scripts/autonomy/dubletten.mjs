@@ -71,13 +71,15 @@ export function dubletten(units) {
   };
 }
 
-/** Wert für eine Markdown-Tabellenzelle: Objekte als JSON, Listen mit Pfeil, Pipe entschärft (Belegprüfung #722). */
+const entschaerfe = (t) => t.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+
+/** Wert für eine Markdown-Tabellenzelle: Objekte als JSON, Listen mit Pfeil, Backslash und Pipe entschärft (Belegprüfung #722). */
 export const tabellenText = (v) => {
   const roh = Array.isArray(v) && v.every((x) => typeof x !== "object") ? v.join(" → ") : typeof v === "object" && v !== null ? JSON.stringify(v) : String(v ?? "");
-  return roh.replace(/\s+/g, " ").replace(/\|/g, "\\|");
+  return entschaerfe(roh.replace(/\s+/g, " "));
 };
 
-const zelle = (t) => String(t ?? "").replace(/\s+/g, " ").trim().slice(0, AUSZUG).replace(/\|/g, "\\|");
+const zelle = (t) => entschaerfe(String(t ?? "").replace(/\s+/g, " ").trim().slice(0, AUSZUG));
 
 /** Markdown: Zahlen je Kurs, dann je Kurs die Paare nach Block gruppiert, größte Blöcke zuerst. */
 export function renderBericht(kurse, datum) {

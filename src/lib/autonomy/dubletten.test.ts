@@ -49,4 +49,7 @@ test("Tabellentext: Pipe wird wirklich entschärft, Objekte bleiben lesbar (Bele
   assert.equal(tabellenText({ links: "A|B" }), '{"links":"A\\|B"}');
   assert.equal(tabellenText([{ a: 1 }]), '[{"a":1}]');
   assert.equal(tabellenText(null), "");
+  assert.equal(tabellenText("a\\|b"), "a\\\\\\|b");
+  const md = renderBericht([{ name: "K", units: [e("A-1-u1", "Gleich", "c\\|d"), e("A-1-u2", "Gleich", "x")] }], "2026-11-05");
+  assert.ok(md.includes("c\\\\\\|d"));
 });
