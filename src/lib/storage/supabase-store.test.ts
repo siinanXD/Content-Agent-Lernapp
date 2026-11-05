@@ -61,4 +61,20 @@ describe("loadCourse (SIN-882)", () => {
     assert.equal(rows.length, 2500);
     assert.equal(new Set(rows.map((r) => r.id)).size, 2500);
   });
+
+  it("MAF aus den Tabellen: Fragen tragen examAreas aus der Zuordnung, Industriemechaniker keine (SIN-1534)", async () => {
+    const MAF = "e22073de-7020-4380-9002-c70d46c25e25";
+    const row = (id: string) => ({ id, title: id, minutes: 5, explanation: "x", source_url: "https://x", source_fetched_at: "2026-10-01", sort_order: 0 });
+    const frage = (unit: string) => ({ id: `${unit}-q1`, unit_id: unit, type: "auswahl", prompt: "?", choices: ["a", "b"], correct: "a", explanation: "x", source_url: "https://x", sort_order: 0 });
+    const lade = async (id: string) => {
+      stubFetch(
+        { units: [row("LF1-1-u1"), row("XYZ-9-u1")], questions: [frage("LF1-1-u1"), frage("XYZ-9-u1")], sources: [], plans: [], evaluations: [] },
+        { id, keyword: "k", status: "published", created_at: "2026-10-01", mock: false, variants: 2, lernfeld: { id, title: "t", focus: "f", units: [] } },
+      );
+      const generated = (await supabaseStorage.getCourse(id))?.generated as { units: Array<{ id: string; questions: Array<{ examAreas?: string[] }> }> };
+      return generated.units.map((u) => u.questions[0]!.examAreas);
+    };
+    assert.deepEqual(await lade(MAF), [["PT-a"], undefined]); // unbekannter Block: kein Gebiet, nicht raten
+    assert.deepEqual(await lade(COURSE), [undefined, undefined]);
+  });
 });

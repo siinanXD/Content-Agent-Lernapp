@@ -1,4 +1,5 @@
 import type { GeneratedLernfeld, GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
+import { gebietFuerEinheit, tabelleFuerKurs, unbekannteBloecke } from "@/lib/content/pruefungsgebiete";
 import { mitKiKennzeichnung } from "@/lib/review/content-guard";
 import { schreibeTeil } from "./generated-teil";
 import { getServiceSupabase } from "./supabase-client";
@@ -158,12 +159,17 @@ async function loadCourse(id: string): Promise<Course | undefined> {
       title: courseRow.keyword,
       focus: (course.plan as { focus?: string } | undefined)?.focus ?? courseRow.keyword,
     };
+    // SIN-1534: Prüfungsgebiet je Einheit aus der Zuordnungs-Tabelle des Kurses; Industriemechaniker hat keine.
+    const tabelle = tabelleFuerKurs(courseRow.id);
+    const unbekannt = tabelle ? unbekannteBloecke(tabelle, unitRows.map((u) => u.id)) : [];
+    if (unbekannt.length) console.warn(`pruefungsgebiete: Block ohne Zuordnung, kein Gebiet gesetzt: ${unbekannt.join(", ")}`);
     course.generated = mitKiKennzeichnung({
       id: meta.id,
       title: meta.title,
       focus: meta.focus,
-      units: unitRows.map(
-        (u): GeneratedUnit => ({
+      units: unitRows.map((u): GeneratedUnit => {
+        const gebiet = tabelle && gebietFuerEinheit(tabelle, u.id)?.gebiet;
+        return {
           id: u.id,
           title: u.title,
           minutes: u.minutes,
@@ -178,12 +184,12 @@ async function loadCourse(id: string): Promise<Course | undefined> {
             correct: q.correct,
             explanation: q.explanation,
             sourceUrl: q.source_url,
-            // Legacy rows predate AP-18; callers treat missing level/examAreas as optional.
+            // Legacy rows predate AP-18; callers treat missing level as optional.
             level: undefined,
-            examAreas: undefined,
+            examAreas: gebiet ? [gebiet] : undefined,
           })),
-        }),
-      ),
+        };
+      }),
     });
   }
 

@@ -1,0 +1,564 @@
+{
+ "kurs": "Maschinen- und Anlagenführer",
+ "courseId": "e22073de-7020-4380-9002-c70d46c25e25",
+ "stand": "2026-11-03",
+ "quelle": "MaschFüAusbV § 8 und § 9, https://www.gesetze-im-internet.de/maschf_ausbv/__9.html",
+ "hinweis": "Vorschlag von Hand je Block zugeordnet, Einheit erbt den Block. unsicher: true = Zuordnung nicht gestützt, wird benutzt und von Sinan oder einem Ausbilder geprüft (Issue Fachprüfung). Kein Inhalt, nur die Gliederung der Verordnung.",
+ "herkunft": "Bericht 03.11.2026 (lernapp-aufbau-2026-11-03), SIN-1534",
+ "gebiete": {
+  "PT-a": {
+   "titel": "technische Unterlagen",
+   "bereich": "Produktionstechnik",
+   "einheiten": 71
+  },
+  "PT-b": {
+   "titel": "Werkstoffe",
+   "bereich": "Produktionstechnik",
+   "einheiten": 35
+  },
+  "PT-c": {
+   "titel": "Werkzeuge",
+   "bereich": "Produktionstechnik",
+   "einheiten": 33
+  },
+  "PT-d": {
+   "titel": "Funktion von Maschinen und Anlagen",
+   "bereich": "Produktionstechnik",
+   "einheiten": 113
+  },
+  "PT-e": {
+   "titel": "Prüfverfahren und Prüfmittel",
+   "bereich": "Produktionstechnik",
+   "einheiten": 23
+  },
+  "PT-f": {
+   "titel": "Fertigungstechniken",
+   "bereich": "Produktionstechnik",
+   "einheiten": 106
+  },
+  "PP-a": {
+   "titel": "Arbeitsschritte",
+   "bereich": "Produktionsplanung",
+   "einheiten": 49
+  },
+  "PP-b": {
+   "titel": "Qualitätssicherung",
+   "bereich": "Produktionsplanung",
+   "einheiten": 32
+  },
+  "PP-c": {
+   "titel": "vorbeugende Instandhaltung",
+   "bereich": "Produktionsplanung",
+   "einheiten": 55
+  },
+  "PP-d": {
+   "titel": "Produktionsanlagen",
+   "bereich": "Produktionsplanung",
+   "einheiten": 46
+  },
+  "PP-e": {
+   "titel": "Übergabeprotokoll",
+   "bereich": "Produktionsplanung",
+   "einheiten": 6
+  },
+  "WISO-1": {
+   "titel": "allgemeine wirtschaftliche und gesellschaftliche Zusammenhänge der Berufs- und Arbeitswelt",
+   "bereich": "Wirtschafts- und Sozialkunde",
+   "einheiten": 115
+  },
+  "TRAIN-ZP": {
+   "titel": "Zwischenprüfung: Training (§ 8)",
+   "bereich": "Prüfungstraining",
+   "einheiten": 16
+  },
+  "TRAIN-AP": {
+   "titel": "Abschlussprüfung: Training (§ 9)",
+   "bereich": "Prüfungstraining",
+   "einheiten": 1
+  }
+ },
+ "bloecke": {
+  "APPT-1": {
+   "gebiet": "TRAIN-AP",
+   "einheiten": 1
+  },
+  "LF1-1": {
+   "gebiet": "PT-a",
+   "einheiten": 12
+  },
+  "LF1-2": {
+   "gebiet": "PT-a",
+   "einheiten": 8
+  },
+  "LF1-3": {
+   "gebiet": "PT-b",
+   "einheiten": 12
+  },
+  "LF1-4": {
+   "gebiet": "PT-b",
+   "einheiten": 6,
+   "unsicher": true
+  },
+  "LF1-5": {
+   "gebiet": "PT-c",
+   "einheiten": 8
+  },
+  "LF1-6": {
+   "gebiet": "PT-f",
+   "einheiten": 14
+  },
+  "LF1-7": {
+   "gebiet": "PT-e",
+   "einheiten": 8
+  },
+  "LF1-8": {
+   "gebiet": "PP-a",
+   "einheiten": 8,
+   "unsicher": true
+  },
+  "LF1-9": {
+   "gebiet": "PT-a",
+   "einheiten": 4,
+   "unsicher": true
+  },
+  "LF2-1": {
+   "gebiet": "PT-a",
+   "einheiten": 8
+  },
+  "LF2-2": {
+   "gebiet": "PT-a",
+   "einheiten": 10,
+   "unsicher": true
+  },
+  "LF2-3": {
+   "gebiet": "PT-e",
+   "einheiten": 8
+  },
+  "LF2-4": {
+   "gebiet": "PT-f",
+   "einheiten": 10
+  },
+  "LF2-5": {
+   "gebiet": "PT-f",
+   "einheiten": 14
+  },
+  "LF2-6": {
+   "gebiet": "PT-d",
+   "einheiten": 8
+  },
+  "LF2-7": {
+   "gebiet": "PT-f",
+   "einheiten": 10,
+   "unsicher": true
+  },
+  "LF2-8": {
+   "gebiet": "PT-c",
+   "einheiten": 6,
+   "unsicher": true
+  },
+  "LF2-9": {
+   "gebiet": "PP-b",
+   "einheiten": 6,
+   "unsicher": true
+  },
+  "LF3-1": {
+   "gebiet": "PT-a",
+   "einheiten": 7
+  },
+  "LF3-2": {
+   "gebiet": "PT-a",
+   "einheiten": 7
+  },
+  "LF3-3": {
+   "gebiet": "PT-f",
+   "einheiten": 11,
+   "unsicher": true
+  },
+  "LF3-4": {
+   "gebiet": "PT-c",
+   "einheiten": 5
+  },
+  "LF3-5": {
+   "gebiet": "PT-d",
+   "einheiten": 8,
+   "unsicher": true
+  },
+  "LF3-6": {
+   "gebiet": "PT-d",
+   "einheiten": 8,
+   "unsicher": true
+  },
+  "LF3-7": {
+   "gebiet": "PT-e",
+   "einheiten": 7,
+   "unsicher": true
+  },
+  "LF3-8": {
+   "gebiet": "PP-a",
+   "einheiten": 10,
+   "unsicher": true
+  },
+  "LF4-1": {
+   "gebiet": "PP-c",
+   "einheiten": 6
+  },
+  "LF4-2": {
+   "gebiet": "PP-c",
+   "einheiten": 5
+  },
+  "LF4-3": {
+   "gebiet": "PP-c",
+   "einheiten": 8
+  },
+  "LF4-4": {
+   "gebiet": "PP-c",
+   "einheiten": 6,
+   "unsicher": true
+  },
+  "LF4-5": {
+   "gebiet": "PT-d",
+   "einheiten": 9,
+   "unsicher": true
+  },
+  "LF4-6": {
+   "gebiet": "PT-d",
+   "einheiten": 9,
+   "unsicher": true
+  },
+  "LF4-7": {
+   "gebiet": "PT-d",
+   "einheiten": 8
+  },
+  "LF4-8": {
+   "gebiet": "PP-c",
+   "einheiten": 7,
+   "unsicher": true
+  },
+  "LF5-1": {
+   "gebiet": "PT-f",
+   "einheiten": 12
+  },
+  "LF5-2": {
+   "gebiet": "PT-b",
+   "einheiten": 10
+  },
+  "LF5-3": {
+   "gebiet": "PT-b",
+   "einheiten": 4
+  },
+  "LF5-4": {
+   "gebiet": "PT-c",
+   "einheiten": 7
+  },
+  "LF5-5": {
+   "gebiet": "PT-f",
+   "einheiten": 9
+  },
+  "LF5-6": {
+   "gebiet": "PP-a",
+   "einheiten": 7,
+   "unsicher": true
+  },
+  "LF5-7": {
+   "gebiet": "PT-c",
+   "einheiten": 7,
+   "unsicher": true
+  },
+  "LF5-8": {
+   "gebiet": "PT-b",
+   "einheiten": 3,
+   "unsicher": true
+  },
+  "LF5-9": {
+   "gebiet": "PP-b",
+   "einheiten": 8
+  },
+  "LF6-1": {
+   "gebiet": "PT-d",
+   "einheiten": 5
+  },
+  "LF6-2": {
+   "gebiet": "PT-d",
+   "einheiten": 9
+  },
+  "LF6-3": {
+   "gebiet": "PT-d",
+   "einheiten": 10
+  },
+  "LF6-4": {
+   "gebiet": "PT-d",
+   "einheiten": 7
+  },
+  "LF6-5": {
+   "gebiet": "PT-d",
+   "einheiten": 6
+  },
+  "LF6-6": {
+   "gebiet": "PP-d",
+   "einheiten": 10
+  },
+  "LF7-1": {
+   "gebiet": "PP-a",
+   "einheiten": 6
+  },
+  "LF7-2": {
+   "gebiet": "PT-d",
+   "einheiten": 7,
+   "unsicher": true
+  },
+  "LF7-3": {
+   "gebiet": "PT-d",
+   "einheiten": 7,
+   "unsicher": true
+  },
+  "LF7-4": {
+   "gebiet": "PT-d",
+   "einheiten": 6,
+   "unsicher": true
+  },
+  "LF7-5": {
+   "gebiet": "PP-a",
+   "einheiten": 6
+  },
+  "LF8-1": {
+   "gebiet": "PT-f",
+   "einheiten": 4,
+   "unsicher": true
+  },
+  "LF8-2": {
+   "gebiet": "PT-a",
+   "einheiten": 10
+  },
+  "LF8-3": {
+   "gebiet": "PT-a",
+   "einheiten": 6
+  },
+  "LF8-4": {
+   "gebiet": "PT-f",
+   "einheiten": 13
+  },
+  "LF8-5": {
+   "gebiet": "PT-f",
+   "einheiten": 8
+  },
+  "LF8-6": {
+   "gebiet": "PP-b",
+   "einheiten": 9
+  },
+  "LF9-1": {
+   "gebiet": "PP-c",
+   "einheiten": 3
+  },
+  "LF9-2": {
+   "gebiet": "PP-c",
+   "einheiten": 6
+  },
+  "LF9-3": {
+   "gebiet": "PP-c",
+   "einheiten": 6
+  },
+  "LF9-4": {
+   "gebiet": "PP-c",
+   "einheiten": 4,
+   "unsicher": true
+  },
+  "LF9-5": {
+   "gebiet": "PP-c",
+   "einheiten": 4
+  },
+  "M0-1": {
+   "gebiet": "WISO-1",
+   "einheiten": 15
+  },
+  "M0-2": {
+   "gebiet": "WISO-1",
+   "einheiten": 10
+  },
+  "M0-3": {
+   "gebiet": "WISO-1",
+   "einheiten": 20,
+   "unsicher": true
+  },
+  "M0-4": {
+   "gebiet": "WISO-1",
+   "einheiten": 15,
+   "unsicher": true
+  },
+  "PA-1": {
+   "gebiet": "PT-d",
+   "einheiten": 6
+  },
+  "PA-2": {
+   "gebiet": "PP-d",
+   "einheiten": 10
+  },
+  "PA-3": {
+   "gebiet": "PP-d",
+   "einheiten": 10
+  },
+  "PA-4": {
+   "gebiet": "PP-d",
+   "einheiten": 6
+  },
+  "PA-5": {
+   "gebiet": "PP-d",
+   "einheiten": 10
+  },
+  "PA-6": {
+   "gebiet": "PP-a",
+   "einheiten": 6,
+   "unsicher": true
+  },
+  "PA-7": {
+   "gebiet": "PP-a",
+   "einheiten": 6,
+   "unsicher": true
+  },
+  "PA-8": {
+   "gebiet": "PP-e",
+   "einheiten": 6
+  },
+  "QS-1": {
+   "gebiet": "PP-b",
+   "einheiten": 3
+  },
+  "QS-2": {
+   "gebiet": "PP-b",
+   "einheiten": 3
+  },
+  "QS-3": {
+   "gebiet": "PP-b",
+   "einheiten": 3
+  },
+  "SBP-1": {
+   "gebiet": "WISO-1",
+   "einheiten": 7,
+   "unsicher": true
+  },
+  "SBP-2": {
+   "gebiet": "WISO-1",
+   "einheiten": 11,
+   "unsicher": true
+  },
+  "WISO-1": {
+   "gebiet": "WISO-1",
+   "einheiten": 14
+  },
+  "WISO-2": {
+   "gebiet": "WISO-1",
+   "einheiten": 11
+  },
+  "WISO-3": {
+   "gebiet": "WISO-1",
+   "einheiten": 12
+  },
+  "ZP-1": {
+   "gebiet": "TRAIN-ZP",
+   "einheiten": 2
+  },
+  "ZP-2": {
+   "gebiet": "TRAIN-ZP",
+   "einheiten": 5
+  },
+  "ZP-3": {
+   "gebiet": "TRAIN-ZP",
+   "einheiten": 6
+  },
+  "ZP-4": {
+   "gebiet": "TRAIN-ZP",
+   "einheiten": 3
+  }
+ },
+ "ausnahmen": {
+  "LF1-1-u12": {
+   "gebiet": "PT-f",
+   "unsicher": true,
+   "grund": "Titel gehört zu Trennen von Hand, nicht zum Block Zeichnungen lesen"
+  },
+  "LF1-3-u11": {
+   "gebiet": "PT-b",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-f"
+  },
+  "LF1-5-u1": {
+   "gebiet": "PT-c",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-f"
+  },
+  "LF1-5-u2": {
+   "gebiet": "PT-c",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-f"
+  },
+  "LF1-5-u4": {
+   "gebiet": "PT-c",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-f"
+  },
+  "LF4-7-u6": {
+   "gebiet": "PT-d",
+   "unsicher": true,
+   "grund": "Titel deutet auf PP-c"
+  },
+  "LF5-4-u3": {
+   "gebiet": "PT-c",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-b"
+  },
+  "LF5-4-u6": {
+   "gebiet": "PT-c",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-b"
+  },
+  "LF5-9-u2": {
+   "gebiet": "PP-b",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-e"
+  },
+  "LF5-9-u3": {
+   "gebiet": "PP-b",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-e"
+  },
+  "LF5-9-u4": {
+   "gebiet": "PP-b",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-e"
+  },
+  "LF6-2-u3": {
+   "gebiet": "PT-d",
+   "unsicher": true,
+   "grund": "Titel deutet auf PP-c"
+  },
+  "LF6-2-u5": {
+   "gebiet": "PT-d",
+   "unsicher": true,
+   "grund": "Titel deutet auf PP-c"
+  },
+  "LF6-2-u7": {
+   "gebiet": "PT-d",
+   "unsicher": true,
+   "grund": "Titel deutet auf PP-c"
+  },
+  "LF6-2-u9": {
+   "gebiet": "PT-d",
+   "unsicher": true,
+   "grund": "Titel deutet auf PP-c"
+  },
+  "LF7-5-u1": {
+   "gebiet": "PP-a",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-e"
+  },
+  "LF7-5-u3": {
+   "gebiet": "PP-a",
+   "unsicher": true,
+   "grund": "Titel deutet auf PT-e"
+  },
+  "PA-3-u10": {
+   "gebiet": "PP-d",
+   "unsicher": true,
+   "grund": "Titel deutet auf PP-e"
+  }
+ }
+}
