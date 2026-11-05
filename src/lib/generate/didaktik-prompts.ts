@@ -15,6 +15,7 @@ import {
   type QuestionMix,
 } from "@/lib/content/curriculum";
 import { ELEKTRO_HINWEIS } from "@/lib/review/pruefhinweise";
+import { BILDWUNSCH_REGELN } from "./bildwunsch";
 
 const VARIANT_RULES: Record<UnitVariant, string> = {
   standard:
@@ -120,12 +121,13 @@ export const TEXT_REGELN = `Regeln für jeden Text, den Lernende sehen (Einheit 
 `;
 
 export function didaktikSchemaHint(): string {
-  return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
+  return `Schema je Einheit: {"id","title","minutes","moduleId","blockId","variant","sections":{"einstieg","kern","beispiel","merksatz"},"explanation":"Zusammenfassung der sections (Fallback)","explanationSimple?","image?":{"src","alt","longDescription?","kind","source":{"url","license","attribution?"},"generatedFrom?"},"bildwunsch":null|{"art","motiv","werte":[{"name","wert"}]},"safetyFlag?","questions":[{"id","type","level":"erinnern|verstehen|anwenden","prompt","choices?","pairs?","steps?","blanks?","correct","explanation","sourceUrl","examAreas","image?","sampleSolution?","sampleChecklist?"}]}.
 Stufenmix pro Einheit: 2 erinnern / 3 verstehen / 2 anwenden (bei 7 Fragen; bei 5–8 anpassen). Rückmeldung ≤60 Wörter, ohne Quellensatz (Quelle nur in sourceUrl).
 Offene Aufgaben (rechnen/kurze Begründung): nur sampleSolution + sampleChecklist zur Selbstkontrolle — keine KI-Bewertung.
 Phase A: nur generierte SVG (license Generated-SVG), keine Commons-/KI-Bilder.
 explanation muss immer gesetzt sein (Fallback aus sections).
-${FRAGE_FORMAT}${TEXT_REGELN}${auswahlRegelnBlock()}`;
+${FRAGE_FORMAT}${TEXT_REGELN}${BILDWUNSCH_REGELN}
+${auswahlRegelnBlock()}`;
 }
 
 /** Full block prompt with variant rules (AP-14/AP-15 contract). */
