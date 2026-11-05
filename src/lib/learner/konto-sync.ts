@@ -7,7 +7,7 @@
 import { getBrowserSupabase } from "@/lib/auth/browser-client";
 import type { ReviewItem } from "@/lib/content/didaktik";
 import { isDemoMode } from "@/lib/learner/demo-modus";
-import { loadStack, writeStoredStack } from "@/lib/learner/leitner";
+import { loadStack, writeStoredStack, type StapelVermerk } from "@/lib/learner/leitner";
 import {
   readStoredEvents,
   writeStoredEvents,
@@ -16,6 +16,7 @@ import {
 
 const OWNER_KEY = "cal-lernstand-konto";
 const MAX_EVENTS = 800;
+const MAX_VERMERKE = 500;
 
 const eventKey = (e: LearningEvent) => `${e.at}|${e.kind}|${e.unitId ?? ""}`;
 
@@ -29,21 +30,58 @@ export function mergeEvents(
   return [...byKey.values()].sort((x, y) => x.at.localeCompare(y.at)).slice(-MAX_EVENTS);
 }
 
+export type Stapel = { items: ReviewItem[]; removed: StapelVermerk[] };
+/** Zeile in `learner_state.stack`: eine Frage im Stapel oder ihr Löschvermerk. */
+type StapelZeile = ReviewItem | (StapelVermerk & { entfernt: true });
+
+const stempel = (i: ReviewItem) => i.at ?? ""; // Stände ohne Zeitpunkt gelten als die ältesten
+
 /**
- * Stapel je Frage: der Eintrag mit dem späteren Fälligkeitstermin gewinnt (der jüngere Lernschritt rückt weiter).
- * shortcut: eine Frage, die auf einem Gerät den Stapel verlassen hat, kommt vom anderen Gerät zurück;
- * ausbauen, wenn Wiederholungen einen eigenen Änderungszeitpunkt je Frage bekommen.
+ * Stapel je Frage: der jüngere Eintrag gewinnt, egal ob Stufe oder Löschvermerk. So bleibt eine fertig gelernte
+ * Frage weg und eine falsch beantwortete fällt auf Stufe 1 zurück, ohne dass der Abgleich sie überschreibt.
+ * shortcut: nur die jüngsten 500 Löschvermerke bleiben; eine noch ältere Entfernung kann ein Gerät zurückbringen.
  */
-export function mergeStack(a: readonly ReviewItem[], b: readonly ReviewItem[]): ReviewItem[] {
-  const byId = new Map<string, ReviewItem>();
-  for (const i of [...a, ...b]) {
-    const old = byId.get(i.questionId);
-    if (!old || i.dueAt > old.dueAt) byId.set(i.questionId, i);
+export function mergeStack(a: Stapel, b: Stapel): Stapel {
+  const items = new Map<string, ReviewItem>();
+  for (const i of [...a.items, ...b.items]) {
+    const alt = items.get(i.questionId);
+    if (!alt || stempel(i) > stempel(alt) || (stempel(i) === stempel(alt) && i.dueAt > alt.dueAt)) {
+      items.set(i.questionId, i);
+    }
   }
-  return [...byId.values()];
+  const removed = new Map<string, StapelVermerk>();
+  for (const r of [...a.removed, ...b.removed]) {
+    const alt = removed.get(r.questionId);
+    if (!alt || r.at > alt.at) removed.set(r.questionId, r);
+  }
+  for (const [id, r] of removed) {
+    const i = items.get(id);
+    if (!i) continue;
+    if (r.at > stempel(i)) items.delete(id);
+    else removed.delete(id);
+  }
+  const byId = (x: { questionId: string }, y: { questionId: string }) => x.questionId.localeCompare(y.questionId);
+  return {
+    items: [...items.values()].sort(byId),
+    removed: [...removed.values()].sort((x, y) => x.at.localeCompare(y.at)).slice(-MAX_VERMERKE),
+  };
 }
 
-type Zeile = { events: LearningEvent[]; stack: ReviewItem[] };
+export const stapelZuZeilen = (s: Stapel): StapelZeile[] => [
+  ...s.items,
+  ...s.removed.map((r) => ({ ...r, entfernt: true as const })),
+];
+
+export function zeilenZuStapel(zeilen: readonly StapelZeile[] | null | undefined): Stapel {
+  const stapel: Stapel = { items: [], removed: [] };
+  for (const z of zeilen ?? []) {
+    if ("entfernt" in z) stapel.removed.push({ questionId: z.questionId, at: z.at });
+    else stapel.items.push(z);
+  }
+  return stapel;
+}
+
+type Zeile = { events: LearningEvent[]; stack: StapelZeile[] };
 const sameJson = (x: unknown, y: unknown) => JSON.stringify(x) === JSON.stringify(y);
 
 let laeuft = false;
@@ -84,17 +122,20 @@ export async function syncLernstand(): Promise<boolean> {
     const localEvents = readStoredEvents();
     const localStack = loadStack();
     const events = mergeEvents(localEvents, data?.events ?? []);
-    const items = mergeStack(localStack.items, data?.stack ?? []);
+    const lokal: Stapel = { items: localStack.items, removed: localStack.removed ?? [] };
+    const stapel = mergeStack(lokal, zeilenZuStapel(data?.stack));
+    const zeilen = stapelZuZeilen(stapel);
 
-    const lokalGeaendert = !sameJson(events, localEvents) || !sameJson(items, localStack.items);
+    const lokalZeilen = stapelZuZeilen(mergeStack(lokal, { items: [], removed: [] })); // gleiche Reihenfolge
+    const lokalGeaendert = !sameJson(events, localEvents) || !sameJson(zeilen, lokalZeilen);
     if (lokalGeaendert) {
       writeStoredEvents(events);
-      writeStoredStack({ items, updatedAt: localStack.updatedAt });
+      writeStoredStack({ ...stapel, updatedAt: localStack.updatedAt });
     }
-    if (!data || !sameJson(events, data.events) || !sameJson(items, data.stack)) {
+    if (!data || !sameJson(events, data.events) || !sameJson(zeilen, data.stack)) {
       await client
         .from("learner_state")
-        .upsert({ user_id: userId, events, stack: items, updated_at: new Date().toISOString() });
+        .upsert({ user_id: userId, events, stack: zeilen, updated_at: new Date().toISOString() });
     }
     return lokalGeaendert;
   } catch {

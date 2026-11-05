@@ -12,9 +12,13 @@ import { LERNSTAND_GEAENDERT } from "@/lib/learner/streak";
 
 const KEY = "cal-leitner-stack";
 
+/** Löschvermerk (SIN-1451): ohne ihn holt der Konto-Abgleich eine fertig gelernte Frage zurück. */
+export type StapelVermerk = { questionId: string; at: string };
+
 export type LeitnerStack = {
   items: ReviewItem[];
   updatedAt: string;
+  removed?: StapelVermerk[];
 };
 
 export function emptyStack(): LeitnerStack {
@@ -48,6 +52,9 @@ export function writeStoredStack(stack: LeitnerStack) {
     /* Speicher voll oder gesperrt: Lernen geht trotzdem weiter */
   }
 }
+
+const ohne = (stack: LeitnerStack, questionId: string) =>
+  (stack.removed ?? []).filter((r) => r.questionId !== questionId);
 
 function addDays(iso: string, days: number): string {
   const d = new Date(iso);
@@ -96,8 +103,9 @@ export function markWrong(stack: LeitnerStack, questionId: string, now = new Dat
   const dueAt = addDays(now.toISOString(), LEITNER_INTERVALS_DAYS[1]);
   const rest = stack.items.filter((i) => i.questionId !== questionId);
   return {
-    items: [...rest, { questionId, stage: 1, dueAt }],
+    items: [...rest, { questionId, stage: 1, dueAt, at: now.toISOString() }],
     updatedAt: now.toISOString(),
+    removed: ohne(stack, questionId),
   };
 }
 
@@ -117,13 +125,18 @@ export function markCorrect(
 
   if (existing) {
     if (existing.stage >= 4) {
-      return { items: rest, updatedAt: now.toISOString() };
+      return {
+        items: rest,
+        updatedAt: now.toISOString(),
+        removed: [...ohne(stack, questionId), { questionId, at: now.toISOString() }],
+      };
     }
     const next = (existing.stage + 1) as 1 | 2 | 3 | 4;
     const dueAt = addDays(now.toISOString(), LEITNER_INTERVALS_DAYS[next]);
     return {
-      items: [...rest, { questionId, stage: next, dueAt }],
+      items: [...rest, { questionId, stage: next, dueAt, at: now.toISOString() }],
       updatedAt: now.toISOString(),
+      removed: ohne(stack, questionId),
     };
   }
 
@@ -136,9 +149,11 @@ export function markCorrect(
           questionId,
           stage,
           dueAt: addDays(now.toISOString(), LEITNER_INTERVALS_DAYS[stage]),
+          at: now.toISOString(),
         },
       ],
       updatedAt: now.toISOString(),
+      removed: ohne(stack, questionId),
     };
   }
 

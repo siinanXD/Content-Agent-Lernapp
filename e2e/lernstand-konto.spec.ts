@@ -125,3 +125,20 @@ test("offline begonnene Einheit geht nicht verloren: sie wird nach Rückkehr des
   const b = await neuerBrowser(browser);
   await stand(b);
 });
+
+test("fertig gelernte Frage kommt durch den Abgleich nicht zurück (Stufe 4 richtig)", async ({ browser }) => {
+  const frage = { questionId: "M0-1-u1-q1", stage: 4, dueAt: "2026-11-01T00:00:00.000Z" };
+  server.zeile = { user_id: user.id, events: [], stack: [frage] };
+  const a = await neuerBrowser(browser);
+  await a.goto("/lernpfad");
+  await a.evaluate((f) => window.localStorage.setItem("cal-leitner-stack", JSON.stringify({ items: [f], updatedAt: f.dueAt })), frage);
+  await a.goto("/wiederholung");
+  await a.locator("button[aria-pressed]").first().click();
+  await a.getByRole("button", { name: "Antwort prüfen" }).click();
+
+  await expect.poll(() => JSON.stringify(server.zeile?.stack ?? [])).toContain('"entfernt":true');
+  await a.waitForTimeout(3000); // der Abgleich lief; früher holte er die Frage nach etwa 1 s zurück
+  const lokal = await a.evaluate(() => JSON.parse(window.localStorage.getItem("cal-leitner-stack") ?? "{}").items);
+  expect(lokal).toEqual([]);
+  expect((server.zeile?.stack as { stage?: number }[]).some((z) => z.stage)).toBe(false);
+});
