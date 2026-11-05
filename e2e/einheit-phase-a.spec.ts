@@ -37,6 +37,13 @@ const units = [
     questions: [question("LF1-2:u1-q1")],
     moduleId: "LF1",
     blockId: "LF1-2",
+    // SIN-1543: Form eines Eintrags aus docs/content/bilder.json
+    image: {
+      src: "/generated/sketch-example.svg",
+      alt: "Skizze einer Platte mit Maßen",
+      kind: "sketch",
+      source: { url: "local", license: "Generated-SVG" },
+    },
   },
 ];
 
@@ -75,6 +82,14 @@ test("Direktaufruf (Neuladen) mit Sonderzeichen in der Id öffnet die Einheit", 
   await page.goto("/einheit/LF1-2%3Au1");
   await expect(page.getByRole("heading", { name: "Feilen und Sägen" })).toBeVisible();
   await expect(page.getByText(/^Frage 1 von 1/)).toBeVisible();
+});
+
+test("Einheit mit Bild zeigt es mit Alt-Text und Lizenz (SIN-1543)", async ({ page }, info) => {
+  await page.goto("/einheit/LF1-2%3Au1");
+  const bild = page.getByRole("img", { name: "Skizze einer Platte mit Maßen" });
+  await expect(bild).toBeVisible();
+  await expect(page.getByText("Lizenz: Generated-SVG")).toBeVisible();
+  await page.screenshot({ path: info.outputPath(`einheit-bild-${info.project.name}.png`), fullPage: true });
 });
 
 test("Unbekannte Einheit zeigt die Fehlerseite statt abzustürzen", async ({ page }) => {

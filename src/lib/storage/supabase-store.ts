@@ -1,4 +1,6 @@
 import type { GeneratedLernfeld, GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
+import { bildFuer } from "@/lib/content/bilder";
+import type { UnitImage } from "@/lib/content/didaktik";
 import { gebietFuerEinheit, tabelleFuerKurs, unbekannteBloecke } from "@/lib/content/pruefungsgebiete";
 import { frageAusSpalten, frageSpalten, gebietAbweichungen, unitAusSpalten, unitSpalten, type QuestionSpalten, type UnitSpalten } from "./gliederung";
 import { mitKiKennzeichnung } from "@/lib/review/content-guard";
@@ -198,6 +200,8 @@ async function loadCourse(id: string): Promise<Course | undefined> {
           sourceUrl: u.source_url,
           sourceFetchedAt: u.source_fetched_at,
           ...unitAusSpalten(u),
+          // SIN-1543: Bild aus bilder.json, wo die Spalte leer ist.
+          ...(u.image ? {} : mitBild(bildFuer(u.id))),
           questions: (byUnit.get(u.id) ?? []).map((q) => ({
             id: q.id,
             type: q.type as GeneratedUnit["questions"][number]["type"],
@@ -207,6 +211,7 @@ async function loadCourse(id: string): Promise<Course | undefined> {
             explanation: q.explanation,
             sourceUrl: q.source_url,
             ...frageAusSpalten(q, gebiet),
+            ...(q.image ? {} : mitBild(bildFuer(q.id))),
           })),
         };
       }),
@@ -219,6 +224,8 @@ async function loadCourse(id: string): Promise<Course | undefined> {
 
   return course;
 }
+
+const mitBild = (image: UnitImage | undefined) => (image ? { image } : {});
 
 export const supabaseStorage: CourseStorage = {
   backend: "supabase",
