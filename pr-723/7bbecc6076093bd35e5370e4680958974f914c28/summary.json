@@ -1,0 +1,17 @@
+{
+  "duration": 7718.228000000001,
+  "tests": [
+    {
+      "title": "weg-gesamtweg.spec.ts › Es gibt mindestens einen veröffentlichten Kurs",
+      "status": "expected",
+      "duration": 6
+    },
+    {
+      "title": "weg-gesamtweg.spec.ts › Gesamtweg bis Prüfungsmodus: Maschinen- und Anlagenführer (e22073de)",
+      "status": "expected",
+      "duration": 5688,
+      "webm": "02.webm",
+      "gif": "02.gif"
+    }
+  ]
+}
