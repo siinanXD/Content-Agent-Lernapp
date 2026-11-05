@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { gebietAbweichungen } from "@/lib/storage/gliederung";
 import { GEBIETE_TABELLEN, gebietFuerEinheit, tabelleFuerKurs, unbekannteBloecke } from "./pruefungsgebiete";
 
 /** Einheiten-IDs, die die Tabelle abdeckt: je Block `einheiten` Stück (u1..un) plus die Ausnahmen. */
@@ -40,4 +41,10 @@ test("Unbekannter Block: kein Gebiet, Warnung statt Raten; Industriemechaniker o
   assert.equal(gebietFuerEinheit(maf, "unit-01"), undefined);
   assert.deepEqual(unbekannteBloecke(maf, ["LF1-1-u1", "XYZ-9-u1", "XYZ-9-u2"]), ["XYZ-9"]);
   assert.equal(tabelleFuerKurs("00000000-0000-0000-0000-000000000000"), undefined);
+});
+
+test("Abweichung zwischen Spalte und Datei wird gemeldet, Übereinstimmung nicht (SIN-1550)", () => {
+  const maf = tabelleFuerKurs("e22073de-7020-4380-9002-c70d46c25e25")!;
+  assert.deepEqual(gebietAbweichungen(maf, [{ id: "LF1-1-u1", examAreas: ["PT-a"] }, { id: "LF1-1-u2" }]), []);
+  assert.deepEqual(gebietAbweichungen(maf, [{ id: "LF1-1-u1", examAreas: ["WISO-1"] }]), ["LF1-1-u1: Spalte WISO-1, Tabelle PT-a"]);
 });

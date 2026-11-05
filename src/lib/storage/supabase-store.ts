@@ -1,5 +1,6 @@
 import type { GeneratedLernfeld, GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import { gebietFuerEinheit, tabelleFuerKurs, unbekannteBloecke } from "@/lib/content/pruefungsgebiete";
+import { frageAusSpalten, frageSpalten, gebietAbweichungen, unitAusSpalten, unitSpalten, type QuestionSpalten, type UnitSpalten } from "./gliederung";
 import { mitKiKennzeichnung } from "@/lib/review/content-guard";
 import { schreibeTeil } from "./generated-teil";
 import { getServiceSupabase } from "./supabase-client";
@@ -33,7 +34,7 @@ type SourceRow = {
   note: string | null;
 };
 
-type UnitRow = {
+type UnitRow = UnitSpalten & {
   id: string;
   title: string;
   minutes: number;
@@ -43,7 +44,7 @@ type UnitRow = {
   sort_order: number;
 };
 
-type QuestionRow = {
+type QuestionRow = QuestionSpalten & {
   id: string;
   unit_id: string;
   type: string;
@@ -100,7 +101,7 @@ async function loadCourse(id: string): Promise<Course | undefined> {
         () =>
           sb
             .from("units")
-            .select("id, title, minutes, explanation, source_url, source_fetched_at, sort_order")
+            .select("id, title, minutes, explanation, source_url, source_fetched_at, sort_order, module_id, block_id, image")
             .eq("course_id", id)
             .order("sort_order", { ascending: true })
             .order("id", { ascending: true }),
@@ -110,7 +111,7 @@ async function loadCourse(id: string): Promise<Course | undefined> {
         () =>
           sb
             .from("questions")
-            .select("id, unit_id, type, prompt, choices, correct, explanation, source_url, sort_order")
+            .select("id, unit_id, type, prompt, choices, correct, explanation, source_url, sort_order, exam_areas, level, image")
             .eq("course_id", id)
             .order("sort_order", { ascending: true })
             .order("id", { ascending: true }),
@@ -145,7 +146,23 @@ async function loadCourse(id: string): Promise<Course | undefined> {
 
   // Prefer full AP-15 payload (includes moduleId/blockId/Didaktik fields).
   if (isLernfeld(courseRow.lernfeld) && courseRow.lernfeld.units?.length) {
-    course.generated = courseRow.lernfeld;
+    // SIN-1550: Die Spalten gewinnen vor dem jsonb; Inhalte wie sections/variant stehen nur dort und bleiben.
+    const einheit = new Map(unitRows.map((r) => [r.id, r]));
+    const frage = new Map(questionRows.map((r) => [`${r.unit_id}\u0000${r.id}`, r]));
+    course.generated = {
+      ...courseRow.lernfeld,
+      units: courseRow.lernfeld.units.map((u) => {
+        const r = einheit.get(u.id);
+        return {
+          ...u,
+          ...(r ? unitAusSpalten(r) : {}),
+          questions: (u.questions ?? []).map((q) => {
+            const qr = frage.get(`${u.id}\u0000${q.id}`);
+            return qr ? { ...q, ...frageAusSpalten(qr) } : q;
+          }),
+        };
+      }),
+    };
   } else if (unitRows.length) {
     const byUnit = new Map<string, QuestionRow[]>();
     for (const q of questionRows) {
@@ -163,6 +180,10 @@ async function loadCourse(id: string): Promise<Course | undefined> {
     const tabelle = tabelleFuerKurs(courseRow.id);
     const unbekannt = tabelle ? unbekannteBloecke(tabelle, unitRows.map((u) => u.id)) : [];
     if (unbekannt.length) console.warn(`pruefungsgebiete: Block ohne Zuordnung, kein Gebiet gesetzt: ${unbekannt.join(", ")}`);
+    const abweichend = tabelle
+      ? gebietAbweichungen(tabelle, questionRows.flatMap((q) => (q.exam_areas ? [{ id: q.unit_id, examAreas: q.exam_areas }] : [])))
+      : [];
+    if (abweichend.length) console.warn(`pruefungsgebiete: Spalte weicht von der Tabelle ab (${abweichend.length}): ${[...new Set(abweichend)].slice(0, 5).join("; ")}`);
     course.generated = mitKiKennzeichnung({
       id: meta.id,
       title: meta.title,
@@ -176,6 +197,7 @@ async function loadCourse(id: string): Promise<Course | undefined> {
           explanation: u.explanation,
           sourceUrl: u.source_url,
           sourceFetchedAt: u.source_fetched_at,
+          ...unitAusSpalten(u),
           questions: (byUnit.get(u.id) ?? []).map((q) => ({
             id: q.id,
             type: q.type as GeneratedUnit["questions"][number]["type"],
@@ -184,9 +206,7 @@ async function loadCourse(id: string): Promise<Course | undefined> {
             correct: q.correct,
             explanation: q.explanation,
             sourceUrl: q.source_url,
-            // Legacy rows predate AP-18; callers treat missing level as optional.
-            level: undefined,
-            examAreas: gebiet ? [gebiet] : undefined,
+            ...frageAusSpalten(q, gebiet),
           })),
         };
       }),
@@ -329,6 +349,7 @@ export const supabaseStorage: CourseStorage = {
           source_url: u.sourceUrl || fallbackUrl,
           source_fetched_at: u.sourceFetchedAt || fallbackFetched,
           sort_order: i,
+          ...unitSpalten(u),
         }));
     const questionRows = generated.units.flatMap((u, ui) =>
       (u.questions ?? []).map((q, qi) => ({
@@ -342,6 +363,7 @@ export const supabaseStorage: CourseStorage = {
         explanation: q.explanation || "",
         source_url: q.sourceUrl || u.sourceUrl || fallbackUrl,
         sort_order: ui * 1000 + qi,
+        ...frageSpalten(q, tabelleFuerKurs(id), u.id || `unit-${ui + 1}`),
       })),
     );
 
