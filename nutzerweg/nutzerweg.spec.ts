@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test, expect, type Page } from "@playwright/test";
 
 // SIN-1453: Nutzerwege, fachlich richtig. Jeder Test ist ein Weg; rot heißt: ein Mensch würde es merken.
@@ -36,6 +38,11 @@ async function beantworten(page: Page, falsch = false): Promise<string> {
   if ((await textfeld.count()) > 0) {
     await textfeld.first().fill("Eigener Lösungsversuch");
     typ = "text";
+  }
+  const speichern = page.getByRole("button", { name: "Antwort speichern" });
+  if (await speichern.isVisible()) {
+    await speichern.click(); // Prüfungsmodus: offene Aufgabe wird gespeichert, Musterlösung erst im Ergebnis
+    return "offen";
   }
   const muster = page.getByRole("button", { name: "Musterlösung zeigen" });
   if (await muster.isVisible()) {
@@ -111,29 +118,62 @@ test("Weg 3: Einheit abschließen erhöht den Stand", async ({ page }) => {
   expect(nachher.profil.pct).toBeGreaterThanOrEqual(vorher.profil.pct);
 });
 
-test("Weg 4: Prüfung läuft mit der angezeigten Dauer bis zum Ergebnis", async ({ page }) => {
-  await anmelden(page);
-  await page.goto("/pruefung");
-  const dauer = Number(/(\d+) Min/.exec((await page.getByText(/\d+ Min · \d+ Fragen/).first().textContent()) ?? "")?.[1]);
-  expect(dauer).toBeGreaterThan(0);
-  await page.getByRole("button", { name: "Prüfung starten" }).click();
-  const uhr = page.locator("p", { hasText: /Restzeit/ });
-  const [, m, s] = /(\d+):(\d{2})/.exec((await uhr.textContent()) ?? "")!;
-  const sekunden = Number(m) * 60 + Number(s);
-  expect(sekunden, `Restzeit zu Beginn ${m}:${s}, angezeigt waren ${dauer} Min`).toBeGreaterThanOrEqual(dauer * 60 - 10);
-  const typen = new Set<string>();
-  const letzte = page.getByRole("button", { name: "Ergebnis je Gebiet", exact: true });
-  for (let guard = 0; guard < 30; guard++) {
-    typen.add(await beantworten(page));
-    if (await letzte.isVisible()) {
-      await letzte.click();
-      break;
-    }
-    await page.getByRole("button", { name: "Weiter", exact: true }).click();
+// Weg 4 (SIN-1516): Prüfung je Kurs bis zum Ergebnis, Handy und Desktop. Gebietstitel wie in der Map.
+const PRUEFUNG_KURSE = [
+  { name: "Maschinen- und Anlagenführer", id: "e22073de-7020-4380-9002-c70d46c25e25", map: "maf-metall.json", teil: "PT" },
+  { name: "Industriekaufmann", id: "5a1f0c52-3d6e-4b8a-9e47-2c8d1b7f6a31", map: "indkfl.json", teil: "T1" },
+];
+const ANSICHTEN = [
+  { name: "Handy", size: { width: 390, height: 844 } },
+  { name: "Desktop", size: { width: 1280, height: 800 } },
+];
+const VORLAGENFRAGE = "Was ist der erste Schritt vor Aufnahme einer neuen Fertigungstätigkeit?";
+
+for (const kurs of PRUEFUNG_KURSE) {
+  for (const ansicht of ANSICHTEN) {
+    test(`Weg 4: Prüfung ${kurs.name} läuft mit der angezeigten Dauer bis zum Ergebnis (${ansicht.name})`, async ({ page }, testInfo) => {
+      await page.setViewportSize(ansicht.size);
+      await anmelden(page);
+      const map = JSON.parse(readFileSync(join(process.cwd(), "docs", "content", kurs.map), "utf8"));
+      const teil = map.exam.gradedParts.find((p: { id: string }) => p.id === kurs.teil);
+      await page.goto(`/pruefung?part=${kurs.teil}&kurs=${kurs.id}`);
+
+      // Gebietstitel stehen wie in der Map, nirgends die Vorlagen oder die Prüfung eines anderen Kurses.
+      const dauer = Number(/(\d+) Min/.exec((await page.getByText(/\d+ Min · \d+ Fragen/).first().textContent()) ?? "")?.[1]);
+      expect(dauer, "angezeigte Dauer").toBe(Number(/(\d+) Minuten/.exec(teil.duration)![1]));
+      for (const g of teil.gebiete) await expect(page.getByText(g.title, { exact: false }).first(), `Gebiet ${g.id}`).toBeVisible();
+      await page.screenshot({ path: testInfo.outputPath(`aufbau-${ansicht.name}.png`), fullPage: true });
+
+      await page.getByRole("button", { name: "Prüfung starten" }).click();
+      const uhr = page.locator("p", { hasText: /Restzeit/ });
+      const [, m, sek] = /(\d+):(\d{2})/.exec((await uhr.textContent()) ?? "")!;
+      expect(Number(m) * 60 + Number(sek), `Restzeit zu Beginn ${m}:${sek}, angezeigt waren ${dauer} Min`).toBeGreaterThanOrEqual(dauer * 60 - 10);
+
+      const typen = new Set<string>();
+      const letzte = page.getByRole("button", { name: "Ergebnis je Gebiet", exact: true });
+      for (let guard = 0; guard < 60; guard++) {
+        const frage = (await page.getByRole("heading", { level: 2 }).first().textContent()) ?? "";
+        expect(frage, "Vorlagenfrage in der Prüfung").not.toContain(VORLAGENFRAGE);
+        typen.add(await beantworten(page));
+        // Die Lösung erscheint erst im Ergebnis: nach der Antwort nur „gespeichert“.
+        await expect(page.getByText(/Antwort gespeichert/)).toBeVisible();
+        await expect(page.getByTestId("answer-feedback")).toHaveCount(0);
+        if (await letzte.isVisible()) {
+          await letzte.click();
+          break;
+        }
+        await page.getByRole("button", { name: "Weiter", exact: true }).click();
+      }
+      await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
+      await expect(page.getByText("Nach Prüfungsgebiet")).toBeVisible();
+      await expect(page.getByText("Nach Lernfeld")).toHaveCount(0);
+      await page.getByRole("button", { name: /Antworten mit Lösung durchgehen/ }).click();
+      await expect(page.getByText("Richtig:").first()).toBeVisible();
+      await page.screenshot({ path: testInfo.outputPath(`ergebnis-${ansicht.name}.png`), fullPage: true });
+      console.log(`Fragetypen in der Prüfung (${kurs.name}, ${ansicht.name}): ${[...typen].join(", ")}`);
+    });
   }
-  await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
-  console.log(`Fragetypen in der Prüfung: ${[...typen].join(", ")}`);
-});
+}
 
 test("Weg 5: Falsche Antwort ist in der Wiederholung sofort übbar", async ({ page }, testInfo) => {
   await anmelden(page);

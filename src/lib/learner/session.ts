@@ -1,5 +1,5 @@
 import type { AreaResult } from "@/lib/learner/exam";
-import type { WrongAnswer } from "@/lib/learner/exam-result";
+import type { ReviewItem, WrongAnswer } from "@/lib/learner/exam-result";
 import { demoSession, isDemoMode } from "@/lib/learner/demo-modus";
 
 export type LearnerSession = {
@@ -17,6 +17,8 @@ export type LearnerSession = {
     partTitle?: string;
     /** Falsch beantwortete Prüfungsfragen (kommen in die Wiederholung). */
     wrongAnswers?: WrongAnswer[];
+    /** Alle Prüfungsfragen mit Antwort, Lösung, Erklärung und Quelle; erst im Ergebnis sichtbar (SIN-1538). */
+    review?: ReviewItem[];
   };
 };
 

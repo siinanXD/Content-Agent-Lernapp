@@ -161,11 +161,11 @@ export default function ErgebnisPage() {
                     {a.title}
                   </span>
                   <span className="text-xs text-[var(--color-text-secondary)]">
-                    {a.correct}/{a.total} · {Math.round(a.ratio * 100)}%
+                    {a.total === 0 ? "keine Antworten" : `${a.correct}/${a.total} · ${Math.round(a.ratio * 100)}%`}
                   </span>
                 </span>
                 <span
-                  className={`shrink-0 rounded-[var(--radius-sm)] px-2.5 py-1 text-xs font-medium ${lightClass[a.light]}`}
+                  className={`shrink-0 rounded-[var(--radius-sm)] px-2.5 py-1 text-xs font-medium ${a.light ? lightClass[a.light] : ""}`}
                 >
                   {a.label}
                 </span>

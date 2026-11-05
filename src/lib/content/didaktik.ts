@@ -137,7 +137,8 @@ export function examQuestionTarget(partId: string, durationMinutes: number | nul
     WISO: 15,
     ZP: 15,
     T1: 25,
-    T2: 40,
+    T2A: 40,
+    T2C: 15,
   };
   if (defaults[partId] != null) return defaults[partId]!;
   if (durationMinutes != null && durationMinutes > 0) {

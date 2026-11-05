@@ -4,6 +4,7 @@
  * Die vollen Regeln (Längen, Anzahl, Lösung in choices) prüft weiter `validateQuestion()` danach.
  * Doku: https://platform.claude.com/docs/en/build-with-claude/structured-outputs
  */
+import { BILDWUNSCH_ARTEN } from "./bildwunsch";
 import { QUESTION_JSON_SCHEMA } from "./question-schema";
 
 /** Von der API nicht unterstützt (`minItems` nur bis 1, siehe `stripUnsupported`). */
@@ -59,6 +60,23 @@ const image = {
   additionalProperties: false,
 } as const;
 
+/** SIN-1551: Bildwunsch als Daten oder null; Pflichtfeld, damit der Agent bewusst entscheidet. */
+const bildwunsch = {
+  anyOf: [
+    {
+      type: "object",
+      properties: {
+        art: { enum: BILDWUNSCH_ARTEN },
+        motiv: str,
+        werte: { type: "array", items: { type: "object", properties: { name: str, wert: str }, required: ["name", "wert"], additionalProperties: false } },
+      },
+      required: ["art", "motiv", "werte"],
+      additionalProperties: false,
+    },
+    { type: "null" },
+  ],
+} as const;
+
 /**
  * Frage = Frageschema. Kein Bild je Frage: Die API erlaubt höchstens 24 optionale Felder und 16 Union-Felder
  * je Anfrage; ein optionales `image` in allen fünf Typen sprengt das (siehe docs/decisions/SIN-489-structured-outputs.md).
@@ -83,12 +101,13 @@ const unit = {
     explanation: str,
     explanationSimple: str,
     image,
+    bildwunsch,
     safetyFlag: { type: "boolean" },
     sourceUrl: str,
     sourceFetchedAt: str,
     questions: { type: "array", items: question, minItems: 1 },
   },
-  required: ["id", "title", "minutes", "sections", "explanation", "sourceUrl", "sourceFetchedAt", "questions"],
+  required: ["id", "title", "minutes", "sections", "explanation", "bildwunsch", "sourceUrl", "sourceFetchedAt", "questions"],
   additionalProperties: false,
 } as const;
 

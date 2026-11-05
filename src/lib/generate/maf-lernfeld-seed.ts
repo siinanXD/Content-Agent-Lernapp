@@ -10,6 +10,7 @@ import {
   type UnitSections,
   type UnitVariant,
 } from "@/lib/content/didaktik";
+import type { Bildwunsch } from "./bildwunsch";
 
 export type QuestionType =
   | "auswahl"
@@ -57,6 +58,8 @@ export type GeneratedUnit = {
   /** AP-18 didactic variant; optional on legacy stored units. */
   variant?: UnitVariant;
   image?: UnitImage;
+  /** SIN-1551: Wunsch des Inhalts-Agenten, nur Daten; kein fertiges Bild. `null` = kein Bild gewünscht. */
+  bildwunsch?: Bildwunsch | null;
   questions: GeneratedQuestion[];
   sourceUrl: string;
   sourceFetchedAt: string;

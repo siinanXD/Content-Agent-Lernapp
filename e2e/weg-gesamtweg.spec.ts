@@ -168,7 +168,7 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
   }
 
   // Prüfungsmodus
-  await page.goto("/pruefung");
+  await page.goto("/pruefung?part=WISO");
   await expect(page.getByRole("heading", { name: "Prüfungsmodus" })).toBeVisible();
   await page.getByRole("button", { name: "Prüfung starten" }).click();
   await expect(page.getByText(/Frage 1\/\d+/)).toBeVisible();
@@ -180,11 +180,10 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
     }
     const options = page.locator("button[aria-pressed]");
     if ((await options.count()) > 0) await options.first().click();
-    const sample = page.getByRole("button", { name: "Musterlösung zeigen" });
+    const sample = page.getByRole("button", { name: "Antwort speichern" });
     if (await sample.isVisible()) {
       await page.getByRole("textbox").fill("Eigener Lösungsversuch");
       await sample.click();
-      await page.getByRole("button", { name: "Selbstkontrolle speichern" }).click();
     } else {
       await page.getByRole("button", { name: "Antwort prüfen" }).click();
     }
