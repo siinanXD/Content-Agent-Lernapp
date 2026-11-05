@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import phaseAIndex from "../src/lib/learner/phase-a-index.json";
 
-// SIN-255: Gesamtweg Start → Lernpfad → Einheit → Ergebnis → Wiederholung
+// Weg-Test (Präfix weg-: e2e-video spielt ihn mit Video, SIN-1590). SIN-255: Gesamtweg Start → Lernpfad → Einheit → Ergebnis → Wiederholung
 // (1/3/7 Tage) → Prüfungsmodus für den veröffentlichten Kurs (Phase A).
 // Die Phase-A-Antwort ist fest vorgegeben, die Zeit im Browser wird mit
 // page.clock gesetzt: keine Live-Keys, keine echten Wartezeiten.
