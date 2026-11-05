@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { loadAllCurricula } from "@/lib/content/curriculum";
 import type { GeneratedQuestion, GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import type { QuestionEvaluationRecord } from "@/lib/quality/question-evaluations";
 import { mockStorage } from "@/lib/storage";
@@ -120,4 +121,47 @@ test("loadCoursePath (Kurs-Lernpfad) filtert verworfene Fragen", async () => {
   ]);
   const path = await loadCoursePath(mockStorage, course.id);
   assert.deepEqual(path?.units.flatMap((u) => u.questions.map((q) => q.id)), ["ok"]);
+});
+
+// SIN-1541: Sicherheits-Merker blendet nur in Blöcken mit safety: true aus.
+const mafMap = loadAllCurricula().find((c) => c.id === "maf-metall")!;
+const blocks = mafMap.modules.flatMap((m) => m.blocks);
+const sicherBlock = blocks.find((b) => b.safety === true)!.id;
+const freierBlock = blocks.find((b) => b.safety !== true && b.id.startsWith("LF2-"))!.id;
+const flagged = (unitId: string, passed = true): QuestionEvaluationRecord => ({
+  ...evaluation("c", unitId, "q1", passed, "2026-10-01"),
+  sicherheitFlag: true,
+});
+
+/** Füllt den Kurs mit je einer Einheit aller Blöcke der Metall-Map, damit sie eindeutig die passende Map ist. */
+function sichtbar(unitIds: string[], evals: QuestionEvaluationRecord[]): string[] {
+  const fueller = blocks.map((b) => `${b.id}-u99`);
+  const units = [...unitIds, ...fueller].map((id) => unit(id, ["q1"]));
+  return dropDiscardedQuestions(units, evals).map((u) => u.id).filter((id) => !fueller.includes(id));
+}
+
+test("Merker in Block ohne safety → sichtbar; in Block mit safety → ausgeblendet; nicht bestanden → ausgeblendet", () => {
+  const frei = `${freierBlock}-u1`;
+  const sicher = `${sicherBlock}-u1`;
+  const durchgefallen = `${freierBlock}-u2`;
+  const ids = [frei, sicher, durchgefallen];
+  const evals = [flagged(frei), flagged(sicher), flagged(durchgefallen, false)];
+  assert.deepEqual(sichtbar(ids, evals), [frei]);
+});
+
+test("Schalter SICHERHEITS_MERKER=alle: Verhalten wie vor SIN-1541 (jeder Merker blendet aus)", () => {
+  const frei = `${freierBlock}-u1`;
+  const vorher = process.env.SICHERHEITS_MERKER;
+  process.env.SICHERHEITS_MERKER = "alle";
+  try {
+    assert.deepEqual(sichtbar([frei], [flagged(frei)]), []);
+  } finally {
+    if (vorher === undefined) delete process.env.SICHERHEITS_MERKER;
+    else process.env.SICHERHEITS_MERKER = vorher;
+  }
+});
+
+test("Unbekannter Block oder keine Map: Merker blendet aus (sicherer Rückfall)", () => {
+  assert.deepEqual(sichtbar(["XYZ-9-u1"], [flagged("XYZ-9-u1")]), []);
+  assert.deepEqual(sichtbar([`${freierBlock}-u1`, "XYZ-9-u1"], [flagged("XYZ-9-u1")]), [`${freierBlock}-u1`]);
 });

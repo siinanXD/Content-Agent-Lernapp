@@ -1,0 +1,6 @@
+# SIN-1541 — Sicherheits-Merker: nur Blöcke mit safety:true blenden aus
+
+- Links: [SIN-1541](https://linear.app/sinan-kahraman/issue/SIN-1541), [SIN-1517](https://linear.app/sinan-kahraman/issue/SIN-1517), [SIN-808](https://linear.app/sinan-kahraman/issue/SIN-808)
+- Entscheidung: `dropDiscardedQuestions` blendet eine Frage mit Merker (`sicherheit_flag`) nur noch aus, wenn ihr Block in der Map `safety: true` trägt (`merkerBlendetAus`, `src/lib/learner/sicherheits-merker.ts`). Nicht bestandene Fragen bleiben immer ausgeblendet. Einziger Schalter: `SICHERHEITS_MERKER=alle` stellt den Stand von vor diesem Issue her (Option 1); bei Option 3 entsteht ein neuer Auftrag.
+- Annahmen: Option 2 aus SIN-1517 gilt als Annahme, Sinan prüft sie beim Durchklicken. Maßgeblich ist `safety` des Blocks, nicht des Moduls (Issue-Wortlaut), obwohl der Richter `block ?? module` nutzt. Ohne passende Map oder bei unbekanntem Block blendet der Merker weiter aus (sicherer Rückfall). Die Veröffentlichungsprüfung (`veroeffentlichen.ts`, SIN-808) bleibt streng. Nichts wird neu bewertet, nichts gelöscht, 0 € API-Kosten.
+- Stichprobe: `scripts/sicherheits-stichprobe.ts` (nur lesen) schreibt `docs/ops/sicherheits-stichprobe-<Datum>.md`. Das Linear-Issue mit Label `sinan` (`node scripts/autonomy/sinan.mjs create …`) wurde in dieser lokalen Sitzung nicht angelegt.

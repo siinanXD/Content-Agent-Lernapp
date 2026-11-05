@@ -16,6 +16,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 | SIN-1551 | SIN-1551 — Schema 3/3: Inhalts-Agent liefert Gebiet, Stufe und Bildwunsch als Daten | [SIN-1551-bildwunsch.md](decisions/SIN-1551-bildwunsch.md) |
 | SIN-1550 | SIN-1550 — Schema 2/3: Store liest und schreibt die neuen Spalten | [SIN-1550-store-spalten.md](decisions/SIN-1550-store-spalten.md) |
 | SIN-1549 | SIN-1549 — Schema 1/3: Spalten für Modul, Block, Gebiet, Stufe und Bild | [SIN-1549-schema-spalten.md](decisions/SIN-1549-schema-spalten.md) |
+| SIN-1541 | SIN-1541 — Sicherheits-Merker: nur Blöcke mit safety:true blenden aus | [SIN-1541-sicherheits-merker.md](decisions/SIN-1541-sicherheits-merker.md) |
 | SIN-1540 | SIN-1540 — Bericht: gleiche und ähnliche Einheiten je Block | [SIN-1540-dubletten-bericht.md](decisions/SIN-1540-dubletten-bericht.md) |
 | SIN-1534 | SIN-1534 — Zuordnung Block → Prüfungsgebiet als Tabelle im Repo | [SIN-1534-pruefungsgebiete-tabelle.md](decisions/SIN-1534-pruefungsgebiete-tabelle.md) |
 | SIN-1532 | SIN-1532: Fragetypen-Schreibweisen beim Lesen | [SIN-1532-fragetypen-schreibweisen.md](decisions/SIN-1532-fragetypen-schreibweisen.md) |
