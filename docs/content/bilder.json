@@ -1,0 +1,9 @@
+{
+  "M0-1-u1": {
+    "src": "/generated/sketch-example.svg",
+    "alt": "Skizze einer Platte mit Maßen",
+    "kind": "sketch",
+    "source": { "url": "local", "license": "Generated-SVG" },
+    "freigegeben": false
+  }
+}
