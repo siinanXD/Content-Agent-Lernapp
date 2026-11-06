@@ -66,6 +66,7 @@ Wo liegt was. Zuerst lesen, dann gezielt öffnen statt das Repo zu durchsuchen (
 | Fertig-Liste: v1/v2, Idee je Woche, Einsortieren, Fortschritt (SIN-528) | `scripts/autonomy/linear.mjs` (`startOrder`, `isIdea`, `classifyNew`, `fetchProgress`), Migration `20261020010000_sin528_loop_snapshot_fortschritt.sql` |
 | Fertig-Liste Lern-App v1: offene Punkte je ein Issue, solange offen keine Ideen (SIN-764) | `docs/FERTIG.md` (Checkboxen, Wortlaut Sinan), `scripts/autonomy/fertig.mjs` (`parseFertig`, `fertigIssues`, `fertigKriterien`) |
 | Restore-Test der Sicherung, monatlich in lokaler Supabase im Runner (SIN-337) | `.github/workflows/restore-test.yml`, Alarm `scripts/autonomy/backup.mjs` (`analyzeRestoreTest`), Doku `docs/ops/BACKUP.md` |
+| Umgebungen dev, staging, production, Branch-Fluss, Rücksetzen (SIN-1593) | `docs/ops/umgebungen.md`, Entscheidung `docs/decisions/SIN-1593-umgebungen.md` |
 | Risiko-Regeln | `scripts/autonomy/risk.mjs` (Gate selbst: nur mit Freigabe ändern) |
 | Größen, Modell, Runden, Bündeln, Verbrauch | `docs/autonomy/groessen.md`, `scripts/autonomy/sparen.mjs` |
 
