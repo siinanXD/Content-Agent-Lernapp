@@ -46,7 +46,7 @@ const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
 };
 
 /** Höchstens so viele Module in der Prüfungsreife auf Heute; sonst wächst die Seite mit jedem Modul. */
-const READINESS_MAX = 3;
+const READINESS_MAX = 2;
 
 const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
 
@@ -311,12 +311,23 @@ export function LernpfadView({
 
         {readiness.length > 0 ? (
           <section aria-label="Prüfungsreife" className={`${tile} bento-span-6`}>
-            <h2
-              className="text-[15px] font-semibold leading-[19.5px] text-[var(--color-text-primary)]"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Prüfungsreife
-            </h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2
+                className="text-[15px] font-semibold leading-[19.5px] text-[var(--color-text-primary)]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Prüfungsreife
+              </h2>
+              {allReadiness.length > readiness.length ? (
+                <Link
+                  href={pfadHref}
+                  aria-label={`Alle ${allReadiness.length} Module im Pfad ansehen`}
+                  className={`inline-flex min-h-11 items-center text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 ${focus}`}
+                >
+                  Alle {allReadiness.length} Module
+                </Link>
+              ) : null}
+            </div>
             <p className="text-xs text-[var(--color-text-secondary)]">
               {allReadiness.length > readiness.length
                 ? `Die ${readiness.length} Module mit dem geringsten Anteil erledigter Einheiten. `
@@ -348,14 +359,6 @@ export function LernpfadView({
                 </li>
               ))}
             </ul>
-            {allReadiness.length > readiness.length ? (
-              <Link
-                href={pfadHref}
-                className={`inline-flex min-h-11 items-center self-start text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 ${focus}`}
-              >
-                Alle {allReadiness.length} Module im Pfad
-              </Link>
-            ) : null}
           </section>
         ) : null}
       </div>

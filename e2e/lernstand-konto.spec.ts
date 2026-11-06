@@ -84,7 +84,7 @@ async function neuerBrowser(browser: Browser): Promise<Page> {
 async function einheitAbschliessen(page: Page) {
   await page.goto("/lernpfad");
   await expect(page.getByText("Berufsbildung 1").first()).toBeVisible();
-  await page.locator('[data-state="heute"]').first().click();
+  await page.getByRole("link", { name: "Einheit starten" }).click();
   await page.locator("button[aria-pressed]").first().click();
   await page.getByRole("button", { name: "Antwort prüfen" }).click();
   await page.getByRole("button", { name: "Ergebnis anzeigen", exact: true }).click();
@@ -92,7 +92,7 @@ async function einheitAbschliessen(page: Page) {
 }
 
 async function stand(page: Page) {
-  await page.goto("/lernpfad");
+  await page.goto("/lernpfad/pfad");
   await expect(page.locator('[data-state="erledigt"]')).toHaveCount(1);
   await expect(page.locator('[data-state="erledigt"]')).toContainText("01 · Fertig");
   await expect(page.locator('[data-state="heute"]')).toContainText("02 · Jetzt");
@@ -105,7 +105,7 @@ test("Einheit in Browser A, frischer Browser B mit demselben Konto zeigt denselb
   await stand(a);
 
   const b = await neuerBrowser(browser);
-  await b.goto("/lernpfad");
+  await b.goto("/lernpfad/pfad");
   await expect(b.locator('[data-state="erledigt"]')).toHaveCount(1);
   await expect(b.locator('[data-state="erledigt"]')).toContainText("01 · Fertig");
   await expect(b.locator('[data-state="heute"]')).toContainText("02 · Jetzt");
