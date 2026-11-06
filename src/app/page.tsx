@@ -72,6 +72,13 @@ export default function StartseitePage() {
             </Link>
             <Link
               prefetch={false}
+              href="/willkommen"
+              className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-[var(--color-text-on-brand)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
+            >
+              Ich bin Azubi: jetzt lernen
+            </Link>
+            <Link
+              prefetch={false}
               href="/ausbilder?demo=1"
               className="inline-flex min-h-11 items-center self-start text-sm font-medium text-[var(--color-text-on-brand)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-text-on-brand)]"
             >

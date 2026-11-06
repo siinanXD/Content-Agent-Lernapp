@@ -58,6 +58,7 @@ export default function PruefungErgebnisPage() {
   const passed = examPassed(result.correct, result.total);
   const areas = result.areaResults ?? [];
   const wrong = result.wrongAnswers ?? [];
+  const review = result.review ?? [];
   const weak = weakestAreas(areas);
 
   return (
@@ -147,42 +148,50 @@ export default function PruefungErgebnisPage() {
             </Tile>
           </div>
           {areas.length > 0 ? (
-            <Tile aria-labelledby="lernfeld-titel">
+            <Tile aria-labelledby="gebiet-titel">
               <h2
-                id="lernfeld-titel"
+                id="gebiet-titel"
                 className="text-[17px] font-semibold leading-[22px]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Nach Lernfeld
+                Nach Prüfungsgebiet
               </h2>
               <ul className="flex flex-col gap-3">
                 {areas.map((a) => {
+                  const tested = a.total > 0;
                   const pct = Math.round(a.ratio * 100);
                   const red = a.light === "red";
+                  const short = a.quota !== undefined && a.available !== undefined && a.available < a.quota;
                   return (
                     <li key={a.areaId} className="flex flex-col gap-[5px]">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm font-medium leading-[18px]">{a.title}</span>
+                        <span className="min-w-0 text-sm font-medium leading-[18px]">{a.title}</span>
                         <span
-                          className={`text-[13px] font-medium leading-[17px] ${red ? "text-[var(--color-feedback-danger)]" : "text-[var(--color-text-secondary)]"}`}
+                          className={`shrink-0 text-[13px] font-medium leading-[17px] ${red ? "text-[var(--color-feedback-danger)]" : "text-[var(--color-text-secondary)]"}`}
                           style={{ fontFamily: "var(--font-mono)" }}
                         >
-                          {pct} %
+                          {tested ? `${pct} %` : "nicht geprüft"}
                         </span>
                       </div>
-                      <div
-                        role="progressbar"
-                        aria-label={a.title}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={pct}
-                        className="h-1.5 w-full overflow-hidden rounded-[3px] bg-[var(--color-border-subtle)]"
-                      >
+                      {tested ? (
                         <div
-                          className={`h-full rounded-[3px] ${red ? "bg-[var(--color-feedback-danger)]" : "bg-[var(--color-brand-primary)]"}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
+                          role="progressbar"
+                          aria-label={a.title}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={pct}
+                          className="h-1.5 w-full overflow-hidden rounded-[3px] bg-[var(--color-border-subtle)]"
+                        >
+                          <div
+                            className={`h-full rounded-[3px] ${red ? "bg-[var(--color-feedback-danger)]" : "bg-[var(--color-brand-primary)]"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      ) : null}
+                      <p className="text-xs leading-4 text-[var(--color-text-secondary)]">
+                        {tested ? `${a.correct} von ${a.total} richtig · ${a.label}` : "Keine Antwort in diesem Gebiet."}
+                        {short ? ` Im Kurs gibt es nur ${a.available} von ${a.quota} Fragen.` : ""}
+                      </p>
                     </li>
                   );
                 })}
@@ -225,7 +234,7 @@ export default function PruefungErgebnisPage() {
             </Link>
           )}
 
-          {wrong.length > 0 ? (
+          {review.length > 0 ? (
             <>
               <Button
                 variant="secondary"
@@ -234,24 +243,49 @@ export default function PruefungErgebnisPage() {
                 onClick={() => setOpen((o) => !o)}
                 className="!text-[var(--color-brand-primary)] font-semibold"
               >
-                Antworten durchgehen
+                Antworten mit Lösung durchgehen
               </Button>
               {open ? (
                 <ol id={listId} className="flex flex-col gap-3">
-                  {wrong.map((w) => (
+                  {review.map((r) => (
                     <li
-                      key={w.id}
+                      key={r.id}
                       className="flex flex-col gap-1 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] p-[var(--bento-pad)]"
                     >
-                      <p className="text-[15px] font-semibold leading-5">{w.prompt}</p>
+                      <p className="text-[15px] font-semibold leading-5">{r.prompt}</p>
                       <p className="text-sm leading-[18px]">
-                        <span className="font-medium">Richtig: </span>
-                        {w.answer}
+                        <span className="font-medium">Deine Antwort: </span>
+                        {r.given || "keine"}
                       </p>
-                      {w.explanation ? (
+                      <p className="text-sm leading-[18px]">
+                        <span className="font-medium">Wertung: </span>
+                        {r.correct === null ? "Selbstkontrolle, nicht gewertet" : r.correct ? "richtig" : "falsch"}
+                      </p>
+                      <p className="text-sm leading-[18px]">
+                        <span className="font-medium">{r.correct === null ? "Musterlösung: " : "Richtig: "}</span>
+                        {r.answer}
+                      </p>
+                      {r.checklist?.length ? (
+                        <ul className="list-disc pl-5 text-sm leading-[18px]">
+                          {r.checklist.map((c) => (
+                            <li key={c}>{c}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      {r.explanation ? (
                         <p className="text-sm leading-[18px] text-[var(--color-text-secondary)]">
-                          {w.explanation}
+                          {r.explanation}
                         </p>
+                      ) : null}
+                      {r.sourceUrl ? (
+                        <a
+                          href={r.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-[var(--color-brand-primary)] underline underline-offset-4"
+                        >
+                          Quelle
+                        </a>
                       ) : null}
                     </li>
                   ))}

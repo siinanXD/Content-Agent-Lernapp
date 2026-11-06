@@ -330,6 +330,7 @@ export function renderContentSection(m, { sourceIssues = [], fabrik = {} } = {})
     "",
     `Bestehensquote je Modul (schwächste): ${lowest.length ? lowest.map((p) => `${p.mapId}/${p.moduleId} ${p.pct} % (${p.total})`).join(", ") : "nicht verfügbar"}`,
     `Fragen bewertet: ${m.fragenBewertet ?? "nicht verfügbar"} von ${m.fragenGesamt ?? "nicht verfügbar"} (Bewertungslauf: npm run quality:judge-backfill)`,
+    "Richter und Bilder: Der Richter sieht nur Text, kein Bild und keinen Alt-Text. Bildbezüge in Fragen (\"in der Skizze\") prüft er nicht; das macht ein Mensch (SIN-1551).",
     `Verworfene Fragen (letzte Bewertung nicht bestanden): ${m.offeneVerworfene}`,
     "Verwerfungsgründe nach Modul und Fragetyp (häufigste zuerst):",
     m.verworfenNachModulTyp ? renderDiscarded(m.verworfenNachModulTyp) : "nicht verfügbar",

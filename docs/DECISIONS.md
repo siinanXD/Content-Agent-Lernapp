@@ -13,7 +13,18 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1551 | SIN-1551 — Schema 3/3: Inhalts-Agent liefert Gebiet, Stufe und Bildwunsch als Daten | [SIN-1551-bildwunsch.md](decisions/SIN-1551-bildwunsch.md) |
+| SIN-1550 | SIN-1550 — Schema 2/3: Store liest und schreibt die neuen Spalten | [SIN-1550-store-spalten.md](decisions/SIN-1550-store-spalten.md) |
+| SIN-1549 | SIN-1549 — Schema 1/3: Spalten für Modul, Block, Gebiet, Stufe und Bild | [SIN-1549-schema-spalten.md](decisions/SIN-1549-schema-spalten.md) |
+| SIN-1541 | SIN-1541 — Sicherheits-Merker: nur Blöcke mit safety:true blenden aus | [SIN-1541-sicherheits-merker.md](decisions/SIN-1541-sicherheits-merker.md) |
+| SIN-1540 | SIN-1540 — Bericht: gleiche und ähnliche Einheiten je Block | [SIN-1540-dubletten-bericht.md](decisions/SIN-1540-dubletten-bericht.md) |
+| SIN-1534 | SIN-1534 — Zuordnung Block → Prüfungsgebiet als Tabelle im Repo | [SIN-1534-pruefungsgebiete-tabelle.md](decisions/SIN-1534-pruefungsgebiete-tabelle.md) |
+| SIN-1532 | SIN-1532: Fragetypen-Schreibweisen beim Lesen | [SIN-1532-fragetypen-schreibweisen.md](decisions/SIN-1532-fragetypen-schreibweisen.md) |
+| SIN-1516 | SIN-1516 Prüfung: echte Fragen und Gebiete nach § 9 | [SIN-1516-pruefung-echte-fragen-gebiete.md](decisions/SIN-1516-pruefung-echte-fragen-gebiete.md) |
+| SIN-1513 | SIN-1513: Modul und Block im Lernpfad ohne Schema | [SIN-1513-modul-block-lernpfad.md](decisions/SIN-1513-modul-block-lernpfad.md) |
+| SIN-1451 | SIN-1451: Lernstand gehört zum Konto | [SIN-1451-lernstand-konto.md](decisions/SIN-1451-lernstand-konto.md) |
 | SIN-1450 | SIN-1450: Wiederholung sofort üben | [SIN-1450-wiederholung-ueben.md](decisions/SIN-1450-wiederholung-ueben.md) |
+| SIN-1449 | SIN-1449 Prüfung: echte Zeit, echte Fragen | [SIN-1449-pruefung-echte-zeit.md](decisions/SIN-1449-pruefung-echte-zeit.md) |
 | SIN-1446 | SIN-1446 — Lernpfad: Stand aus Lernereignissen | [SIN-1446-lernpfad-echter-stand.md](decisions/SIN-1446-lernpfad-echter-stand.md) |
 | SIN-1197 | SIN-1197 Anmeldung nach Standard: Passwort, Registrieren, Passwort vergessen, Google | [SIN-1197-anmeldung-standard.md](decisions/SIN-1197-anmeldung-standard.md) |
 | SIN-1191 | SIN-1191 · Langfuse: Richter-Scores je Frage von 6 auf 2 | [SIN-1191-langfuse-scores.md](decisions/SIN-1191-langfuse-scores.md) |

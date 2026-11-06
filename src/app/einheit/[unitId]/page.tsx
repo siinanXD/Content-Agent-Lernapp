@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnswerFeedback } from "@/components/ui/answer-feedback";
@@ -35,6 +36,7 @@ import {
   flushProgress,
 } from "@/lib/learner/progress-outbox";
 import { useOnline } from "@/lib/use-online";
+import { useAfterMount } from "@/lib/use-after-mount";
 import {
   trackExplanationReported,
   trackQuestionAnswered,
@@ -71,9 +73,20 @@ export default function EinheitPage() {
       : { unitId: params.unitId, unit: getUnit(params.unitId), fetched: false };
   const unit = current.unit;
   const loading = !unit && !current.fetched;
-  const [index, setIndex] = useState(0);
+  // Stand je Einheit in der Sitzung merken: Neuladen beginnt nicht bei Frage 1 (SIN-1514).
+  const stateKey = `cal-einheit-${params.unitId}`;
+  const mounted = useAfterMount(() => true, false);
+  let saved = { index: 0, correct: 0 };
+  try {
+    const s = mounted ? JSON.parse(window.sessionStorage.getItem(stateKey) ?? "null") : null;
+    // Index hinter der letzten Frage (Inhalt geändert): von vorn beginnen.
+    if (Number.isInteger(s?.index) && s.index > 0 && s.index < (unit?.questions.length ?? 0)) saved = { index: s.index, correct: s.correct | 0 };
+  } catch {}
+  const [indexOverride, setIndexOverride] = useState<number | null>(null);
+  const [countOverride, setCountOverride] = useState<number | null>(null);
+  const index = indexOverride ?? saved.index;
+  const correctCount = countOverride ?? saved.correct;
   const [revealed, setRevealed] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [awaitSelfCheck, setAwaitSelfCheck] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false);
@@ -182,7 +195,7 @@ export default function EinheitPage() {
   function onChecked(result: AnswerResult) {
     if (!question) return;
     if (result.selfChecked) {
-      if (result.correct) setCorrectCount((c) => c + 1);
+      if (result.correct) setCountOverride(correctCount + 1);
       setLastCorrect(result.correct);
       setAwaitSelfCheck(false);
       applyLeitner(question.id, result.correct, question.level === "anwenden");
@@ -203,7 +216,7 @@ export default function EinheitPage() {
       setAwaitSelfCheck(true);
       return;
     }
-    if (result.correct) setCorrectCount((c) => c + 1);
+    if (result.correct) setCountOverride(correctCount + 1);
     applyLeitner(question.id, result.correct, question.level === "anwenden");
     trackQuestionAnswered({
       unitId: unit!.id,
@@ -236,6 +249,7 @@ export default function EinheitPage() {
       },
     });
     progress.current.finished = true;
+    window.sessionStorage.removeItem(stateKey);
     trackUnitCompleted({
       unitId: unit!.id,
       unitTitle: unit!.title,
@@ -252,7 +266,9 @@ export default function EinheitPage() {
       finish(correctCount);
       return;
     }
-    setIndex((i) => i + 1);
+    // Nur beim Wechsel speichern: Neuladen nach einer Antwort zählt die Frage nicht doppelt.
+    window.sessionStorage.setItem(stateKey, JSON.stringify({ index: index + 1, correct: correctCount }));
+    setIndexOverride(index + 1);
     setRevealed(false);
     setLastCorrect(false);
     setAwaitSelfCheck(false);
@@ -263,6 +279,14 @@ export default function EinheitPage() {
     <MobileShell>
       <main className="flex flex-1 flex-col">
       <header className="px-6 pb-2 pt-12">
+        {/* prefetch aus: sonst lädt die Einheit das Bundle des Lernpfads mit und reißt das JS-Budget (SIN-1514). */}
+        <Link
+          prefetch={false}
+          href="/lernpfad"
+          className="mb-2 inline-flex min-h-11 items-center text-sm font-medium text-[var(--color-brand-primary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
+        >
+          ‹ Zurück zum Lernpfad
+        </Link>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Einheit {unit.indexLabel} · {unit.minutes} Min · {unit.variant}
         </p>

@@ -8,6 +8,7 @@ import {
   passRateByModule,
   ratedQuestions,
   renderCoverage,
+  renderContentSection,
   renderDiscarded,
   summarizeRuns,
   weakestUnits,
@@ -174,4 +175,9 @@ test("SIN-402: passRateByModule nutzt nur gefilterte Bewertungen", () => {
   const { bewertet } = ratedQuestions(questions, evaluations);
   const passRates = passRateByModule(maps, bewertet, { c1: "maf-metall" });
   assert.deepEqual(passRates, [{ mapId: "maf-metall", moduleId: "LF1", total: 2, passed: 1, failed: 1, pct: 50 }]);
+});
+
+test("Kennzahlen-Bericht sagt, dass der Richter keine Bildbezüge prüft (SIN-1551)", () => {
+  const m = { verfuegbar: true, coverage: [], passRates: [], runs: { kostenLetzteLaeufe: [], fabrikHaengt: false, einheitenNeuWoche: 0, laeufeWoche: 0, kostenWocheEur: 0 }, progress: {}, offeneVerworfene: "0" };
+  assert.match(renderContentSection(m), /Der Richter sieht nur Text.*Bildbezüge.*prüft er nicht/);
 });

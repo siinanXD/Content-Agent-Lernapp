@@ -5,6 +5,7 @@
 import type { GeneratedUnit } from "@/lib/generate/maf-lernfeld-seed";
 import { type PathUnit, PLAYABLE_UNITS as SEED_UNITS } from "./playable-path";
 import { normalizeQuestions } from "./normalize-question";
+import { deriveModuleBlock, type MapTitles } from "./modul-block";
 import phaseAIndex from "./phase-a-index.json";
 import { sauberTitel } from "./titel";
 import phaseATitles from "./phase-a-titles.json";
@@ -54,8 +55,32 @@ function isPlayable(u: GeneratedUnit | null | undefined): u is GeneratedUnit {
   );
 }
 
-export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
-  return units.filter(isPlayable).map((u, index): PathUnit => {
+/**
+ * Modul/Block aus den Feldern der Einheit, sonst aus der ID (SIN-1513). Mit `titles` (Map des Kurses)
+ * gelten deren Titel und Reihenfolge; Einheiten, die die Map nicht kennt, folgen am Ende.
+ */
+export function mapGeneratedToPathUnits(units: GeneratedUnit[], titles?: MapTitles): PathUnit[] {
+  const rank = (list: Array<{ id: string }>) => new Map(list.map((x, i) => [x.id, i]));
+  const modRank = rank(titles?.modules ?? []);
+  const blockRank = rank(titles?.blocks ?? []);
+  const where = (u: GeneratedUnit) => {
+    const d = deriveModuleBlock(u.id);
+    return { moduleId: u.moduleId ?? d?.moduleId ?? "M0", blockId: u.blockId ?? d?.blockId ?? "M0-3" };
+  };
+  const playable = units.filter(isPlayable);
+  const ordered = titles
+    ? playable
+        .map((u, i) => ({ u, i, w: where(u) }))
+        .sort(
+          (a, b) =>
+            (modRank.get(a.w.moduleId) ?? 1e9) - (modRank.get(b.w.moduleId) ?? 1e9) ||
+            (blockRank.get(a.w.blockId) ?? 1e9) - (blockRank.get(b.w.blockId) ?? 1e9) ||
+            a.i - b.i,
+        )
+        .map((x) => x.u)
+    : playable;
+  return ordered.map((u, index): PathUnit => {
+    const { moduleId, blockId } = where(u);
     return {
       id: u.id,
       indexLabel: String(index + 1).padStart(2, "0"),
@@ -72,10 +97,10 @@ export function mapGeneratedToPathUnits(units: GeneratedUnit[]): PathUnit[] {
       sourceLabel: `Quelle: ${
         (u.sourceUrl ?? "").includes("gesetze-im-internet") ? "MaschFüAusbV" : "KMK RLP"
       }`,
-      moduleId: u.moduleId ?? "M0",
-      moduleTitle: modTitle(u.moduleId),
-      blockId: u.blockId ?? "M0-3",
-      blockTitle: blockTitle(u.blockId),
+      moduleId,
+      moduleTitle: titles?.modules.find((m) => m.id === moduleId)?.title ?? modTitle(moduleId),
+      blockId,
+      blockTitle: titles?.blocks.find((b) => b.id === blockId)?.title ?? blockTitle(blockId),
       examAreas: u.questions[0]?.examAreas ?? [],
       questions: normalizeQuestions(u.questions),
     };
@@ -112,8 +137,8 @@ export function phaseAPathUnits(): PathUnit[] {
   return usingPhaseASnapshot() ? SEED_UNITS : SEED_UNITS;
 }
 
-export function setPhaseAPathUnits(units: GeneratedUnit[]): PathUnit[] {
-  const mapped = mapGeneratedToPathUnits(units);
+export function setPhaseAPathUnits(units: GeneratedUnit[], titles?: MapTitles): PathUnit[] {
+  const mapped = mapGeneratedToPathUnits(units, titles);
   if (mapped.length) cachedUnits = mapped;
   return mapped;
 }
@@ -130,7 +155,7 @@ export function setActiveCourse(courseId: string | null) {
   }
 }
 
-function activeCourse(): string | null {
+export function activeCourse(): string | null {
   try {
     return window.localStorage.getItem(COURSE_KEY);
   } catch {
@@ -155,17 +180,27 @@ export function fetchPhaseAPathUnits(courseId: string | null = activeCourse()): 
 }
 
 async function loadPhaseAPathUnits(courseId: string | null): Promise<PathUnit[]> {
+  return (await fetchPublishedPathUnits(courseId)) ?? phaseAPathUnits();
+}
+
+/**
+ * Nur die veröffentlichten Einheiten des Kurses (SIN-1449), nie die Beispieldaten: `null`, wenn der Abruf
+ * scheitert oder der Kurs nichts Spielbares hat. Die Prüfung braucht das, damit sie nicht mit Seed-Fragen läuft.
+ */
+export async function fetchPublishedPathUnits(
+  courseId: string | null = activeCourse(),
+): Promise<PathUnit[] | null> {
   try {
     const query = courseId ? `?kurs=${encodeURIComponent(courseId)}` : "";
     const res = await fetch(`/api/learner/phase-a${query}`, { cache: "no-store" });
-    if (!res.ok) return phaseAPathUnits();
-    const data = (await res.json()) as { units?: GeneratedUnit[] };
+    if (!res.ok) return null;
+    const data = (await res.json()) as { units?: GeneratedUnit[]; titles?: MapTitles };
     if (data.units?.length) {
-      const mapped = setPhaseAPathUnits(data.units);
+      const mapped = setPhaseAPathUnits(data.units, data.titles);
       if (mapped.length) return mapped;
     }
   } catch {
-    /* seed fallback */
+    /* kein Abruf, keine Prüfung aus Beispieldaten */
   }
-  return phaseAPathUnits();
+  return null;
 }

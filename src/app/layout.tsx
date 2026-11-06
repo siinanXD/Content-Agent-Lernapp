@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { A11yProvider } from "@/components/a11y/a11y-provider";
 import { ServiceWorkerRegister } from "@/components/a11y/service-worker-register";
 import { ProgressSync } from "@/components/a11y/progress-sync";
+import { LernstandSync } from "@/components/a11y/lernstand-sync";
 import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import "./globals.css";
 
@@ -61,6 +62,7 @@ export default function RootLayout({
           <A11yProvider>
             <ServiceWorkerRegister />
             <ProgressSync />
+            <LernstandSync />
             {children}
           </A11yProvider>
         </PostHogProvider>

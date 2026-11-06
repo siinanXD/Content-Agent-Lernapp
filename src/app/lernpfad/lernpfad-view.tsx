@@ -26,6 +26,7 @@ import {
   type LeitnerStack,
 } from "@/lib/learner/leitner";
 import { nextDueAt, reviewTileCopy } from "@/lib/learner/review-overview";
+import { listExamParts } from "@/lib/learner/exam";
 import { sauberTitel } from "@/lib/learner/titel";
 import {
   EMPTY_LEARNING_SUMMARY,
@@ -43,6 +44,9 @@ const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
   today: "heute",
   open: "offen",
 };
+
+/** Höchstens so viele Module in der Prüfungsreife auf Heute; sonst wächst die Seite mit jedem Modul. */
+const READINESS_MAX = 3;
 
 const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
 
@@ -126,6 +130,7 @@ export function LernpfadView({
     pathModules.find((m) => m.units > 0) ??
     pathModules[0];
   const currentDone = current?.blocks.flatMap((b) => b.units).filter((u) => u.status === "done").length ?? 0;
+  const examParts = listExamParts(courseId);
   const online = useOnline();
   const days = summary === "fehler" ? 0 : summary.streak.days;
 
@@ -148,7 +153,7 @@ export function LernpfadView({
   const nextUnit = pathUnits.find((u) => u.status !== "done");
 
   // Nur Module mit Einheiten zählen (`groups` enthält keine leeren Module).
-  const readiness = groups.map((mod) => {
+  const allReadiness = groups.map((mod) => {
     const all = mod.blocks.flatMap((b) => b.units);
     const done = all.filter((u) => u.status === "done").length;
     return {
@@ -159,6 +164,12 @@ export function LernpfadView({
       pct: all.length === 0 ? 0 : Math.round((done / all.length) * 100),
     };
   });
+  // Heute bleibt kurz (SIN-1595): die schwächsten Module in Modulreihenfolge, der Rest steht im Pfad.
+  const weakest = new Set(
+    [...allReadiness].sort((a, b) => a.pct - b.pct).slice(0, READINESS_MAX).map((r) => r.moduleId),
+  );
+  const readiness = allReadiness.filter((r) => weakest.has(r.moduleId));
+  const pfadHref = courseId ? `/lernpfad/${courseId}/pfad` : "/lernpfad/pfad";
 
   return (
     <MobileShell wide>
@@ -186,7 +197,7 @@ export function LernpfadView({
           {(
             [
               ["heute", "Heute", courseId ? `/lernpfad/${courseId}` : "/lernpfad"],
-              ["pfad", "Pfad", courseId ? `/lernpfad/${courseId}/pfad` : "/lernpfad/pfad"],
+              ["pfad", "Pfad", pfadHref],
             ] as const
           ).map(([id, label, href]) => (
             <Link
@@ -306,7 +317,12 @@ export function LernpfadView({
             >
               Prüfungsreife
             </h2>
-            <p className="text-xs text-[var(--color-text-secondary)]">Anteil erledigter Einheiten. Zulassung entscheidet ein Mensch.</p>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              {allReadiness.length > readiness.length
+                ? `Die ${readiness.length} Module mit dem geringsten Anteil erledigter Einheiten. `
+                : "Anteil erledigter Einheiten. "}
+              Zulassung entscheidet ein Mensch.
+            </p>
             <ul className="mt-1 flex flex-col gap-2.5">
               {readiness.map((r) => (
                 <li key={r.moduleId} className="flex items-center gap-2.5">
@@ -332,6 +348,14 @@ export function LernpfadView({
                 </li>
               ))}
             </ul>
+            {allReadiness.length > readiness.length ? (
+              <Link
+                href={pfadHref}
+                className={`inline-flex min-h-11 items-center self-start text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 ${focus}`}
+              >
+                Alle {allReadiness.length} Module im Pfad
+              </Link>
+            ) : null}
           </section>
         ) : null}
       </div>
@@ -371,6 +395,7 @@ export function LernpfadView({
             key={mod.moduleId}
             className="px-6 pt-8 md:px-12"
             data-module-state={mod.units ? "mit-einheiten" : "leer"}
+            data-testid="modul"
           >
             <h2
               className="sr-only"
@@ -439,6 +464,54 @@ export function LernpfadView({
         );
       })}
 
+      {ansicht === "pfad" ? (
+      <section className="px-6 py-8 md:px-12">
+        <p className="bento-label">Prüfung</p>
+        <h2
+          className="text-lg font-medium text-[var(--color-text-primary)]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Prüfungsgebiete
+        </h2>
+        {examParts.length === 0 ? (
+          <p role="status" className="mt-3 text-sm text-[var(--color-text-secondary)]">
+            Für diesen Kurs gibt es noch keinen Prüfungsmodus.
+          </p>
+        ) : (
+        <ul className="mt-3 flex flex-col gap-2">
+          {examParts.map((p) => {
+            const row =
+              "flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3.5 py-3";
+            const meta = (
+              <span className="text-right text-xs text-[var(--color-text-secondary)]">
+                {p.durationMinutes ? `${p.durationMinutes} Min` : p.durationText}
+                {p.weightPercent != null ? ` · ${p.weightPercent}%` : ""}
+                {p.simulated ? "" : " · nicht nachgebildet"}
+              </span>
+            );
+            return (
+              <li key={p.id}>
+                {p.simulated ? (
+                  <Link
+                    href={`/pruefung?part=${p.id}${courseId ? `&kurs=${courseId}` : ""}`}
+                    className={`${row} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]`}
+                  >
+                    <span className="text-sm text-[var(--color-text-primary)]">{p.bereich}</span>
+                    {meta}
+                  </Link>
+                ) : (
+                  <div className={row}>
+                    <span className="text-sm text-[var(--color-text-primary)]">{p.bereich}</span>
+                    {meta}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        )}
+      </section>
+      ) : null}
       </main>
 
       <BottomNav />

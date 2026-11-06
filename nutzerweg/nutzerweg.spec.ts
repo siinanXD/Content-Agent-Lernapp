@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test, expect, type Page } from "@playwright/test";
 
 // SIN-1453: Nutzerwege, fachlich richtig. Jeder Test ist ein Weg; rot heißt: ein Mensch würde es merken.
@@ -36,6 +38,11 @@ async function beantworten(page: Page, falsch = false): Promise<string> {
   if ((await textfeld.count()) > 0) {
     await textfeld.first().fill("Eigener Lösungsversuch");
     typ = "text";
+  }
+  const speichern = page.getByRole("button", { name: "Antwort speichern" });
+  if (await speichern.isVisible()) {
+    await speichern.click(); // Prüfungsmodus: offene Aufgabe wird gespeichert, Musterlösung erst im Ergebnis
+    return "offen";
   }
   const muster = page.getByRole("button", { name: "Musterlösung zeigen" });
   if (await muster.isVisible()) {
@@ -110,29 +117,62 @@ test("Weg 3: Einheit abschließen erhöht den Stand", async ({ page }) => {
   expect(nachher.profil.pct).toBeGreaterThanOrEqual(vorher.profil.pct);
 });
 
-test("Weg 4: Prüfung läuft mit der angezeigten Dauer bis zum Ergebnis", async ({ page }) => {
-  await anmelden(page);
-  await page.goto("/pruefung");
-  const dauer = Number(/(\d+) Min/.exec((await page.getByText(/\d+ Min · \d+ Fragen/).first().textContent()) ?? "")?.[1]);
-  expect(dauer).toBeGreaterThan(0);
-  await page.getByRole("button", { name: "Prüfung starten" }).click();
-  const uhr = page.locator("p", { hasText: /Restzeit/ });
-  const [, m, s] = /(\d+):(\d{2})/.exec((await uhr.textContent()) ?? "")!;
-  const sekunden = Number(m) * 60 + Number(s);
-  expect(sekunden, `Restzeit zu Beginn ${m}:${s}, angezeigt waren ${dauer} Min`).toBeGreaterThanOrEqual(dauer * 60 - 10);
-  const typen = new Set<string>();
-  const letzte = page.getByRole("button", { name: "Ergebnis je Gebiet", exact: true });
-  for (let guard = 0; guard < 30; guard++) {
-    typen.add(await beantworten(page));
-    if (await letzte.isVisible()) {
-      await letzte.click();
-      break;
-    }
-    await page.getByRole("button", { name: "Weiter", exact: true }).click();
+// Weg 4 (SIN-1516): Prüfung je Kurs bis zum Ergebnis, Handy und Desktop. Gebietstitel wie in der Map.
+const PRUEFUNG_KURSE = [
+  { name: "Maschinen- und Anlagenführer", id: "e22073de-7020-4380-9002-c70d46c25e25", map: "maf-metall.json", teil: "PT" },
+  { name: "Industriekaufmann", id: "5a1f0c52-3d6e-4b8a-9e47-2c8d1b7f6a31", map: "indkfl.json", teil: "T1" },
+];
+const ANSICHTEN = [
+  { name: "Handy", size: { width: 390, height: 844 } },
+  { name: "Desktop", size: { width: 1280, height: 800 } },
+];
+const VORLAGENFRAGE = "Was ist der erste Schritt vor Aufnahme einer neuen Fertigungstätigkeit?";
+
+for (const kurs of PRUEFUNG_KURSE) {
+  for (const ansicht of ANSICHTEN) {
+    test(`Weg 4: Prüfung ${kurs.name} läuft mit der angezeigten Dauer bis zum Ergebnis (${ansicht.name})`, async ({ page }, testInfo) => {
+      await page.setViewportSize(ansicht.size);
+      await anmelden(page);
+      const map = JSON.parse(readFileSync(join(process.cwd(), "docs", "content", kurs.map), "utf8"));
+      const teil = map.exam.gradedParts.find((p: { id: string }) => p.id === kurs.teil);
+      await page.goto(`/pruefung?part=${kurs.teil}&kurs=${kurs.id}`);
+
+      // Gebietstitel stehen wie in der Map, nirgends die Vorlagen oder die Prüfung eines anderen Kurses.
+      const dauer = Number(/(\d+) Min/.exec((await page.getByText(/\d+ Min · \d+ Fragen/).first().textContent()) ?? "")?.[1]);
+      expect(dauer, "angezeigte Dauer").toBe(Number(/(\d+) Minuten/.exec(teil.duration)![1]));
+      for (const g of teil.gebiete) await expect(page.getByText(g.title, { exact: false }).first(), `Gebiet ${g.id}`).toBeVisible();
+      await page.screenshot({ path: testInfo.outputPath(`aufbau-${ansicht.name}.png`), fullPage: true });
+
+      await page.getByRole("button", { name: "Prüfung starten" }).click();
+      const uhr = page.locator("p", { hasText: /Restzeit/ });
+      const [, m, sek] = /(\d+):(\d{2})/.exec((await uhr.textContent()) ?? "")!;
+      expect(Number(m) * 60 + Number(sek), `Restzeit zu Beginn ${m}:${sek}, angezeigt waren ${dauer} Min`).toBeGreaterThanOrEqual(dauer * 60 - 10);
+
+      const typen = new Set<string>();
+      const letzte = page.getByRole("button", { name: "Ergebnis je Gebiet", exact: true });
+      for (let guard = 0; guard < 60; guard++) {
+        const frage = (await page.getByRole("heading", { level: 2 }).first().textContent()) ?? "";
+        expect(frage, "Vorlagenfrage in der Prüfung").not.toContain(VORLAGENFRAGE);
+        typen.add(await beantworten(page));
+        // Die Lösung erscheint erst im Ergebnis: nach der Antwort nur „gespeichert“.
+        await expect(page.getByText(/Antwort gespeichert/)).toBeVisible();
+        await expect(page.getByTestId("answer-feedback")).toHaveCount(0);
+        if (await letzte.isVisible()) {
+          await letzte.click();
+          break;
+        }
+        await page.getByRole("button", { name: "Weiter", exact: true }).click();
+      }
+      await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
+      await expect(page.getByText("Nach Prüfungsgebiet")).toBeVisible();
+      await expect(page.getByText("Nach Lernfeld")).toHaveCount(0);
+      await page.getByRole("button", { name: /Antworten mit Lösung durchgehen/ }).click();
+      await expect(page.getByText("Richtig:").first()).toBeVisible();
+      await page.screenshot({ path: testInfo.outputPath(`ergebnis-${ansicht.name}.png`), fullPage: true });
+      console.log(`Fragetypen in der Prüfung (${kurs.name}, ${ansicht.name}): ${[...typen].join(", ")}`);
+    });
   }
-  await expect(page).toHaveURL(/\/pruefung\/ergebnis$/);
-  console.log(`Fragetypen in der Prüfung: ${[...typen].join(", ")}`);
-});
+}
 
 test("Weg 5: Falsche Antwort ist in der Wiederholung sofort übbar", async ({ page }, testInfo) => {
   await anmelden(page);
@@ -174,4 +214,87 @@ test("Weg 7: Die Navigation ist auf jeder Hauptseite und in der Prüfung sichtba
   await page.goto("/pruefung");
   await page.getByRole("button", { name: "Prüfung starten" }).click();
   await expect(nav, "Navigation fehlt in der laufenden Prüfung").toBeVisible();
+});
+
+test("Weg 8: Pfad zeigt genau ein Modul mit Zähler, Fortschritt bleibt (SIN-1513, SIN-1455)", async ({ page }) => {
+  await anmelden(page);
+  await einheitDurchspielen(page, false);
+  const erledigt = await anzahlErledigt(page);
+  expect(erledigt, "abgeschlossene Einheit ohne Haken im Pfad").toBeGreaterThan(0);
+  await expect(page.getByTestId("modul"), "Pfad zeigt genau ein Modul").toHaveCount(1);
+  // Zähler im Kopf („N von M Einheiten“) = Haken im Pfad, auch nach Neuladen.
+  const zaehler = async () => Number(/(\d+) von \d+ Einheiten/.exec(await page.locator("header").innerText())?.[1] ?? -1);
+  expect(await zaehler(), "erledigt/gesamt im Modul").toBe(erledigt);
+  await page.reload();
+  await expect(page.getByTestId("modul")).toHaveCount(1);
+  expect(await page.locator('[data-state="erledigt"]').count(), "erledigte Einheiten nach Neuladen").toBe(erledigt);
+  expect(await zaehler(), "Modulzähler nach Neuladen").toBe(erledigt);
+});
+
+test("Weg 9: Einheit hat Zurück und behält den Stand nach Neuladen, Abmelden führt zur Startseite (SIN-1514)", async ({ page }) => {
+  await anmelden(page);
+  await page.goto("/lernpfad");
+  await page.locator('[data-state="heute"]').first().click();
+  await expect(page).toHaveURL(/\/einheit\//);
+  await expect(page.getByRole("link", { name: /Zurück zum Lernpfad/ })).toBeVisible();
+  const zaehler = page.getByText(/^Frage \d+ von \d+/);
+  const erste = (await zaehler.textContent()) ?? "";
+  if (!/^Frage (\d+) von \1\b/.test(erste)) {
+    await beantworten(page);
+    // Neuladen nach der Antwort, vor „Weiter“: dieselbe Frage, nichts doppelt gespeichert.
+    await page.reload();
+    await expect(page.getByText(/^Frage \d+ von \d+/)).toHaveText(erste);
+    await beantworten(page);
+    await page.getByRole("button", { name: "Weiter", exact: true }).click();
+    await expect(zaehler).not.toHaveText(erste);
+    const zweite = (await zaehler.textContent()) ?? "";
+    await page.reload();
+    await expect(page.getByText(/^Frage \d+ von \d+/)).toHaveText(zweite);
+  }
+  await page.goto("/profil");
+  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("Weg 10: Beispiel beenden beendet den Beispielmodus sichtbar (SIN-1514)", async ({ page }) => {
+  await page.goto("/lernpfad?demo=1");
+  const hinweis = page.getByRole("note").filter({ hasText: "Beispiel: Die Zahlen" });
+  await expect(hinweis).toBeVisible();
+  await hinweis.getByRole("link", { name: "Beispiel beenden" }).click();
+  await expect(page).toHaveURL(/\/\?demo=0$/);
+  await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem("cal-demo"))).toBeNull();
+  await expect(page.getByRole("note").filter({ hasText: "Beispiel: Die Zahlen" })).toHaveCount(0);
+});
+
+test("Weg 11: Die Navigation steht auf jeder Hauptseite fest unten, auch im langen Lernpfad (SIN-1514)", async ({ page }) => {
+  await anmelden(page);
+  const hoehe = page.viewportSize()!.height;
+  const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+  const unterkante = () => nav.evaluate((el) => Math.round(el.getBoundingClientRect().bottom));
+  for (const pfad of ["/lernpfad", "/wiederholung", "/pruefung", "/profil", "/einstellungen"]) {
+    await page.goto(pfad);
+    await expect(nav).toBeVisible();
+    expect(await unterkante(), `Navigation oben auf ${pfad}`).toBe(hoehe);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    expect(await unterkante(), `Navigation in der Mitte von ${pfad}`).toBe(hoehe);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    expect(await unterkante(), `Navigation am Ende von ${pfad}`).toBe(hoehe);
+  }
+});
+
+test("Weg 12: Gerätewechsel: ein frischer Browser mit demselben Konto zeigt denselben Stand (SIN-1451)", async ({ page, browser }, testInfo) => {
+  await anmelden(page);
+  await einheitDurchspielen(page, false);
+  const a = { haken: await anzahlErledigt(page), profil: await lerntage(page) };
+  // Frischer Kontext = anderes Gerät: kein Speicher, keine Sitzung. Der Abgleich mit dem Konto braucht einen Moment.
+  const { baseURL, viewport, hasTouch, extraHTTPHeaders } = testInfo.project.use;
+  const geraetB = await browser.newContext({ baseURL, viewport, hasTouch, extraHTTPHeaders });
+  try {
+    const b = await geraetB.newPage();
+    await anmelden(b);
+    await expect.poll(() => anzahlErledigt(b), { timeout: 30_000, message: "Haken auf dem zweiten Gerät" }).toBe(a.haken);
+    expect((await lerntage(b)).done, "Lerntage auf dem zweiten Gerät").toBe(a.profil.done);
+  } finally {
+    await geraetB.close();
+  }
 });

@@ -1,6 +1,7 @@
 import { getStorage } from "@/lib/storage";
 import type { GeneratedLernfeld } from "@/lib/generate/maf-lernfeld-seed";
 import { dropDiscardedQuestions } from "@/lib/learner/discarded";
+import { mapTitlesForUnits } from "@/lib/learner/map-titles-server";
 import phaseAIndex from "@/lib/learner/phase-a-index.json";
 
 /**
@@ -42,6 +43,7 @@ export async function GET(req: Request) {
       byModule: phaseAIndex.byModule,
       modules: phaseAIndex.modules,
       units,
+      titles: mapTitlesForUnits(units),
       storage: storage.backend,
       source: units.length ? "supabase" : "index-only",
     });

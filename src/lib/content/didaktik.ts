@@ -33,6 +33,8 @@ export type ReviewItem = {
   questionId: string;
   stage: 1 | 2 | 3 | 4;
   dueAt: string;
+  /** Zeitpunkt der letzten Änderung (SIN-1451): der jüngere Stand gewinnt beim Konto-Abgleich. */
+  at?: string;
 };
 
 export type ExamSet = {
@@ -135,7 +137,8 @@ export function examQuestionTarget(partId: string, durationMinutes: number | nul
     WISO: 15,
     ZP: 15,
     T1: 25,
-    T2: 40,
+    T2A: 40,
+    T2C: 15,
   };
   if (defaults[partId] != null) return defaults[partId]!;
   if (durationMinutes != null && durationMinutes > 0) {

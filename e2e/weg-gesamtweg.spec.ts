@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import phaseAIndex from "../src/lib/learner/phase-a-index.json";
 
-// SIN-255: Gesamtweg Start → Lernpfad → Einheit → Ergebnis → Wiederholung
+// Weg-Test (Präfix weg-: e2e-video spielt ihn mit Video, SIN-1590). SIN-255: Gesamtweg Start → Lernpfad → Einheit → Ergebnis → Wiederholung
 // (1/3/7 Tage) → Prüfungsmodus für den veröffentlichten Kurs (Phase A).
 // Die Phase-A-Antwort ist fest vorgegeben, die Zeit im Browser wird mit
 // page.clock gesetzt: keine Live-Keys, keine echten Wartezeiten.
@@ -42,7 +42,7 @@ type StackItem ={ stage: number; dueAt: string };
 
 async function readStack(page: Page): Promise<StackItem[]> {
   return page.evaluate(
-    () => JSON.parse(window.sessionStorage.getItem("cal-leitner-stack") ?? "{}").items ?? [],
+    () => JSON.parse(window.localStorage.getItem("cal-leitner-stack") ?? "{}").items ?? [],
   );
 }
 
@@ -168,7 +168,7 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
   }
 
   // Prüfungsmodus
-  await page.goto("/pruefung");
+  await page.goto("/pruefung?part=WISO");
   await expect(page.getByRole("heading", { name: "Prüfungsmodus" })).toBeVisible();
   await page.getByRole("button", { name: "Prüfung starten" }).click();
   await expect(page.getByText(/Frage 1\/\d+/)).toBeVisible();
@@ -180,11 +180,10 @@ test(`Gesamtweg bis Prüfungsmodus: ${course.keyword} (${course.courseId.slice(0
     }
     const options = page.locator("button[aria-pressed]");
     if ((await options.count()) > 0) await options.first().click();
-    const sample = page.getByRole("button", { name: "Musterlösung zeigen" });
+    const sample = page.getByRole("button", { name: "Antwort speichern" });
     if (await sample.isVisible()) {
       await page.getByRole("textbox").fill("Eigener Lösungsversuch");
       await sample.click();
-      await page.getByRole("button", { name: "Selbstkontrolle speichern" }).click();
     } else {
       await page.getByRole("button", { name: "Antwort prüfen" }).click();
     }

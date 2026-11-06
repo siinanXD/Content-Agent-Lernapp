@@ -53,7 +53,7 @@
       "name": "Prüfen",
       "auftrag": "Bewertet Risiko, Tests, Sicherheit und Optik und macht Fehler auf main rückgängig.",
       "ausloeser": "Pull Request, Push auf main, Deploy",
-      "workflows": ["pr-gate", "ci", "codeql", "visual", "sichtpruefung", "goldset", "nach-deploy", "pr-crawler"],
+      "workflows": ["pr-gate", "ci", "codeql", "visual", "sichtpruefung", "e2e-video", "goldset", "nach-deploy", "pr-crawler"],
       "schritte": ["REVERT", "pr-crawler"],
       "modell": "keins (Code)",
       "budget": { "proLauf": null, "proWoche": null },
