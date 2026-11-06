@@ -27,6 +27,7 @@ import {
 } from "@/lib/learner/leitner";
 import { nextDueAt, reviewTileCopy } from "@/lib/learner/review-overview";
 import { listExamParts } from "@/lib/learner/exam";
+import { sauberTitel } from "@/lib/learner/titel";
 import {
   EMPTY_LEARNING_SUMMARY,
   loadLearningEvents,
@@ -44,9 +45,12 @@ const NODE_STATE: Record<PathUnitStatus, PathNodeState> = {
   open: "offen",
 };
 
+/** Höchstens so viele Module in der Prüfungsreife auf Heute; sonst wächst die Seite mit jedem Modul. */
+const READINESS_MAX = 2;
+
 const EMPTY_WEEK: Array<WeekDay | null> = Array.from({ length: 7 }, () => null);
 
-/** Aktuelle Kalenderwoche (Mo bis So) aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
+/** Letzte 7 Tage aus dem lokalen Speicher; stabile Referenz für `useAfterMount`. */
 const loadWeek = (): WeekDay[] => weekActivity(loadLearningEvents());
 
 /** Erledigte Einheiten aus den lokalen Lernereignissen; im Beispielmodus erfundene (SIN-1446). */
@@ -59,6 +63,12 @@ const loadProgress = (): Progress => ({
 
 /** Wochentag und Begrüßung im Browser; stabile Referenz für `useAfterMount`. */
 const loadGreeting = (): Begruessung => begruessung(new Date());
+
+/** Erster Satz der Erklärung als Vorschau, ohne Adressen; die Fragen gehören nicht auf die Startkarte. */
+const kurzSatz = (text: string): string | undefined => {
+  const satz = sauberTitel(text).split(/(?<=[.!?])\s/)[0]?.trim();
+  return satz && satz.length <= 160 ? satz : undefined;
+};
 
 const weekdayShort = (day: string) =>
   new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "");
@@ -78,7 +88,10 @@ export function LernpfadView({
   initialUnits,
   modules = [],
   courseId = null,
+  ansicht = "heute",
 }: {
+  /** „Heute“ (A1) oder „Pfad“ (N5, genau ein Modul) (SIN-1455). */
+  ansicht?: "heute" | "pfad";
   initialUnits: PathUnit[];
   /** Kurs aus `/lernpfad/[kurs]`; ohne Angabe der Standardkurs (SIN-777). */
   courseId?: string | null;
@@ -109,6 +122,14 @@ export function LernpfadView({
   );
   const groups = groupUnitsByModule(pathUnits);
   const pathModules = withEmptyModules(groups, modules);
+  // Pfad zeigt ein Modul: gewähltes, sonst das mit der nächsten offenen Einheit, sonst das erste mit Einheiten.
+  const [chosen, setChosen] = useState<string | null>(null);
+  const current =
+    pathModules.find((m) => m.moduleId === chosen) ??
+    pathModules.find((m) => m.blocks.some((b) => b.units.some((u) => u.status !== "done"))) ??
+    pathModules.find((m) => m.units > 0) ??
+    pathModules[0];
+  const currentDone = current?.blocks.flatMap((b) => b.units).filter((u) => u.status === "done").length ?? 0;
   const examParts = listExamParts(courseId);
   const online = useOnline();
   const days = summary === "fehler" ? 0 : summary.streak.days;
@@ -132,7 +153,7 @@ export function LernpfadView({
   const nextUnit = pathUnits.find((u) => u.status !== "done");
 
   // Nur Module mit Einheiten zählen (`groups` enthält keine leeren Module).
-  const readiness = groups.map((mod) => {
+  const allReadiness = groups.map((mod) => {
     const all = mod.blocks.flatMap((b) => b.units);
     const done = all.filter((u) => u.status === "done").length;
     return {
@@ -143,21 +164,59 @@ export function LernpfadView({
       pct: all.length === 0 ? 0 : Math.round((done / all.length) * 100),
     };
   });
+  // Heute bleibt kurz (SIN-1595): die schwächsten Module in Modulreihenfolge, der Rest steht im Pfad.
+  const weakest = new Set(
+    [...allReadiness].sort((a, b) => a.pct - b.pct).slice(0, READINESS_MAX).map((r) => r.moduleId),
+  );
+  const readiness = allReadiness.filter((r) => weakest.has(r.moduleId));
+  const pfadHref = courseId ? `/lernpfad/${courseId}/pfad` : "/lernpfad/pfad";
 
   return (
     <MobileShell wide>
       <ConsentBanner />
       <main className="flex flex-1 flex-col">
-      <header className="px-6 pb-4 pt-11 md:px-12">
-        <p className="bento-label uppercase">{hello?.weekday}</p>
-        <h1
-          className="mt-0.5 text-[24px] font-bold leading-[31px] text-[var(--color-text-primary)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {hello?.greeting ?? "Hallo"}
-        </h1>
+      <header className="flex items-start justify-between gap-3 px-6 pb-4 pt-11 md:px-12">
+        <div className="min-w-0">
+          <p className="bento-label uppercase">
+            {ansicht === "heute" ? hello?.weekday : current ? `Modul ${current.moduleId}` : "Modul"}
+          </p>
+          <h1
+            className="mt-0.5 text-[24px] font-bold leading-[31px] text-[var(--color-text-primary)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {ansicht === "heute" ? (hello?.greeting ?? "Hallo") : "Lernpfad"}
+          </h1>
+          {ansicht === "pfad" && current ? (
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              {current.moduleTitle}
+              {current.units > 0 ? ` · ${currentDone} von ${current.units} Einheiten` : ""}
+            </p>
+          ) : null}
+        </div>
+        <nav aria-label="Ansicht" className="flex shrink-0 gap-2">
+          {(
+            [
+              ["heute", "Heute", courseId ? `/lernpfad/${courseId}` : "/lernpfad"],
+              ["pfad", "Pfad", pfadHref],
+            ] as const
+          ).map(([id, label, href]) => (
+            <Link
+              key={id}
+              href={href}
+              aria-current={ansicht === id ? "page" : undefined}
+              className={`inline-flex min-h-11 items-center rounded-[var(--radius-md)] border px-4 text-sm font-semibold ${focus} ${
+                ansicht === id
+                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-text-on-brand)]"
+                  : "border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </header>
 
+      {ansicht === "heute" ? (
       <div className="bento px-6 md:px-12">
         {online ? null : (
           <div className="bento-tile bento-span-6">
@@ -170,7 +229,7 @@ export function LernpfadView({
             indexLabel={nextUnit.indexLabel}
             title={nextUnit.title}
             minutes={nextUnit.minutes}
-            preview={nextUnit.questions[0]?.prompt}
+            preview={kurzSatz(nextUnit.explanation)}
             href={`/einheit/${nextUnit.id}`}
           />
         ) : null}
@@ -201,7 +260,7 @@ export function LernpfadView({
                 {days === 1 ? "Tag am Stück" : "Tage am Stück"}
               </span>
             </p>
-            <ol aria-label="Diese Woche" className="mt-auto flex justify-between gap-1 pt-1">
+            <ol aria-label="Letzte 7 Tage" className="mt-auto flex justify-between gap-1 pt-1">
               {(week ?? EMPTY_WEEK).map((d, i) => (
                 <li key={d?.day ?? i} className="flex flex-col items-center gap-1">
                   <span
@@ -252,14 +311,28 @@ export function LernpfadView({
 
         {readiness.length > 0 ? (
           <section aria-label="Prüfungsreife" className={`${tile} bento-span-6`}>
-            <h2
-              className="text-[15px] font-semibold leading-[19.5px] text-[var(--color-text-primary)]"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Prüfungsreife
-            </h2>
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Anteil der erledigten Einheiten. Ob du zur Prüfung zugelassen wirst, entscheidet ein Mensch.
+            <div className="flex items-center justify-between gap-3">
+              <h2
+                className="text-[15px] font-semibold leading-[19.5px] text-[var(--color-text-primary)]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Prüfungsreife
+              </h2>
+              {allReadiness.length > readiness.length ? (
+                <Link
+                  href={pfadHref}
+                  aria-label={`Alle ${allReadiness.length} Module im Pfad ansehen`}
+                  className={`inline-flex min-h-11 items-center text-sm font-semibold text-[var(--color-brand-primary)] underline underline-offset-4 ${focus}`}
+                >
+                  Alle {allReadiness.length} Module
+                </Link>
+              ) : null}
+            </div>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              {allReadiness.length > readiness.length
+                ? `Die ${readiness.length} Module mit dem geringsten Anteil erledigter Einheiten. `
+                : "Anteil erledigter Einheiten. "}
+              Zulassung entscheidet ein Mensch.
             </p>
             <ul className="mt-1 flex flex-col gap-2.5">
               {readiness.map((r) => (
@@ -289,8 +362,9 @@ export function LernpfadView({
           </section>
         ) : null}
       </div>
+      ) : null}
 
-      {pathModules.length === 0 ? (
+      {ansicht === "pfad" && pathModules.length === 0 ? (
         <StateView
           kind="leer"
           title="Noch keine Einheiten"
@@ -298,24 +372,40 @@ export function LernpfadView({
         />
       ) : null}
 
-      {pathModules.map((mod) => {
-        const modUnits = mod.blocks.flatMap((b) => b.units);
-        const modDone = modUnits.filter((u) => u.status === "done").length;
-        const heading = (
-          <h2
-            className="inline text-lg font-medium text-[var(--color-text-primary)]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {mod.moduleId} · {mod.moduleTitle}
-          </h2>
-        );
+      {ansicht === "pfad" && pathModules.length > 1 ? (
+        <div className="px-6 pt-2 md:px-12">
+          <label className="flex flex-col gap-1 text-sm text-[var(--color-text-secondary)]">
+            Modul wählen
+            <select
+              value={current?.moduleId ?? ""}
+              onChange={(e) => setChosen(e.target.value)}
+              className={`min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] px-3 text-base text-[var(--color-text-primary)] ${focus}`}
+            >
+              {pathModules.map((m) => (
+                <option key={m.moduleId} value={m.moduleId}>
+                  {m.moduleId} · {m.moduleTitle}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
+
+      {(ansicht === "pfad" && current ? [current] : []).map((mod) => {
+        const modulNext = mod.blocks.flatMap((b) => b.units).find((u) => u.status !== "done");
         return (
           <section
             key={mod.moduleId}
             className="px-6 pt-8 md:px-12"
             data-module-state={mod.units ? "mit-einheiten" : "leer"}
+            data-testid="modul"
           >
-            {mod.units === 0 ? <div className="mb-2">{heading}</div> : null}
+            <h2
+              className="sr-only"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {mod.moduleId} · {mod.moduleTitle}
+            </h2>
             {mod.units === 0 ? (
               <div
                 tabIndex={0}
@@ -335,23 +425,7 @@ export function LernpfadView({
                 </p>
               </div>
             ) : null}
-            {mod.units > 0 ? (
-              // Module einklappbar (SIN-1513): zuerst nur Module, offen ist das mit der nächsten Einheit.
-              <details
-                key={`${mod.moduleId}-${nextUnit?.moduleId === mod.moduleId}`}
-                open={nextUnit?.moduleId === mod.moduleId}
-                data-testid="modul"
-                className="group"
-              >
-                <summary
-                  className={`mb-2 flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 ${focus}`}
-                >
-                  {heading}
-                  <span className="mono-label shrink-0 text-[var(--color-text-secondary)]">
-                    {modDone} / {modUnits.length}
-                  </span>
-                </summary>
-                {mod.blocks.map((block) => (
+            {mod.blocks.map((block) => (
               <div key={block.blockId} className="mb-3">
                 <p className="mb-2 text-sm text-[var(--color-text-secondary)]">
                   {block.blockTitle}
@@ -380,13 +454,20 @@ export function LernpfadView({
                   ))}
                 </ol>
               </div>
-                ))}
-              </details>
+            ))}
+            {modulNext ? (
+              <Link
+                href={`/einheit/${modulNext.id}`}
+                className={`mt-2 flex min-h-[50px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-base font-semibold text-[var(--color-text-on-brand)] ${focus}`}
+              >
+                Einheit {modulNext.indexLabel} starten
+              </Link>
             ) : null}
           </section>
         );
       })}
 
+      {ansicht === "pfad" ? (
       <section className="px-6 py-8 md:px-12">
         <p className="bento-label">Prüfung</p>
         <h2
@@ -433,6 +514,7 @@ export function LernpfadView({
         </ul>
         )}
       </section>
+      ) : null}
       </main>
 
       <BottomNav />

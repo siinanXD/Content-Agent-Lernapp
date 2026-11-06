@@ -19,6 +19,7 @@ export const routes = [
   "/beruf",
   "/schwerpunkt",
   "/lernpfad",
+  "/lernpfad/pfad",
   "/einheit/unit-03",
   "/ergebnis",
   "/wiederholung",

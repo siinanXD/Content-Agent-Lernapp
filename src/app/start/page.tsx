@@ -20,7 +20,7 @@ export default function StartPage() {
           className="text-[34px] font-bold leading-10 text-[var(--color-text-on-brand)]"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          Content-Agent-Lernapp
+          Dein Lernpfad
         </h1>
         <p
           className="text-xl font-medium leading-7 text-[var(--color-text-on-brand)]"

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { loadOnboarding, needsOnboarding } from "@/lib/learner/onboarding";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
+import { getAccessToken } from "@/lib/auth/browser-client";
 import { saveSession } from "@/lib/learner/session";
 
 type Variant = "pruefung" | "weiterbildung";
@@ -18,6 +19,18 @@ export function StartForm() {
   // Erster Start: erst Onboarding (00 → 00b → 15).
   useEffect(() => {
     if (needsOnboarding(loadOnboarding())) router.replace("/willkommen");
+  }, [router]);
+
+  // Angemeldete brauchen kein Formular zum Kurs erzeugen: sie landen auf „Heute“ (SIN-1455).
+  useEffect(() => {
+    let weg = false;
+    getAccessToken().then((token) => {
+      // Wer noch nicht eingeführt wurde, geht zuerst durchs Onboarding (oben).
+      if (token && !weg && !needsOnboarding(loadOnboarding())) router.replace("/lernpfad");
+    });
+    return () => {
+      weg = true;
+    };
   }, [router]);
 
   function startCourse() {
