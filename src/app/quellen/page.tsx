@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MobileShell } from "@/components/learner/mobile-shell";
 import { mafSeedLernfeldSicherheit } from "@/lib/generate/maf-lernfeld-seed";
+import { quellenName } from "./quellen-name";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]";
@@ -43,9 +44,9 @@ export default function QuellenPage() {
               <a
                 href={u.sourceUrl}
                 rel="noopener noreferrer"
-                className={`inline-flex min-h-11 items-center break-all text-[15px] font-medium text-[var(--color-brand-primary)] underline underline-offset-2 ${focusRing}`}
+                className={`inline-flex min-h-11 items-center text-[15px] font-medium text-[var(--color-brand-primary)] underline underline-offset-2 ${focusRing}`}
               >
-                {u.sourceUrl}
+                {quellenName(u.sourceUrl)}
               </a>
               <p className="text-sm text-[var(--color-text-secondary)]">
                 Abgerufen am{" "}
