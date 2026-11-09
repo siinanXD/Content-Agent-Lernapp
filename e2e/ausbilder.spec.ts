@@ -86,9 +86,14 @@ test("Ausbilder ohne Anmeldung wird zur Anmeldung geführt", async ({ page }) =>
 });
 
 test("Ausbilder ohne Gruppe und bei Fehler: ehrliche Zustände", async ({ page }) => {
-  await mockGroup(page, 404, { error: "Ihnen ist noch keine Gruppe zugeordnet." });
+  // SIN-1586: ohne Gruppe 200 mit leerem Zustand, also kein 4xx und kein Konsolenfehler.
+  const fehler: string[] = [];
+  page.on("console", (m) => (m.type() === "error" ? fehler.push(m.text()) : undefined));
+  page.on("response", (r) => (r.status() >= 400 ? fehler.push(`${r.status()} ${r.url()}`) : undefined));
+  await mockGroup(page, 200, { group: null, members: [] });
   await page.goto("/ausbilder");
   await expect(page.getByText("Noch keine Gruppe", { exact: true })).toBeVisible();
+  expect(fehler).toEqual([]);
 
   await page.unroute("**/api/ausbilder/gruppe");
   await mockGroup(page, 503, { error: "Die Gruppe konnte nicht geladen werden." });
@@ -108,7 +113,7 @@ test("Ausbilder legt Gruppe an und erzeugt eine Einladung", async ({ page }) => 
       created = route.request().postDataJSON();
       return route.fulfill({ status: 201, json: { id: "g1" } });
     }
-    if (!created) return route.fulfill({ status: 404, json: { error: "Ihnen ist noch keine Gruppe zugeordnet." } });
+    if (!created) return route.fulfill({ json: { group: null, members: [] } });
     return route.fulfill({
       json: {
         group: { name: created.name, schwerpunkt: created.schwerpunkt, examDate: created.examDate, startsOn: created.startsOn },

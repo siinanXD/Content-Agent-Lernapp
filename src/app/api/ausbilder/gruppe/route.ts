@@ -28,7 +28,12 @@ export async function GET(request: Request) {
   query = wanted ? query.eq("id", wanted) : query.is("archived_at", null);
   const { data: found, error: groupError } = await query.limit(2);
   if (groupError) return fail("Die Gruppe konnte nicht geladen werden.", 503);
-  if (!found?.length) return fail("Ihnen ist noch keine Gruppe zugeordnet.", 404);
+  if (!found?.length) {
+    // Eine ausdrücklich gewählte Gruppe, die es nicht gibt, bleibt ein 404.
+    if (wanted) return fail("Diese Gruppe gibt es nicht.", 404);
+    // Noch keine Gruppe ist nach der Erstanmeldung normal, kein Fehler (SIN-1586).
+    return Response.json({ group: null, members: [] }, { headers: noStore });
+  }
   if (found.length > 1) return fail("Bitte wählen Sie eine Ihrer Gruppen.", 409);
   const group = found[0];
 

@@ -71,7 +71,10 @@ export default function AusbilderPage() {
       if (res.status === 401 || res.status === 403) return setLoad({ kind: "anmelden" });
       // Mehrere aktive Gruppen und keine gewählt: zur Auswahl.
       if (res.status === 409) return router.replace("/ausbilder/gruppen");
-      if (res.status === 404) return setLoad({ kind: "ohne-gruppe" });
+      // Ohne Gruppe antwortet die API mit 200 und `group: null` (SIN-1586); 404 nur bei unbekanntem `?gruppe=`.
+      if (res.status === 404 || (res.ok && (data as { group?: unknown } | null)?.group === null)) {
+        return setLoad({ kind: "ohne-gruppe" });
+      }
       const overview = res.ok ? parseOverview(data) : null;
       if (overview) return setLoad({ kind: "bereit", overview, demo: false });
       const text = (data as { error?: string } | null)?.error;
