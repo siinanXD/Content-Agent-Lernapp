@@ -13,6 +13,7 @@ Modellnamen und Features nur aus aktuellen Docs/Repos, nie aus dem Gedächtnis.
 
 | Issue | Titel | Datei |
 | --- | --- | --- |
+| SIN-1614 | SIN-1614 — Dependabot-PR #728 baubar machen, Handlebars auf 4.7.10 | [SIN-1614-security-deps.md](decisions/SIN-1614-security-deps.md) |
 | SIN-1551 | SIN-1551 — Schema 3/3: Inhalts-Agent liefert Gebiet, Stufe und Bildwunsch als Daten | [SIN-1551-bildwunsch.md](decisions/SIN-1551-bildwunsch.md) |
 | SIN-1550 | SIN-1550 — Schema 2/3: Store liest und schreibt die neuen Spalten | [SIN-1550-store-spalten.md](decisions/SIN-1550-store-spalten.md) |
 | SIN-1549 | SIN-1549 — Schema 1/3: Spalten für Modul, Block, Gebiet, Stufe und Bild | [SIN-1549-schema-spalten.md](decisions/SIN-1549-schema-spalten.md) |
