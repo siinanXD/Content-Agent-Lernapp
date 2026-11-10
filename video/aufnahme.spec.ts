@@ -54,7 +54,7 @@ test("Tutorial: Start bis Ergebnis", async ({ page, context }) => {
 
   await expect(page).toHaveURL(/\/lernpfad$/);
   await marke("lernpfad");
-  await page.locator('[data-state="heute"]').first().click();
+  await page.getByRole("link", { name: "Einheit starten" }).click();
   await expect(page).toHaveURL(/\/einheit\//);
 
   await marke("einheit");

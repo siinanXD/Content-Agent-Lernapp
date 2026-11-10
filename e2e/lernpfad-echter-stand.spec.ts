@@ -53,17 +53,18 @@ const pfadGeladen = (page: import("@playwright/test").Page) =>
 const nodes = (page: import("@playwright/test").Page, state: string) => page.locator(`[data-state="${state}"]`);
 
 test("neues Konto: nichts erledigt, erste Einheit ist Jetzt, Prüfungsreife 0 %", async ({ page }, info) => {
-  await page.goto("/lernpfad");
+  await page.goto("/lernpfad/pfad");
   await expect(nodes(page, "heute")).toHaveCount(1);
   await expect(nodes(page, "heute")).toContainText("01 · Jetzt");
   await expect(nodes(page, "erledigt")).toHaveCount(0);
+  await page.getByRole("link", { name: "Heute", exact: true }).click();
   await expect(page.getByRole("progressbar", { name: "Modul M0 Fortschritt" })).toHaveAttribute("aria-valuenow", "0");
   await expect(page.getByRole("region", { name: "Prüfungsreife" })).toContainText("0 %");
   await page.screenshot({ path: info.outputPath("neues-konto.png"), fullPage: true });
 });
 
 test("nach einer abgeschlossenen Einheit: genau diese erledigt, Als Nächstes springt weiter, auch nach Neuladen", async ({ page }, info) => {
-  await page.goto("/lernpfad");
+  await page.goto("/lernpfad/pfad");
   await pfadGeladen(page);
   await nodes(page, "heute").first().click();
   await page.locator("button[aria-pressed]").first().click();
@@ -73,19 +74,22 @@ test("nach einer abgeschlossenen Einheit: genau diese erledigt, Als Nächstes sp
 
   for (const reload of [false, true]) {
     if (reload) await page.reload();
-    else await page.goto("/lernpfad");
+    else await page.goto("/lernpfad/pfad");
     await pfadGeladen(page);
     await expect(nodes(page, "erledigt")).toHaveCount(1);
     await expect(nodes(page, "erledigt")).toContainText("01 · Fertig");
     await expect(nodes(page, "heute")).toHaveCount(1);
     await expect(nodes(page, "heute")).toContainText("02 · Jetzt");
+    await page.getByRole("link", { name: "Heute", exact: true }).click();
     await expect(page.getByRole("progressbar", { name: "Modul M0 Fortschritt" })).toHaveAttribute("aria-valuenow", "25");
+    await page.getByRole("link", { name: "Pfad", exact: true }).click();
+    await expect(page).toHaveURL(/\/lernpfad\/pfad$/);
   }
   await page.screenshot({ path: info.outputPath("nach-einheit.png"), fullPage: true });
 });
 
 test("Beispielmodus ?demo=1 zeigt weiter seine erfundenen Daten", async ({ page }, info) => {
-  await page.goto("/lernpfad?demo=1");
+  await page.goto("/lernpfad/pfad?demo=1");
   await expect(nodes(page, "erledigt")).toHaveCount(2);
   await expect(nodes(page, "heute")).toContainText("03 · Jetzt");
   await page.screenshot({ path: info.outputPath("beispielmodus.png"), fullPage: true });

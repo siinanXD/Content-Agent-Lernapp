@@ -44,7 +44,7 @@ Umgesetzt: 58 von 61 Frames, fehlend: 0, kein App-Screen: 3.
 | `27 Impressum` | /impressum | `src/app/impressum/page.tsx` | umgesetzt |
 | `28 Datenschutzerklärung` | /datenschutz | `src/app/datenschutz/page.tsx` | umgesetzt |
 | `29 Hinweis zu KI-Inhalten` | /ki-hinweis | `src/app/ki-hinweis/page.tsx` | umgesetzt |
-| `A1 Lernpfad · Bento` | /lernpfad | `src/app/lernpfad/page.tsx` | umgesetzt |
+| `A1 Lernpfad · Bento` | /lernpfad | `src/app/lernpfad/page.tsx`, `src/app/lernpfad/lernpfad-view.tsx` | umgesetzt |
 | `A2 Einheit · Frage mit „Warum?“` | /einheit/[unitId] | `src/app/einheit/[unitId]/page.tsx`, `src/components/learner/why-panel.tsx` | umgesetzt |
 | `A3 Startseite · Hero 2026 (Desktop)` | / | `src/app/page.tsx` | umgesetzt |
 | `W1 Willkommen` | /willkommen | `src/app/willkommen/page.tsx` | umgesetzt |
@@ -54,7 +54,7 @@ Umgesetzt: 58 von 61 Frames, fehlend: 0, kein App-Screen: 3.
 | `N2 Prüfungsmodus · Start` | /pruefung | `src/app/pruefung/page.tsx` | umgesetzt |
 | `N3 Einwilligung · Banner (Nutzungsdaten)` | Komponente ConsentBanner | `src/components/learner/consent-banner.tsx` | umgesetzt |
 | `N4 Startseite · Bildungsträger (mobil)` | / | `src/app/page.tsx` | umgesetzt |
-| `N5 Lernpfad · Karte (Variante 2026)` | /lernpfad | `src/app/lernpfad/lernpfad-view.tsx` | umgesetzt |
+| `N5 Lernpfad · Karte (Variante 2026)` | /lernpfad/pfad | `src/app/lernpfad/lernpfad-view.tsx` | umgesetzt |
 | `W4 Einheit · Erklärung` | /einheit/[unitId] | `src/app/einheit/[unitId]/page.tsx` | umgesetzt |
 | `W5 Ergebnis` | /ergebnis | `src/app/ergebnis/page.tsx` | umgesetzt |
 | `W6 Wiederholung` | /wiederholung | `src/app/wiederholung/page.tsx` | umgesetzt |

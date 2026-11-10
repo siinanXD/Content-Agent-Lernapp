@@ -4,8 +4,15 @@ import AxeBuilder from "@axe-core/playwright";
 // SIN-452: Module ohne Einheiten zeigen „Noch keine Einheiten“, ohne Startknopf, aber fokussierbar.
 
 test("Lernpfad: Modul ohne Einheiten ist beschriftet, fokussierbar und nicht startbar", async ({ page }) => {
-  await page.goto("/lernpfad");
+  // Pfad zeigt ein Modul; das ohne Einheiten ist über die Modulwahl erreichbar.
+  await page.goto("/lernpfad/pfad");
   await page.waitForLoadState("networkidle");
+  const wahl = page.getByLabel("Modul wählen");
+  const werte = await wahl.locator("option").evaluateAll((o) => o.map((e) => (e as HTMLOptionElement).value));
+  for (const wert of werte) {
+    await wahl.selectOption(wert);
+    if ((await page.getByTestId("modul-leer").count()) > 0) break;
+  }
 
   const leer = page.getByTestId("modul-leer");
   expect(await leer.count(), "mindestens ein Modul ohne Einheiten").toBeGreaterThan(0);

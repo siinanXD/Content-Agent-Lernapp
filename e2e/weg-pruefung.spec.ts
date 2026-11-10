@@ -33,8 +33,8 @@ for (const vp of viewports) {
       "PT-a": 6,
     });
 
-    // 1. Prüfung öffnen: Lernpfad zeigt die Teile mit den Zeiten der Map, nicht die Vorlagen.
-    await page.goto("/lernpfad");
+    // 1. Prüfung öffnen: Pfad (Prüfungsgebiete stehen nicht auf Heute, SIN-1595) zeigt die Teile mit den Zeiten der Map, nicht die Vorlagen.
+    await page.goto("/lernpfad/pfad");
     const teile = page.locator("section", { hasText: "Prüfungsgebiete" });
     await expect(teile.getByText("Produktionsplanung")).toBeVisible();
     await expect(teile.getByText("60 Min · 30%")).toBeVisible();

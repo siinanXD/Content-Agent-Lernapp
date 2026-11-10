@@ -114,7 +114,7 @@ test("Bericht: Persona-Lauf kennzeichnet die KI im Text, Crawler nicht", () => {
 
 test("Crawler: jede Seite unter src/app steht in e2e/routes.ts (Ausnahmen begründet)", () => {
   // /admin braucht Anmeldung, /lernpfad/[kurs] einen veröffentlichten Kurs: beide nicht ohne Konto abgehbar.
-  const ausnahmen = new Set(["admin", "lernpfad/[kurs]"]);
+  const ausnahmen = new Set(["admin", "lernpfad/[kurs]", "lernpfad/[kurs]/pfad"]);
   const routen = leseRouten(readFileSync("e2e/routes.ts", "utf8"));
   const seiten: string[] = [];
   const walk = (dir: string) => {

@@ -5,8 +5,8 @@ import { getBrowserSupabase } from "@/lib/auth/browser-client";
 import { syncLernstand } from "@/lib/learner/konto-sync";
 import { LERNSTAND_GEAENDERT } from "@/lib/learner/streak";
 
-/** Ansichten, die den lokalen Stand nur beim Laden lesen: nach einem Abgleich neu laden (nicht mitten in einer Einheit). */
-const NEU_LADEN_AUF = new Set(["/lernpfad", "/profil"]);
+/** Ansichten, die den lokalen Stand nur beim Laden lesen: nach einem Abgleich neu laden (nicht mitten in einer Einheit). Heute, Pfad und Kurs-Ansichten liegen alle unter /lernpfad (SIN-1455). */
+const neuLadenAuf = (pfad: string) => pfad === "/profil" || pfad === "/lernpfad" || pfad.startsWith("/lernpfad/");
 
 /** SIN-1451: gleicht den Lernstand beim Start, bei Anmeldung, nach Netzrückkehr und nach lokalen Änderungen mit dem Konto ab. */
 export function LernstandSync() {
@@ -14,7 +14,7 @@ export function LernstandSync() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const run = async () => {
       if (await syncLernstand()) {
-        if (NEU_LADEN_AUF.has(window.location.pathname)) window.location.reload();
+        if (neuLadenAuf(window.location.pathname)) window.location.reload();
       }
     };
     const spaeter = () => {

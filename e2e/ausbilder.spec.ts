@@ -31,6 +31,16 @@ async function mockGroup(page: Page, status = 200, body: unknown = overview) {
   );
 }
 
+test("Angemeldet ohne Ausbilder-Rolle: klarer Hinweis, Weg zurück, keine Konsolenfehler (SIN-1455)", async ({ page }) => {
+  const fehler: string[] = [];
+  page.on("pageerror", (e) => fehler.push(e.message));
+  await mockGroup(page, 403, { error: "forbidden" });
+  await page.goto("/ausbilder");
+  await expect(page.getByText("Kein Zugang", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Zurück zu Heute" })).toHaveAttribute("href", "/lernpfad");
+  expect(fehler).toEqual([]);
+});
+
 test("Ausbilder sieht Kennzahlen, Filter, Liste, Erinnerung und CSV", async ({ page }) => {
   await mockGroup(page);
   await page.goto("/ausbilder");

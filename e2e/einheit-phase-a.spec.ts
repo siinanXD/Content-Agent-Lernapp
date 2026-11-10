@@ -62,7 +62,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("Lernpfad → Einheit aus Phase-A-Daten öffnet ohne Fehler", async ({ page }) => {
-  await page.goto("/lernpfad");
+  await page.goto("/lernpfad/pfad");
   const node = page.locator('[data-state="heute"]').first();
   await expect(node).toBeVisible();
   await node.click();
